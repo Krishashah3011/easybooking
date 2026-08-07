@@ -16,9 +16,8 @@ database.sqlite
 .env
 .env.*
 
-
-
-
+.cursor/
+.gemini/
 
 /extensions/*/dist
 
