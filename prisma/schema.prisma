@@ -32,3 +32,44 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+// Shop-level booking configuration. One row per shop (installed store).
+// Product-level overrides, blackout dates, and actual Booking records
+// are added in later phases — this model only covers the global defaults
+// that every bookable product falls back to.
+model BookingSettings {
+  id String @id @default(cuid())
+
+  // The shop this settings row belongs to, e.g. "my-store.myshopify.com"
+  shop String @unique
+
+  // Comma-separated day numbers that are working days, 0 = Sunday ... 6 = Saturday
+  // e.g. "1,2,3,4,5" for Mon-Fri
+  workingDays String @default("1,2,3,4,5")
+
+  // Daily booking window, stored as 24hr "HH:mm" strings
+  dailyStartTime String @default("09:00")
+  dailyEndTime   String @default("17:00")
+
+  // How long a single slot is, in minutes
+  slotDurationMinutes Int @default(30)
+
+  // Gap enforced between consecutive slots, in minutes
+  bufferMinutes Int @default(0)
+
+  // Customer must book at least this many hours before a slot's start time
+  minAdvanceHours Int @default(0)
+
+  // Customers can't book further out than this many days from today
+  maxAdvanceDays Int @default(30)
+
+  // Max number of bookings allowed in a single slot (capacity)
+  maxBookingsPerSlot Int @default(1)
+
+  // Optional overall booking window for the store; null = no restriction
+  bookingStartDate DateTime?
+  bookingEndDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
