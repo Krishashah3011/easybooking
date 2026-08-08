@@ -1,0 +1,520 @@
+import { useEffect, useState } from "react";
+import type {
+  ActionFunctionArgs,
+  HeadersFunction,
+  LoaderFunctionArgs,
+} from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
+import { useAppBridge } from "@shopify/app-bridge-react";
+import { boundary } from "@shopify/shopify-app-react-router/server";
+import { authenticate } from "../shopify.server";
+import {
+  WEEKDAY_LABELS,
+  getBookingSettings,
+} from "../models/bookingSettings.server";
+import {
+  ensureBookableProduct,
+  parseBookableProductForm,
+  toBookableProductFormValues,
+  upsertBookableProductOverrides,
+  type BookableProductFieldErrors,
+  type BookableProductFormValues,
+} from "../models/bookableProduct.server";
+import {
+  addBlackoutDate,
+  deleteBlackoutDate,
+  listProductBlackoutDates,
+  parseBlackoutDateForm,
+} from "../models/blackoutDate.server";
+
+type FieldChangeEvent = { currentTarget: { value: string } };
+
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  const { admin, session } = await authenticate.admin(request);
+  const productId = decodeURIComponent(params.productId as string);
+
+  const response = await admin.graphql(
+    `#graphql
+      query BookingProductLookup($id: ID!) {
+        product(id: $id) {
+          id
+          title
+        }
+      }`,
+    { variables: { id: productId } },
+  );
+  const responseJson = await response.json();
+  const product = responseJson.data?.product;
+
+  if (!product) {
+    throw new Response("Product not found", { status: 404 });
+  }
+
+  const bookableProduct = await ensureBookableProduct(
+    session.shop,
+    productId,
+    product.title,
+  );
+  const [shopSettings, blackoutDates] = await Promise.all([
+    getBookingSettings(session.shop),
+    listProductBlackoutDates(session.shop, bookableProduct.id),
+  ]);
+
+  return {
+    productId,
+    productTitle: product.title as string,
+    values: toBookableProductFormValues(bookableProduct),
+    shopDefaults: {
+      workingDays: shopSettings.workingDays,
+      dailyStartTime: shopSettings.dailyStartTime,
+      dailyEndTime: shopSettings.dailyEndTime,
+      slotDurationMinutes: shopSettings.slotDurationMinutes,
+      bufferMinutes: shopSettings.bufferMinutes,
+      minAdvanceHours: shopSettings.minAdvanceHours,
+      maxAdvanceDays: shopSettings.maxAdvanceDays,
+      maxBookingsPerSlot: shopSettings.maxBookingsPerSlot,
+    },
+    blackoutDates: blackoutDates.map(
+      (b: { id: string; date: Date; reason: string | null }) => ({
+        id: b.id,
+        date: b.date.toISOString().slice(0, 10),
+        reason: b.reason,
+      }),
+    ),
+  };
+};
+
+export const action = async ({ request, params }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const productId = decodeURIComponent(params.productId as string);
+  const formData = await request.formData();
+  const intent = String(formData.get("intent") ?? "") as
+    "saveOverrides" | "addBlackoutDate" | "deleteBlackoutDate" | "";
+
+  if (intent === "saveOverrides") {
+    const productTitle = String(formData.get("productTitle") ?? "");
+    const { values, errors } = parseBookableProductForm(formData);
+
+    if (Object.keys(errors).length > 0) {
+      return { intent, ok: false as const, errors, values };
+    }
+
+    const saved = await upsertBookableProductOverrides(
+      session.shop,
+      productId,
+      productTitle,
+      values,
+    );
+    return {
+      intent,
+      ok: true as const,
+      errors: {},
+      values: toBookableProductFormValues(saved),
+    };
+  }
+
+  if (intent === "addBlackoutDate") {
+    const bookableProduct = await ensureBookableProduct(
+      session.shop,
+      productId,
+      String(formData.get("productTitle") ?? ""),
+    );
+    const { date, reason, errors } = parseBlackoutDateForm(formData);
+    if (!date) {
+      return { intent, ok: false as const, blackoutErrors: errors };
+    }
+    await addBlackoutDate(session.shop, date, reason, bookableProduct.id);
+    return { intent, ok: true as const, blackoutErrors: {} };
+  }
+
+  if (intent === "deleteBlackoutDate") {
+    const id = String(formData.get("id") ?? "");
+    await deleteBlackoutDate(session.shop, id);
+    return { intent, ok: true as const };
+  }
+
+  return { intent, ok: false as const };
+};
+
+export default function BookableProductPage() {
+  const {
+    productId,
+    productTitle,
+    values: initialValues,
+    shopDefaults,
+    blackoutDates,
+  } = useLoaderData<typeof loader>();
+  const overridesFetcher = useFetcher<typeof action>();
+  const blackoutFetcher = useFetcher<typeof action>();
+  const shopify = useAppBridge();
+
+  const [values, setValues] =
+    useState<BookableProductFormValues>(initialValues);
+  const [newBlackoutDate, setNewBlackoutDate] = useState("");
+  const [newBlackoutReason, setNewBlackoutReason] = useState("");
+
+  const errors: BookableProductFieldErrors =
+    overridesFetcher.data?.intent === "saveOverrides"
+      ? (overridesFetcher.data.errors ?? {})
+      : {};
+  const isSaving =
+    overridesFetcher.state === "submitting" ||
+    overridesFetcher.state === "loading";
+
+  useEffect(() => {
+    if (
+      overridesFetcher.data?.intent === "saveOverrides" &&
+      overridesFetcher.data.ok
+    ) {
+      setValues(overridesFetcher.data.values);
+      shopify.toast.show("Product booking settings saved");
+    }
+  }, [overridesFetcher.data, shopify]);
+
+  useEffect(() => {
+    if (
+      blackoutFetcher.data?.intent === "addBlackoutDate" &&
+      blackoutFetcher.data.ok
+    ) {
+      setNewBlackoutDate("");
+      setNewBlackoutReason("");
+    }
+  }, [blackoutFetcher.data]);
+
+  const setField = <K extends keyof BookableProductFormValues>(
+    key: K,
+    value: BookableProductFormValues[K],
+  ) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleWorkingDay = (day: number) => {
+    setValues((prev) => {
+      const current = prev.workingDays ?? [];
+      const has = current.includes(day);
+      const workingDays = has
+        ? current.filter((d) => d !== day)
+        : [...current, day].sort((a, b) => a - b);
+      return { ...prev, workingDays };
+    });
+  };
+
+  const handleSave = () => {
+    overridesFetcher.submit(
+      {
+        intent: "saveOverrides",
+        productTitle,
+        isEnabled: String(values.isEnabled),
+        workingDays: values.workingDays ? values.workingDays.join(",") : "",
+        dailyStartTime: values.dailyStartTime ?? "",
+        dailyEndTime: values.dailyEndTime ?? "",
+        slotDurationMinutes:
+          values.slotDurationMinutes !== null
+            ? String(values.slotDurationMinutes)
+            : "",
+        bufferMinutes:
+          values.bufferMinutes !== null ? String(values.bufferMinutes) : "",
+        minAdvanceHours:
+          values.minAdvanceHours !== null ? String(values.minAdvanceHours) : "",
+        maxAdvanceDays:
+          values.maxAdvanceDays !== null ? String(values.maxAdvanceDays) : "",
+        maxBookingsPerSlot:
+          values.maxBookingsPerSlot !== null
+            ? String(values.maxBookingsPerSlot)
+            : "",
+        bookingStartDate: values.bookingStartDate ?? "",
+        bookingEndDate: values.bookingEndDate ?? "",
+      },
+      { method: "POST" },
+    );
+  };
+
+  const handleAddBlackoutDate = () => {
+    if (!newBlackoutDate) return;
+    blackoutFetcher.submit(
+      {
+        intent: "addBlackoutDate",
+        productTitle,
+        date: newBlackoutDate,
+        reason: newBlackoutReason,
+      },
+      { method: "POST" },
+    );
+  };
+
+  const handleDeleteBlackoutDate = (id: string) => {
+    blackoutFetcher.submit(
+      { intent: "deleteBlackoutDate", id },
+      { method: "POST" },
+    );
+  };
+
+  return (
+    <s-page heading={productTitle}>
+      <s-link slot="breadcrumb-actions" href="/app/products">
+        Products
+      </s-link>
+      <s-button
+        slot="primary-action"
+        variant="primary"
+        onClick={handleSave}
+        {...(isSaving ? { loading: true } : {})}
+      >
+        Save
+      </s-button>
+
+      <s-section heading="Booking">
+        <s-switch
+          label="Booking enabled for this product"
+          checked={values.isEnabled}
+          onChange={() => setField("isEnabled", !values.isEnabled)}
+        ></s-switch>
+      </s-section>
+
+      <s-section heading="Working days">
+        <s-paragraph>
+          Leave every day unchecked below and this product will use the shop
+          default instead. Check any day to set a custom schedule just for this
+          product.
+        </s-paragraph>
+        <s-stack direction="inline" gap="base">
+          {WEEKDAY_LABELS.map((day) => (
+            <s-checkbox
+              key={day.value}
+              label={day.label}
+              checked={(values.workingDays ?? []).includes(day.value)}
+              onChange={() => toggleWorkingDay(day.value)}
+            ></s-checkbox>
+          ))}
+        </s-stack>
+        {errors.workingDays && (
+          <s-banner tone="critical">{errors.workingDays}</s-banner>
+        )}
+      </s-section>
+
+      <s-section heading="Daily booking window">
+        <s-stack direction="inline" gap="base">
+          <s-text-field
+            label="Start time"
+            placeholder={shopDefaults.dailyStartTime}
+            details="Blank = use shop default"
+            value={values.dailyStartTime ?? ""}
+            error={errors.dailyStartTime}
+            onChange={(e: FieldChangeEvent) =>
+              setField("dailyStartTime", e.currentTarget.value || null)
+            }
+          ></s-text-field>
+          <s-text-field
+            label="End time"
+            placeholder={shopDefaults.dailyEndTime}
+            details="Blank = use shop default"
+            value={values.dailyEndTime ?? ""}
+            error={errors.dailyEndTime}
+            onChange={(e: FieldChangeEvent) =>
+              setField("dailyEndTime", e.currentTarget.value || null)
+            }
+          ></s-text-field>
+        </s-stack>
+      </s-section>
+
+      <s-section heading="Slot configuration">
+        <s-stack direction="inline" gap="base">
+          <s-number-field
+            label="Slot duration (minutes)"
+            placeholder={String(shopDefaults.slotDurationMinutes)}
+            details="Blank = use shop default"
+            value={
+              values.slotDurationMinutes !== null
+                ? String(values.slotDurationMinutes)
+                : ""
+            }
+            min={5}
+            step={5}
+            error={errors.slotDurationMinutes}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "slotDurationMinutes",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+          <s-number-field
+            label="Buffer time (minutes)"
+            placeholder={String(shopDefaults.bufferMinutes)}
+            details="Blank = use shop default"
+            value={
+              values.bufferMinutes !== null ? String(values.bufferMinutes) : ""
+            }
+            min={0}
+            step={5}
+            error={errors.bufferMinutes}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "bufferMinutes",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+          <s-number-field
+            label="Max bookings per slot"
+            placeholder={String(shopDefaults.maxBookingsPerSlot)}
+            details="Blank = use shop default"
+            value={
+              values.maxBookingsPerSlot !== null
+                ? String(values.maxBookingsPerSlot)
+                : ""
+            }
+            min={1}
+            step={1}
+            error={errors.maxBookingsPerSlot}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "maxBookingsPerSlot",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+        </s-stack>
+      </s-section>
+
+      <s-section heading="Advance booking rules">
+        <s-stack direction="inline" gap="base">
+          <s-number-field
+            label="Minimum advance booking time (hours)"
+            placeholder={String(shopDefaults.minAdvanceHours)}
+            details="Blank = use shop default"
+            value={
+              values.minAdvanceHours !== null
+                ? String(values.minAdvanceHours)
+                : ""
+            }
+            min={0}
+            step={1}
+            error={errors.minAdvanceHours}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "minAdvanceHours",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+          <s-number-field
+            label="Maximum advance booking (days)"
+            placeholder={String(shopDefaults.maxAdvanceDays)}
+            details="Blank = use shop default"
+            value={
+              values.maxAdvanceDays !== null
+                ? String(values.maxAdvanceDays)
+                : ""
+            }
+            min={1}
+            step={1}
+            error={errors.maxAdvanceDays}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "maxAdvanceDays",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+        </s-stack>
+      </s-section>
+
+      <s-section heading="Booking start & end date">
+        <s-stack direction="inline" gap="base">
+          <s-date-field
+            label="Booking start date"
+            details="Blank = use shop default"
+            value={values.bookingStartDate ?? ""}
+            error={errors.bookingStartDate}
+            onChange={(e: FieldChangeEvent) =>
+              setField("bookingStartDate", e.currentTarget.value || null)
+            }
+          ></s-date-field>
+          <s-date-field
+            label="Booking end date"
+            details="Blank = use shop default"
+            value={values.bookingEndDate ?? ""}
+            error={errors.bookingEndDate}
+            onChange={(e: FieldChangeEvent) =>
+              setField("bookingEndDate", e.currentTarget.value || null)
+            }
+          ></s-date-field>
+        </s-stack>
+      </s-section>
+
+      <s-section heading="Blackout dates for this product">
+        <s-paragraph>
+          Dates this specific product can&apos;t be booked on — e.g. maintenance
+          or a specific staff member&apos;s day off — on top of any shop-wide
+          blackout dates.
+        </s-paragraph>
+
+        <s-stack direction="inline" gap="base">
+          <s-date-field
+            label="Date"
+            value={newBlackoutDate}
+            onChange={(e: FieldChangeEvent) =>
+              setNewBlackoutDate(e.currentTarget.value)
+            }
+          ></s-date-field>
+          <s-text-field
+            label="Reason (optional)"
+            value={newBlackoutReason}
+            onChange={(e: FieldChangeEvent) =>
+              setNewBlackoutReason(e.currentTarget.value)
+            }
+          ></s-text-field>
+          <s-button onClick={handleAddBlackoutDate}>Add blackout date</s-button>
+        </s-stack>
+
+        {blackoutDates.length > 0 && (
+          <s-table>
+            <s-table-header-row>
+              <s-table-header>Date</s-table-header>
+              <s-table-header>Reason</s-table-header>
+              <s-table-header>Remove</s-table-header>
+            </s-table-header-row>
+            <s-table-body>
+              {blackoutDates.map(
+                (b: { id: string; date: string; reason: string | null }) => (
+                  <s-table-row key={b.id}>
+                    <s-table-cell>{b.date}</s-table-cell>
+                    <s-table-cell>{b.reason ?? "—"}</s-table-cell>
+                    <s-table-cell>
+                      <s-button
+                        variant="tertiary"
+                        tone="critical"
+                        onClick={() => handleDeleteBlackoutDate(b.id)}
+                      >
+                        Remove
+                      </s-button>
+                    </s-table-cell>
+                  </s-table-row>
+                ),
+              )}
+            </s-table-body>
+          </s-table>
+        )}
+      </s-section>
+
+      <s-section slot="aside" heading="Product ID">
+        <s-paragraph>{productId}</s-paragraph>
+      </s-section>
+    </s-page>
+  );
+}
+
+export const headers: HeadersFunction = (headersArgs) => {
+  return boundary.headers(headersArgs);
+};
