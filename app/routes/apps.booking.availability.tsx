@@ -1,0 +1,47 @@
+import type { LoaderFunctionArgs } from "react-router";
+import { authenticate } from "../shopify.server";
+import { resolveBookingContext } from "../models/booking-context.server";
+import { getAvailableDatesInMonth } from "../models/slotAvailability.server";
+
+/**
+ * GET /apps/booking/availability?productId=<gid>&year=<yyyy>&month=<1-12>
+ *
+ * Called from the storefront theme extension to know which dates to show
+ * as selectable in the calendar. Signature-verified by Shopify's app
+ * proxy — only requests actually forwarded from a storefront are accepted.
+ */
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { session } = await authenticate.public.appProxy(request);
+  if (!session) {
+    return Response.json({ error: "Unknown shop" }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const productId = url.searchParams.get("productId");
+  const year = Number(url.searchParams.get("year"));
+  const month = Number(url.searchParams.get("month"));
+
+  if (!productId || !Number.isInteger(year) || !Number.isInteger(month)) {
+    return Response.json(
+      { error: "productId, year, and month are required" },
+      { status: 400 },
+    );
+  }
+  if (month < 1 || month > 12) {
+    return Response.json({ error: "month must be 1-12" }, { status: 400 });
+  }
+
+  const context = await resolveBookingContext(session.shop, productId);
+  if (!context) {
+    return Response.json({ availableDates: [] });
+  }
+
+  const availableDates = getAvailableDatesInMonth(
+    context.effectiveSettings,
+    year,
+    month,
+    context.blackoutDates,
+  );
+
+  return Response.json({ availableDates });
+};

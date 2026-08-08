@@ -1,0 +1,110 @@
+.booking-widget {
+  max-width: 360px;
+  margin: 1.5rem 0;
+  font-family: inherit;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.booking-widget__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.booking-widget__month-label {
+  font-weight: 600;
+}
+
+.booking-widget__nav {
+  background: none;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.booking-widget__nav:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.booking-widget__status {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.9rem;
+}
+
+.booking-widget__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.booking-widget__day {
+  aspect-ratio: 1;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: not-allowed;
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.booking-widget__day--available {
+  cursor: pointer;
+  color: inherit;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.booking-widget__day--available:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.booking-widget__day--selected {
+  background: #111;
+  color: #fff;
+}
+
+.booking-widget__slots {
+  margin-top: 1rem;
+}
+
+.booking-widget__slots-label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.booking-widget__slot-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.booking-widget__slot {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: none;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.booking-widget__slot:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.booking-widget__slot--selected {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.booking-widget__selection {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}

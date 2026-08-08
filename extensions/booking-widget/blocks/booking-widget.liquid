@@ -1,0 +1,59 @@
+{% comment %}
+  Booking Widget app block.
+
+  Add this to a product page (via the theme editor) for any product that
+  has booking enabled in the app's admin. It lets the customer pick a
+  date and time slot before adding the product to their cart; the
+  selection is submitted as line item properties ("Booking Date" /
+  "Booking Time") on the nearest add-to-cart form.
+{% endcomment %}
+
+<div
+  class="booking-widget"
+  data-booking-widget
+  data-product-id="gid://shopify/Product/{{ product.id }}"
+  data-proxy-base="/apps/booking"
+>
+  <div class="booking-widget__header">
+    <button
+      type="button"
+      class="booking-widget__nav"
+      data-booking-prev
+      aria-label="Previous month"
+    >
+      ‹
+    </button>
+    <span class="booking-widget__month-label" data-booking-month-label></span>
+    <button
+      type="button"
+      class="booking-widget__nav"
+      data-booking-next
+      aria-label="Next month"
+    >
+      ›
+    </button>
+  </div>
+
+  <div class="booking-widget__calendar" data-booking-calendar>
+    <p class="booking-widget__status" data-booking-status>
+      Loading availability…
+    </p>
+  </div>
+
+  <div class="booking-widget__slots" data-booking-slots hidden>
+    <p class="booking-widget__slots-label">Available times</p>
+    <div class="booking-widget__slot-list" data-booking-slot-list></div>
+  </div>
+
+  <p class="booking-widget__selection" data-booking-selection hidden></p>
+</div>
+
+{{ 'booking-widget.css' | asset_url | stylesheet_tag }}
+{{ 'booking-widget.js' | asset_url | script_tag }}
+
+{% schema %}
+{
+  "name": "Booking Widget",
+  "settings": []
+}
+{% endschema %}
