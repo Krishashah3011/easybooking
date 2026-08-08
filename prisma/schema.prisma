@@ -1,7 +1,13 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -27,29 +33,67 @@ model Session {
   refreshTokenExpires DateTime?
 }
 
+// Shop-level booking configuration. One row per shop (installed store).
+// Product-level overrides, blackout dates, and actual Booking records
+// are added in later phases — this model only covers the global defaults
+// that every bookable product falls back to.
 model BookingSettings {
   id String @id @default(cuid())
+
+  // The shop this settings row belongs to, e.g. "my-store.myshopify.com"
   shop String @unique
+
+  // Comma-separated day numbers that are working days, 0 = Sunday ... 6 = Saturday
+  // e.g. "1,2,3,4,5" for Mon-Fri
   workingDays String @default("1,2,3,4,5")
+
+  // Daily booking window, stored as 24hr "HH:mm" strings
   dailyStartTime String @default("09:00")
   dailyEndTime   String @default("17:00")
+
+  // How long a single slot is, in minutes
   slotDurationMinutes Int @default(30)
+
+  // Gap enforced between consecutive slots, in minutes
   bufferMinutes Int @default(0)
+
+  // Customer must book at least this many hours before a slot's start time
   minAdvanceHours Int @default(0)
+
+  // Customers can't book further out than this many days from today
   maxAdvanceDays Int @default(30)
+
+  // Max number of bookings allowed in a single slot (capacity)
   maxBookingsPerSlot Int @default(1)
+
+  // Optional overall booking window for the store; null = no restriction
   bookingStartDate DateTime?
   bookingEndDate   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+// Per-product booking configuration. A product must have a row here with
+// isEnabled=true to be bookable at all. Every override field is nullable —
+// null means "fall back to the shop's BookingSettings" for that field.
+// This is how a single product can, say, run shorter slots than the rest
+// of the store without duplicating every setting.
 model BookableProduct {
   id String @id @default(cuid())
+
   shop String
+
+  // Shopify product GID, e.g. "gid://shopify/Product/1234567890"
   productId String
+
+  // Cached product title, refreshed whenever this row is saved, purely so
+  // the admin product list doesn't need a live Admin API call to render.
   productTitle String
+
   isEnabled Boolean @default(false)
+
+  // All overrides below are optional — null falls back to BookingSettings
   workingDays          String?
   dailyStartTime       String?
   dailyEndTime         String?
@@ -60,28 +104,44 @@ model BookableProduct {
   maxBookingsPerSlot   Int?
   bookingStartDate     DateTime?
   bookingEndDate       DateTime?
+
   blackoutDates BlackoutDate[]
   bookings      Booking[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@unique([shop, productId])
   @@index([shop])
 }
 
+// A single blocked date. If bookableProductId is null, the date is blocked
+// store-wide (applies to every bookable product). If set, it only blocks
+// that one product — e.g. a piece of equipment out for maintenance on a
+// day the rest of the shop is open.
 model BlackoutDate {
   id String @id @default(cuid())
+
   shop String
+
   bookableProductId String?
   bookableProduct   BookableProduct? @relation(fields: [bookableProductId], references: [id], onDelete: Cascade)
+
   date   DateTime
   reason String?
+
   createdAt DateTime @default(now())
+
   @@index([shop])
   @@index([bookableProductId])
 }
 
 enum BookingStatus {
   CONFIRMED
+  // Created successfully but the slot's capacity was already full at the
+  // time the order came in — flagged for the merchant to manually
+  // resolve (contact customer, refund, etc). See Phase 4 notes on why
+  // this can happen instead of being prevented outright.
   OVERBOOKED
   CANCELLED
 }
@@ -91,28 +151,43 @@ enum BookingSource {
   ADMIN_MANUAL
 }
 
+// A single confirmed (or flagged) appointment. Created either from an
+// order's line item properties (storefront checkout) or directly by
+// a merchant from the admin (manual/phone booking).
 model Booking {
   id String @id @default(cuid())
+
   shop String
+
   bookableProductId String
   bookableProduct   BookableProduct @relation(fields: [bookableProductId], references: [id], onDelete: Cascade)
+
+  // Present only for STOREFRONT_ORDER bookings
   orderId       String?
   orderName     String?
   lineItemId    String?
+
   customerName  String?
   customerEmail String?
   customerPhone String?
   isGuest       Boolean @default(true)
+
+  // The booked date ("YYYY-MM-DD") and slot, kept both as the raw pieces
+  // (for display) and as a precise UTC instant (for capacity counting).
   date         String
   slotStart    String
   slotEnd      String
   slotStartsAt DateTime
+
   status BookingStatus @default(CONFIRMED)
   source BookingSource
+
   confirmationSentAt DateTime?
   reminderSentAt     DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@index([shop])
   @@index([bookableProductId, slotStartsAt])
   @@index([orderId])
