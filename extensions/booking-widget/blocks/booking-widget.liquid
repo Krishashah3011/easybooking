@@ -49,11 +49,12 @@
 </div>
 
 {{ 'booking-widget.css' | asset_url | stylesheet_tag }}
-{{ 'booking-widget.js' | asset_url | script_tag }}
+<script src="{{ 'booking-widget.js' | asset_url }}" defer></script>
 
 {% schema %}
 {
   "name": "Booking Widget",
+  "target": "section",
   "settings": []
 }
 {% endschema %}
