@@ -7,7 +7,11 @@ import {
 import { getBookingSettings } from "./bookingSettings.server";
 import { computeSlotsForDate } from "./slotAvailability.server";
 import { sendEmail } from "../utils/mailer.server";
-import { confirmationEmail, reminderEmail } from "./emailTemplates.server";
+import {
+  confirmationEmail,
+  reminderEmail,
+  cancellationEmail,
+} from "./emailTemplates.server";
 
 export type OrderLineItem = {
   id: number | string;
@@ -144,6 +148,35 @@ async function sendBookingConfirmation(
 }
 
 /**
+ * Sends the booking cancellation email, if the booking has an email on
+ * file. Best-effort — a failed or skipped send never throws, so it can't
+ * block the cancellation itself.
+ */
+async function sendBookingCancellation(
+  booking: Booking,
+  productTitle: string,
+  shop: string,
+): Promise<void> {
+  if (!booking.customerEmail) return;
+
+  const { subject, text, html } = cancellationEmail({
+    productTitle,
+    customerName: booking.customerName,
+    date: booking.date,
+    slotStart: booking.slotStart,
+    slotEnd: booking.slotEnd,
+    shopName: shop,
+  });
+
+  await sendEmail({
+    to: booking.customerEmail,
+    subject,
+    text,
+    html,
+  });
+}
+
+/**
  * Processes every line item on an order, creating a Booking for any that
  * carry booking properties and belong to an enabled bookable product.
  * Safe to call more than once for the same order (webhook retries) —
@@ -155,6 +188,10 @@ async function sendBookingConfirmation(
  * status OVERBOOKED instead of silently rejected, so the merchant can
  * follow up. True prevention would require a Shopify Function on
  * cart/checkout validation — out of scope for this phase.
+ *
+ * TEMPORARY: has console.log debugging on each skip reason, to track down
+ * why storefront orders weren't creating bookings. Safe to remove once
+ * that's confirmed fixed.
  */
 export async function createBookingsFromOrder(
   shop: string,
@@ -166,7 +203,13 @@ export async function createBookingsFromOrder(
 
   for (const lineItem of order.line_items ?? []) {
     const selection = extractBookingSelection(lineItem);
-    if (!selection || lineItem.product_id == null) continue;
+    if (!selection || lineItem.product_id == null) {
+      console.log(
+        `Skipping line item ${lineItem.id}: no booking selection or product_id`,
+        { selection, product_id: lineItem.product_id },
+      );
+      continue;
+    }
 
     const existing = await prisma.booking.findFirst({
       where: {
@@ -175,11 +218,22 @@ export async function createBookingsFromOrder(
         lineItemId: String(lineItem.id),
       },
     });
-    if (existing) continue;
+    if (existing) {
+      console.log(
+        `Skipping line item ${lineItem.id}: booking already exists (order ${order.id})`,
+      );
+      continue;
+    }
 
     const productGid = toProductGid(lineItem.product_id);
     const bookableProduct = await getBookableProduct(shop, productGid);
-    if (!bookableProduct || !bookableProduct.isEnabled) continue;
+    if (!bookableProduct || !bookableProduct.isEnabled) {
+      console.log(
+        `Skipping line item ${lineItem.id}: product ${productGid} not bookable/enabled`,
+        bookableProduct,
+      );
+      continue;
+    }
 
     const effectiveSettings = resolveEffectiveSettings(
       shopSettings,
@@ -248,15 +302,31 @@ function addMinutes(time: string, minutes: number): string {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
-/** Cancels every non-cancelled booking tied to an order (orders/cancelled webhook). */
+/**
+ * Cancels every non-cancelled booking tied to an order (orders/cancelled
+ * webhook), and sends a cancellation email for each one that had a
+ * customer email on file.
+ */
 export async function cancelBookingsForOrder(
   shop: string,
   orderId: number | string,
 ): Promise<void> {
-  await prisma.booking.updateMany({
+  const bookings = await prisma.booking.findMany({
     where: { shop, orderId: String(orderId), status: { not: "CANCELLED" } },
-    data: { status: "CANCELLED" },
+    include: { bookableProduct: { select: { productTitle: true } } },
   });
+
+  for (const booking of bookings) {
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: "CANCELLED" },
+    });
+    await sendBookingCancellation(
+      booking,
+      booking.bookableProduct.productTitle,
+      shop,
+    );
+  }
 }
 
 export type ManualBookingInput = {
@@ -405,12 +475,19 @@ export async function listBookings(
   );
 }
 
-/** Admin-initiated cancellation of a single booking. Idempotent. */
+/**
+ * Admin-initiated cancellation of a single booking. Idempotent — sends a
+ * cancellation email only on the transition into CANCELLED, never on a
+ * repeat call against an already-cancelled booking.
+ */
 export async function cancelBooking(
   shop: string,
   id: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const booking = await prisma.booking.findFirst({ where: { id, shop } });
+  const booking = await prisma.booking.findFirst({
+    where: { id, shop },
+    include: { bookableProduct: { select: { productTitle: true } } },
+  });
   if (!booking) {
     return { ok: false, error: "Booking not found." };
   }
@@ -419,6 +496,11 @@ export async function cancelBooking(
       where: { id },
       data: { status: "CANCELLED" },
     });
+    await sendBookingCancellation(
+      booking,
+      booking.bookableProduct.productTitle,
+      shop,
+    );
   }
   return { ok: true };
 }

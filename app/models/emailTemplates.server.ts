@@ -69,6 +69,35 @@ export function reminderEmail(data: BookingEmailData): {
   return { subject, text, html };
 }
 
+export function cancellationEmail(data: BookingEmailData): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = `Booking cancelled: ${data.productTitle} on ${data.date}`;
+  const text = [
+    greeting(data.customerName),
+    "",
+    `Your booking has been cancelled:`,
+    `- ${data.productTitle}`,
+    `- ${data.date}, ${data.slotStart}\u2013${data.slotEnd}`,
+    "",
+    `If this wasn't expected, please contact ${data.shopName}.`,
+  ].join("\n");
+
+  const html = `
+    <p>${greeting(data.customerName)}</p>
+    <p>Your booking has been cancelled:</p>
+    <ul>
+      <li><strong>${escapeHtml(data.productTitle)}</strong></li>
+      <li>${escapeHtml(data.date)}, ${escapeHtml(data.slotStart)}\u2013${escapeHtml(data.slotEnd)}</li>
+    </ul>
+    <p>If this wasn't expected, please contact ${escapeHtml(data.shopName)}.</p>
+  `.trim();
+
+  return { subject, text, html };
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
