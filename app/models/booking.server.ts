@@ -78,6 +78,37 @@ async function countConfirmedBookingsForSlot(
 }
 
 /**
+ * Returns how many CONFIRMED bookings exist per exact slot start time,
+ * across a date range, keyed by ISO datetime. Used by the storefront
+ * availability/slots endpoints so the calendar and time picker can
+ * exclude slots that are already fully booked, instead of only applying
+ * the rule-based restrictions (working days, buffer time, etc).
+ */
+export async function getBookedCountsInRange(
+  shop: string,
+  bookableProductId: string,
+  rangeStart: Date,
+  rangeEnd: Date,
+): Promise<Map<string, number>> {
+  const grouped = await prisma.booking.groupBy({
+    by: ["slotStartsAt"],
+    where: {
+      shop,
+      bookableProductId,
+      status: "CONFIRMED",
+      slotStartsAt: { gte: rangeStart, lte: rangeEnd },
+    },
+    _count: { _all: true },
+  });
+
+  const counts = new Map<string, number>();
+  for (const row of grouped) {
+    counts.set(row.slotStartsAt.toISOString(), row._count._all);
+  }
+  return counts;
+}
+
+/**
  * Sends the booking confirmation email, if the booking has an email on
  * file, and records confirmationSentAt. Best-effort — a failed or skipped
  * send never throws, so it can't block booking creation.

@@ -10,6 +10,7 @@ import {
 } from "./blackoutDate.server";
 
 export type BookingContext = {
+  bookableProductId: string;
   effectiveSettings: EffectiveBookingSettings;
   blackoutDates: Set<string>;
 };
@@ -46,6 +47,7 @@ export async function resolveBookingContext(
   ]);
 
   return {
+    bookableProductId: bookableProduct.id,
     effectiveSettings: resolveEffectiveSettings(shopSettings, bookableProduct),
     blackoutDates,
   };

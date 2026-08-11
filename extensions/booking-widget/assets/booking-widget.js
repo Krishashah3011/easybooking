@@ -34,6 +34,7 @@
     var form = root.closest('form[action*="/cart/add"]');
     var dateInput = null;
     var timeInput = null;
+    var submitBtn = null;
     if (form) {
       dateInput = document.createElement("input");
       dateInput.type = "hidden";
@@ -44,6 +45,23 @@
       timeInput.type = "hidden";
       timeInput.name = "properties[Booking Time]";
       form.appendChild(timeInput);
+
+      // Booking a slot is required for this product — disable the add-to-cart
+      // control until the customer actually picks a date and time, and block
+      // submission outright as a safety net in case a theme re-enables it.
+      submitBtn = form.querySelector('[type="submit"], [name="add"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+      }
+      form.addEventListener("submit", function (event) {
+        if (!selectedDate || !selectedSlot) {
+          event.preventDefault();
+          selectionEl.hidden = false;
+          selectionEl.textContent =
+            "Please select a date and time before adding this to your cart.";
+          root.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
     }
 
     function setStatus(container, message) {
@@ -198,10 +216,12 @@
           "Selected: " + selectedDate + " at " + selectedSlot.start;
         if (dateInput) dateInput.value = selectedDate;
         if (timeInput) timeInput.value = selectedSlot.start;
+        if (submitBtn) submitBtn.disabled = false;
       } else {
         selectionEl.hidden = true;
         if (dateInput) dateInput.value = "";
         if (timeInput) timeInput.value = "";
+        if (submitBtn) submitBtn.disabled = true;
       }
     }
 

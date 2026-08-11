@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import { resolveBookingContext } from "../models/booking-context.server";
 import { getAvailableDatesInMonth } from "../models/slotAvailability.server";
+import { getBookedCountsInRange } from "../models/booking.server";
 
 /**
  * GET /apps/booking/availability?productId=<gid>&year=<yyyy>&month=<1-12>
@@ -36,11 +37,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return Response.json({ availableDates: [] });
   }
 
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+  const bookedCounts = await getBookedCountsInRange(
+    session.shop,
+    context.bookableProductId,
+    monthStart,
+    monthEnd,
+  );
+
   const availableDates = getAvailableDatesInMonth(
     context.effectiveSettings,
     year,
     month,
     context.blackoutDates,
+    new Date(),
+    bookedCounts,
   );
 
   return Response.json({ availableDates });
