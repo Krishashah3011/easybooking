@@ -185,7 +185,7 @@
       slotListEl.innerHTML = "";
 
       if (slots.length === 0) {
-        setStatus(slotListEl, "No times available on this date.");
+        setStatus(slotListEl, "No times at all on this date.");
         return;
       }
 
@@ -194,6 +194,14 @@
         btn.type = "button";
         btn.className = "booking-widget__slot";
         btn.textContent = slot.start + " \u2013 " + slot.end;
+
+        if (!slot.available) {
+          btn.classList.add("booking-widget__slot--unavailable");
+          btn.disabled = true;
+          btn.textContent += " (Booked)";
+          slotListEl.appendChild(btn);
+          return;
+        }
 
         if (selectedSlot && selectedSlot.startsAt === slot.startsAt) {
           btn.classList.add("booking-widget__slot--selected");

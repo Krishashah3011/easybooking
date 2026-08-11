@@ -15,7 +15,7 @@ import {
 import { getBookingSettings } from "../models/bookingSettings.server";
 import { computeSlotsForDate, type TimeSlot } from "../models/slotAvailability.server";
 import { listShopBlackoutDates, listProductBlackoutDates } from "../models/blackoutDate.server";
-import { createManualBooking } from "../models/booking.server";
+import { createManualBooking, getBookedCountsInRange } from "../models/booking.server";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -62,7 +62,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       shopSettings,
       bookableProduct,
     );
-    const slots = computeSlotsForDate(effectiveSettings, date, blackoutDates);
+
+    const dayStart = new Date(`${date}T00:00:00.000Z`);
+    const dayEnd = new Date(`${date}T23:59:59.999Z`);
+    const bookedCounts = await getBookedCountsInRange(
+      session.shop,
+      bookableProductId,
+      dayStart,
+      dayEnd,
+    );
+
+    const slots = computeSlotsForDate(
+      effectiveSettings,
+      date,
+      blackoutDates,
+      new Date(),
+      bookedCounts,
+    );
 
     return { intent, ok: true as const, slots };
   }
@@ -190,7 +206,7 @@ export default function NewBookingPage() {
       {slotsFetcher.data?.intent === "loadSlots" && (
         <s-section heading="Available times">
           {slots.length === 0 ? (
-            <s-paragraph>No open slots on this date.</s-paragraph>
+            <s-paragraph>No slots at all on this date.</s-paragraph>
           ) : (
             <s-stack direction="inline" gap="base">
               {slots.map((slot) => (
@@ -201,9 +217,13 @@ export default function NewBookingPage() {
                       ? "primary"
                       : "secondary"
                   }
-                  onClick={() => setSelectedSlot(slot)}
+                  {...(!slot.available ? { disabled: true } : {})}
+                  onClick={() => {
+                    if (slot.available) setSelectedSlot(slot);
+                  }}
                 >
                   {slot.start} – {slot.end}
+                  {!slot.available ? " (Booked)" : ""}
                 </s-button>
               ))}
             </s-stack>

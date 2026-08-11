@@ -103,6 +103,16 @@
   border-color: #111;
 }
 
+.booking-widget__slot--unavailable {
+  opacity: 0.4;
+  filter: blur(0.3px);
+  cursor: not-allowed;
+}
+
+.booking-widget__slot--unavailable:hover {
+  background: none;
+}
+
 .booking-widget__selection {
   margin-top: 0.75rem;
   font-size: 0.9rem;

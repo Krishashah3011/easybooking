@@ -8,6 +8,8 @@ export type TimeSlot = {
   startsAt: string;
   /** How many more bookings this slot can accept right now */
   remainingCapacity: number;
+  /** False when the slot is fully booked — still returned so it can be shown, disabled */
+  available: boolean;
 };
 
 const MINUTES_IN_DAY = 24 * 60;
@@ -102,14 +104,14 @@ export function computeSlotsForDate(
     if (startsAt < earliestBookableAt) continue;
 
     const booked = bookedCounts.get(startsAt.toISOString()) ?? 0;
-    const remainingCapacity = settings.maxBookingsPerSlot - booked;
-    if (remainingCapacity <= 0) continue;
+    const remainingCapacity = Math.max(0, settings.maxBookingsPerSlot - booked);
 
     slots.push({
       start: minutesToTime(slotStartMin),
       end: minutesToTime(slotEndMin),
       startsAt: startsAt.toISOString(),
       remainingCapacity,
+      available: remainingCapacity > 0,
     });
   }
 
@@ -137,7 +139,7 @@ export function getAvailableDatesInMonth(
       now,
       bookedCounts,
     );
-    if (slots.length > 0) available.push(dateStr);
+    if (slots.some((s) => s.available)) available.push(dateStr);
   }
 
   return available;
