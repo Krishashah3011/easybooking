@@ -1,16 +1,6 @@
 import type { BookingSettings } from "@prisma/client";
 import prisma from "../db.server";
 
-export const WEEKDAY_LABELS = [
-  { value: 0, label: "Sunday" },
-  { value: 1, label: "Monday" },
-  { value: 2, label: "Tuesday" },
-  { value: 3, label: "Wednesday" },
-  { value: 4, label: "Thursday" },
-  { value: 5, label: "Friday" },
-  { value: 6, label: "Saturday" },
-] as const;
-
 export const DEFAULT_BOOKING_SETTINGS = {
   workingDays: "1,2,3,4,5",
   dailyStartTime: "09:00",

@@ -26,7 +26,7 @@ function minutesToTime(minutes: number): string {
 }
 
 /** "YYYY-MM-DD" -> day of week, 0 = Sunday ... 6 = Saturday, in UTC (dates are treated as calendar dates, not tied to a timezone). */
-function dayOfWeek(dateStr: string): number {
+export function dayOfWeek(dateStr: string): number {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }

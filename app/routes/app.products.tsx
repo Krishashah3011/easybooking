@@ -130,7 +130,7 @@ export default function BookingProductsPage() {
                   </s-table-cell>
                   <s-table-cell>
                     <s-link
-                      href={`/app/products/${encodeURIComponent(product.id)}`}
+                      href={`/app/products/${product.id.split("/").pop()}`}
                     >
                       Configure
                     </s-link>

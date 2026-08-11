@@ -8,8 +8,8 @@ import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import { WEEKDAY_LABELS } from "../models/weekday-labels";
 import {
-  WEEKDAY_LABELS,
   getBookingSettings,
   parseBookingSettingsForm,
   toFormValues,
@@ -240,8 +240,9 @@ export default function BookingSettingsPage() {
 
       <s-section slot="aside" heading="About these settings">
         <s-paragraph>
-          These are shop-wide defaults. In a later phase, individual products
-          will be able to override any of these values.
+          These are your shop-wide defaults. Any individual product can
+          override them from that product&apos;s own booking config page —
+          leaving a field blank there falls back to what you set here.
         </s-paragraph>
       </s-section>
     </s-page>

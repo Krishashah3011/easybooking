@@ -8,10 +8,8 @@ import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import {
-  WEEKDAY_LABELS,
-  getBookingSettings,
-} from "../models/bookingSettings.server";
+import { WEEKDAY_LABELS } from "../models/weekday-labels";
+import { getBookingSettings } from "../models/bookingSettings.server";
 import {
   ensureBookableProduct,
   parseBookableProductForm,
@@ -31,7 +29,7 @@ type FieldChangeEvent = { currentTarget: { value: string } };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
-  const productId = decodeURIComponent(params.productId as string);
+  const productId = `gid://shopify/Product/${params.productId}`;
 
   const response = await admin.graphql(
     `#graphql
@@ -86,7 +84,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  const productId = decodeURIComponent(params.productId as string);
+  const productId = `gid://shopify/Product/${params.productId}`;
   const formData = await request.formData();
   const intent = String(formData.get("intent") ?? "") as
     "saveOverrides" | "addBlackoutDate" | "deleteBlackoutDate" | "";
