@@ -29,9 +29,14 @@
     var selectedDate = null;
     var selectedSlot = null;
 
-    // Wire up hidden inputs on the nearest add-to-cart form so the
-    // selection is submitted as line item properties.
-    var form = root.closest('form[action*="/cart/add"]');
+    // Wire up hidden inputs on the page's add-to-cart form so the
+    // selection is submitted as line item properties. This widget is an
+    // app block with "target": "section", so it can render as a SIBLING
+    // of the theme's buy-buttons block rather than nested inside its
+    // <form> — root.closest() would miss the form in that case, so we
+    // search the whole document instead. A product page normally has
+    // exactly one add-to-cart form, so this is safe.
+    var form = document.querySelector('form[action*="/cart/add"]');
     var dateInput = null;
     var timeInput = null;
     var submitBtn = null;

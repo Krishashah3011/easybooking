@@ -25,7 +25,6 @@ export default function App() {
         <s-link href="/app/bookings/new">New Booking</s-link>
         <s-link href="/app/booking-management">Bookings</s-link>
         <s-link href="/app/reports">Reports</s-link>
-        <s-link href="/app/additional">Additional page</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>

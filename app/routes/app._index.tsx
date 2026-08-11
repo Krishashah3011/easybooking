@@ -159,7 +159,6 @@ export default function Index() {
             App Bridge
           </s-link>{" "}
           interface examples like an{" "}
-          <s-link href="/app/additional">additional page in the app nav</s-link>
           , as well as an{" "}
           <s-link
             href="https://shopify.dev/docs/api/admin-graphql"
