@@ -7,11 +7,7 @@ import {
 import { getBookingSettings } from "./bookingSettings.server";
 import { computeSlotsForDate } from "./slotAvailability.server";
 import { sendEmail } from "../utils/mailer.server";
-import {
-  confirmationEmail,
-  reminderEmail,
-  cancellationEmail,
-} from "./emailTemplates.server";
+import { confirmationEmail, reminderEmail, cancellationEmail, rescheduledEmail } from "./emailTemplates.server";
 
 export type OrderLineItem = {
   id: number | string;
@@ -148,35 +144,6 @@ async function sendBookingConfirmation(
 }
 
 /**
- * Sends the booking cancellation email, if the booking has an email on
- * file. Best-effort — a failed or skipped send never throws, so it can't
- * block the cancellation itself.
- */
-async function sendBookingCancellation(
-  booking: Booking,
-  productTitle: string,
-  shop: string,
-): Promise<void> {
-  if (!booking.customerEmail) return;
-
-  const { subject, text, html } = cancellationEmail({
-    productTitle,
-    customerName: booking.customerName,
-    date: booking.date,
-    slotStart: booking.slotStart,
-    slotEnd: booking.slotEnd,
-    shopName: shop,
-  });
-
-  await sendEmail({
-    to: booking.customerEmail,
-    subject,
-    text,
-    html,
-  });
-}
-
-/**
  * Processes every line item on an order, creating a Booking for any that
  * carry booking properties and belong to an enabled bookable product.
  * Safe to call more than once for the same order (webhook retries) —
@@ -188,10 +155,6 @@ async function sendBookingCancellation(
  * status OVERBOOKED instead of silently rejected, so the merchant can
  * follow up. True prevention would require a Shopify Function on
  * cart/checkout validation — out of scope for this phase.
- *
- * TEMPORARY: has console.log debugging on each skip reason, to track down
- * why storefront orders weren't creating bookings. Safe to remove once
- * that's confirmed fixed.
  */
 export async function createBookingsFromOrder(
   shop: string,
@@ -203,13 +166,7 @@ export async function createBookingsFromOrder(
 
   for (const lineItem of order.line_items ?? []) {
     const selection = extractBookingSelection(lineItem);
-    if (!selection || lineItem.product_id == null) {
-      console.log(
-        `Skipping line item ${lineItem.id}: no booking selection or product_id`,
-        { selection, product_id: lineItem.product_id },
-      );
-      continue;
-    }
+    if (!selection || lineItem.product_id == null) continue;
 
     const existing = await prisma.booking.findFirst({
       where: {
@@ -218,22 +175,11 @@ export async function createBookingsFromOrder(
         lineItemId: String(lineItem.id),
       },
     });
-    if (existing) {
-      console.log(
-        `Skipping line item ${lineItem.id}: booking already exists (order ${order.id})`,
-      );
-      continue;
-    }
+    if (existing) continue;
 
     const productGid = toProductGid(lineItem.product_id);
     const bookableProduct = await getBookableProduct(shop, productGid);
-    if (!bookableProduct || !bookableProduct.isEnabled) {
-      console.log(
-        `Skipping line item ${lineItem.id}: product ${productGid} not bookable/enabled`,
-        bookableProduct,
-      );
-      continue;
-    }
+    if (!bookableProduct || !bookableProduct.isEnabled) continue;
 
     const effectiveSettings = resolveEffectiveSettings(
       shopSettings,
@@ -302,31 +248,15 @@ function addMinutes(time: string, minutes: number): string {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
-/**
- * Cancels every non-cancelled booking tied to an order (orders/cancelled
- * webhook), and sends a cancellation email for each one that had a
- * customer email on file.
- */
+/** Cancels every non-cancelled booking tied to an order (orders/cancelled webhook). */
 export async function cancelBookingsForOrder(
   shop: string,
   orderId: number | string,
 ): Promise<void> {
-  const bookings = await prisma.booking.findMany({
+  await prisma.booking.updateMany({
     where: { shop, orderId: String(orderId), status: { not: "CANCELLED" } },
-    include: { bookableProduct: { select: { productTitle: true } } },
+    data: { status: "CANCELLED" },
   });
-
-  for (const booking of bookings) {
-    await prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: "CANCELLED" },
-    });
-    await sendBookingCancellation(
-      booking,
-      booking.bookableProduct.productTitle,
-      shop,
-    );
-  }
 }
 
 export type ManualBookingInput = {
@@ -351,6 +281,10 @@ export async function createManualBooking(
   shop: string,
   input: ManualBookingInput,
 ): Promise<ManualBookingResult> {
+  if (!input.customerEmail) {
+    return { ok: false, error: "Customer email is required." };
+  }
+
   const bookableProduct = await prisma.bookableProduct.findFirst({
     where: { id: input.bookableProductId, shop },
   });
@@ -475,11 +409,7 @@ export async function listBookings(
   );
 }
 
-/**
- * Admin-initiated cancellation of a single booking. Idempotent — sends a
- * cancellation email only on the transition into CANCELLED, never on a
- * repeat call against an already-cancelled booking.
- */
+/** Admin-initiated cancellation of a single booking. Idempotent. */
 export async function cancelBooking(
   shop: string,
   id: string,
@@ -496,11 +426,18 @@ export async function cancelBooking(
       where: { id },
       data: { status: "CANCELLED" },
     });
-    await sendBookingCancellation(
-      booking,
-      booking.bookableProduct.productTitle,
-      shop,
-    );
+
+    if (booking.customerEmail) {
+      const { subject, text, html } = cancellationEmail({
+        productTitle: booking.bookableProduct.productTitle,
+        customerName: booking.customerName,
+        date: booking.date,
+        slotStart: booking.slotStart,
+        slotEnd: booking.slotEnd,
+        shopName: shop,
+      });
+      await sendEmail({ to: booking.customerEmail, subject, text, html });
+    }
   }
   return { ok: true };
 }
@@ -571,6 +508,21 @@ export async function rescheduleBooking(
       reminderSentAt: null,
     },
   });
+
+  if (updated.customerEmail) {
+    const { subject, text, html } = rescheduledEmail({
+      productTitle: booking.bookableProduct.productTitle,
+      customerName: updated.customerName,
+      date: updated.date,
+      slotStart: updated.slotStart,
+      slotEnd: updated.slotEnd,
+      shopName: shop,
+      previousDate: booking.date,
+      previousSlotStart: booking.slotStart,
+      previousSlotEnd: booking.slotEnd,
+    });
+    await sendEmail({ to: updated.customerEmail, subject, text, html });
+  }
 
   return { ok: true, booking: updated };
 }

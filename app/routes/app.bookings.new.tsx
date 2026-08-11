@@ -13,11 +13,23 @@ import {
   resolveEffectiveSettings,
 } from "../models/bookableProduct.server";
 import { getBookingSettings } from "../models/bookingSettings.server";
-import { computeSlotsForDate, type TimeSlot } from "../models/slotAvailability.server";
-import { listShopBlackoutDates, listProductBlackoutDates } from "../models/blackoutDate.server";
+import {
+  computeSlotsForDate,
+  getAvailableDatesInMonth,
+  type TimeSlot,
+} from "../models/slotAvailability.server";
+import {
+  listShopBlackoutDates,
+  listProductBlackoutDates,
+} from "../models/blackoutDate.server";
 import { createManualBooking, getBookedCountsInRange } from "../models/booking.server";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -28,10 +40,76 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
+async function resolveBlackoutDatesAndSettings(
+  shop: string,
+  bookableProductId: string,
+) {
+  const bookableProduct = await listBookableProducts(shop).then((products) =>
+    products.find((p) => p.id === bookableProductId),
+  );
+  if (!bookableProduct) return null;
+
+  const [shopSettings, shopBlackouts, productBlackouts] = await Promise.all([
+    getBookingSettings(shop),
+    listShopBlackoutDates(shop),
+    listProductBlackoutDates(shop, bookableProductId),
+  ]);
+
+  const blackoutDates = new Set<string>([
+    ...shopBlackouts.map((b: { date: Date }) => b.date.toISOString().slice(0, 10)),
+    ...productBlackouts.map((b: { date: Date }) => b.date.toISOString().slice(0, 10)),
+  ]);
+
+  const effectiveSettings = resolveEffectiveSettings(shopSettings, bookableProduct);
+
+  return { effectiveSettings, blackoutDates };
+}
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "") as "loadSlots" | "createBooking" | "";
+  const intent = String(formData.get("intent") ?? "") as
+    | "loadAvailability"
+    | "loadSlots"
+    | "createBooking"
+    | "";
+
+  if (intent === "loadAvailability") {
+    const bookableProductId = String(formData.get("bookableProductId") ?? "");
+    const year = Number(formData.get("year"));
+    const month = Number(formData.get("month"));
+    if (!bookableProductId || !Number.isInteger(year) || !Number.isInteger(month)) {
+      return { intent, ok: false as const, availableDates: [] as string[] };
+    }
+
+    const resolved = await resolveBlackoutDatesAndSettings(
+      session.shop,
+      bookableProductId,
+    );
+    if (!resolved) {
+      return { intent, ok: false as const, availableDates: [] as string[] };
+    }
+
+    const monthStart = new Date(Date.UTC(year, month - 1, 1));
+    const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+    const bookedCounts = await getBookedCountsInRange(
+      session.shop,
+      bookableProductId,
+      monthStart,
+      monthEnd,
+    );
+
+    const availableDates = getAvailableDatesInMonth(
+      resolved.effectiveSettings,
+      year,
+      month,
+      resolved.blackoutDates,
+      new Date(),
+      bookedCounts,
+    );
+
+    return { intent, ok: true as const, availableDates };
+  }
 
   if (intent === "loadSlots") {
     const bookableProductId = String(formData.get("bookableProductId") ?? "");
@@ -40,28 +118,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { intent, ok: false as const, slots: [] as TimeSlot[] };
     }
 
-    const bookableProduct = await listBookableProducts(session.shop).then(
-      (products) => products.find((p) => p.id === bookableProductId),
+    const resolved = await resolveBlackoutDatesAndSettings(
+      session.shop,
+      bookableProductId,
     );
-    if (!bookableProduct) {
+    if (!resolved) {
       return { intent, ok: false as const, slots: [] as TimeSlot[] };
     }
-
-    const [shopSettings, shopBlackouts, productBlackouts] = await Promise.all([
-      getBookingSettings(session.shop),
-      listShopBlackoutDates(session.shop),
-      listProductBlackoutDates(session.shop, bookableProductId),
-    ]);
-
-    const blackoutDates = new Set<string>([
-      ...shopBlackouts.map((b: { date: Date }) => b.date.toISOString().slice(0, 10)),
-      ...productBlackouts.map((b: { date: Date }) => b.date.toISOString().slice(0, 10)),
-    ]);
-
-    const effectiveSettings = resolveEffectiveSettings(
-      shopSettings,
-      bookableProduct,
-    );
 
     const dayStart = new Date(`${date}T00:00:00.000Z`);
     const dayEnd = new Date(`${date}T23:59:59.999Z`);
@@ -73,9 +136,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
 
     const slots = computeSlotsForDate(
-      effectiveSettings,
+      resolved.effectiveSettings,
       date,
-      blackoutDates,
+      resolved.blackoutDates,
       new Date(),
       bookedCounts,
     );
@@ -104,18 +167,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function NewBookingPage() {
   const { products } = useLoaderData<typeof loader>();
+  const availabilityFetcher = useFetcher<typeof action>();
   const slotsFetcher = useFetcher<typeof action>();
   const createFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
+  const today = new Date();
+
   const [bookableProductId, setBookableProductId] = useState(
     products[0]?.id ?? "",
   );
+  const [viewYear, setViewYear] = useState(today.getUTCFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getUTCMonth() + 1);
   const [date, setDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+
+  const availableDates: string[] =
+    availabilityFetcher.data?.intent === "loadAvailability" &&
+    availabilityFetcher.data.ok
+      ? availabilityFetcher.data.availableDates
+      : [];
 
   const slots: TimeSlot[] =
     slotsFetcher.data?.intent === "loadSlots" && slotsFetcher.data.ok
@@ -127,6 +201,27 @@ export default function NewBookingPage() {
       ? createFetcher.data.error
       : null;
 
+  const loadAvailability = (productId: string, year: number, month: number) => {
+    if (!productId) return;
+    availabilityFetcher.submit(
+      {
+        intent: "loadAvailability",
+        bookableProductId: productId,
+        year: String(year),
+        month: String(month),
+      },
+      { method: "POST" },
+    );
+  };
+
+  // Load the calendar whenever the product or visible month changes.
+  useEffect(() => {
+    setDate("");
+    setSelectedSlot(null);
+    loadAvailability(bookableProductId, viewYear, viewMonth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookableProductId, viewYear, viewMonth]);
+
   useEffect(() => {
     if (createFetcher.data?.intent === "createBooking" && createFetcher.data.ok) {
       shopify.toast.show("Booking created");
@@ -134,20 +229,43 @@ export default function NewBookingPage() {
       setCustomerName("");
       setCustomerEmail("");
       setCustomerPhone("");
+      // A slot just got taken — refresh the calendar/slots so it shows as booked.
+      loadAvailability(bookableProductId, viewYear, viewMonth);
+      if (date) {
+        slotsFetcher.submit(
+          { intent: "loadSlots", bookableProductId, date },
+          { method: "POST" },
+        );
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createFetcher.data, shopify]);
 
-  const handleCheckAvailability = () => {
-    if (!bookableProductId || !date) return;
+  const goToMonth = (delta: number) => {
+    let newMonth = viewMonth + delta;
+    let newYear = viewYear;
+    if (newMonth < 1) {
+      newMonth = 12;
+      newYear -= 1;
+    } else if (newMonth > 12) {
+      newMonth = 1;
+      newYear += 1;
+    }
+    setViewMonth(newMonth);
+    setViewYear(newYear);
+  };
+
+  const selectDate = (dateStr: string) => {
+    setDate(dateStr);
     setSelectedSlot(null);
     slotsFetcher.submit(
-      { intent: "loadSlots", bookableProductId, date },
+      { intent: "loadSlots", bookableProductId, date: dateStr },
       { method: "POST" },
     );
   };
 
   const handleCreateBooking = () => {
-    if (!bookableProductId || !date || !selectedSlot || !customerName) return;
+    if (!bookableProductId || !date || !selectedSlot || !customerName || !customerEmail) return;
     createFetcher.submit(
       {
         intent: "createBooking",
@@ -175,35 +293,105 @@ export default function NewBookingPage() {
     );
   }
 
+  const availableSet = new Set(availableDates);
+  const daysInMonth = new Date(Date.UTC(viewYear, viewMonth, 0)).getUTCDate();
+  const firstWeekday = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).getUTCDay();
+  const isLoadingAvailability = availabilityFetcher.state !== "idle";
+
   return (
     <s-page heading="New Booking">
-      <s-section heading="Product and date">
-        <s-stack direction="inline" gap="base">
-          <s-select
-            label="Product"
-            value={bookableProductId}
-            onChange={(e: FieldChangeEvent) =>
-              setBookableProductId(e.currentTarget.value)
-            }
-          >
-            {products.map((p) => (
-              <s-option key={p.id} value={p.id}>
-                {p.title}
-              </s-option>
-            ))}
-          </s-select>
-          <s-date-field
-            label="Date"
-            value={date}
-            onChange={(e: FieldChangeEvent) => setDate(e.currentTarget.value)}
-          ></s-date-field>
-          <s-button onClick={handleCheckAvailability}>
-            Check availability
-          </s-button>
-        </s-stack>
+      <s-section heading="Product">
+        <s-select
+          label="Product"
+          value={bookableProductId}
+          onChange={(e: FieldChangeEvent) =>
+            setBookableProductId(e.currentTarget.value)
+          }
+        >
+          {products.map((p) => (
+            <s-option key={p.id} value={p.id}>
+              {p.title}
+            </s-option>
+          ))}
+        </s-select>
       </s-section>
 
-      {slotsFetcher.data?.intent === "loadSlots" && (
+      <s-section heading="Date">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "0.75rem",
+            maxWidth: "20rem",
+          }}
+        >
+          <s-button variant="tertiary" onClick={() => goToMonth(-1)}>
+            ‹
+          </s-button>
+          <span style={{ fontWeight: 600 }}>
+            {MONTH_NAMES[viewMonth - 1]} {viewYear}
+          </span>
+          <s-button variant="tertiary" onClick={() => goToMonth(1)}>
+            ›
+          </s-button>
+        </div>
+
+        {isLoadingAvailability ? (
+          <s-paragraph>Loading availability…</s-paragraph>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7, 2.4rem)",
+              gap: "0.25rem",
+              maxWidth: "20rem",
+            }}
+          >
+            {Array.from({ length: firstWeekday }).map((_, i) => (
+              <span key={`blank-${i}`} />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const isAvailable = availableSet.has(dateStr);
+              const isSelected = dateStr === date;
+              return (
+                <button
+                  key={dateStr}
+                  type="button"
+                  disabled={!isAvailable}
+                  onClick={() => isAvailable && selectDate(dateStr)}
+                  style={{
+                    aspectRatio: "1",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "0.85rem",
+                    cursor: isAvailable ? "pointer" : "not-allowed",
+                    background: isSelected
+                      ? "#111"
+                      : isAvailable
+                        ? "rgba(0,0,0,0.06)"
+                        : "transparent",
+                    color: isSelected
+                      ? "#fff"
+                      : isAvailable
+                        ? "inherit"
+                        : "rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {!isLoadingAvailability && availableDates.length === 0 && (
+          <s-paragraph>No availability this month.</s-paragraph>
+        )}
+      </s-section>
+
+      {date && (
         <s-section heading="Available times">
           {slots.length === 0 ? (
             <s-paragraph>No slots at all on this date.</s-paragraph>
@@ -242,7 +430,8 @@ export default function NewBookingPage() {
               }
             ></s-text-field>
             <s-text-field
-              label="Email (optional)"
+              label="Email"
+              required
               value={customerEmail}
               onChange={(e: FieldChangeEvent) =>
                 setCustomerEmail(e.currentTarget.value)
@@ -262,7 +451,7 @@ export default function NewBookingPage() {
           <s-button
             variant="primary"
             onClick={handleCreateBooking}
-            {...(!customerName ? { disabled: true } : {})}
+            {...(!customerName || !customerEmail ? { disabled: true } : {})}
           >
             Create booking
           </s-button>

@@ -82,7 +82,7 @@ export function cancellationEmail(data: BookingEmailData): {
     `- ${data.productTitle}`,
     `- ${data.date}, ${data.slotStart}\u2013${data.slotEnd}`,
     "",
-    `If this wasn't expected, please contact ${data.shopName}.`,
+    `If this wasn't expected, feel free to reach out to ${data.shopName}.`,
   ].join("\n");
 
   const html = `
@@ -92,7 +92,44 @@ export function cancellationEmail(data: BookingEmailData): {
       <li><strong>${escapeHtml(data.productTitle)}</strong></li>
       <li>${escapeHtml(data.date)}, ${escapeHtml(data.slotStart)}\u2013${escapeHtml(data.slotEnd)}</li>
     </ul>
-    <p>If this wasn't expected, please contact ${escapeHtml(data.shopName)}.</p>
+    <p>If this wasn't expected, feel free to reach out to ${escapeHtml(data.shopName)}.</p>
+  `.trim();
+
+  return { subject, text, html };
+}
+
+export type RescheduledEmailData = BookingEmailData & {
+  previousDate: string;
+  previousSlotStart: string;
+  previousSlotEnd: string;
+};
+
+export function rescheduledEmail(data: RescheduledEmailData): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = `Booking rescheduled: ${data.productTitle} now on ${data.date}`;
+  const text = [
+    greeting(data.customerName),
+    "",
+    `Your booking has been rescheduled:`,
+    `- ${data.productTitle}`,
+    `- Was: ${data.previousDate}, ${data.previousSlotStart}\u2013${data.previousSlotEnd}`,
+    `- Now: ${data.date}, ${data.slotStart}\u2013${data.slotEnd}`,
+    "",
+    `Thanks for your patience \u2014 ${data.shopName}.`,
+  ].join("\n");
+
+  const html = `
+    <p>${greeting(data.customerName)}</p>
+    <p>Your booking has been rescheduled:</p>
+    <ul>
+      <li><strong>${escapeHtml(data.productTitle)}</strong></li>
+      <li>Was: ${escapeHtml(data.previousDate)}, ${escapeHtml(data.previousSlotStart)}\u2013${escapeHtml(data.previousSlotEnd)}</li>
+      <li>Now: ${escapeHtml(data.date)}, ${escapeHtml(data.slotStart)}\u2013${escapeHtml(data.slotEnd)}</li>
+    </ul>
+    <p>Thanks for your patience \u2014 ${escapeHtml(data.shopName)}.</p>
   `.trim();
 
   return { subject, text, html };
