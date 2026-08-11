@@ -29,45 +29,78 @@
     var selectedDate = null;
     var selectedSlot = null;
 
-    // Wire up hidden inputs on the page's add-to-cart form so the
-    // selection is submitted as line item properties. This widget is an
-    // app block with "target": "section", so it can render as a SIBLING
-    // of the theme's buy-buttons block rather than nested inside its
-    // <form> — root.closest() would miss the form in that case, so we
-    // search the whole document instead. A product page normally has
-    // exactly one add-to-cart form, so this is safe.
-    var form = document.querySelector('form[action*="/cart/add"]');
-    var dateInput = null;
-    var timeInput = null;
-    var submitBtn = null;
-    if (form) {
-      dateInput = document.createElement("input");
-      dateInput.type = "hidden";
-      dateInput.name = "properties[Booking Date]";
-      form.appendChild(dateInput);
+    // Soft UX touch only: find the nearby add-to-cart form (if any) just to
+    // disable its submit button until a date/time is picked. This is NOT
+    // where the booking data actually gets attached — see the document-level
+    // submit listener below for that.
+    var widgetSection = root.closest(".shopify-section");
+    var nearbyForm =
+      (widgetSection && widgetSection.querySelector('form[action*="/cart/add"]')) ||
+      document.querySelector('form[action*="/cart/add"]');
+    var submitBtn = nearbyForm
+      ? nearbyForm.querySelector('[type="submit"], [name="add"]')
+      : null;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
 
-      timeInput = document.createElement("input");
-      timeInput.type = "hidden";
-      timeInput.name = "properties[Booking Time]";
-      form.appendChild(timeInput);
+    // The real fix: some themes rebuild/replace the buy-box <form> when a
+    // variant (color/size) is picked, or when the cart-drawer re-renders
+    // sections — which silently wipes out any hidden inputs we attached
+    // earlier. So instead of attaching inputs once at page load, we
+    // attach them at the exact moment "Add to cart" is submitted, onto
+    // whichever form is actually live right then. Using the capturing
+    // phase (the `true` at the end) means this runs BEFORE the theme's
+    // own submit handler reads the form's data.
+    document.addEventListener(
+      "submit",
+      function (event) {
+        var target = event.target;
+        if (!(target instanceof HTMLFormElement)) return;
+        if (!/\/cart\/add/.test(target.getAttribute("action") || "")) return;
 
-      // Booking a slot is required for this product — disable the add-to-cart
-      // control until the customer actually picks a date and time, and block
-      // submission outright as a safety net in case a theme re-enables it.
-      submitBtn = form.querySelector('[type="submit"], [name="add"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-      }
-      form.addEventListener("submit", function (event) {
+        // If there's more than one add-to-cart form on the page (e.g. a
+        // recommended-products section), only act on the one inside this
+        // widget's own section — leave unrelated products' forms alone.
+        var allCartForms = document.querySelectorAll('form[action*="/cart/add"]');
+        if (allCartForms.length > 1 && widgetSection && !widgetSection.contains(target)) {
+          return;
+        }
+
         if (!selectedDate || !selectedSlot) {
           event.preventDefault();
           selectionEl.hidden = false;
           selectionEl.textContent =
             "Please select a date and time before adding this to your cart.";
           root.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
         }
-      });
-    }
+
+        var dateInput = target.querySelector(
+          'input[name="properties[Booking Date]"]',
+        );
+        var timeInput = target.querySelector(
+          'input[name="properties[Booking Time]"]',
+        );
+
+        if (!dateInput) {
+          dateInput = document.createElement("input");
+          dateInput.type = "hidden";
+          dateInput.name = "properties[Booking Date]";
+          target.appendChild(dateInput);
+        }
+        if (!timeInput) {
+          timeInput = document.createElement("input");
+          timeInput.type = "hidden";
+          timeInput.name = "properties[Booking Time]";
+          target.appendChild(timeInput);
+        }
+
+        dateInput.value = selectedDate;
+        timeInput.value = selectedSlot.start;
+      },
+      true,
+    );
 
     function setStatus(container, message) {
       container.innerHTML = "";
@@ -227,13 +260,9 @@
         selectionEl.hidden = false;
         selectionEl.textContent =
           "Selected: " + selectedDate + " at " + selectedSlot.start;
-        if (dateInput) dateInput.value = selectedDate;
-        if (timeInput) timeInput.value = selectedSlot.start;
         if (submitBtn) submitBtn.disabled = false;
       } else {
         selectionEl.hidden = true;
-        if (dateInput) dateInput.value = "";
-        if (timeInput) timeInput.value = "";
         if (submitBtn) submitBtn.disabled = true;
       }
     }
