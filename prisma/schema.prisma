@@ -47,7 +47,6 @@ model BookingSettings {
 
 model BookableProduct {
   id String @id @default(cuid())
-
   shop String
   productId String
   productTitle String
@@ -62,13 +61,10 @@ model BookableProduct {
   maxBookingsPerSlot   Int?
   bookingStartDate     DateTime?
   bookingEndDate       DateTime?
-
   blackoutDates BlackoutDate[]
   bookings      Booking[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@unique([shop, productId])
   @@index([shop])
 }
@@ -78,11 +74,9 @@ model BlackoutDate {
   shop String
   bookableProductId String?
   bookableProduct   BookableProduct? @relation(fields: [bookableProductId], references: [id], onDelete: Cascade)
-
   date   DateTime
   reason String?
   createdAt DateTime @default(now())
-
   @@index([shop])
   @@index([bookableProductId])
 }
@@ -107,7 +101,6 @@ enum CustomFieldType {
 
 model CustomBookingField {
   id String @id @default(cuid())
-
   shop String
   fieldKey String
   label    String
@@ -115,10 +108,8 @@ model CustomBookingField {
   required Boolean @default(false)
   options String?
   sortOrder Int @default(0)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@unique([shop, fieldKey])
   @@index([shop])
 }
@@ -126,10 +117,8 @@ model CustomBookingField {
 model Booking {
   id String @id @default(cuid())
   shop String
-
   bookableProductId String
   bookableProduct   BookableProduct @relation(fields: [bookableProductId], references: [id], onDelete: Cascade)
-
   orderId       String?
   orderName     String?
   lineItemId    String?
@@ -141,7 +130,6 @@ model Booking {
   slotStart    String
   slotEnd      String
   slotStartsAt DateTime
-
   status BookingStatus @default(CONFIRMED)
   source BookingSource
   customFieldResponses Json?
@@ -149,7 +137,6 @@ model Booking {
   reminderSentAt     DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@index([shop])
   @@index([bookableProductId, slotStartsAt])
   @@index([orderId])
