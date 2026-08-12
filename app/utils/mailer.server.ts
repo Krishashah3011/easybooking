@@ -29,6 +29,13 @@ export type SendEmailInput = {
   subject: string;
   text: string;
   html: string;
+  /**
+   * Optional per-shop override for the display name on the "From" line
+   * (e.g. "Acme Bookings" instead of the default "Bookings"). The actual
+   * sending address always stays SMTP_FROM_EMAIL — only the display name
+   * is overridable, since arbitrary from-addresses break SPF/DKIM.
+   */
+  fromName?: string | null;
 };
 
 /**
@@ -47,7 +54,8 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
   }
 
   const fromEmail = process.env.SMTP_FROM_EMAIL;
-  const fromName = process.env.SMTP_FROM_NAME || "Bookings";
+  const fromName =
+    input.fromName?.trim() || process.env.SMTP_FROM_NAME || "Bookings";
   if (!fromEmail) {
     console.warn("SMTP_FROM_EMAIL is not set — skipping email send.");
     return false;

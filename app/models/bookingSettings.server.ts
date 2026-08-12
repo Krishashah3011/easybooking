@@ -12,6 +12,7 @@ export const DEFAULT_BOOKING_SETTINGS = {
   maxBookingsPerSlot: 1,
   bookingStartDate: null as Date | null,
   bookingEndDate: null as Date | null,
+  emailFromName: null as string | null,
 };
 
 export type BookingSettingsFormValues = {
@@ -25,6 +26,7 @@ export type BookingSettingsFormValues = {
   maxBookingsPerSlot: number;
   bookingStartDate: string | null; // "YYYY-MM-DD" or null
   bookingEndDate: string | null;
+  emailFromName: string | null;
 };
 
 export type BookingSettingsFieldErrors = Partial<
@@ -69,6 +71,7 @@ export function toFormValues(
     maxBookingsPerSlot: settings.maxBookingsPerSlot,
     bookingStartDate: toDateInputValue(settings.bookingStartDate),
     bookingEndDate: toDateInputValue(settings.bookingEndDate),
+    emailFromName: settings.emailFromName,
   };
 }
 
@@ -85,6 +88,7 @@ function toDateInputValue(date: Date | null): string | null {
 }
 
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const MAX_FROM_NAME_LENGTH = 60;
 
 /**
  * Parses raw multipart/form-data values from the settings form into typed
@@ -154,6 +158,12 @@ export function parseBookingSettingsForm(formData: FormData): {
     errors.bookingEndDate = "End date must be after start date.";
   }
 
+  const emailFromNameRaw = String(formData.get("emailFromName") ?? "").trim();
+  if (emailFromNameRaw.length > MAX_FROM_NAME_LENGTH) {
+    errors.emailFromName = `Keep it under ${MAX_FROM_NAME_LENGTH} characters.`;
+  }
+  const emailFromName = emailFromNameRaw || null;
+
   return {
     values: {
       workingDays,
@@ -166,6 +176,7 @@ export function parseBookingSettingsForm(formData: FormData): {
       maxBookingsPerSlot,
       bookingStartDate,
       bookingEndDate,
+      emailFromName,
     },
     errors,
   };
@@ -190,6 +201,7 @@ export async function upsertBookingSettings(
     bookingEndDate: values.bookingEndDate
       ? new Date(values.bookingEndDate)
       : null,
+    emailFromName: values.emailFromName,
   };
 
   return prisma.bookingSettings.upsert({

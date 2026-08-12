@@ -90,6 +90,7 @@ export default function BookingSettingsPage() {
         maxBookingsPerSlot: String(values.maxBookingsPerSlot),
         bookingStartDate: values.bookingStartDate ?? "",
         bookingEndDate: values.bookingEndDate ?? "",
+        emailFromName: values.emailFromName ?? "",
       },
       { method: "POST" },
     );
@@ -236,6 +237,32 @@ export default function BookingSettingsPage() {
             }
           ></s-date-field>
         </s-stack>
+      </s-section>
+
+      <s-section heading="Email notifications">
+        <s-paragraph>
+          The display name customers see as the sender on booking
+          confirmation, reminder, and cancellation emails. Leave blank to
+          use the default.
+        </s-paragraph>
+        <s-text-field
+          label="Sender name"
+          placeholder="Bookings"
+          details={`Shown as e.g. "Acme Bookings <bookings@yourdomain.com>" — the email address itself can't be changed here.`}
+          value={values.emailFromName ?? ""}
+          error={errors.emailFromName}
+          onChange={(e: FieldChangeEvent) =>
+            setField("emailFromName", e.currentTarget.value || null)
+          }
+        ></s-text-field>
+      </s-section>
+
+      <s-section slot="aside" heading="About these settings">
+        <s-paragraph>
+          These are your shop-wide defaults. Any individual product can
+          override them from that product&apos;s own booking config page —
+          leaving a field blank there falls back to what you set here.
+        </s-paragraph>
       </s-section>
     </s-page>
   );

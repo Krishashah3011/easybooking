@@ -118,3 +118,10 @@
   font-size: 0.9rem;
   font-weight: 600;
 }
+
+.booking-widget__slot-remaining {
+  display: block;
+  font-size: 0.75em;
+  opacity: 0.75;
+  margin-top: 2px;
+}

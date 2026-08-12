@@ -6,6 +6,11 @@
     "July", "August", "September", "October", "November", "December",
   ];
 
+  // Show a "X left" badge on a slot once its remaining capacity drops to
+  // this number or below. Keeps normal slots clean while still creating
+  // urgency when a slot is close to full.
+  var LOW_AVAILABILITY_THRESHOLD = 2;
+
   function pad(n) {
     return String(n).padStart(2, "0");
   }
@@ -44,14 +49,13 @@
       submitBtn.disabled = true;
     }
 
-    // The real fix: some themes rebuild/replace the buy-box <form> when a
-    // variant (color/size) is picked, or when the cart-drawer re-renders
-    // sections — which silently wipes out any hidden inputs we attached
-    // earlier. So instead of attaching inputs once at page load, we
-    // attach them at the exact moment "Add to cart" is submitted, onto
-    // whichever form is actually live right then. Using the capturing
-    // phase (the `true` at the end) means this runs BEFORE the theme's
-    // own submit handler reads the form's data.
+    // Some themes rebuild/replace the buy-box <form> when a variant
+    // (color/size) is picked, or when the cart-drawer re-renders — which
+    // silently wipes out any hidden inputs we attached earlier. So instead
+    // of attaching inputs once at page load, we attach them at the exact
+    // moment "Add to cart" is submitted, onto whichever form is actually
+    // live right then. Using the capturing phase (the `true` at the end)
+    // means this runs BEFORE the theme's own submit handler reads the form.
     document.addEventListener(
       "submit",
       function (event) {
@@ -231,14 +235,36 @@
         var btn = document.createElement("button");
         btn.type = "button";
         btn.className = "booking-widget__slot";
-        btn.textContent = slot.start + " \u2013 " + slot.end;
 
-        if (!slot.available) {
+        // Slots the server considers fully booked are simply left out of
+        // the response entirely (see slotAvailability.server.ts), so
+        // slot.available should always be truthy here in practice — this
+        // branch is kept as a defensive fallback only.
+        if (slot.available === false) {
           btn.classList.add("booking-widget__slot--unavailable");
           btn.disabled = true;
-          btn.textContent += " (Booked)";
+          btn.textContent = slot.start + " \u2013 " + slot.end + " (Booked)";
           slotListEl.appendChild(btn);
           return;
+        }
+
+        var timeLabel = document.createElement("span");
+        timeLabel.textContent = slot.start + " \u2013 " + slot.end;
+        btn.appendChild(timeLabel);
+
+        // "Spots left" — only shown once availability is getting low, so
+        // normal slots stay clean and this reads as a genuine signal.
+        if (
+          typeof slot.remainingCapacity === "number" &&
+          slot.remainingCapacity <= LOW_AVAILABILITY_THRESHOLD
+        ) {
+          var remainingLabel = document.createElement("span");
+          remainingLabel.className = "booking-widget__slot-remaining";
+          remainingLabel.textContent =
+            slot.remainingCapacity === 1
+              ? "1 spot left"
+              : slot.remainingCapacity + " spots left";
+          btn.appendChild(remainingLabel);
         }
 
         if (selectedSlot && selectedSlot.startsAt === slot.startsAt) {

@@ -7,7 +7,11 @@ import {
 import { getBookingSettings } from "./bookingSettings.server";
 import { computeSlotsForDate } from "./slotAvailability.server";
 import { sendEmail } from "../utils/mailer.server";
-import { confirmationEmail, reminderEmail, cancellationEmail, rescheduledEmail } from "./emailTemplates.server";
+import {
+  confirmationEmail,
+  reminderEmail,
+  cancellationEmail,
+} from "./emailTemplates.server";
 
 export type OrderLineItem = {
   id: number | string;
@@ -109,6 +113,20 @@ export async function getBookedCountsInRange(
 }
 
 /**
+ * Looks up the shop's configured email sender display name (set on the
+ * Booking Settings page), if any. Best-effort — falls back to null (which
+ * makes sendEmail use the environment default) on any error.
+ */
+async function getEmailFromName(shop: string): Promise<string | null> {
+  try {
+    const settings = await getBookingSettings(shop);
+    return settings.emailFromName;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Sends the booking confirmation email, if the booking has an email on
  * file, and records confirmationSentAt. Best-effort — a failed or skipped
  * send never throws, so it can't block booking creation.
@@ -129,11 +147,13 @@ async function sendBookingConfirmation(
     shopName: shop,
   });
 
+  const fromName = await getEmailFromName(shop);
   const sent = await sendEmail({
     to: booking.customerEmail,
     subject,
     text,
     html,
+    fromName,
   });
   if (sent) {
     await prisma.booking.update({
@@ -141,6 +161,37 @@ async function sendBookingConfirmation(
       data: { confirmationSentAt: new Date() },
     });
   }
+}
+
+/**
+ * Sends the booking cancellation email, if the booking has an email on
+ * file. Best-effort — a failed or skipped send never throws, so it can't
+ * block the cancellation itself.
+ */
+async function sendBookingCancellation(
+  booking: Booking,
+  productTitle: string,
+  shop: string,
+): Promise<void> {
+  if (!booking.customerEmail) return;
+
+  const { subject, text, html } = cancellationEmail({
+    productTitle,
+    customerName: booking.customerName,
+    date: booking.date,
+    slotStart: booking.slotStart,
+    slotEnd: booking.slotEnd,
+    shopName: shop,
+  });
+
+  const fromName = await getEmailFromName(shop);
+  await sendEmail({
+    to: booking.customerEmail,
+    subject,
+    text,
+    html,
+    fromName,
+  });
 }
 
 /**
@@ -166,7 +217,13 @@ export async function createBookingsFromOrder(
 
   for (const lineItem of order.line_items ?? []) {
     const selection = extractBookingSelection(lineItem);
-    if (!selection || lineItem.product_id == null) continue;
+    if (!selection || lineItem.product_id == null) {
+      console.log(
+        `Skipping line item ${lineItem.id}: no booking selection or product_id`,
+        { selection, product_id: lineItem.product_id },
+      );
+      continue;
+    }
 
     const existing = await prisma.booking.findFirst({
       where: {
@@ -175,11 +232,22 @@ export async function createBookingsFromOrder(
         lineItemId: String(lineItem.id),
       },
     });
-    if (existing) continue;
+    if (existing) {
+      console.log(
+        `Skipping line item ${lineItem.id}: booking already exists (order ${order.id})`,
+      );
+      continue;
+    }
 
     const productGid = toProductGid(lineItem.product_id);
     const bookableProduct = await getBookableProduct(shop, productGid);
-    if (!bookableProduct || !bookableProduct.isEnabled) continue;
+    if (!bookableProduct || !bookableProduct.isEnabled) {
+      console.log(
+        `Skipping line item ${lineItem.id}: product ${productGid} not bookable/enabled`,
+        bookableProduct,
+      );
+      continue;
+    }
 
     const effectiveSettings = resolveEffectiveSettings(
       shopSettings,
@@ -248,15 +316,31 @@ function addMinutes(time: string, minutes: number): string {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
-/** Cancels every non-cancelled booking tied to an order (orders/cancelled webhook). */
+/**
+ * Cancels every non-cancelled booking tied to an order (orders/cancelled
+ * webhook), and sends a cancellation email for each one that had a
+ * customer email on file.
+ */
 export async function cancelBookingsForOrder(
   shop: string,
   orderId: number | string,
 ): Promise<void> {
-  await prisma.booking.updateMany({
+  const bookings = await prisma.booking.findMany({
     where: { shop, orderId: String(orderId), status: { not: "CANCELLED" } },
-    data: { status: "CANCELLED" },
+    include: { bookableProduct: { select: { productTitle: true } } },
   });
+
+  for (const booking of bookings) {
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: "CANCELLED" },
+    });
+    await sendBookingCancellation(
+      booking,
+      booking.bookableProduct.productTitle,
+      shop,
+    );
+  }
 }
 
 export type ManualBookingInput = {
@@ -281,10 +365,6 @@ export async function createManualBooking(
   shop: string,
   input: ManualBookingInput,
 ): Promise<ManualBookingResult> {
-  if (!input.customerEmail) {
-    return { ok: false, error: "Customer email is required." };
-  }
-
   const bookableProduct = await prisma.bookableProduct.findFirst({
     where: { id: input.bookableProductId, shop },
   });
@@ -409,7 +489,11 @@ export async function listBookings(
   );
 }
 
-/** Admin-initiated cancellation of a single booking. Idempotent. */
+/**
+ * Admin-initiated cancellation of a single booking. Idempotent — sends a
+ * cancellation email only on the transition into CANCELLED, never on a
+ * repeat call against an already-cancelled booking.
+ */
 export async function cancelBooking(
   shop: string,
   id: string,
@@ -426,18 +510,11 @@ export async function cancelBooking(
       where: { id },
       data: { status: "CANCELLED" },
     });
-
-    if (booking.customerEmail) {
-      const { subject, text, html } = cancellationEmail({
-        productTitle: booking.bookableProduct.productTitle,
-        customerName: booking.customerName,
-        date: booking.date,
-        slotStart: booking.slotStart,
-        slotEnd: booking.slotEnd,
-        shopName: shop,
-      });
-      await sendEmail({ to: booking.customerEmail, subject, text, html });
-    }
+    await sendBookingCancellation(
+      booking,
+      booking.bookableProduct.productTitle,
+      shop,
+    );
   }
   return { ok: true };
 }
@@ -509,21 +586,6 @@ export async function rescheduleBooking(
     },
   });
 
-  if (updated.customerEmail) {
-    const { subject, text, html } = rescheduledEmail({
-      productTitle: booking.bookableProduct.productTitle,
-      customerName: updated.customerName,
-      date: updated.date,
-      slotStart: updated.slotStart,
-      slotEnd: updated.slotEnd,
-      shopName: shop,
-      previousDate: booking.date,
-      previousSlotStart: booking.slotStart,
-      previousSlotEnd: booking.slotEnd,
-    });
-    await sendEmail({ to: updated.customerEmail, subject, text, html });
-  }
-
   return { ok: true, booking: updated };
 }
 
@@ -566,11 +628,13 @@ export async function sendDueReminders(
       shopName: booking.shop,
     });
 
+    const fromName = await getEmailFromName(booking.shop);
     const ok = await sendEmail({
       to: booking.customerEmail,
       subject,
       text,
       html,
+      fromName,
     });
     if (ok) {
       await prisma.booking.update({
