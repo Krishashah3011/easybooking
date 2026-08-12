@@ -108,7 +108,7 @@ enum CustomFieldType {
 model CustomBookingField {
   id String @id @default(cuid())
 
-  shop string
+  shop String
   fieldKey String
   label    String
   type     CustomFieldType @default(TEXT)

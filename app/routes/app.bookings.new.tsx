@@ -424,6 +424,7 @@ export default function NewBookingPage() {
           <s-stack direction="inline" gap="base">
             <s-text-field
               label="Name"
+              required
               value={customerName}
               onChange={(e: FieldChangeEvent) =>
                 setCustomerName(e.currentTarget.value)
@@ -438,7 +439,7 @@ export default function NewBookingPage() {
               }
             ></s-text-field>
             <s-text-field
-              label="Phone (optional)"
+              label="Phone"
               value={customerPhone}
               onChange={(e: FieldChangeEvent) =>
                 setCustomerPhone(e.currentTarget.value)

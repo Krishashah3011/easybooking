@@ -92,7 +92,7 @@ export default function BookingSettingsPage() {
         bookingEndDate: values.bookingEndDate ?? "",
         emailFromName: values.emailFromName ?? "",
       },
-      { method: "POST" },
+      { method: "POST" }, 
     );
   };
 
@@ -255,14 +255,6 @@ export default function BookingSettingsPage() {
             setField("emailFromName", e.currentTarget.value || null)
           }
         ></s-text-field>
-      </s-section>
-
-      <s-section slot="aside" heading="About these settings">
-        <s-paragraph>
-          These are your shop-wide defaults. Any individual product can
-          override them from that product&apos;s own booking config page —
-          leaving a field blank there falls back to what you set here.
-        </s-paragraph>
       </s-section>
     </s-page>
   );
