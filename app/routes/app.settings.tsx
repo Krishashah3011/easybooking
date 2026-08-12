@@ -18,8 +18,6 @@ import {
   type BookingSettingsFormValues,
 } from "../models/bookingSettings.server";
 
-// Polaris web components emit plain DOM events; we only ever read
-// `currentTarget.value` off of them, so a minimal shape is enough here.
 type FieldChangeEvent = { currentTarget: { value: string } };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {

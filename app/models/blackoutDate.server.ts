@@ -5,7 +5,6 @@ export type BlackoutDateFieldErrors = {
   date?: string;
 };
 
-/** Shop-wide blackout dates only (bookableProductId is null). */
 export async function listShopBlackoutDates(
   shop: string,
 ): Promise<BlackoutDate[]> {
@@ -15,7 +14,6 @@ export async function listShopBlackoutDates(
   });
 }
 
-/** Blackout dates scoped to one specific product. */
 export async function listProductBlackoutDates(
   shop: string,
   bookableProductId: string,
@@ -58,7 +56,6 @@ export async function addBlackoutDate(
   });
 }
 
-/** Deletes a blackout date, scoped to the shop so one store can't delete another's row. */
 export async function deleteBlackoutDate(
   shop: string,
   id: string,

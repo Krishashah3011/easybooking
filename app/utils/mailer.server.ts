@@ -29,21 +29,9 @@ export type SendEmailInput = {
   subject: string;
   text: string;
   html: string;
-  /**
-   * Optional per-shop override for the display name on the "From" line
-   * (e.g. "Acme Bookings" instead of the default "Bookings"). The actual
-   * sending address always stays SMTP_FROM_EMAIL — only the display name
-   * is overridable, since arbitrary from-addresses break SPF/DKIM.
-   */
   fromName?: string | null;
 };
 
-/**
- * Sends an email via whatever SMTP credentials are configured in the
- * environment. Returns false (and logs) instead of throwing when SMTP
- * isn't configured or the send fails — callers should treat email as
- * best-effort and never let it block booking creation.
- */
 export async function sendEmail(input: SendEmailInput): Promise<boolean> {
   const transporter = getTransporter();
   if (!transporter) {

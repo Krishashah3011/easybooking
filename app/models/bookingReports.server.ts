@@ -7,8 +7,8 @@ const DAY_NAMES = [
 
 export type ReportFilters = {
   bookableProductId?: string;
-  dateFrom?: string; // "YYYY-MM-DD"
-  dateTo?: string; // "YYYY-MM-DD"
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type BookingReportData = {
@@ -24,14 +24,6 @@ export type BookingReportData = {
 
 const REPORT_ROW_CAP = 5000;
 
-/**
- * Aggregates booking counts for the reports page. Pulls matching bookings
- * (capped at REPORT_ROW_CAP) and aggregates in memory rather than with
- * SQL groupBy, since we need a derived hour-of-day and day-of-week from
- * stored strings, not a raw column. Fine at this scale — if a shop's
- * booking volume grows well past a few thousand rows per report window,
- * this would be worth moving to a real SQL aggregation instead.
- */
 export async function getBookingReportData(
   shop: string,
   filters: ReportFilters = {},
@@ -67,7 +59,7 @@ export async function getBookingReportData(
   const byDay = new Map<number, number>();
 
   for (const booking of bookings) {
-    if (booking.status === "CANCELLED") continue; // reports reflect real demand, not withdrawn bookings
+    if (booking.status === "CANCELLED") continue;
 
     const productTitle = booking.bookableProduct.productTitle;
     byProduct.set(productTitle, (byProduct.get(productTitle) ?? 0) + 1);

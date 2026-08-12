@@ -214,12 +214,10 @@ export default function NewBookingPage() {
     );
   };
 
-  // Load the calendar whenever the product or visible month changes.
   useEffect(() => {
     setDate("");
     setSelectedSlot(null);
     loadAvailability(bookableProductId, viewYear, viewMonth);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookableProductId, viewYear, viewMonth]);
 
   useEffect(() => {
@@ -229,7 +227,6 @@ export default function NewBookingPage() {
       setCustomerName("");
       setCustomerEmail("");
       setCustomerPhone("");
-      // A slot just got taken — refresh the calendar/slots so it shows as booked.
       loadAvailability(bookableProductId, viewYear, viewMonth);
       if (date) {
         slotsFetcher.submit(
@@ -238,7 +235,6 @@ export default function NewBookingPage() {
         );
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createFetcher.data, shopify]);
 
   const goToMonth = (delta: number) => {

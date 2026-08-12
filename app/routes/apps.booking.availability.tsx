@@ -4,13 +4,7 @@ import { resolveBookingContext } from "../models/booking-context.server";
 import { getAvailableDatesInMonth } from "../models/slotAvailability.server";
 import { getBookedCountsInRange } from "../models/booking.server";
 
-/**
- * GET /apps/booking/availability?productId=<gid>&year=<yyyy>&month=<1-12>
- *
- * Called from the storefront theme extension to know which dates to show
- * as selectable in the calendar. Signature-verified by Shopify's app
- * proxy — only requests actually forwarded from a storefront are accepted.
- */
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.public.appProxy(request);
   if (!session) {

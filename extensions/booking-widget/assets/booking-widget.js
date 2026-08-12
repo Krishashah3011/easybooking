@@ -6,9 +6,6 @@
     "July", "August", "September", "October", "November", "December",
   ];
 
-  // Show a "X left" badge on a slot once its remaining capacity drops to
-  // this number or below. Keeps normal slots clean while still creating
-  // urgency when a slot is close to full.
   var LOW_AVAILABILITY_THRESHOLD = 2;
 
   function pad(n) {
@@ -29,15 +26,11 @@
 
     var today = new Date();
     var viewYear = today.getUTCFullYear();
-    var viewMonth = today.getUTCMonth() + 1; // 1-12
+    var viewMonth = today.getUTCMonth() + 1;
     var availableDates = [];
     var selectedDate = null;
     var selectedSlot = null;
 
-    // Soft UX touch only: find the nearby add-to-cart form (if any) just to
-    // disable its submit button until a date/time is picked. This is NOT
-    // where the booking data actually gets attached — see the document-level
-    // submit listener below for that.
     var widgetSection = root.closest(".shopify-section");
     var nearbyForm =
       (widgetSection && widgetSection.querySelector('form[action*="/cart/add"]')) ||
@@ -49,13 +42,6 @@
       submitBtn.disabled = true;
     }
 
-    // Some themes rebuild/replace the buy-box <form> when a variant
-    // (color/size) is picked, or when the cart-drawer re-renders — which
-    // silently wipes out any hidden inputs we attached earlier. So instead
-    // of attaching inputs once at page load, we attach them at the exact
-    // moment "Add to cart" is submitted, onto whichever form is actually
-    // live right then. Using the capturing phase (the `true` at the end)
-    // means this runs BEFORE the theme's own submit handler reads the form.
     document.addEventListener(
       "submit",
       function (event) {
@@ -63,9 +49,6 @@
         if (!(target instanceof HTMLFormElement)) return;
         if (!/\/cart\/add/.test(target.getAttribute("action") || "")) return;
 
-        // If there's more than one add-to-cart form on the page (e.g. a
-        // recommended-products section), only act on the one inside this
-        // widget's own section — leave unrelated products' forms alone.
         var allCartForms = document.querySelectorAll('form[action*="/cart/add"]');
         if (allCartForms.length > 1 && widgetSection && !widgetSection.contains(target)) {
           return;
@@ -236,10 +219,6 @@
         btn.type = "button";
         btn.className = "booking-widget__slot";
 
-        // Slots the server considers fully booked are simply left out of
-        // the response entirely (see slotAvailability.server.ts), so
-        // slot.available should always be truthy here in practice — this
-        // branch is kept as a defensive fallback only.
         if (slot.available === false) {
           btn.classList.add("booking-widget__slot--unavailable");
           btn.disabled = true;
@@ -252,8 +231,6 @@
         timeLabel.textContent = slot.start + " \u2013 " + slot.end;
         btn.appendChild(timeLabel);
 
-        // "Spots left" — only shown once availability is getting low, so
-        // normal slots stay clean and this reads as a genuine signal.
         if (
           typeof slot.remainingCapacity === "number" &&
           slot.remainingCapacity <= LOW_AVAILABILITY_THRESHOLD

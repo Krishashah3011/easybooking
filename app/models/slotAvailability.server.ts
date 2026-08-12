@@ -1,14 +1,10 @@
 import type { EffectiveBookingSettings } from "./bookableProduct.server";
 
 export type TimeSlot = {
-  /** "HH:mm" in the shop's configured booking hours */
   start: string;
   end: string;
-  /** Full ISO datetime for the slot start, in UTC */
   startsAt: string;
-  /** How many more bookings this slot can accept right now */
   remainingCapacity: number;
-  /** False when the slot is fully booked — still returned so it can be shown, disabled */
   available: boolean;
 };
 
@@ -27,7 +23,6 @@ function minutesToTime(minutes: number): string {
   return `${h}:${m}`;
 }
 
-/** "YYYY-MM-DD" -> day of week, 0 = Sunday ... 6 = Saturday, in UTC (dates are treated as calendar dates, not tied to a timezone). */
 export function dayOfWeek(dateStr: string): number {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
@@ -47,18 +42,6 @@ function isWithinDateWindow(
   return true;
 }
 
-/**
- * Computes every bookable slot for a single date, given the resolved
- * (shop-defaults + product-overrides) settings and the set of blocked
- * dates that apply to this product ("YYYY-MM-DD" strings — shop-wide and
- * product-specific blackout dates should already be merged into this set
- * by the caller).
- *
- * `bookedCounts` is optional and lets a future phase (once actual Booking
- * records exist) pass in how many bookings already exist per slot, keyed
- * by the slot's ISO startsAt, so capacity can be enforced. It defaults to
- * empty, meaning every slot is treated as fully open.
- */
 export function computeSlotsForDate(
   settings: EffectiveBookingSettings,
   dateStr: string,
@@ -118,11 +101,10 @@ export function computeSlotsForDate(
   return slots;
 }
 
-/** Returns every "YYYY-MM-DD" in the given UTC month that has at least one open slot. */
 export function getAvailableDatesInMonth(
   settings: EffectiveBookingSettings,
   year: number,
-  month: number, // 1-12
+  month: number,
   blackoutDates: Set<string>,
   now: Date = new Date(),
   bookedCounts: Map<string, number> = new Map(),

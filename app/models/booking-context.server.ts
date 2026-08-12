@@ -15,14 +15,6 @@ export type BookingContext = {
   blackoutDates: Set<string>;
 };
 
-/**
- * Resolves everything the slot-availability engine needs for a product:
- * shop defaults merged with any product overrides, plus every blackout
- * date (shop-wide and product-specific) collapsed into one set.
- *
- * Returns null if the product isn't set up for booking at all — either
- * it has no BookableProduct row yet, or booking is turned off for it.
- */
 export async function resolveBookingContext(
   shop: string,
   productId: string,

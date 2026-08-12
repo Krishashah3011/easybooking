@@ -1,9 +1,9 @@
 export type BookingEmailData = {
   productTitle: string;
   customerName: string | null;
-  date: string; // "YYYY-MM-DD"
-  slotStart: string; // "HH:mm"
-  slotEnd: string; // "HH:mm"
+  date: string;
+  slotStart: string;
+  slotEnd: string;
   shopName: string;
 };
 

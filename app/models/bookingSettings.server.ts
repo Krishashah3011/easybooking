@@ -24,7 +24,7 @@ export type BookingSettingsFormValues = {
   minAdvanceHours: number;
   maxAdvanceDays: number;
   maxBookingsPerSlot: number;
-  bookingStartDate: string | null; // "YYYY-MM-DD" or null
+  bookingStartDate: string | null;
   bookingEndDate: string | null;
   emailFromName: string | null;
 };
@@ -33,10 +33,6 @@ export type BookingSettingsFieldErrors = Partial<
   Record<keyof BookingSettingsFormValues, string>
 >;
 
-/**
- * Fetches the BookingSettings row for a shop, creating one with defaults
- * if it doesn't exist yet (every shop should always have exactly one row).
- */
 export async function getBookingSettings(
   shop: string,
 ): Promise<BookingSettings> {
@@ -53,10 +49,6 @@ export async function getBookingSettings(
   });
 }
 
-/**
- * Converts a BookingSettings DB row into the shape the settings form uses
- * (working days as a number array, dates as "YYYY-MM-DD" strings).
- */
 export function toFormValues(
   settings: BookingSettings,
 ): BookingSettingsFormValues {
@@ -90,11 +82,6 @@ function toDateInputValue(date: Date | null): string | null {
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const MAX_FROM_NAME_LENGTH = 60;
 
-/**
- * Parses raw multipart/form-data values from the settings form into typed
- * values, returning field-level errors for anything invalid. Nothing is
- * persisted here — this only validates and shapes the input.
- */
 export function parseBookingSettingsForm(formData: FormData): {
   values: BookingSettingsFormValues;
   errors: BookingSettingsFieldErrors;

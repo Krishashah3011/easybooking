@@ -6,12 +6,6 @@ import { getBookedCountsInRange } from "../models/booking.server";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-/**
- * GET /apps/booking/slots?productId=<gid>&date=<yyyy-mm-dd>
- *
- * Called from the storefront theme extension once a customer picks a date
- * on the calendar, to load that date's actual time slots.
- */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.public.appProxy(request);
   if (!session) {

@@ -20,7 +20,6 @@ export type BookableProductFieldErrors = Partial<
   Record<keyof BookableProductFormValues, string>
 >;
 
-/** The fully resolved settings for a product — overrides merged over shop defaults. */
 export type EffectiveBookingSettings = {
   workingDays: number[];
   dailyStartTime: string;
@@ -52,11 +51,6 @@ export async function getBookableProduct(
   });
 }
 
-/**
- * Ensures a BookableProduct row exists for this product (creating a
- * disabled, no-overrides row if needed), and refreshes the cached title.
- * Used when a merchant opens a product's config page for the first time.
- */
 export async function ensureBookableProduct(
   shop: string,
   productId: string,
@@ -105,11 +99,6 @@ function toDateInputValue(date: Date | null): string | null {
 
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-/**
- * Parses the per-product override form. Every field is optional here —
- * an empty field means "inherit from shop settings", not an error.
- * A field is only validated if the merchant actually filled it in.
- */
 export function parseBookableProductForm(formData: FormData): {
   values: BookableProductFormValues;
   errors: BookableProductFieldErrors;
@@ -235,10 +224,6 @@ function parseOptionalInt(value: FormDataEntryValue | null): OptionalIntResult {
     : { value: null, invalid: true };
 }
 
-/**
- * Toggles booking on/off for a product without touching any overrides
- * that may already be saved — used by the quick toggle on the product list.
- */
 export async function setBookableProductEnabled(
   shop: string,
   productId: string,
@@ -284,7 +269,6 @@ export async function upsertBookableProductOverrides(
   });
 }
 
-/** Merges a product's overrides over the shop's BookingSettings defaults. */
 export function resolveEffectiveSettings(
   shopSettings: BookingSettings,
   product: BookableProduct | null,
