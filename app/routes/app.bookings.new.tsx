@@ -183,6 +183,7 @@ export default function NewBookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
 
   const availableDates: string[] =
@@ -226,6 +227,7 @@ export default function NewBookingPage() {
       setSelectedSlot(null);
       setCustomerName("");
       setCustomerEmail("");
+      setEmailTouched(false);
       setCustomerPhone("");
       loadAvailability(bookableProductId, viewYear, viewMonth);
       if (date) {
@@ -426,14 +428,22 @@ export default function NewBookingPage() {
                 setCustomerName(e.currentTarget.value)
               }
             ></s-text-field>
-            <s-text-field
-              label="Email"
-              required
-              value={customerEmail}
-              onChange={(e: FieldChangeEvent) =>
-                setCustomerEmail(e.currentTarget.value)
-              }
-            ></s-text-field>
+              <s-text-field
+                label="Email"
+                required
+                value={customerEmail}
+                error={
+                  emailTouched &&
+                  customerEmail !== "" &&
+                  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)
+                    ? "Please enter a valid email address"
+                    : undefined
+                }
+                onChange={(e: FieldChangeEvent) =>
+                  setCustomerEmail(e.currentTarget.value)
+                }
+                onBlur={() => setEmailTouched(true)}
+              ></s-text-field>
             <s-text-field
               label="Phone"
               value={customerPhone}
