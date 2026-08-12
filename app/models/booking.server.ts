@@ -12,6 +12,7 @@ import {
   reminderEmail,
   cancellationEmail,
 } from "./emailTemplates.server";
+import { listCustomFields } from "./customBookingField.server";
 
 export type OrderLineItem = {
   id: number | string;
@@ -40,6 +41,7 @@ function toProductGid(productId: number | string): string {
   return `gid://shopify/Product/${productId}`;
 }
 
+/** Reads the booking date/time off a line item's cart properties, if present. */
 export function extractBookingSelection(
   lineItem: OrderLineItem,
 ): { date: string; time: string } | null {
@@ -48,6 +50,31 @@ export function extractBookingSelection(
   const time = properties.find((p) => p.name === BOOKING_TIME_PROPERTY)?.value;
   if (!date || !time) return null;
   return { date, time };
+}
+
+/**
+ * Matches a line item's cart properties against the shop's custom field
+ * definitions (matched by label, same as Booking Date/Time above), and
+ * returns a {fieldKey: value} snapshot for storage on the booking. Fields
+ * with no matching property are simply omitted, not stored as empty.
+ */
+function extractCustomFieldResponses(
+  lineItem: OrderLineItem,
+  fields: { fieldKey: string; label: string }[],
+): Record<string, string> | null {
+  if (fields.length === 0) return null;
+
+  const properties = lineItem.properties ?? [];
+  const responses: Record<string, string> = {};
+
+  for (const field of fields) {
+    const value = properties.find((p) => p.name === field.label)?.value;
+    if (value) {
+      responses[field.fieldKey] = value;
+    }
+  }
+
+  return Object.keys(responses).length > 0 ? responses : null;
 }
 
 function resolveCustomerInfo(order: OrderPayload) {
@@ -59,6 +86,8 @@ function resolveCustomerInfo(order: OrderPayload) {
     customerName: name || null,
     customerEmail: order.email ?? order.customer?.email ?? null,
     customerPhone: order.phone ?? order.customer?.phone ?? null,
+    // Shopify orders placed without a logged-in customer account have no
+    // `customer.id`-backed record tying them to a stored account.
     isGuest: !order.customer,
   };
 }
@@ -78,6 +107,13 @@ async function countConfirmedBookingsForSlot(
   });
 }
 
+/**
+ * Returns how many CONFIRMED bookings exist per exact slot start time,
+ * across a date range, keyed by ISO datetime. Used by the storefront
+ * availability/slots endpoints so the calendar and time picker can
+ * exclude slots that are already fully booked, instead of only applying
+ * the rule-based restrictions (working days, buffer time, etc).
+ */
 export async function getBookedCountsInRange(
   shop: string,
   bookableProductId: string,
@@ -102,6 +138,11 @@ export async function getBookedCountsInRange(
   return counts;
 }
 
+/**
+ * Looks up the shop's configured email sender display name (set on the
+ * Booking Settings page), if any. Best-effort — falls back to null (which
+ * makes sendEmail use the environment default) on any error.
+ */
 async function getEmailFromName(shop: string): Promise<string | null> {
   try {
     const settings = await getBookingSettings(shop);
@@ -111,6 +152,11 @@ async function getEmailFromName(shop: string): Promise<string | null> {
   }
 }
 
+/**
+ * Sends the booking confirmation email, if the booking has an email on
+ * file, and records confirmationSentAt. Best-effort — a failed or skipped
+ * send never throws, so it can't block booking creation.
+ */
 async function sendBookingConfirmation(
   booking: Booking,
   productTitle: string,
@@ -143,6 +189,11 @@ async function sendBookingConfirmation(
   }
 }
 
+/**
+ * Sends the booking cancellation email, if the booking has an email on
+ * file. Best-effort — a failed or skipped send never throws, so it can't
+ * block the cancellation itself.
+ */
 async function sendBookingCancellation(
   booking: Booking,
   productTitle: string,
@@ -169,6 +220,19 @@ async function sendBookingCancellation(
   });
 }
 
+/**
+ * Processes every line item on an order, creating a Booking for any that
+ * carry booking properties and belong to an enabled bookable product.
+ * Safe to call more than once for the same order (webhook retries) —
+ * line items that already have a Booking row are skipped.
+ *
+ * Capacity is checked at creation time, but because the order already
+ * exists by the time this runs (Shopify's hosted checkout isn't gated by
+ * our app), a slot that's already full gets the booking recorded with
+ * status OVERBOOKED instead of silently rejected, so the merchant can
+ * follow up. True prevention would require a Shopify Function on
+ * cart/checkout validation — out of scope for this phase.
+ */
 export async function createBookingsFromOrder(
   shop: string,
   order: OrderPayload,
@@ -176,6 +240,7 @@ export async function createBookingsFromOrder(
   const created: Booking[] = [];
   const shopSettings = await getBookingSettings(shop);
   const customerInfo = resolveCustomerInfo(order);
+  const customFields = await listCustomFields(shop);
 
   for (const lineItem of order.line_items ?? []) {
     const selection = extractBookingSelection(lineItem);
@@ -218,7 +283,7 @@ export async function createBookingsFromOrder(
     const slotsForDate = computeSlotsForDate(
       effectiveSettings,
       selection.date,
-      new Set(),
+      new Set(), // blackout dates aren't re-checked post-purchase; capacity is what matters here
     );
     const matchedSlot = slotsForDate.find((s) => s.start === selection.time);
     const slotStartsAt = matchedSlot
@@ -238,6 +303,11 @@ export async function createBookingsFromOrder(
         ? "CONFIRMED"
         : "OVERBOOKED";
 
+    const customFieldResponses = extractCustomFieldResponses(
+      lineItem,
+      customFields,
+    );
+
     const booking = await prisma.booking.create({
       data: {
         shop,
@@ -255,6 +325,7 @@ export async function createBookingsFromOrder(
         slotStartsAt,
         status,
         source: "STOREFRONT_ORDER",
+        customFieldResponses: customFieldResponses ?? undefined,
       },
     });
     created.push(booking);
@@ -278,6 +349,11 @@ function addMinutes(time: string, minutes: number): string {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
+/**
+ * Cancels every non-cancelled booking tied to an order (orders/cancelled
+ * webhook), and sends a cancellation email for each one that had a
+ * customer email on file.
+ */
 export async function cancelBookingsForOrder(
   shop: string,
   orderId: number | string,
@@ -307,11 +383,19 @@ export type ManualBookingInput = {
   customerName: string;
   customerEmail: string | null;
   customerPhone: string | null;
+  /** {fieldKey: value} for whatever custom fields the shop has defined. */
+  customFieldResponses?: Record<string, string>;
 };
 
 export type ManualBookingResult =
   { ok: true; booking: Booking } | { ok: false; error: string };
 
+/**
+ * Creates a booking directly from the admin (phone/walk-in bookings).
+ * Unlike order-driven bookings, capacity IS enforced synchronously here —
+ * this path fully controls the write, so a full slot is rejected outright
+ * instead of being flagged.
+ */
 export async function createManualBooking(
   shop: string,
   input: ManualBookingInput,
@@ -350,6 +434,14 @@ export async function createManualBooking(
     return { ok: false, error: "That slot is already fully booked." };
   }
 
+  const customFields = await listCustomFields(shop);
+  const responses = input.customFieldResponses ?? {};
+  for (const field of customFields) {
+    if (field.required && !responses[field.fieldKey]?.trim()) {
+      return { ok: false, error: `"${field.label}" is required.` };
+    }
+  }
+
   const booking = await prisma.booking.create({
     data: {
       shop,
@@ -364,6 +456,8 @@ export async function createManualBooking(
       slotStartsAt: new Date(matchedSlot.startsAt),
       status: "CONFIRMED",
       source: "ADMIN_MANUAL",
+      customFieldResponses:
+        Object.keys(responses).length > 0 ? responses : undefined,
     },
   });
 
@@ -388,11 +482,12 @@ export type BookingWithProductTitle = Booking & { productTitle: string };
 export type ListBookingsFilters = {
   status?: "CONFIRMED" | "OVERBOOKED" | "CANCELLED";
   bookableProductId?: string;
-  search?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  search?: string; // matches customer name, email, or order name
+  dateFrom?: string; // "YYYY-MM-DD"
+  dateTo?: string; // "YYYY-MM-DD"
 };
 
+/** General booking list for the Booking Management admin page, newest first. */
 export async function listBookings(
   shop: string,
   filters: ListBookingsFilters = {},
@@ -439,6 +534,11 @@ export async function listBookings(
   );
 }
 
+/**
+ * Admin-initiated cancellation of a single booking. Idempotent — sends a
+ * cancellation email only on the transition into CANCELLED, never on a
+ * repeat call against an already-cancelled booking.
+ */
 export async function cancelBooking(
   shop: string,
   id: string,
@@ -464,6 +564,12 @@ export async function cancelBooking(
   return { ok: true };
 }
 
+/**
+ * Moves an existing booking to a new date/slot. The target slot is
+ * validated (must be a real slot under the product's current settings)
+ * and its capacity is checked excluding this booking's own current
+ * reservation — same enforcement as manual booking creation.
+ */
 export async function rescheduleBooking(
   shop: string,
   id: string,
@@ -520,6 +626,7 @@ export async function rescheduleBooking(
       slotEnd: matchedSlot.end,
       slotStartsAt: new Date(matchedSlot.startsAt),
       status: "CONFIRMED",
+      // A reschedule is a new commitment — let a reminder go out again.
       reminderSentAt: null,
     },
   });
@@ -527,6 +634,12 @@ export async function rescheduleBooking(
   return { ok: true, booking: updated };
 }
 
+/**
+ * Sends reminder emails for every CONFIRMED booking whose slot starts
+ * within `windowHours` from now and hasn't had a reminder sent yet.
+ * Meant to be called on a schedule from an external cron trigger — see
+ * the /cron/send-reminders route.
+ */
 export async function sendDueReminders(
   windowHours = 24,
 ): Promise<{ sent: number; skipped: number }> {

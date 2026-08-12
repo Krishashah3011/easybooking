@@ -9,6 +9,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { listBookableProducts } from "../models/bookableProduct.server";
+import { listCustomFields } from "../models/customBookingField.server";
 import {
   cancelBooking,
   listBookings,
@@ -39,14 +40,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     dateTo,
   };
 
-  const [bookings, products] = await Promise.all([
+  const [bookings, products, customFields] = await Promise.all([
     listBookings(session.shop, filters),
     listBookableProducts(session.shop),
+    listCustomFields(session.shop),
   ]);
 
   return {
     bookings,
     products: products.map((p) => ({ id: p.id, title: p.productTitle })),
+    // fieldKey -> current label, so responses on old bookings still show a
+    // readable label even if a field's wording changed since.
+    customFieldLabels: Object.fromEntries(
+      customFields.map((f) => [f.fieldKey, f.label]),
+    ) as Record<string, string>,
     filters: {
       status: status ?? "",
       bookableProductId: bookableProductId ?? "",
@@ -80,7 +87,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return { intent, ok: false as const, error: "Unknown action." };
 };
 
-function BookingRow({ booking }: { booking: BookingWithProductTitle }) {
+function CustomFieldAnswers({
+  responses,
+  labels,
+}: {
+  responses: unknown;
+  labels: Record<string, string>;
+}) {
+  if (!responses || typeof responses !== "object") return null;
+  const entries = Object.entries(responses as Record<string, string>);
+  if (entries.length === 0) return null;
+
+  return (
+    <s-stack direction="block" gap="none">
+      {entries.map(([fieldKey, value]) => (
+        <s-text key={fieldKey} tone="subdued">
+          {(labels[fieldKey] ?? fieldKey) + ": " + value}
+        </s-text>
+      ))}
+    </s-stack>
+  );
+}
+
+function BookingRow({
+  booking,
+  customFieldLabels,
+}: {
+  booking: BookingWithProductTitle;
+  customFieldLabels: Record<string, string>;
+}) {
   const cancelFetcher = useFetcher<typeof action>();
   const rescheduleFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
@@ -134,8 +169,16 @@ function BookingRow({ booking }: { booking: BookingWithProductTitle }) {
     <s-table-row>
       <s-table-cell>{booking.productTitle}</s-table-cell>
       <s-table-cell>
-        {booking.customerName ?? "—"}
-        {booking.customerEmail ? ` (${booking.customerEmail})` : ""}
+        <s-stack direction="block" gap="none">
+          <s-text>
+            {booking.customerName ?? "—"}
+            {booking.customerEmail ? ` (${booking.customerEmail})` : ""}
+          </s-text>
+          <CustomFieldAnswers
+            responses={booking.customFieldResponses}
+            labels={customFieldLabels}
+          />
+        </s-stack>
       </s-table-cell>
       <s-table-cell>
         {isRescheduling ? (
@@ -219,7 +262,8 @@ function BookingRow({ booking }: { booking: BookingWithProductTitle }) {
 }
 
 export default function BookingManagementPage() {
-  const { bookings, products, filters } = useLoaderData<typeof loader>();
+  const { bookings, products, customFieldLabels, filters } =
+    useLoaderData<typeof loader>();
 
   const [search, setSearch] = useState(filters.search);
   const [status, setStatus] = useState(filters.status);
@@ -302,7 +346,11 @@ export default function BookingManagementPage() {
             </s-table-header-row>
             <s-table-body>
               {bookings.map((booking) => (
-                <BookingRow key={booking.id} booking={booking} />
+                <BookingRow
+                  key={booking.id}
+                  booking={booking}
+                  customFieldLabels={customFieldLabels}
+                />
               ))}
             </s-table-body>
           </s-table>
