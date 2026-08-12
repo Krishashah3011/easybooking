@@ -1,0 +1,19 @@
+{
+  "booking_widget": {
+    "block_name": "Widget de réservation",
+    "previous_month": "Mois précédent",
+    "next_month": "Mois suivant",
+    "available_times": "Horaires disponibles",
+    "loading_availability": "Chargement des disponibilités…",
+    "availability_error": "Impossible de charger les disponibilités pour le moment.",
+    "no_availability": "Aucune disponibilité ce mois-ci.",
+    "loading_times": "Chargement des horaires…",
+    "times_error": "Impossible de charger les horaires pour le moment.",
+    "no_times": "Aucun horaire disponible à cette date.",
+    "booked": "Complet",
+    "spot_left": "Il reste 1 place",
+    "spots_left": "Il reste {count} places",
+    "select_before_cart": "Veuillez sélectionner une date et une heure avant d'ajouter ceci au panier.",
+    "selected": "Sélectionné : {date} à {time}"
+  }
+}

@@ -13,6 +13,7 @@ export const DEFAULT_BOOKING_SETTINGS = {
   bookingStartDate: null as Date | null,
   bookingEndDate: null as Date | null,
   emailFromName: null as string | null,
+  timeFormat: "24h" as "12h" | "24h",
 };
 
 export type BookingSettingsFormValues = {
@@ -27,6 +28,7 @@ export type BookingSettingsFormValues = {
   bookingStartDate: string | null;
   bookingEndDate: string | null;
   emailFromName: string | null;
+  timeFormat: "12h" | "24h";
 };
 
 export type BookingSettingsFieldErrors = Partial<
@@ -64,6 +66,7 @@ export function toFormValues(
     bookingStartDate: toDateInputValue(settings.bookingStartDate),
     bookingEndDate: toDateInputValue(settings.bookingEndDate),
     emailFromName: settings.emailFromName,
+    timeFormat: settings.timeFormat === "12h" ? "12h" : "24h",
   };
 }
 
@@ -151,6 +154,9 @@ export function parseBookingSettingsForm(formData: FormData): {
   }
   const emailFromName = emailFromNameRaw || null;
 
+  const timeFormatRaw = String(formData.get("timeFormat") ?? "");
+  const timeFormat: "12h" | "24h" = timeFormatRaw === "12h" ? "12h" : "24h";
+
   return {
     values: {
       workingDays,
@@ -164,6 +170,7 @@ export function parseBookingSettingsForm(formData: FormData): {
       bookingStartDate,
       bookingEndDate,
       emailFromName,
+      timeFormat,
     },
     errors,
   };
@@ -189,6 +196,7 @@ export async function upsertBookingSettings(
       ? new Date(values.bookingEndDate)
       : null,
     emailFromName: values.emailFromName,
+    timeFormat: values.timeFormat,
   };
 
   return prisma.bookingSettings.upsert({

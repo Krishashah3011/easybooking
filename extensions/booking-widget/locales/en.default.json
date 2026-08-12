@@ -1,1 +1,19 @@
-{}
+{
+  "booking_widget": {
+    "block_name": "Booking Widget",
+    "previous_month": "Previous month",
+    "next_month": "Next month",
+    "available_times": "Available times",
+    "loading_availability": "Loading availability…",
+    "availability_error": "Unable to load availability right now.",
+    "no_availability": "No availability this month.",
+    "loading_times": "Loading times…",
+    "times_error": "Unable to load times right now.",
+    "no_times": "No times available on this date.",
+    "booked": "Booked",
+    "spot_left": "1 spot left",
+    "spots_left": "{count} spots left",
+    "select_before_cart": "Please select a date and time before adding this to your cart.",
+    "selected": "Selected: {date} at {time}"
+  }
+}

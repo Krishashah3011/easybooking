@@ -41,6 +41,9 @@ model BookingSettings {
   bookingStartDate DateTime?
   bookingEndDate   DateTime?
   emailFromName String?
+  /// "12h" or "24h" — how booking times are DISPLAYED across admin/storefront.
+  /// Storage/API times are always 24h "HH:mm" regardless of this setting.
+  timeFormat String @default("24h")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -85,6 +88,10 @@ enum BookingStatus {
   CONFIRMED
   OVERBOOKED
   CANCELLED
+  /// Set when an admin reschedules a booking. Treated as fully active
+  /// everywhere CONFIRMED is (counts toward slot capacity, still gets
+  /// reminder emails) — it's a history label, not a distinct lifecycle state.
+  RESCHEDULED
 }
 
 enum BookingSource {

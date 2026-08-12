@@ -10,17 +10,31 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { listBookableProducts } from "../models/bookableProduct.server";
 import { listCustomFields } from "../models/customBookingField.server";
+import { getBookingSettings } from "../models/bookingSettings.server";
 import {
   cancelBooking,
   listBookings,
+  listSlotsForReschedule,
   rescheduleBooking,
   type BookingWithProductTitle,
   type ListBookingsFilters,
 } from "../models/booking.server";
+import type { TimeSlot } from "../models/slotAvailability.server";
+import {
+  formatDateDisplay,
+  formatTimeRangeDisplay,
+  type TimeFormat,
+} from "../utils/format";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-const STATUS_OPTIONS = ["", "CONFIRMED", "OVERBOOKED", "CANCELLED"] as const;
+const STATUS_OPTIONS = [
+  "",
+  "CONFIRMED",
+  "RESCHEDULED",
+  "OVERBOOKED",
+  "CANCELLED",
+] as const;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -40,10 +54,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     dateTo,
   };
 
-  const [bookings, products, customFields] = await Promise.all([
+  const [bookings, products, customFields, shopSettings] = await Promise.all([
     listBookings(session.shop, filters),
     listBookableProducts(session.shop),
     listCustomFields(session.shop),
+    getBookingSettings(session.shop),
   ]);
 
   return {
@@ -52,6 +67,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     customFieldLabels: Object.fromEntries(
       customFields.map((f) => [f.fieldKey, f.label]),
     ) as Record<string, string>,
+    timeFormat: (shopSettings.timeFormat === "12h" ? "12h" : "24h") as TimeFormat,
     filters: {
       status: status ?? "",
       bookableProductId: bookableProductId ?? "",
@@ -66,12 +82,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = String(formData.get("intent") ?? "") as
-    "cancel" | "reschedule" | "";
+    "cancel" | "reschedule" | "loadRescheduleSlots" | "";
 
   if (intent === "cancel") {
     const id = String(formData.get("id") ?? "");
     const result = await cancelBooking(session.shop, id);
     return { intent, ...result };
+  }
+
+  if (intent === "loadRescheduleSlots") {
+    const id = String(formData.get("id") ?? "");
+    const date = String(formData.get("date") ?? "");
+    if (!id || !date) {
+      return {
+        intent,
+        ok: false as const,
+        error: "Missing booking or date.",
+        slots: [] as TimeSlot[],
+      };
+    }
+    const result = await listSlotsForReschedule(session.shop, id, date);
+    if (!result.ok) {
+      return { intent, ok: false as const, error: result.error, slots: [] as TimeSlot[] };
+    }
+    return { intent, ok: true as const, slots: result.slots };
   }
 
   if (intent === "reschedule") {
@@ -110,12 +144,15 @@ function CustomFieldAnswers({
 function BookingRow({
   booking,
   customFieldLabels,
+  timeFormat,
 }: {
   booking: BookingWithProductTitle;
   customFieldLabels: Record<string, string>;
+  timeFormat: TimeFormat;
 }) {
   const cancelFetcher = useFetcher<typeof action>();
   const rescheduleFetcher = useFetcher<typeof action>();
+  const rescheduleSlotsFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
   const [isRescheduling, setIsRescheduling] = useState(false);
@@ -127,6 +164,13 @@ function BookingRow({
     !rescheduleFetcher.data.ok
       ? rescheduleFetcher.data.error
       : null;
+
+  const rescheduleSlots: TimeSlot[] =
+    rescheduleSlotsFetcher.data?.intent === "loadRescheduleSlots" &&
+    rescheduleSlotsFetcher.data.ok
+      ? rescheduleSlotsFetcher.data.slots
+      : [];
+  const isLoadingRescheduleSlots = rescheduleSlotsFetcher.state !== "idle";
 
   useEffect(() => {
     if (
@@ -143,6 +187,23 @@ function BookingRow({
       shopify.toast.show("Booking cancelled");
     }
   }, [cancelFetcher.data, shopify]);
+
+  useEffect(() => {
+    if (!isRescheduling || !newDate) return;
+    rescheduleSlotsFetcher.submit(
+      { intent: "loadRescheduleSlots", id: booking.id, date: newDate },
+      { method: "POST" },
+    );
+  }, [isRescheduling, newDate]);
+
+  useEffect(() => {
+    if (rescheduleSlots.length === 0) return;
+    const stillValid = rescheduleSlots.some((s) => s.start === newSlotStart);
+    if (stillValid) return;
+    const currentSlot = rescheduleSlots.find((s) => s.start === booking.slotStart);
+    const firstAvailable = rescheduleSlots.find((s) => s.available);
+    setNewSlotStart((currentSlot ?? firstAvailable ?? rescheduleSlots[0]).start);
+  }, [rescheduleSlots]);
 
   const handleCancel = () => {
     cancelFetcher.submit(
@@ -162,6 +223,15 @@ function BookingRow({
       { method: "POST" },
     );
   };
+
+  const badgeTone =
+    booking.status === "CONFIRMED"
+      ? "success"
+      : booking.status === "RESCHEDULED"
+        ? "info"
+        : booking.status === "OVERBOOKED"
+          ? "critical"
+          : "neutral";
 
   return (
     <s-table-row>
@@ -189,32 +259,43 @@ function BookingRow({
                 setNewDate(e.currentTarget.value)
               }
             ></s-date-field>
-            <s-text-field
+            <s-select
               label="New time"
               labelAccessibilityVisibility="exclusive"
-              placeholder="HH:mm"
               value={newSlotStart}
+              disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
               onChange={(e: FieldChangeEvent) =>
                 setNewSlotStart(e.currentTarget.value)
               }
-            ></s-text-field>
+            >
+              {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                <s-option value="">Loading times…</s-option>
+              )}
+              {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                <s-option value="">No times on this date</s-option>
+              )}
+              {rescheduleSlots.map((slot) => (
+                <s-option
+                  key={slot.startsAt}
+                  value={slot.start}
+                  {...(!slot.available && slot.start !== booking.slotStart
+                    ? { disabled: true }
+                    : {})}
+                >
+                  {formatTimeRangeDisplay(slot.start, slot.end, timeFormat)}
+                  {!slot.available && slot.start !== booking.slotStart
+                    ? " (booked)"
+                    : ""}
+                </s-option>
+              ))}
+            </s-select>
           </s-stack>
         ) : (
-          `${booking.date} ${booking.slotStart}–${booking.slotEnd}`
+          `${formatDateDisplay(booking.date)} ${formatTimeRangeDisplay(booking.slotStart, booking.slotEnd, timeFormat)}`
         )}
       </s-table-cell>
       <s-table-cell>
-        <s-badge
-          tone={
-            booking.status === "CONFIRMED"
-              ? "success"
-              : booking.status === "OVERBOOKED"
-                ? "critical"
-                : "neutral"
-          }
-        >
-          {booking.status}
-        </s-badge>
+        <s-badge tone={badgeTone}>{booking.status}</s-badge>
       </s-table-cell>
       <s-table-cell>{booking.source}</s-table-cell>
       <s-table-cell>
@@ -223,7 +304,11 @@ function BookingRow({
             <>
               {isRescheduling ? (
                 <>
-                  <s-button variant="primary" onClick={handleReschedule}>
+                  <s-button
+                    variant="primary"
+                    onClick={handleReschedule}
+                    {...(!newSlotStart ? { disabled: true } : {})}
+                  >
                     Save
                   </s-button>
                   <s-button
@@ -260,7 +345,7 @@ function BookingRow({
 }
 
 export default function BookingManagementPage() {
-  const { bookings, products, customFieldLabels, filters } =
+  const { bookings, products, customFieldLabels, filters, timeFormat } =
     useLoaderData<typeof loader>();
 
   const [search, setSearch] = useState(filters.search);
@@ -348,6 +433,7 @@ export default function BookingManagementPage() {
                   key={booking.id}
                   booking={booking}
                   customFieldLabels={customFieldLabels}
+                  timeFormat={timeFormat}
                 />
               ))}
             </s-table-body>

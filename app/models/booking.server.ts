@@ -13,6 +13,9 @@ import {
   cancellationEmail,
 } from "./emailTemplates.server";
 import { listCustomFields } from "./customBookingField.server";
+import { formatDateDisplay, formatTimeDisplay } from "../utils/format";
+
+const ACTIVE_BOOKING_STATUSES = ["CONFIRMED", "RESCHEDULED"] as const;
 
 export type OrderLineItem = {
   id: number | string;
@@ -93,7 +96,7 @@ async function countConfirmedBookingsForSlot(
       shop,
       bookableProductId,
       slotStartsAt,
-      status: "CONFIRMED",
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
     },
   });
 }
@@ -109,7 +112,7 @@ export async function getBookedCountsInRange(
     where: {
       shop,
       bookableProductId,
-      status: "CONFIRMED",
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
       slotStartsAt: { gte: rangeStart, lte: rangeEnd },
     },
     _count: { _all: true },
@@ -122,12 +125,17 @@ export async function getBookedCountsInRange(
   return counts;
 }
 
-async function getEmailFromName(shop: string): Promise<string | null> {
+async function getShopEmailSettings(
+  shop: string,
+): Promise<{ fromName: string | null; timeFormat: "12h" | "24h" }> {
   try {
     const settings = await getBookingSettings(shop);
-    return settings.emailFromName;
+    return {
+      fromName: settings.emailFromName,
+      timeFormat: settings.timeFormat === "12h" ? "12h" : "24h",
+    };
   } catch {
-    return null;
+    return { fromName: null, timeFormat: "24h" };
   }
 }
 
@@ -138,16 +146,16 @@ async function sendBookingConfirmation(
 ): Promise<void> {
   if (!booking.customerEmail) return;
 
+  const { fromName, timeFormat } = await getShopEmailSettings(shop);
   const { subject, text, html } = confirmationEmail({
     productTitle,
     customerName: booking.customerName,
-    date: booking.date,
-    slotStart: booking.slotStart,
-    slotEnd: booking.slotEnd,
+    date: formatDateDisplay(booking.date),
+    slotStart: formatTimeDisplay(booking.slotStart, timeFormat),
+    slotEnd: formatTimeDisplay(booking.slotEnd, timeFormat),
     shopName: shop,
   });
 
-  const fromName = await getEmailFromName(shop);
   const sent = await sendEmail({
     to: booking.customerEmail,
     subject,
@@ -170,16 +178,16 @@ async function sendBookingCancellation(
 ): Promise<void> {
   if (!booking.customerEmail) return;
 
+  const { fromName, timeFormat } = await getShopEmailSettings(shop);
   const { subject, text, html } = cancellationEmail({
     productTitle,
     customerName: booking.customerName,
-    date: booking.date,
-    slotStart: booking.slotStart,
-    slotEnd: booking.slotEnd,
+    date: formatDateDisplay(booking.date),
+    slotStart: formatTimeDisplay(booking.slotStart, timeFormat),
+    slotEnd: formatTimeDisplay(booking.slotEnd, timeFormat),
     shopName: shop,
   });
 
-  const fromName = await getEmailFromName(shop);
   await sendEmail({
     to: booking.customerEmail,
     subject,
@@ -424,7 +432,7 @@ export async function listBookingsForProduct(
 export type BookingWithProductTitle = Booking & { productTitle: string };
 
 export type ListBookingsFilters = {
-  status?: "CONFIRMED" | "OVERBOOKED" | "CANCELLED";
+  status?: "CONFIRMED" | "OVERBOOKED" | "CANCELLED" | "RESCHEDULED";
   bookableProductId?: string;
   search?: string;
   dateFrom?: string;
@@ -482,7 +490,11 @@ export async function getUpcomingBookings(
   limit = 5,
 ): Promise<BookingWithProductTitle[]> {
   const bookings = await prisma.booking.findMany({
-    where: { shop, status: "CONFIRMED", slotStartsAt: { gte: new Date() } },
+    where: {
+      shop,
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      slotStartsAt: { gte: new Date() },
+    },
     include: { bookableProduct: { select: { productTitle: true } } },
     orderBy: { slotStartsAt: "asc" },
     take: limit,
@@ -500,7 +512,7 @@ export async function getUpcomingBookings(
 }
 
 export type CountBookingsFilters = {
-  status?: "CONFIRMED" | "OVERBOOKED" | "CANCELLED";
+  status?: "CONFIRMED" | "OVERBOOKED" | "CANCELLED" | "RESCHEDULED";
   dateFrom?: string;
   dateTo?: string;
 };
@@ -586,7 +598,7 @@ export async function rescheduleBooking(
       shop,
       bookableProductId: booking.bookableProductId,
       slotStartsAt: new Date(matchedSlot.startsAt),
-      status: "CONFIRMED",
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
       id: { not: id },
     },
   });
@@ -601,12 +613,63 @@ export async function rescheduleBooking(
       slotStart: matchedSlot.start,
       slotEnd: matchedSlot.end,
       slotStartsAt: new Date(matchedSlot.startsAt),
-      status: "CONFIRMED",
+      status: "RESCHEDULED",
       reminderSentAt: null,
     },
   });
 
   return { ok: true, booking: updated };
+}
+
+export async function listSlotsForReschedule(
+  shop: string,
+  bookingId: string,
+  date: string,
+): Promise<
+  | { ok: true; slots: import("./slotAvailability.server").TimeSlot[] }
+  | { ok: false; error: string }
+> {
+  const booking = await prisma.booking.findFirst({
+    where: { id: bookingId, shop },
+    include: { bookableProduct: true },
+  });
+  if (!booking) {
+    return { ok: false, error: "Booking not found." };
+  }
+
+  const shopSettings = await getBookingSettings(shop);
+  const effectiveSettings = resolveEffectiveSettings(
+    shopSettings,
+    booking.bookableProduct,
+  );
+
+  const dayStart = new Date(`${date}T00:00:00.000Z`);
+  const dayEnd = new Date(`${date}T23:59:59.999Z`);
+  const grouped = await prisma.booking.groupBy({
+    by: ["slotStartsAt"],
+    where: {
+      shop,
+      bookableProductId: booking.bookableProductId,
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      slotStartsAt: { gte: dayStart, lte: dayEnd },
+      id: { not: bookingId },
+    },
+    _count: { _all: true },
+  });
+  const bookedCounts = new Map<string, number>();
+  for (const row of grouped) {
+    bookedCounts.set(row.slotStartsAt.toISOString(), row._count._all);
+  }
+
+  const slots = computeSlotsForDate(
+    effectiveSettings,
+    date,
+    new Set(),
+    new Date(),
+    bookedCounts,
+  );
+
+  return { ok: true, slots };
 }
 
 export async function sendDueReminders(
@@ -617,7 +680,7 @@ export async function sendDueReminders(
 
   const dueBookings = await prisma.booking.findMany({
     where: {
-      status: "CONFIRMED",
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
       reminderSentAt: null,
       slotStartsAt: { gte: now, lte: windowEnd },
     },
@@ -633,16 +696,16 @@ export async function sendDueReminders(
       continue;
     }
 
+    const { fromName, timeFormat } = await getShopEmailSettings(booking.shop);
     const { subject, text, html } = reminderEmail({
       productTitle: booking.bookableProduct.productTitle,
       customerName: booking.customerName,
-      date: booking.date,
-      slotStart: booking.slotStart,
-      slotEnd: booking.slotEnd,
+      date: formatDateDisplay(booking.date),
+      slotStart: formatTimeDisplay(booking.slotStart, timeFormat),
+      slotEnd: formatTimeDisplay(booking.slotEnd, timeFormat),
       shopName: booking.shop,
     });
 
-    const fromName = await getEmailFromName(booking.shop);
     const ok = await sendEmail({
       to: booking.customerEmail,
       subject,
