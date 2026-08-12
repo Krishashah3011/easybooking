@@ -22,9 +22,11 @@ export default function App() {
         <s-link href="/app/settings">Booking Settings</s-link>
         <s-link href="/app/products">Products</s-link>
         <s-link href="/app/blackout-dates">Blackout Dates</s-link>
+        <s-link href="/app/custom-fields">Custom Fields</s-link>
         <s-link href="/app/bookings/new">New Booking</s-link>
         <s-link href="/app/booking-management">Bookings</s-link>
         <s-link href="/app/reports">Reports</s-link>
+        <s-link href="/app/additional">Additional page</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>
