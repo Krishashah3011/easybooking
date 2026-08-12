@@ -49,8 +49,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     bookings,
     products: products.map((p) => ({ id: p.id, title: p.productTitle })),
-    // fieldKey -> current label, so responses on old bookings still show a
-    // readable label even if a field's wording changed since.
     customFieldLabels: Object.fromEntries(
       customFields.map((f) => [f.fieldKey, f.label]),
     ) as Record<string, string>,

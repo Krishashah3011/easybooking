@@ -1,346 +1,164 @@
-import { useEffect } from "react";
-import type {
-  ActionFunctionArgs,
-  HeadersFunction,
-  LoaderFunctionArgs,
-} from "react-router";
-import { useFetcher } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
-import { authenticate } from "../shopify.server";
+import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import { authenticate } from "../shopify.server";
+import { listBookableProducts } from "../models/bookableProduct.server";
+import {
+  countBookings,
+  getUpcomingBookings,
+} from "../models/booking.server";
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function endOfWeekISO(): string {
+  const end = new Date();
+  end.setDate(end.getDate() + 7);
+  return end.toISOString().slice(0, 10);
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
+  const today = todayISO();
+  const weekEnd = endOfWeekISO();
 
-  return null;
-};
+  const [products, todayCount, weekCount, overbookedCount, upcoming] =
+    await Promise.all([
+      listBookableProducts(session.shop),
+      countBookings(session.shop, { dateFrom: today, dateTo: today }),
+      countBookings(session.shop, { dateFrom: today, dateTo: weekEnd }),
+      countBookings(session.shop, { status: "OVERBOOKED" }),
+      getUpcomingBookings(session.shop, 5),
+    ]);
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
-  ];
-  const response = await admin.graphql(
-    `#graphql
-      mutation populateProduct($product: ProductCreateInput!) {
-        productCreate(product: $product) {
-          product {
-            id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-            demoInfo: metafield(namespace: "$app", key: "demo_info") {
-              jsonValue
-            }
-          }
-        }
-      }`,
-    {
-      variables: {
-        product: {
-          title: `${color} Snowboard`,
-          metafields: [
-            {
-              namespace: "$app",
-              key: "demo_info",
-              value: "Created by React Router Template",
-            },
-          ],
-        },
-      },
-    },
+  const enabledProductCount = products.filter((p) => p.isEnabled).length;
+  const smtpConfigured = Boolean(
+    process.env.SMTP_HOST &&
+      process.env.SMTP_PORT &&
+      process.env.SMTP_USER &&
+      process.env.SMTP_PASSWORD &&
+      process.env.SMTP_FROM_EMAIL,
   );
-  const responseJson = await response.json();
-
-  const product = responseJson.data!.productCreate!.product!;
-  const variantId = product.variants.edges[0]!.node!.id!;
-
-  const variantResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
-      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
-        productVariants {
-          id
-          price
-          barcode
-          createdAt
-        }
-      }
-    }`,
-    {
-      variables: {
-        productId: product.id,
-        variants: [{ id: variantId, price: "100.00" }],
-      },
-    },
-  );
-
-  const variantResponseJson = await variantResponse.json();
-
-  const metaobjectResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpsertMetaobject($handle: MetaobjectHandleInput!, $values: JSON!) {
-      metaobjectUpsert(handle: $handle, values: $values) {
-        metaobject {
-          id
-          handle
-          values
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }`,
-    {
-      variables: {
-        handle: {
-          type: "$app:example",
-          handle: "demo-entry",
-        },
-        values: {
-          title: "Demo Entry",
-          description:
-            "This metaobject was created by the Shopify app template to demonstrate the metaobject API.",
-        },
-      },
-    },
-  );
-
-  const metaobjectResponseJson = await metaobjectResponse.json();
 
   return {
-    product: responseJson!.data!.productCreate!.product,
-    variant:
-      variantResponseJson!.data!.productVariantsBulkUpdate!.productVariants,
-    metaobject: metaobjectResponseJson!.data!.metaobjectUpsert!.metaobject,
+    stats: { todayCount, weekCount, overbookedCount, enabledProductCount },
+    smtpConfigured,
+    upcoming,
   };
 };
 
-export default function Index() {
-  const fetcher = useFetcher<typeof action>();
+export default function Dashboard() {
+  const { stats, smtpConfigured, upcoming } = useLoaderData<typeof loader>();
 
-  const shopify = useAppBridge();
-  const isLoading =
-    ["loading", "submitting"].includes(fetcher.state) &&
-    fetcher.formMethod === "POST";
-
-  useEffect(() => {
-    if (fetcher.data?.product?.id) {
-      shopify.toast.show("Product created");
-    }
-  }, [fetcher.data?.product?.id, shopify]);
-
-  const generateProduct = () => fetcher.submit({}, { method: "POST" });
+  const setupSteps = [
+    {
+      done: stats.enabledProductCount > 0,
+      label: "Enable at least one product for booking",
+      href: "/app/products",
+      cta: "Go to Products",
+    },
+    {
+      done: smtpConfigured,
+      label: "Configure SMTP so booking emails can send",
+      href: "/app/settings",
+      cta: "Go to Settings",
+    },
+  ];
+  const remainingSteps = setupSteps.filter((s) => !s.done);
 
   return (
-    <s-page heading="Shopify app template">
-      <s-button slot="primary-action" onClick={generateProduct}>
-        Generate a product
-      </s-button>
-
-      <s-section heading="Congrats on creating a new Shopify app 🎉">
-        <s-paragraph>
-          This embedded app template uses{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/tools/app-bridge"
-            target="_blank"
-          >
-            App Bridge
-          </s-link>{" "}
-          interface examples like an{" "}
-          , as well as an{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            Admin GraphQL
-          </s-link>{" "}
-          mutation demo, to provide a starting point for app development.
-        </s-paragraph>
-      </s-section>
-      <s-section heading="Get started with products">
-        <s-paragraph>
-          Generate a product with GraphQL and get the JSON output for that
-          product. Learn more about the{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreate"
-            target="_blank"
-          >
-            productCreate
-          </s-link>{" "}
-          mutation in our API references. Includes a product{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data/metafields"
-            target="_blank"
-          >
-            metafield
-          </s-link>{" "}
-          and{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data/metaobjects"
-            target="_blank"
-          >
-            metaobject
+    <s-page heading="Dashboard">
+      {stats.overbookedCount > 0 && (
+        <s-banner tone="critical" heading="Bookings need review">
+          <s-paragraph>
+            {stats.overbookedCount === 1
+              ? "1 booking landed in an already-full slot and needs a look."
+              : `${stats.overbookedCount} bookings landed in already-full slots and need a look.`}
+          </s-paragraph>
+          <s-link href="/app/booking-management?status=OVERBOOKED">
+            Review overbooked bookings
           </s-link>
-          .
-        </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-button
-            onClick={generateProduct}
-            {...(isLoading ? { loading: true } : {})}
-          >
-            Generate a product
-          </s-button>
-          {fetcher.data?.product && (
-            <s-button
-              onClick={() => {
-                shopify.intents.invoke?.("edit:shopify/Product", {
-                  value: fetcher.data?.product?.id,
-                });
-              }}
-              target="_blank"
-              variant="tertiary"
-            >
-              Edit product
-            </s-button>
-          )}
-        </s-stack>
-        {fetcher.data?.product && (
-          <s-section heading="productCreate mutation">
-            <s-stack direction="block" gap="base">
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  <code>{JSON.stringify(fetcher.data.product, null, 2)}</code>
-                </pre>
-              </s-box>
+        </s-banner>
+      )}
 
-              <s-heading>productVariantsBulkUpdate mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
+      {remainingSteps.length > 0 && (
+        <s-section heading="Get set up">
+          <s-stack direction="block" gap="base">
+            {remainingSteps.map((step) => (
+              <s-stack
+                key={step.label}
+                direction="inline"
+                gap="base"
+                alignItems="center"
               >
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  <code>{JSON.stringify(fetcher.data.variant, null, 2)}</code>
-                </pre>
-              </s-box>
+                <s-paragraph>{step.label}</s-paragraph>
+                <s-link href={step.href}>{step.cta}</s-link>
+              </s-stack>
+            ))}
+          </s-stack>
+        </s-section>
+      )}
 
-              <s-heading>metaobjectUpsert mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  <code>
-                    {JSON.stringify(fetcher.data.metaobject, null, 2)}
-                  </code>
-                </pre>
-              </s-box>
+      <s-section heading="At a glance">
+        <s-stack direction="inline" gap="loose">
+          <s-box padding="base" borderWidth="base" borderRadius="base">
+            <s-stack direction="block" gap="none">
+              <s-heading>{stats.todayCount}</s-heading>
+              <s-text tone="subdued">Bookings today</s-text>
             </s-stack>
-          </s-section>
+          </s-box>
+          <s-box padding="base" borderWidth="base" borderRadius="base">
+            <s-stack direction="block" gap="none">
+              <s-heading>{stats.weekCount}</s-heading>
+              <s-text tone="subdued">Bookings this week</s-text>
+            </s-stack>
+          </s-box>
+          <s-box padding="base" borderWidth="base" borderRadius="base">
+            <s-stack direction="block" gap="none">
+              <s-heading>{stats.enabledProductCount}</s-heading>
+              <s-text tone="subdued">Products enabled for booking</s-text>
+            </s-stack>
+          </s-box>
+        </s-stack>
+      </s-section>
+
+      <s-section heading="Upcoming bookings">
+        {upcoming.length === 0 ? (
+          <s-paragraph>Nothing coming up yet.</s-paragraph>
+        ) : (
+          <s-table>
+            <s-table-header-row>
+              <s-table-header>Product</s-table-header>
+              <s-table-header>Customer</s-table-header>
+              <s-table-header>When</s-table-header>
+            </s-table-header-row>
+            <s-table-body>
+              {upcoming.map((booking) => (
+                <s-table-row key={booking.id}>
+                  <s-table-cell>{booking.productTitle}</s-table-cell>
+                  <s-table-cell>{booking.customerName ?? "—"}</s-table-cell>
+                  <s-table-cell>
+                    {booking.date} {booking.slotStart}–{booking.slotEnd}
+                  </s-table-cell>
+                </s-table-row>
+              ))}
+            </s-table-body>
+          </s-table>
         )}
+        <s-link href="/app/booking-management">View all bookings</s-link>
       </s-section>
 
-      <s-section slot="aside" heading="App template specs">
-        <s-paragraph>
-          <s-text>Framework: </s-text>
-          <s-link href="https://reactrouter.com/" target="_blank">
-            React Router
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Interface: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/app-home/using-polaris-components"
-            target="_blank"
-          >
-            Polaris web components
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>API: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            GraphQL
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Custom data: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data"
-            target="_blank"
-          >
-            Metafields &amp; metaobjects
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Database: </s-text>
-          <s-link href="https://www.prisma.io/" target="_blank">
-            Prisma
-          </s-link>
-        </s-paragraph>
-      </s-section>
-
-      <s-section slot="aside" heading="Next steps">
-        <s-unordered-list>
-          <s-list-item>
-            Build an{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/getting-started/build-app-example"
-              target="_blank"
-            >
-              example app
-            </s-link>
-          </s-list-item>
-          <s-list-item>
-            Explore Shopify&apos;s API with{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
-              target="_blank"
-            >
-              GraphiQL
-            </s-link>
-          </s-list-item>
-        </s-unordered-list>
+      <s-section slot="aside" heading="Quick links">
+        <s-stack direction="block" gap="small">
+          <s-link href="/app/settings">Booking Settings</s-link>
+          <s-link href="/app/products">Products</s-link>
+          <s-link href="/app/blackout-dates">Blackout Dates</s-link>
+          <s-link href="/app/custom-fields">Custom Fields</s-link>
+          <s-link href="/app/bookings/new">New Booking</s-link>
+          <s-link href="/app/booking-management">Bookings</s-link>
+          <s-link href="/app/reports">Reports</s-link>
+        </s-stack>
       </s-section>
     </s-page>
   );

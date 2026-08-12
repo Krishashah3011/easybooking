@@ -5,13 +5,6 @@ import {
   toPublicField,
 } from "../models/customBookingField.server";
 
-/**
- * GET /apps/booking/custom-fields
- *
- * Called from the storefront theme extension to know which extra
- * questions to render on the booking widget, alongside the date/time
- * picker. Shop-wide — same fields for every bookable product.
- */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.public.appProxy(request);
   if (!session) {

@@ -87,7 +87,6 @@ function FieldEditor({
       }
       onCancel?.();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.data]);
 
   const handleSubmit = () => {

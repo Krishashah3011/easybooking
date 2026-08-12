@@ -5,7 +5,7 @@ export type CustomFieldFormValues = {
   label: string;
   type: CustomFieldType;
   required: boolean;
-  options: string; // raw comma-separated input, only meaningful for SELECT
+  options: string;
 };
 
 export type CustomFieldFieldErrors = Partial<
@@ -15,7 +15,6 @@ export type CustomFieldFieldErrors = Partial<
 const MAX_LABEL_LENGTH = 80;
 const MAX_OPTIONS = 20;
 
-/** Turns a label into a stable, URL/property-safe key, e.g. "Number of guests" -> "number-of-guests". */
 function slugify(label: string): string {
   return (
     label
@@ -26,12 +25,10 @@ function slugify(label: string): string {
   );
 }
 
-/** Appends -2, -3, etc. until the key is unique for this shop. */
 async function uniqueFieldKey(shop: string, base: string): Promise<string> {
   let candidate = base;
   let suffix = 2;
-  // Field counts per shop are small (a handful of questions), so a loop
-  // of individual lookups is simpler than a single query and fine here.
+
   while (
     await prisma.customBookingField.findUnique({
       where: { shop_fieldKey: { shop, fieldKey: candidate } },
@@ -156,7 +153,6 @@ export async function deleteCustomField(
   return { ok: true };
 }
 
-/** Bulk-updates sortOrder to match the given id order (drag-and-drop reordering). */
 export async function reorderCustomFields(
   shop: string,
   orderedIds: string[],
@@ -179,13 +175,12 @@ function normalizeOptions(raw: string): string {
     .join(",");
 }
 
-/** Widget-facing shape: just what's needed to render and validate the field. */
 export type PublicCustomField = {
   fieldKey: string;
   label: string;
   type: CustomFieldType;
   required: boolean;
-  options: string[]; // empty for non-SELECT types
+  options: string[];
 };
 
 export function toPublicField(field: CustomBookingField): PublicCustomField {

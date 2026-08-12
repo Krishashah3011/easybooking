@@ -1,17 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `allDay` on the `BlackoutDate` table. All the data in the column will be lost.
-  - You are about to drop the column `endDate` on the `BlackoutDate` table. All the data in the column will be lost.
-  - You are about to drop the column `endTime` on the `BlackoutDate` table. All the data in the column will be lost.
-  - You are about to drop the column `productId` on the `BlackoutDate` table. All the data in the column will be lost.
-  - You are about to drop the column `startDate` on the `BlackoutDate` table. All the data in the column will be lost.
-  - You are about to drop the column `startTime` on the `BlackoutDate` table. All the data in the column will be lost.
-  - You are about to drop the column `updatedAt` on the `BlackoutDate` table. All the data in the column will be lost.
-  - You are about to drop the `ProductBookingConfig` table. If the table is not empty, all the data it contains will be lost.
-  - Added the required column `date` to the `BlackoutDate` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- CreateEnum
 CREATE TYPE "BookingStatus" AS ENUM ('CONFIRMED', 'OVERBOOKED', 'CANCELLED');
 
