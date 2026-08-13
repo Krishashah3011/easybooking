@@ -463,7 +463,7 @@ export default function NewBookingPage() {
           <s-button
             variant="primary"
             onClick={handleCreateBooking}
-            {...(!customerName || !customerEmail ? { disabled: true } : {})}
+            {...(!customerName || !customerEmail ? { disabled: false } : {})}
           >
             Create booking
           </s-button>
