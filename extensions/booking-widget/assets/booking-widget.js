@@ -200,60 +200,49 @@
         widgetSection.querySelector('form[action*="/cart/add"]')) ||
       document.querySelector('form[action*="/cart/add"]');
 
-    // ---- Relabel the native "Buy it now" / dynamic checkout button ----
-    // We clone the real button so it keeps 100% of the theme's native
-    // styling/classes, just change its text and click behavior. We never
-    // touch the real "Add to cart" button at all.
-    var CHECKOUT_BUTTON_SELECTORS = [
-      ".shopify-payment-button__button--unbranded",
+    // ---- Place our own "Book your slot" button right above Add to cart ----
+    // We never touch or relabel the theme's native Add to cart / dynamic
+    // checkout ("Buy it now") buttons — those stay 100% default Shopify.
+    // Instead we physically move this whole widget (trigger button +
+    // selection display + modal) so it sits immediately before the real
+    // Add to cart button, regardless of where the app block itself was
+    // placed in the theme editor.
+    var KNOWN_NON_ADD_TO_CART_SELECTORS = [
+      ".shopify-payment-button",
       ".shopify-payment-button__button",
-      'button[name="checkout"]',
-      'input[name="checkout"]',
     ];
 
-    function relabelCheckoutButton(btn) {
-      if (!btn || btn.dataset.bookingHandled) return;
-      var clone = btn.cloneNode(true);
-      clone.dataset.bookingHandled = "true";
-      if (clone.tagName === "BUTTON") {
-        clone.setAttribute("type", "button");
-      }
-      clone.textContent = strings.triggerBook;
-      clone.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        clearError();
-        openModal();
-      });
-      btn.parentNode.replaceChild(clone, btn);
-    }
-
-    function findCheckoutButtons(scope) {
-      if (!scope) return [];
-      var found = [];
-      CHECKOUT_BUTTON_SELECTORS.forEach(function (selector) {
-        scope.querySelectorAll(selector).forEach(function (el) {
-          if (found.indexOf(el) === -1) found.push(el);
+    function findAddToCartButton(form) {
+      if (!form) return null;
+      var byName = form.querySelector('[name="add"]');
+      if (byName) return byName;
+      var candidates = form.querySelectorAll('button, input[type="submit"]');
+      for (var i = 0; i < candidates.length; i++) {
+        var el = candidates[i];
+        var type =
+          el.tagName === "INPUT" ? el.type : el.getAttribute("type") || "submit";
+        if (type !== "submit") continue;
+        var isExcluded = KNOWN_NON_ADD_TO_CART_SELECTORS.some(function (sel) {
+          return el.closest(sel);
         });
-      });
-      return found;
+        if (!isExcluded) return el;
+      }
+      return null;
     }
 
-    function handleCheckoutButtons() {
-      var scope = widgetSection || document.body;
-      findCheckoutButtons(scope).forEach(relabelCheckoutButton);
+    var addToCartBtn = findAddToCartButton(nearbyForm);
+    if (addToCartBtn && addToCartBtn.parentNode) {
+      addToCartBtn.parentNode.insertBefore(root, addToCartBtn);
     }
+    // If we couldn't confidently find the Add to cart button, the widget
+    // simply stays wherever the app block was placed — same as before,
+    // nothing breaks either way.
 
-    handleCheckoutButtons();
-    // Dynamic checkout buttons can render asynchronously after this script
-    // runs, so keep watching for them.
-    if (window.MutationObserver) {
-      var checkoutObserver = new MutationObserver(handleCheckoutButtons);
-      checkoutObserver.observe(widgetSection || document.body, {
-        childList: true,
-        subtree: true,
-      });
-    }
+    var triggerBtn = root.querySelector("[data-booking-trigger]");
+    triggerBtn.addEventListener("click", function () {
+      clearError();
+      openModal();
+    });
 
     // ---- Require a booked slot before the real Add to cart submits ----
     // We never call requestSubmit() ourselves — we only listen in on the
@@ -270,6 +259,13 @@
 
         if (!confirmedDate || !confirmedSlot) {
           event.preventDefault();
+          // preventDefault() alone only cancels the native form submission —
+          // it does NOT stop other "submit" listeners (like the theme's own
+          // AJAX add-to-cart handler) from still running on this same event.
+          // Without these, themes that add to cart via their own submit
+          // listener would add the item anyway even though we "blocked" it.
+          event.stopPropagation();
+          event.stopImmediatePropagation();
           showError(strings.selectBeforeCart);
           root.scrollIntoView({ behavior: "smooth", block: "center" });
           return;
@@ -548,6 +544,7 @@
     function updateSelectionDisplay() {
       if (confirmedDate && confirmedSlot) {
         selectionEl.hidden = false;
+        triggerBtn.hidden = true;
         selectionEl.textContent = format(strings.selected, {
           date: formatDateDisplay(confirmedDate, locale),
           time: formatTimeRangeDisplay(
@@ -558,6 +555,7 @@
         });
       } else {
         selectionEl.hidden = true;
+        triggerBtn.hidden = false;
         selectionEl.textContent = "";
       }
     }

@@ -9,8 +9,11 @@
   display: none !important;
 }
 
-.booking-widget__selection {
+.booking-widget__selection,
+.booking-widget__trigger {
   display: block;
+  width: 100%;
+  font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
@@ -20,9 +23,11 @@
   border: 1.5px solid #111;
   border-radius: 2px;
   background: #fff;
+  text-align: center;
 }
 
-.booking-widget__selection:hover {
+.booking-widget__selection:hover,
+.booking-widget__trigger:hover {
   background: rgba(0, 0, 0, 0.04);
 }
 
