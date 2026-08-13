@@ -195,10 +195,6 @@
     var confirmedSlot = null;
 
     var widgetSection = root.closest(".shopify-section");
-    var nearbyForm =
-      (widgetSection &&
-        widgetSection.querySelector('form[action*="/cart/add"]')) ||
-      document.querySelector('form[action*="/cart/add"]');
 
     // ---- Place our own "Book your slot" button right above Add to cart ----
     // We never touch or relabel the theme's native Add to cart / dynamic
@@ -230,7 +226,29 @@
       return null;
     }
 
-    var addToCartBtn = findAddToCartButton(nearbyForm);
+    // A page can have more than one form[action*="/cart/add"] — e.g. an
+    // empty/hidden form injected by another app (selling plans, quick-add
+    // modals for other products, etc). Blindly taking "the first match" can
+    // grab a form with no real button in it at all. Instead, walk every
+    // matching form (scoped to this section first, then the whole page as a
+    // fallback) and use the first one that actually contains a real
+    // add-to-cart button.
+    function pickAddToCartForm(scope) {
+      if (!scope) return { form: null, btn: null };
+      var forms = scope.querySelectorAll('form[action*="/cart/add"]');
+      for (var i = 0; i < forms.length; i++) {
+        var btn = findAddToCartButton(forms[i]);
+        if (btn) return { form: forms[i], btn: btn };
+      }
+      return { form: null, btn: null };
+    }
+
+    var picked = pickAddToCartForm(widgetSection);
+    if (!picked.form) picked = pickAddToCartForm(document);
+
+    var nearbyForm = picked.form;
+    var addToCartBtn = picked.btn;
+
     if (addToCartBtn && addToCartBtn.parentNode) {
       addToCartBtn.parentNode.insertBefore(root, addToCartBtn);
     }
@@ -244,11 +262,57 @@
       openModal();
     });
 
-    // ---- Require a booked slot before the real Add to cart submits ----
-    // We never call requestSubmit() ourselves — we only listen in on the
-    // real submit (fired when the shopper clicks the native Add to cart
-    // button) so the theme's normal add-to-cart flow (AJAX, cart drawer,
-    // redirect, whatever it does) is completely unaffected.
+    // ---- Require a booked slot before Add to cart goes through ----
+    // Some themes use a native form "submit" event for Add to cart; others
+    // intercept the button's "click" directly and fire their own fetch()
+    // without ever dispatching a real submit event. We guard both paths so
+    // this works regardless of how the theme implements add-to-cart. We
+    // never call requestSubmit() ourselves — we only ever block/allow the
+    // theme's own normal flow (AJAX, cart drawer, redirect, whatever it
+    // does) so it's otherwise completely unaffected.
+    function injectBookingFields(form) {
+      var dateInput = form.querySelector(
+        'input[name="properties[Booking Date]"]',
+      );
+      var timeInput = form.querySelector(
+        'input[name="properties[Booking Time]"]',
+      );
+      if (!dateInput) {
+        dateInput = document.createElement("input");
+        dateInput.type = "hidden";
+        dateInput.name = "properties[Booking Date]";
+        form.appendChild(dateInput);
+      }
+      if (!timeInput) {
+        timeInput = document.createElement("input");
+        timeInput.type = "hidden";
+        timeInput.name = "properties[Booking Time]";
+        form.appendChild(timeInput);
+      }
+      dateInput.value = confirmedDate;
+      timeInput.value = confirmedSlot.start;
+    }
+
+    // Returns true if the add-to-cart attempt should be BLOCKED.
+    function guardAddToCart(event) {
+      if (!confirmedDate || !confirmedSlot) {
+        event.preventDefault();
+        // preventDefault() alone only cancels the native default action —
+        // it does NOT stop other listeners (like the theme's own
+        // click/submit AJAX handler) from still running on this same
+        // event. Without these, themes that add to cart via their own
+        // listener would add the item anyway even though we "blocked" it.
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        showError(strings.selectBeforeCart);
+        root.scrollIntoView({ behavior: "smooth", block: "center" });
+        return true;
+      }
+      clearError();
+      if (nearbyForm) injectBookingFields(nearbyForm);
+      return false;
+    }
+
     document.addEventListener(
       "submit",
       function (event) {
@@ -256,46 +320,14 @@
         if (!(target instanceof HTMLFormElement)) return;
         if (target !== nearbyForm) return;
         if (!/\/cart\/add/.test(target.getAttribute("action") || "")) return;
-
-        if (!confirmedDate || !confirmedSlot) {
-          event.preventDefault();
-          // preventDefault() alone only cancels the native form submission —
-          // it does NOT stop other "submit" listeners (like the theme's own
-          // AJAX add-to-cart handler) from still running on this same event.
-          // Without these, themes that add to cart via their own submit
-          // listener would add the item anyway even though we "blocked" it.
-          event.stopPropagation();
-          event.stopImmediatePropagation();
-          showError(strings.selectBeforeCart);
-          root.scrollIntoView({ behavior: "smooth", block: "center" });
-          return;
-        }
-
-        clearError();
-        var dateInput = target.querySelector(
-          'input[name="properties[Booking Date]"]',
-        );
-        var timeInput = target.querySelector(
-          'input[name="properties[Booking Time]"]',
-        );
-        if (!dateInput) {
-          dateInput = document.createElement("input");
-          dateInput.type = "hidden";
-          dateInput.name = "properties[Booking Date]";
-          target.appendChild(dateInput);
-        }
-        if (!timeInput) {
-          timeInput = document.createElement("input");
-          timeInput.type = "hidden";
-          timeInput.name = "properties[Booking Time]";
-          target.appendChild(timeInput);
-        }
-        dateInput.value = confirmedDate;
-        timeInput.value = confirmedSlot.start;
-        // No preventDefault here — let the native add-to-cart flow proceed.
+        guardAddToCart(event);
       },
       true,
     );
+
+    if (addToCartBtn) {
+      addToCartBtn.addEventListener("click", guardAddToCart, true);
+    }
 
     weekdaysEl.innerHTML = "";
     WEEKDAY_LABELS.forEach(function (label) {
