@@ -13,9 +13,9 @@
   data-i18n-booked="{{ 'booking_widget.booked' | t }}"
   data-i18n-spot-left="{{ 'booking_widget.spot_left' | t }}"
   data-i18n-spots-left="{{ 'booking_widget.spots_left' | t }}"
-  data-i18n-please-select-slot="{{ 'booking_widget.please_select_slot' | t }}"
+  data-i18n-select-before-cart="{{ 'booking_widget.select_before_cart' | t }}"
+  data-i18n-selected="{{ 'booking_widget.selected' | t }}"
   data-i18n-trigger-book="{{ 'booking_widget.trigger_book' | t }}"
-  data-i18n-trigger-add-to-cart="{{ 'booking_widget.trigger_add_to_cart' | t }}"
   data-i18n-modal-title="{{ 'booking_widget.modal_title' | t }}"
   data-i18n-modal-subtitle="{{ 'booking_widget.modal_subtitle' | t }}"
   data-i18n-confirm="{{ 'booking_widget.confirm' | t }}"
@@ -25,24 +25,8 @@
   data-i18n-next-month="{{ 'booking_widget.next_month' | t }}"
   data-i18n-available-times="{{ 'booking_widget.available_times' | t }}"
 >
-  <!-- Trigger state: shown before a slot is confirmed -->
-  <div class="booking-widget__trigger" data-booking-trigger>
-    <button type="button" class="booking-widget__btn booking-widget__btn--book" data-booking-open>
-      {{ 'booking_widget.trigger_book' | t }}
-    </button>
-    <button type="button" class="booking-widget__btn booking-widget__btn--cart" data-booking-cart-trigger>
-      {{ 'booking_widget.trigger_add_to_cart' | t }}
-    </button>
-    <p class="booking-widget__error" data-booking-error hidden></p>
-  </div>
-
-  <!-- Summary state: shown after a slot is confirmed -->
-  <div class="booking-widget__summary-block" data-booking-summary-block hidden>
-    <button type="button" class="booking-widget__summary-bar" data-booking-summary-bar></button>
-    <button type="button" class="booking-widget__btn booking-widget__btn--cart" data-booking-cart-confirmed>
-      {{ 'booking_widget.trigger_add_to_cart' | t }}
-    </button>
-  </div>
+  <p class="booking-widget__selection" data-booking-selection hidden></p>
+  <p class="booking-widget__error" data-booking-error hidden></p>
 
   <!-- Popup modal -->
   <div class="booking-widget__overlay" data-booking-overlay hidden>

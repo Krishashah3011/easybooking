@@ -14,9 +14,10 @@
     booked: "Booked",
     spotLeft: "1 spot left",
     spotsLeft: "{count} spots left",
-    pleaseSelectSlot: "Please book a slot before adding this to your cart.",
+    selectBeforeCart:
+      "Please select a date and time before adding this to your cart.",
+    selected: "Selected: {date} at {time}",
     triggerBook: "Book your slot",
-    triggerAddToCart: "Add to cart",
     modalTitle: "Appointment - Booking",
     modalSubtitle: "Select your preferred date & time",
     confirm: "Confirm",
@@ -53,11 +54,10 @@
       booked: d.i18nBooked || FALLBACK_STRINGS.booked,
       spotLeft: d.i18nSpotLeft || FALLBACK_STRINGS.spotLeft,
       spotsLeft: d.i18nSpotsLeft || FALLBACK_STRINGS.spotsLeft,
-      pleaseSelectSlot:
-        d.i18nPleaseSelectSlot || FALLBACK_STRINGS.pleaseSelectSlot,
+      selectBeforeCart:
+        d.i18nSelectBeforeCart || FALLBACK_STRINGS.selectBeforeCart,
+      selected: d.i18nSelected || FALLBACK_STRINGS.selected,
       triggerBook: d.i18nTriggerBook || FALLBACK_STRINGS.triggerBook,
-      triggerAddToCart:
-        d.i18nTriggerAddToCart || FALLBACK_STRINGS.triggerAddToCart,
       modalTitle: d.i18nModalTitle || FALLBACK_STRINGS.modalTitle,
       modalSubtitle: d.i18nModalSubtitle || FALLBACK_STRINGS.modalSubtitle,
       confirm: d.i18nConfirm || FALLBACK_STRINGS.confirm,
@@ -94,7 +94,7 @@
     return e[0] * 60 + e[1] - (s[0] * 60 + s[1]);
   }
 
-  function formatSummaryDate(dateStr, locale) {
+  function formatDateDisplay(dateStr, locale) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
     if (!m) return dateStr;
     var d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
@@ -146,14 +146,8 @@
       });
     }
 
-    var triggerEl = root.querySelector("[data-booking-trigger]");
-    var openBtn = root.querySelector("[data-booking-open]");
-    var cartTriggerBtn = root.querySelector("[data-booking-cart-trigger]");
+    var selectionEl = root.querySelector("[data-booking-selection]");
     var errorEl = root.querySelector("[data-booking-error]");
-
-    var summaryBlockEl = root.querySelector("[data-booking-summary-block]");
-    var summaryBarEl = root.querySelector("[data-booking-summary-bar]");
-    var cartConfirmedBtn = root.querySelector("[data-booking-cart-confirmed]");
 
     var overlayEl = root.querySelector("[data-booking-overlay]");
     var closeBtn = root.querySelector("[data-booking-close]");
@@ -173,11 +167,8 @@
     var availableDates = [];
     var currentSlots = [];
 
-    // Values chosen inside the modal (not yet confirmed)
     var pendingDate = null;
     var pendingSlot = null;
-
-    // Values confirmed via the "Confirm" button
     var confirmedDate = null;
     var confirmedSlot = null;
 
@@ -187,23 +178,106 @@
         widgetSection.querySelector('form[action*="/cart/add"]')) ||
       document.querySelector('form[action*="/cart/add"]');
 
-    // Hide the theme's native buy buttons (Add to cart, dynamic checkout, etc.)
-    // so ours replace them.
-    if (nearbyForm) {
-      var nativeControls = nearbyForm.querySelectorAll(
-        '[type="submit"], [name="add"], .shopify-payment-button',
-      );
-      nativeControls.forEach(function (el) {
-        el.style.display = "none";
-      });
-      var paymentButtonContainer =
-        (widgetSection &&
-          widgetSection.querySelector(".shopify-payment-button")) ||
-        document.querySelector(".shopify-payment-button");
-      if (paymentButtonContainer) {
-        paymentButtonContainer.style.display = "none";
+    // ---- Relabel the native "Buy it now" / dynamic checkout button ----
+    // We clone the real button so it keeps 100% of the theme's native
+    // styling/classes, just change its text and click behavior. We never
+    // touch the real "Add to cart" button at all.
+    var CHECKOUT_BUTTON_SELECTORS = [
+      ".shopify-payment-button__button--unbranded",
+      ".shopify-payment-button__button",
+      'button[name="checkout"]',
+      'input[name="checkout"]',
+    ];
+
+    function relabelCheckoutButton(btn) {
+      if (!btn || btn.dataset.bookingHandled) return;
+      var clone = btn.cloneNode(true);
+      clone.dataset.bookingHandled = "true";
+      if (clone.tagName === "BUTTON") {
+        clone.setAttribute("type", "button");
       }
+      clone.textContent = strings.triggerBook;
+      clone.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        clearError();
+        openModal();
+      });
+      btn.parentNode.replaceChild(clone, btn);
     }
+
+    function findCheckoutButtons(scope) {
+      if (!scope) return [];
+      var found = [];
+      CHECKOUT_BUTTON_SELECTORS.forEach(function (selector) {
+        scope.querySelectorAll(selector).forEach(function (el) {
+          if (found.indexOf(el) === -1) found.push(el);
+        });
+      });
+      return found;
+    }
+
+    function handleCheckoutButtons() {
+      var scope = widgetSection || document.body;
+      findCheckoutButtons(scope).forEach(relabelCheckoutButton);
+    }
+
+    handleCheckoutButtons();
+    // Dynamic checkout buttons can render asynchronously after this script
+    // runs, so keep watching for them.
+    if (window.MutationObserver) {
+      var checkoutObserver = new MutationObserver(handleCheckoutButtons);
+      checkoutObserver.observe(widgetSection || document.body, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    // ---- Require a booked slot before the real Add to cart submits ----
+    // We never call requestSubmit() ourselves — we only listen in on the
+    // real submit (fired when the shopper clicks the native Add to cart
+    // button) so the theme's normal add-to-cart flow (AJAX, cart drawer,
+    // redirect, whatever it does) is completely unaffected.
+    document.addEventListener(
+      "submit",
+      function (event) {
+        var target = event.target;
+        if (!(target instanceof HTMLFormElement)) return;
+        if (target !== nearbyForm) return;
+        if (!/\/cart\/add/.test(target.getAttribute("action") || "")) return;
+
+        if (!confirmedDate || !confirmedSlot) {
+          event.preventDefault();
+          showError(strings.selectBeforeCart);
+          root.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+
+        clearError();
+        var dateInput = target.querySelector(
+          'input[name="properties[Booking Date]"]',
+        );
+        var timeInput = target.querySelector(
+          'input[name="properties[Booking Time]"]',
+        );
+        if (!dateInput) {
+          dateInput = document.createElement("input");
+          dateInput.type = "hidden";
+          dateInput.name = "properties[Booking Date]";
+          target.appendChild(dateInput);
+        }
+        if (!timeInput) {
+          timeInput = document.createElement("input");
+          timeInput.type = "hidden";
+          timeInput.name = "properties[Booking Time]";
+          target.appendChild(timeInput);
+        }
+        dateInput.value = confirmedDate;
+        timeInput.value = confirmedSlot.start;
+        // No preventDefault here — let the native add-to-cart flow proceed.
+      },
+      true,
+    );
 
     weekdaysEl.innerHTML = "";
     WEEKDAY_LABELS.forEach(function (label) {
@@ -247,49 +321,6 @@
     function closeModal() {
       overlayEl.hidden = true;
       document.body.classList.remove("booking-widget-lock-scroll");
-    }
-
-    function submitCartForm() {
-      if (!nearbyForm) return;
-
-      var dateInput = nearbyForm.querySelector(
-        'input[name="properties[Booking Date]"]',
-      );
-      var timeInput = nearbyForm.querySelector(
-        'input[name="properties[Booking Time]"]',
-      );
-      if (!dateInput) {
-        dateInput = document.createElement("input");
-        dateInput.type = "hidden";
-        dateInput.name = "properties[Booking Date]";
-        nearbyForm.appendChild(dateInput);
-      }
-      if (!timeInput) {
-        timeInput = document.createElement("input");
-        timeInput.type = "hidden";
-        timeInput.name = "properties[Booking Time]";
-        nearbyForm.appendChild(timeInput);
-      }
-      dateInput.value = confirmedDate;
-      timeInput.value = confirmedSlot.start;
-
-      if (typeof nearbyForm.requestSubmit === "function") {
-        nearbyForm.requestSubmit();
-      } else {
-        var evt = document.createEvent("Event");
-        evt.initEvent("submit", true, true);
-        nearbyForm.dispatchEvent(evt);
-        nearbyForm.submit();
-      }
-    }
-
-    function handleAddToCartClick() {
-      clearError();
-      if (!confirmedDate || !confirmedSlot) {
-        showError(strings.pleaseSelectSlot);
-        return;
-      }
-      submitCartForm();
     }
 
     function loadMonth() {
@@ -492,21 +523,19 @@
       confirmBtn.disabled = !(pendingDate && pendingSlot);
     }
 
-    function updateSummaryDisplay() {
+    function updateSelectionDisplay() {
       if (confirmedDate && confirmedSlot) {
-        triggerEl.hidden = true;
-        summaryBlockEl.hidden = false;
-        summaryBarEl.textContent =
-          formatSummaryDate(confirmedDate, locale) +
-          " | " +
-          formatTimeRangeDisplay(
+        selectionEl.hidden = false;
+        selectionEl.textContent = format(strings.selected, {
+          date: formatDateDisplay(confirmedDate, locale),
+          time: formatTimeRangeDisplay(
             confirmedSlot.start,
             confirmedSlot.end,
             timeFormat,
-          );
+          ),
+        });
       } else {
-        triggerEl.hidden = false;
-        summaryBlockEl.hidden = true;
+        selectionEl.hidden = true;
       }
     }
 
@@ -528,11 +557,7 @@
       loadMonth();
     }
 
-    openBtn.addEventListener("click", function () {
-      clearError();
-      openModal();
-    });
-    summaryBarEl.addEventListener("click", function () {
+    selectionEl.addEventListener("click", function () {
       openModal();
     });
     closeBtn.addEventListener("click", closeModal);
@@ -549,13 +574,11 @@
       if (!pendingDate || !pendingSlot) return;
       confirmedDate = pendingDate;
       confirmedSlot = pendingSlot;
-      updateSummaryDisplay();
+      updateSelectionDisplay();
       closeModal();
     });
-    cartTriggerBtn.addEventListener("click", handleAddToCartClick);
-    cartConfirmedBtn.addEventListener("click", handleAddToCartClick);
 
-    updateSummaryDisplay();
+    updateSelectionDisplay();
   }
 
   function init() {

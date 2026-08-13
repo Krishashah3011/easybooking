@@ -1,71 +1,34 @@
 .booking-widget {
-  max-width: 420px;
-  margin: 1.5rem 0;
   font-family: inherit;
 }
 
-.booking-widget__trigger,
-.booking-widget__summary-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+/* CRITICAL: without this, [hidden] elements that also have a CSS display
+   rule (like the overlay) stay visible — author styles beat the browser's
+   built-in [hidden]{display:none}. */
+.booking-widget [hidden] {
+  display: none !important;
 }
 
-.booking-widget__btn {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  border-radius: 4px;
+.booking-widget__selection {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: underline;
   cursor: pointer;
-  background: #fff;
-  color: inherit;
-  border: 1px solid rgba(0, 0, 0, 0.55);
-}
-
-.booking-widget__btn:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.booking-widget__btn--confirm {
-  border-color: #111;
-  background: #111;
-  color: #fff;
-}
-
-.booking-widget__btn--confirm:disabled {
-  background: rgba(0, 0, 0, 0.15);
-  border-color: transparent;
-  color: rgba(0, 0, 0, 0.4);
-  cursor: not-allowed;
+  margin: 0.5rem 0;
 }
 
 .booking-widget__error {
   color: #c0392b;
   font-size: 0.85rem;
-  margin: 0.25rem 0 0;
-}
-
-.booking-widget__summary-bar {
-  width: 100%;
-  text-align: left;
-  padding: 0.85rem 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.booking-widget__summary-bar:hover {
-  background: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+  margin: 0.5rem 0;
 }
 
 /* Overlay + modal */
 .booking-widget__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,33 +45,39 @@ body.booking-widget-lock-scroll {
   width: 100%;
   max-width: 700px;
   max-height: 90vh;
-  border-radius: 6px;
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
 .booking-widget__modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .booking-widget__modal-title {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 800;
   margin: 0;
 }
 
 .booking-widget__close {
   border: none;
   background: none;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   line-height: 1;
   cursor: pointer;
-  color: rgba(0, 0, 0, 0.6);
+  color: rgba(0, 0, 0, 0.7);
+  padding: 0;
+}
+
+.booking-widget__close:hover {
+  color: #111;
 }
 
 .booking-widget__modal-subheader {
@@ -121,7 +90,7 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__modal-subtitle {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
   margin: 0;
 }
@@ -159,22 +128,24 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__month-label {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .booking-widget__nav {
   background: none;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
+  border: 1.5px solid #111;
+  border-radius: 2px;
   width: 2rem;
   height: 2rem;
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
+  font-weight: 700;
 }
 
 .booking-widget__nav:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: #111;
+  color: #fff;
 }
 
 .booking-widget__status {
@@ -187,6 +158,7 @@ body.booking-widget-lock-scroll {
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
   font-size: 0.75rem;
+  font-weight: 600;
   color: rgba(0, 0, 0, 0.5);
   margin-bottom: 0.25rem;
 }
@@ -203,13 +175,14 @@ body.booking-widget-lock-scroll {
   background: none;
   border-radius: 50%;
   font-size: 0.85rem;
+  font-weight: 600;
   cursor: not-allowed;
   color: rgba(0, 0, 0, 0.3);
 }
 
 .booking-widget__day--available {
   cursor: pointer;
-  color: inherit;
+  color: #111;
 }
 
 .booking-widget__day--available:hover {
@@ -226,6 +199,7 @@ body.booking-widget-lock-scroll {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.85rem;
+  font-weight: 600;
   color: rgba(0, 0, 0, 0.7);
   margin-bottom: 0.5rem;
 }
@@ -238,7 +212,7 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__slots-label {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.85rem;
   margin: 0 0 0.5rem;
 }
@@ -256,20 +230,21 @@ body.booking-widget-lock-scroll {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
-  padding: 0.6rem 0.75rem;
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+  padding: 0.65rem 0.75rem;
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .booking-widget__slot-row:hover {
-  background: rgba(0, 0, 0, 0.03);
+  border-color: #111;
 }
 
 .booking-widget__slot-row--selected {
   border-color: #111;
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .booking-widget__slot-row--unavailable {
@@ -279,12 +254,13 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__slot-row--unavailable:hover {
-  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.2);
 }
 
 .booking-widget__slot-radio {
   margin: 0;
   flex-shrink: 0;
+  accent-color: #111;
 }
 
 .booking-widget__slot-text {
@@ -293,6 +269,7 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__slot-tag {
   font-size: 0.72rem;
+  font-weight: 600;
   color: rgba(0, 0, 0, 0.55);
   white-space: nowrap;
 }
@@ -303,14 +280,32 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__modal-footer {
   padding: 1rem 1.25rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: flex-end;
 }
 
-.booking-widget__modal-footer .booking-widget__btn--confirm {
+.booking-widget__btn--confirm {
   width: auto;
-  padding: 0.7rem 2rem;
+  padding: 0.75rem 2.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 1.5px solid #111;
+  background: #111;
+  color: #fff;
+}
+
+.booking-widget__btn--confirm:hover {
+  background: #333;
+}
+
+.booking-widget__btn--confirm:disabled {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: transparent;
+  color: rgba(0, 0, 0, 0.4);
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
