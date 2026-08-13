@@ -16,7 +16,7 @@
     spotsLeft: "{count} spots left",
     selectBeforeCart:
       "Please select a date and time before adding this to your cart.",
-    selected: "Selected: {date} at {time}",
+    selected: "{date} | {time}",
     triggerBook: "Book your slot",
     modalTitle: "Appointment - Booking",
     modalSubtitle: "Select your preferred date & time",
@@ -42,31 +42,49 @@
 
   function readStrings(root) {
     var d = root.dataset;
+
+    // Guard: if the Liquid `t` filter ever returns a missing-translation
+    // placeholder (stale deploy, cache, etc.), never show that raw string
+    // to the shopper — fall back to English instead.
+    function safe(value, fallback) {
+      if (!value) return fallback;
+      if (/^Translation missing/i.test(value)) return fallback;
+      return value;
+    }
+
     return {
-      loadingAvailability:
-        d.i18nLoadingAvailability || FALLBACK_STRINGS.loadingAvailability,
-      availabilityError:
-        d.i18nAvailabilityError || FALLBACK_STRINGS.availabilityError,
-      noAvailability: d.i18nNoAvailability || FALLBACK_STRINGS.noAvailability,
-      loadingTimes: d.i18nLoadingTimes || FALLBACK_STRINGS.loadingTimes,
-      timesError: d.i18nTimesError || FALLBACK_STRINGS.timesError,
-      noTimes: d.i18nNoTimes || FALLBACK_STRINGS.noTimes,
-      booked: d.i18nBooked || FALLBACK_STRINGS.booked,
-      spotLeft: d.i18nSpotLeft || FALLBACK_STRINGS.spotLeft,
-      spotsLeft: d.i18nSpotsLeft || FALLBACK_STRINGS.spotsLeft,
-      selectBeforeCart:
-        d.i18nSelectBeforeCart || FALLBACK_STRINGS.selectBeforeCart,
-      selected: d.i18nSelected || FALLBACK_STRINGS.selected,
-      triggerBook: d.i18nTriggerBook || FALLBACK_STRINGS.triggerBook,
-      modalTitle: d.i18nModalTitle || FALLBACK_STRINGS.modalTitle,
-      modalSubtitle: d.i18nModalSubtitle || FALLBACK_STRINGS.modalSubtitle,
-      confirm: d.i18nConfirm || FALLBACK_STRINGS.confirm,
-      close: d.i18nClose || FALLBACK_STRINGS.close,
-      durationMinutes:
-        d.i18nDurationMinutes || FALLBACK_STRINGS.durationMinutes,
-      previousMonth: d.i18nPreviousMonth || FALLBACK_STRINGS.previousMonth,
-      nextMonth: d.i18nNextMonth || FALLBACK_STRINGS.nextMonth,
-      availableTimes: d.i18nAvailableTimes || FALLBACK_STRINGS.availableTimes,
+      loadingAvailability: safe(
+        d.i18nLoadingAvailability,
+        FALLBACK_STRINGS.loadingAvailability,
+      ),
+      availabilityError: safe(
+        d.i18nAvailabilityError,
+        FALLBACK_STRINGS.availabilityError,
+      ),
+      noAvailability: safe(d.i18nNoAvailability, FALLBACK_STRINGS.noAvailability),
+      loadingTimes: safe(d.i18nLoadingTimes, FALLBACK_STRINGS.loadingTimes),
+      timesError: safe(d.i18nTimesError, FALLBACK_STRINGS.timesError),
+      noTimes: safe(d.i18nNoTimes, FALLBACK_STRINGS.noTimes),
+      booked: safe(d.i18nBooked, FALLBACK_STRINGS.booked),
+      spotLeft: safe(d.i18nSpotLeft, FALLBACK_STRINGS.spotLeft),
+      spotsLeft: safe(d.i18nSpotsLeft, FALLBACK_STRINGS.spotsLeft),
+      selectBeforeCart: safe(
+        d.i18nSelectBeforeCart,
+        FALLBACK_STRINGS.selectBeforeCart,
+      ),
+      selected: safe(d.i18nSelected, FALLBACK_STRINGS.selected),
+      triggerBook: safe(d.i18nTriggerBook, FALLBACK_STRINGS.triggerBook),
+      modalTitle: safe(d.i18nModalTitle, FALLBACK_STRINGS.modalTitle),
+      modalSubtitle: safe(d.i18nModalSubtitle, FALLBACK_STRINGS.modalSubtitle),
+      confirm: safe(d.i18nConfirm, FALLBACK_STRINGS.confirm),
+      close: safe(d.i18nClose, FALLBACK_STRINGS.close),
+      durationMinutes: safe(
+        d.i18nDurationMinutes,
+        FALLBACK_STRINGS.durationMinutes,
+      ),
+      previousMonth: safe(d.i18nPreviousMonth, FALLBACK_STRINGS.previousMonth),
+      nextMonth: safe(d.i18nNextMonth, FALLBACK_STRINGS.nextMonth),
+      availableTimes: safe(d.i18nAvailableTimes, FALLBACK_STRINGS.availableTimes),
     };
   }
 
@@ -83,7 +101,7 @@
   function formatTimeRangeDisplay(start, end, timeFormat) {
     return (
       formatTimeDisplay(start, timeFormat) +
-      " \u2013 " +
+      " - " +
       formatTimeDisplay(end, timeFormat)
     );
   }
@@ -99,13 +117,17 @@
     if (!m) return dateStr;
     var d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
     try {
-      return new Intl.DateTimeFormat(locale, {
+      var weekday = new Intl.DateTimeFormat(locale, {
         weekday: "short",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
         timeZone: "UTC",
       }).format(d);
+      var month = new Intl.DateTimeFormat(locale, {
+        month: "short",
+        timeZone: "UTC",
+      }).format(d);
+      var day = String(d.getUTCDate());
+      var year = d.getUTCFullYear();
+      return weekday + ", " + day + " " + month + " " + year;
     } catch (e) {
       return dateStr;
     }
@@ -536,6 +558,7 @@
         });
       } else {
         selectionEl.hidden = true;
+        selectionEl.textContent = "";
       }
     }
 
