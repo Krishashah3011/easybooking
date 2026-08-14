@@ -371,6 +371,15 @@ export default function BookingManagementPage() {
   const [dateFrom, setDateFrom] = useState(filters.dateFrom);
   const [dateTo, setDateTo] = useState(filters.dateTo);
 
+  const hasActiveFilters = Boolean(
+    filters.search ||
+      filters.status ||
+      filters.bookableProductId ||
+      filters.dateFrom ||
+      filters.dateTo,
+  );
+  const [filtersOpen, setFiltersOpen] = useState(hasActiveFilters);
+
   const applyFilters = () => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -383,52 +392,74 @@ export default function BookingManagementPage() {
 
   return (
     <s-page heading="Booking Management">
-      <s-section heading="Filters">
-        <s-stack direction="inline" gap="base">
-          <s-text-field
-            label="Search customer or order"
-            value={search}
-            onChange={(e: FieldChangeEvent) => setSearch(e.currentTarget.value)}
-          ></s-text-field>
-          <s-select
-            label="Status"
-            value={status}
-            onChange={(e: FieldChangeEvent) => setStatus(e.currentTarget.value)}
+      <s-section accessibilityLabel="Filters">
+        <s-stack
+          direction="inline"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="base"
+        >
+          <s-heading>Filters</s-heading>
+          <s-button
+            variant="tertiary"
+            onClick={() => setFiltersOpen((open) => !open)}
           >
-            {STATUS_OPTIONS.map((s) => (
-              <s-option key={s} value={s}>
-                {s || "All"}
-              </s-option>
-            ))}
-          </s-select>
-          <s-select
-            label="Product"
-            value={productId}
-            onChange={(e: FieldChangeEvent) =>
-              setProductId(e.currentTarget.value)
-            }
-          >
-            <s-option value="">All</s-option>
-            {products.map((p) => (
-              <s-option key={p.id} value={p.id}>
-                {p.title}
-              </s-option>
-            ))}
-          </s-select>
-          <s-date-field
-            label="From"
-            value={dateFrom}
-            onChange={(e: FieldChangeEvent) =>
-              setDateFrom(e.currentTarget.value)
-            }
-          ></s-date-field>
-          <s-date-field
-            label="To"
-            value={dateTo}
-            onChange={(e: FieldChangeEvent) => setDateTo(e.currentTarget.value)}
-          ></s-date-field>
-          <s-button onClick={applyFilters}>Apply</s-button>
+            {filtersOpen ? "Hide filters" : "Show filters"}
+          </s-button>
         </s-stack>
+        {filtersOpen && (
+          <s-stack direction="inline" gap="base">
+            <s-text-field
+              label="Search customer or order"
+              value={search}
+              onChange={(e: FieldChangeEvent) =>
+                setSearch(e.currentTarget.value)
+              }
+            ></s-text-field>
+            <s-select
+              label="Status"
+              value={status}
+              onChange={(e: FieldChangeEvent) =>
+                setStatus(e.currentTarget.value)
+              }
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <s-option key={s} value={s}>
+                  {s || "All"}
+                </s-option>
+              ))}
+            </s-select>
+            <s-select
+              label="Product"
+              value={productId}
+              onChange={(e: FieldChangeEvent) =>
+                setProductId(e.currentTarget.value)
+              }
+            >
+              <s-option value="">All</s-option>
+              {products.map((p) => (
+                <s-option key={p.id} value={p.id}>
+                  {p.title}
+                </s-option>
+              ))}
+            </s-select>
+            <s-date-field
+              label="From"
+              value={dateFrom}
+              onChange={(e: FieldChangeEvent) =>
+                setDateFrom(e.currentTarget.value)
+              }
+            ></s-date-field>
+            <s-date-field
+              label="To"
+              value={dateTo}
+              onChange={(e: FieldChangeEvent) =>
+                setDateTo(e.currentTarget.value)
+              }
+            ></s-date-field>
+            <s-button onClick={applyFilters}>Apply</s-button>
+          </s-stack>
+        )}
       </s-section>
 
       <s-section accessibilityLabel="Bookings">
