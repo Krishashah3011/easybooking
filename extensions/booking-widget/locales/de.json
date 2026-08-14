@@ -14,6 +14,12 @@
     "spot_left": "Noch 1 Platz verfügbar",
     "spots_left": "Noch {count} Plätze verfügbar",
     "select_before_cart": "Bitte wähle ein Datum und eine Uhrzeit aus, bevor du dies in den Warenkorb legst.",
-    "selected": "Ausgewählt: {date} um {time}"
+    "selected": "Ausgewählt: {date} um {time}",
+    "trigger_book": "Termin buchen",
+    "modal_title": "Termin - Buchung",
+    "modal_subtitle": "Wählen Sie Ihr bevorzugtes Datum & Uhrzeit",
+    "confirm": "Bestätigen",
+    "close": "Schließen",
+    "duration_minutes": "{count} Min."
   }
 }

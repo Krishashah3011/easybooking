@@ -1,0 +1,11 @@
+{% comment %}
+  Custom booking fields container.
+
+  Filled in dynamically by booking-widget.js once a date and time slot
+  have been picked, with whatever extra questions the merchant has
+  defined on the app's Custom Fields admin page (e.g. "Note for your
+  appointment"). None of these are required to complete a booking —
+  they're optional, collected alongside the date/time selection.
+{% endcomment %}
+
+<div class="booking-widget__fields-pane" data-booking-custom-fields hidden></div>

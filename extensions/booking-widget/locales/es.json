@@ -14,6 +14,12 @@
     "spot_left": "Queda 1 plaza",
     "spots_left": "Quedan {count} plazas",
     "select_before_cart": "Selecciona una fecha y una hora antes de añadir esto al carrito.",
-    "selected": "Seleccionado: {date} a las {time}"
+    "selected": "Seleccionado: {date} a las {time}",
+    "trigger_book": "Reserva tu turno",
+    "modal_title": "Cita - Reserva",
+    "modal_subtitle": "Selecciona la fecha y hora que prefieras",
+    "confirm": "Confirmar",
+    "close": "Cerrar",
+    "duration_minutes": "{count} min"
   }
 }

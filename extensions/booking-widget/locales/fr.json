@@ -14,6 +14,12 @@
     "spot_left": "Il reste 1 place",
     "spots_left": "Il reste {count} places",
     "select_before_cart": "Veuillez sélectionner une date et une heure avant d'ajouter ceci au panier.",
-    "selected": "Sélectionné : {date} à {time}"
+    "selected": "Sélectionné : {date} à {time}",
+    "trigger_book": "Réserver votre créneau",
+    "modal_title": "Rendez-vous - Réservation",
+    "modal_subtitle": "Choisissez la date et l'heure de votre choix",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "duration_minutes": "{count} min"
   }
 }

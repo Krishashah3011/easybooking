@@ -183,9 +183,11 @@ export default function NewBookingPage() {
   const [date, setDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [customerName, setCustomerName] = useState("");
+  const [nameTouched, setNameTouched] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const availableDates: string[] =
     availabilityFetcher.data?.intent === "loadAvailability" &&
@@ -227,9 +229,11 @@ export default function NewBookingPage() {
       shopify.toast.show("Booking created");
       setSelectedSlot(null);
       setCustomerName("");
+      setNameTouched(false);
       setCustomerEmail("");
       setEmailTouched(false);
       setCustomerPhone("");
+      setSubmitAttempted(false);
       loadAvailability(bookableProductId, viewYear, viewMonth);
       if (date) {
         slotsFetcher.submit(
@@ -263,8 +267,39 @@ export default function NewBookingPage() {
     );
   };
 
+  const isValidEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const nameError =
+    (nameTouched || submitAttempted) && !customerName.trim()
+      ? "Name is required"
+      : undefined;
+
+  const emailError =
+    (emailTouched || submitAttempted) && !customerEmail.trim()
+      ? "Email is required"
+      : (emailTouched || submitAttempted) &&
+          customerEmail !== "" &&
+          !isValidEmail(customerEmail)
+        ? "Please enter a valid email address"
+        : undefined;
+
   const handleCreateBooking = () => {
-    if (!bookableProductId || !date || !selectedSlot || !customerName || !customerEmail) return;
+    setSubmitAttempted(true);
+    setNameTouched(true);
+    setEmailTouched(true);
+
+    if (
+      !bookableProductId ||
+      !date ||
+      !selectedSlot ||
+      !customerName.trim() ||
+      !customerEmail.trim() ||
+      !isValidEmail(customerEmail)
+    ) {
+      return;
+    }
+
     createFetcher.submit(
       {
         intent: "createBooking",
@@ -425,21 +460,17 @@ export default function NewBookingPage() {
               label="Name"
               required
               value={customerName}
+              error={nameError}
               onChange={(e: FieldChangeEvent) =>
                 setCustomerName(e.currentTarget.value)
               }
+              onBlur={() => setNameTouched(true)}
             ></s-text-field>
               <s-text-field
                 label="Email"
                 required
                 value={customerEmail}
-                error={
-                  emailTouched &&
-                  customerEmail !== "" &&
-                  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)
-                    ? "Please enter a valid email address"
-                    : undefined
-                }
+                error={emailError}
                 onChange={(e: FieldChangeEvent) =>
                   setCustomerEmail(e.currentTarget.value)
                 }
@@ -456,11 +487,20 @@ export default function NewBookingPage() {
 
           {createError && <s-banner tone="critical">{createError}</s-banner>}
 
-          <s-button
-            variant="primary"
-            onClick={handleCreateBooking}
-            {...(!customerName || !customerEmail ? { disabled: false } : {})}
-          >
+          {submitAttempted && (nameError || emailError) && (
+            <s-banner tone="critical">
+              Please fix the highlighted fields before creating this booking.
+            </s-banner>
+          )}
+
+          {/*
+            Deliberately never disabled: disabling it would silently block
+            the click instead of letting the user trigger validation and
+            see exactly what's missing. handleCreateBooking itself checks
+            required fields and surfaces errors on the fields + banner
+            above instead of submitting.
+          */}
+          <s-button variant="primary" onClick={handleCreateBooking}>
             Create booking
           </s-button>
         </s-section>

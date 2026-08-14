@@ -154,6 +154,7 @@
     var prevBtn = root.querySelector("[data-booking-prev]");
     var nextBtn = root.querySelector("[data-booking-next]");
     var confirmBtn = root.querySelector("[data-booking-confirm]");
+    var customFieldsEl = root.querySelector("[data-booking-custom-fields]");
 
     var today = new Date();
     var viewYear = today.getUTCFullYear();
@@ -165,6 +166,12 @@
     var pendingSlot = null;
     var confirmedDate = null;
     var confirmedSlot = null;
+
+    // Custom field definitions fetched once from the app, and the
+    // shopper's current answers, keyed by fieldKey. None are required —
+    // these are optional notes collected alongside the booking.
+    var customFields = [];
+    var customFieldValues = {};
 
     var widgetSection = root.closest(".shopify-section");
 
@@ -263,6 +270,28 @@
       }
       dateInput.value = confirmedDate;
       timeInput.value = confirmedSlot.start;
+
+      customFields.forEach(function (field) {
+        var value = customFieldValues[field.fieldKey];
+        if (!value) return;
+        var inputName = "properties[" + field.label + "]";
+        var input = form.querySelector(
+          'input[name="' + cssEscape(inputName) + '"]',
+        );
+        if (!input) {
+          input = document.createElement("input");
+          input.type = "hidden";
+          input.name = inputName;
+          form.appendChild(input);
+        }
+        input.value = value;
+      });
+    }
+
+    function cssEscape(value) {
+      return window.CSS && CSS.escape
+        ? CSS.escape(value)
+        : value.replace(/["\\\]]/g, "\\$&");
     }
 
     // Returns true if the add-to-cart attempt should be BLOCKED.
@@ -309,6 +338,7 @@
     });
 
     timezoneEl.textContent = timezoneLabel();
+    loadCustomFields();
 
     function setStatus(container, message) {
       container.innerHTML = "";
@@ -316,6 +346,81 @@
       p.className = "booking-widget__status";
       p.textContent = message;
       container.appendChild(p);
+    }
+
+    function loadCustomFields() {
+      fetch(proxyBase + "/custom-fields")
+        .then(function (res) {
+          return res.json();
+        })
+        .then(function (data) {
+          customFields = data.fields || [];
+          renderCustomFields();
+        })
+        .catch(function () {
+          // Non-critical — booking still works without the extra
+          // questions, so fail silently rather than blocking the widget.
+          customFields = [];
+        });
+    }
+
+    function renderCustomFields() {
+      customFieldsEl.innerHTML = "";
+
+      if (customFields.length === 0) {
+        customFieldsEl.hidden = true;
+        return;
+      }
+
+      customFields.forEach(function (field) {
+        var wrapper = document.createElement("div");
+        wrapper.className = "booking-widget__field";
+
+        var label = document.createElement("label");
+        label.className = "booking-widget__field-label";
+        label.textContent = field.label;
+        var inputId = "booking-field-" + root.dataset.productId + "-" + field.fieldKey;
+        label.setAttribute("for", inputId);
+        wrapper.appendChild(label);
+
+        var input;
+        if (field.type === "TEXTAREA") {
+          input = document.createElement("textarea");
+          input.rows = 3;
+        } else if (field.type === "SELECT") {
+          input = document.createElement("select");
+          var placeholderOpt = document.createElement("option");
+          placeholderOpt.value = "";
+          placeholderOpt.textContent = "";
+          input.appendChild(placeholderOpt);
+          (field.options || []).forEach(function (optionValue) {
+            var opt = document.createElement("option");
+            opt.value = optionValue;
+            opt.textContent = optionValue;
+            input.appendChild(opt);
+          });
+        } else {
+          input = document.createElement("input");
+          input.type = field.type === "NUMBER" ? "number" : "text";
+        }
+
+        input.id = inputId;
+        input.className = "booking-widget__field-input";
+        input.value = customFieldValues[field.fieldKey] || "";
+        input.addEventListener("input", function () {
+          customFieldValues[field.fieldKey] = input.value;
+        });
+        input.addEventListener("change", function () {
+          customFieldValues[field.fieldKey] = input.value;
+        });
+
+        wrapper.appendChild(input);
+        customFieldsEl.appendChild(wrapper);
+      });
+
+      // Only shown once a time slot is picked — asked as the natural next
+      // step after date + time, same as the confirm button appearing.
+      customFieldsEl.hidden = !pendingSlot;
     }
 
     function showError(message) {
@@ -334,6 +439,7 @@
       overlayEl.hidden = false;
       document.body.classList.add("booking-widget-lock-scroll");
       updateConfirmButton();
+      renderCustomFields();
       loadMonth();
       if (pendingDate) {
         loadSlots(pendingDate);
@@ -433,6 +539,7 @@
       pendingSlot = null;
       renderCalendar();
       updateConfirmButton();
+      renderCustomFields();
       loadSlots(dateStr);
     }
 
@@ -528,6 +635,7 @@
           pendingSlot = slot;
           renderSlots();
           updateConfirmButton();
+          renderCustomFields();
         });
 
         slotListEl.appendChild(row);
@@ -568,6 +676,7 @@
       durationEl.hidden = true;
       setStatus(slotListEl, strings.noTimes);
       updateConfirmButton();
+      renderCustomFields();
       loadMonth();
     }
 
