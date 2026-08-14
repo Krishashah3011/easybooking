@@ -89,7 +89,6 @@ export default function BookingSettingsPage() {
         bookingStartDate: values.bookingStartDate ?? "",
         bookingEndDate: values.bookingEndDate ?? "",
         emailFromName: values.emailFromName ?? "",
-        timeFormat: values.timeFormat,
       },
       { method: "POST" }, 
     );
@@ -236,24 +235,6 @@ export default function BookingSettingsPage() {
             }
           ></s-date-field>
         </s-stack>
-      </s-section>
-
-      <s-section heading="Time format">
-        <s-paragraph>
-          Controls how booking times are displayed across the admin and
-          your storefront's booking widget. This only affects display —
-          nothing about how bookings are stored or matched changes.
-        </s-paragraph>
-        <s-select
-          label="Time format"
-          value={values.timeFormat}
-          onChange={(e: FieldChangeEvent) =>
-            setField("timeFormat", e.currentTarget.value as "12h" | "24h")
-          }
-        >
-          <s-option value="24h">24-hour (14:00)</s-option>
-          <s-option value="12h">12-hour (2:00 PM)</s-option>
-        </s-select>
       </s-section>
 
       <s-section heading="Email notifications">

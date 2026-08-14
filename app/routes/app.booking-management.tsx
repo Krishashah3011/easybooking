@@ -10,7 +10,6 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { listBookableProducts } from "../models/bookableProduct.server";
 import { listCustomFields } from "../models/customBookingField.server";
-import { getBookingSettings } from "../models/bookingSettings.server";
 import {
   cancelBooking,
   listBookings,
@@ -20,11 +19,7 @@ import {
   type ListBookingsFilters,
 } from "../models/booking.server";
 import type { TimeSlot } from "../models/slotAvailability.server";
-import {
-  formatDateDisplay,
-  formatTimeRangeDisplay,
-  type TimeFormat,
-} from "../utils/format";
+import { formatDateDisplay, formatTimeRangeDisplay } from "../utils/format";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -54,11 +49,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     dateTo,
   };
 
-  const [bookings, products, customFields, shopSettings] = await Promise.all([
+  const [bookings, products, customFields] = await Promise.all([
     listBookings(session.shop, filters),
     listBookableProducts(session.shop),
     listCustomFields(session.shop),
-    getBookingSettings(session.shop),
   ]);
 
   return {
@@ -67,7 +61,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     customFieldLabels: Object.fromEntries(
       customFields.map((f) => [f.fieldKey, f.label]),
     ) as Record<string, string>,
-    timeFormat: (shopSettings.timeFormat === "12h" ? "12h" : "24h") as TimeFormat,
     filters: {
       status: status ?? "",
       bookableProductId: bookableProductId ?? "",
@@ -144,11 +137,9 @@ function CustomFieldAnswers({
 function BookingRow({
   booking,
   customFieldLabels,
-  timeFormat,
 }: {
   booking: BookingWithProductTitle;
   customFieldLabels: Record<string, string>;
-  timeFormat: TimeFormat;
 }) {
   const cancelFetcher = useFetcher<typeof action>();
   const rescheduleFetcher = useFetcher<typeof action>();
@@ -282,7 +273,7 @@ function BookingRow({
                     ? { disabled: true }
                     : {})}
                 >
-                  {formatTimeRangeDisplay(slot.start, slot.end, timeFormat)}
+                  {formatTimeRangeDisplay(slot.start, slot.end)}
                   {!slot.available && slot.start !== booking.slotStart
                     ? " (booked)"
                     : ""}
@@ -291,7 +282,7 @@ function BookingRow({
             </s-select>
           </s-stack>
         ) : (
-          `${formatDateDisplay(booking.date)} ${formatTimeRangeDisplay(booking.slotStart, booking.slotEnd, timeFormat)}`
+          `${formatDateDisplay(booking.date)} ${formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}`
         )}
       </s-table-cell>
       <s-table-cell>
@@ -345,7 +336,7 @@ function BookingRow({
 }
 
 export default function BookingManagementPage() {
-  const { bookings, products, customFieldLabels, filters, timeFormat } =
+  const { bookings, products, customFieldLabels, filters } =
     useLoaderData<typeof loader>();
 
   const [search, setSearch] = useState(filters.search);
@@ -433,7 +424,6 @@ export default function BookingManagementPage() {
                   key={booking.id}
                   booking={booking}
                   customFieldLabels={customFieldLabels}
-                  timeFormat={timeFormat}
                 />
               ))}
             </s-table-body>

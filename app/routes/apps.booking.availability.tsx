@@ -3,7 +3,6 @@ import { authenticate } from "../shopify.server";
 import { resolveBookingContext } from "../models/booking-context.server";
 import { getAvailableDatesInMonth } from "../models/slotAvailability.server";
 import { getBookedCountsInRange } from "../models/booking.server";
-import { getBookingSettings } from "../models/bookingSettings.server";
 
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -27,12 +26,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return Response.json({ error: "month must be 1-12" }, { status: 400 });
   }
 
-  const shopSettings = await getBookingSettings(session.shop);
-  const timeFormat = shopSettings.timeFormat === "12h" ? "12h" : "24h";
-
   const context = await resolveBookingContext(session.shop, productId);
   if (!context) {
-    return Response.json({ availableDates: [], timeFormat });
+    return Response.json({ availableDates: [] });
   }
 
   const monthStart = new Date(Date.UTC(year, month - 1, 1));
@@ -53,5 +49,5 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     bookedCounts,
   );
 
-  return Response.json({ availableDates, timeFormat });
+  return Response.json({ availableDates });
 };

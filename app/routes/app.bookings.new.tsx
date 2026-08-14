@@ -23,7 +23,7 @@ import {
   listProductBlackoutDates,
 } from "../models/blackoutDate.server";
 import { createManualBooking, getBookedCountsInRange } from "../models/booking.server";
-import { formatTimeRangeDisplay, type TimeFormat } from "../utils/format";
+import { formatTimeRangeDisplay } from "../utils/format";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -34,14 +34,10 @@ const MONTH_NAMES = [
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  const [allProducts, shopSettings] = await Promise.all([
-    listBookableProducts(session.shop),
-    getBookingSettings(session.shop),
-  ]);
+  const allProducts = await listBookableProducts(session.shop);
   const enabledProducts = allProducts.filter((p) => p.isEnabled);
   return {
     products: enabledProducts.map((p) => ({ id: p.id, title: p.productTitle })),
-    timeFormat: (shopSettings.timeFormat === "12h" ? "12h" : "24h") as TimeFormat,
   };
 };
 
@@ -171,7 +167,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function NewBookingPage() {
-  const { products, timeFormat } = useLoaderData<typeof loader>();
+  const { products } = useLoaderData<typeof loader>();
   const availabilityFetcher = useFetcher<typeof action>();
   const slotsFetcher = useFetcher<typeof action>();
   const createFetcher = useFetcher<typeof action>();
@@ -413,7 +409,7 @@ export default function NewBookingPage() {
                     if (slot.available) setSelectedSlot(slot);
                   }}
                 >
-                  {formatTimeRangeDisplay(slot.start, slot.end, timeFormat)}
+                  {formatTimeRangeDisplay(slot.start, slot.end)}
                   {!slot.available ? " (Booked)" : ""}
                 </s-button>
               ))}

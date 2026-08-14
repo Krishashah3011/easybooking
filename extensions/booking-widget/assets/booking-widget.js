@@ -88,22 +88,8 @@
     };
   }
 
-  function formatTimeDisplay(time, timeFormat) {
-    var m = /^(\d{2}):(\d{2})$/.exec(time);
-    if (!m || timeFormat !== "12h") return time;
-    var hour24 = Number(m[1]);
-    var minute = m[2];
-    var period = hour24 >= 12 ? "PM" : "AM";
-    var hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-    return hour12 + ":" + minute + " " + period;
-  }
-
-  function formatTimeRangeDisplay(start, end, timeFormat) {
-    return (
-      formatTimeDisplay(start, timeFormat) +
-      " - " +
-      formatTimeDisplay(end, timeFormat)
-    );
+  function formatTimeRangeDisplay(start, end) {
+    return start + " - " + end;
   }
 
   function slotDurationMinutes(slot) {
@@ -112,25 +98,12 @@
     return e[0] * 60 + e[1] - (s[0] * 60 + s[1]);
   }
 
-  function formatDateDisplay(dateStr, locale) {
+  // Dates are always shown as DD-MM-YYYY across the whole store — not
+  // locale-dependent, not configurable. Kept deliberately simple.
+  function formatDateDisplay(dateStr) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
     if (!m) return dateStr;
-    var d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-    try {
-      var weekday = new Intl.DateTimeFormat(locale, {
-        weekday: "short",
-        timeZone: "UTC",
-      }).format(d);
-      var month = new Intl.DateTimeFormat(locale, {
-        month: "short",
-        timeZone: "UTC",
-      }).format(d);
-      var day = String(d.getUTCDate());
-      var year = d.getUTCFullYear();
-      return weekday + ", " + day + " " + month + " " + year;
-    } catch (e) {
-      return dateStr;
-    }
+    return m[3] + "-" + m[2] + "-" + m[1];
   }
 
   function timezoneLabel() {
@@ -152,7 +125,6 @@
     var proxyBase = root.dataset.proxyBase;
     var locale = root.dataset.locale || "en";
     var strings = readStrings(root);
-    var timeFormat = "24h";
     var monthFormatter;
     try {
       monthFormatter = new Intl.DateTimeFormat(locale, {
@@ -394,9 +366,6 @@
         })
         .then(function (data) {
           availableDates = data.availableDates || [];
-          if (data.timeFormat === "12h" || data.timeFormat === "24h") {
-            timeFormat = data.timeFormat;
-          }
           renderCalendar();
         })
         .catch(function () {
@@ -516,11 +485,7 @@
 
         var textWrap = document.createElement("span");
         textWrap.className = "booking-widget__slot-text";
-        textWrap.textContent = formatTimeRangeDisplay(
-          slot.start,
-          slot.end,
-          timeFormat,
-        );
+        textWrap.textContent = formatTimeRangeDisplay(slot.start, slot.end);
 
         if (slot.available === false) {
           row.classList.add("booking-widget__slot-row--unavailable");
@@ -578,12 +543,8 @@
         selectionEl.hidden = false;
         triggerBtn.hidden = true;
         selectionEl.textContent = format(strings.selected, {
-          date: formatDateDisplay(confirmedDate, locale),
-          time: formatTimeRangeDisplay(
-            confirmedSlot.start,
-            confirmedSlot.end,
-            timeFormat,
-          ),
+          date: formatDateDisplay(confirmedDate),
+          time: formatTimeRangeDisplay(confirmedSlot.start, confirmedSlot.end),
         });
       } else {
         selectionEl.hidden = true;

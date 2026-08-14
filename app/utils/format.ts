@@ -1,5 +1,9 @@
-export type TimeFormat = "12h" | "24h";
-
+/**
+ * Booking dates are always displayed as DD-MM-YYYY across the whole app —
+ * admin, storefront widget, and emails — regardless of shop locale. Not
+ * configurable by design; keeping one fixed format everywhere avoids the
+ * inconsistency that came from partially wiring a per-shop setting.
+ */
 export function formatDateDisplay(dateStr: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
   if (!match) return dateStr;
@@ -7,22 +11,7 @@ export function formatDateDisplay(dateStr: string): string {
   return `${day}-${month}-${year}`;
 }
 
-export function formatTimeDisplay(time: string, format: TimeFormat): string {
-  const match = /^(\d{2}):(\d{2})$/.exec(time);
-  if (!match) return time;
-  if (format === "24h") return time;
-
-  const hour24 = Number(match[1]);
-  const minute = match[2];
-  const period = hour24 >= 12 ? "PM" : "AM";
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-  return `${hour12}:${minute} ${period}`;
-}
-
-export function formatTimeRangeDisplay(
-  start: string,
-  end: string,
-  format: TimeFormat,
-): string {
-  return `${formatTimeDisplay(start, format)} \u2013 ${formatTimeDisplay(end, format)}`;
+/** Times are always shown as stored — 24-hour "HH:mm" — no format setting. */
+export function formatTimeRangeDisplay(start: string, end: string): string {
+  return `${start} \u2013 ${end}`;
 }

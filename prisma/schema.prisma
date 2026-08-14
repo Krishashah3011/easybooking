@@ -41,9 +41,6 @@ model BookingSettings {
   bookingStartDate DateTime?
   bookingEndDate   DateTime?
   emailFromName String?
-  /// "12h" or "24h" — how booking times are DISPLAYED across admin/storefront.
-  /// Storage/API times are always 24h "HH:mm" regardless of this setting.
-  timeFormat String @default("24h")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

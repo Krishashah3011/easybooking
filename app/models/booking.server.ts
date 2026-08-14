@@ -13,7 +13,7 @@ import {
   cancellationEmail,
 } from "./emailTemplates.server";
 import { listCustomFields } from "./customBookingField.server";
-import { formatDateDisplay, formatTimeDisplay } from "../utils/format";
+import { formatDateDisplay } from "../utils/format";
 
 const ACTIVE_BOOKING_STATUSES = ["CONFIRMED", "RESCHEDULED"] as const;
 
@@ -127,15 +127,12 @@ export async function getBookedCountsInRange(
 
 async function getShopEmailSettings(
   shop: string,
-): Promise<{ fromName: string | null; timeFormat: "12h" | "24h" }> {
+): Promise<{ fromName: string | null }> {
   try {
     const settings = await getBookingSettings(shop);
-    return {
-      fromName: settings.emailFromName,
-      timeFormat: settings.timeFormat === "12h" ? "12h" : "24h",
-    };
+    return { fromName: settings.emailFromName };
   } catch {
-    return { fromName: null, timeFormat: "24h" };
+    return { fromName: null };
   }
 }
 
@@ -146,13 +143,13 @@ async function sendBookingConfirmation(
 ): Promise<void> {
   if (!booking.customerEmail) return;
 
-  const { fromName, timeFormat } = await getShopEmailSettings(shop);
+  const { fromName } = await getShopEmailSettings(shop);
   const { subject, text, html } = confirmationEmail({
     productTitle,
     customerName: booking.customerName,
     date: formatDateDisplay(booking.date),
-    slotStart: formatTimeDisplay(booking.slotStart, timeFormat),
-    slotEnd: formatTimeDisplay(booking.slotEnd, timeFormat),
+    slotStart: booking.slotStart,
+    slotEnd: booking.slotEnd,
     shopName: shop,
   });
 
@@ -178,13 +175,13 @@ async function sendBookingCancellation(
 ): Promise<void> {
   if (!booking.customerEmail) return;
 
-  const { fromName, timeFormat } = await getShopEmailSettings(shop);
+  const { fromName } = await getShopEmailSettings(shop);
   const { subject, text, html } = cancellationEmail({
     productTitle,
     customerName: booking.customerName,
     date: formatDateDisplay(booking.date),
-    slotStart: formatTimeDisplay(booking.slotStart, timeFormat),
-    slotEnd: formatTimeDisplay(booking.slotEnd, timeFormat),
+    slotStart: booking.slotStart,
+    slotEnd: booking.slotEnd,
     shopName: shop,
   });
 
@@ -696,13 +693,13 @@ export async function sendDueReminders(
       continue;
     }
 
-    const { fromName, timeFormat } = await getShopEmailSettings(booking.shop);
+    const { fromName } = await getShopEmailSettings(booking.shop);
     const { subject, text, html } = reminderEmail({
       productTitle: booking.bookableProduct.productTitle,
       customerName: booking.customerName,
       date: formatDateDisplay(booking.date),
-      slotStart: formatTimeDisplay(booking.slotStart, timeFormat),
-      slotEnd: formatTimeDisplay(booking.slotEnd, timeFormat),
+      slotStart: booking.slotStart,
+      slotEnd: booking.slotEnd,
       shopName: booking.shop,
     });
 

@@ -5,8 +5,6 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { listBookableProducts } from "../models/bookableProduct.server";
 import { getBookingReportData } from "../models/bookingReports.server";
-import { getBookingSettings } from "../models/bookingSettings.server";
-import { formatTimeDisplay, type TimeFormat } from "../utils/format";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -18,16 +16,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const dateFrom = url.searchParams.get("dateFrom") || undefined;
   const dateTo = url.searchParams.get("dateTo") || undefined;
 
-  const [report, products, shopSettings] = await Promise.all([
+  const [report, products] = await Promise.all([
     getBookingReportData(session.shop, { bookableProductId, dateFrom, dateTo }),
     listBookableProducts(session.shop),
-    getBookingSettings(session.shop),
   ]);
 
   return {
     report,
     products: products.map((p) => ({ id: p.id, title: p.productTitle })),
-    timeFormat: (shopSettings.timeFormat === "12h" ? "12h" : "24h") as TimeFormat,
     filters: {
       bookableProductId: bookableProductId ?? "",
       dateFrom: dateFrom ?? "",
@@ -93,12 +89,9 @@ function BarList({
 }
 
 export default function BookingReportsPage() {
-  const { report, products, filters, timeFormat } = useLoaderData<typeof loader>();
+  const { report, products, filters } = useLoaderData<typeof loader>();
 
-  const bookingsByHourDisplay = report.bookingsByHour.map((row) => ({
-    ...row,
-    hour: formatTimeDisplay(row.hour, timeFormat),
-  }));
+  const bookingsByHourDisplay = report.bookingsByHour;
 
   const [productId, setProductId] = useState(filters.bookableProductId);
   const [dateFrom, setDateFrom] = useState(filters.dateFrom);
