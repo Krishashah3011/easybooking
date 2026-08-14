@@ -20,6 +20,14 @@
     "modal_subtitle": "Select your preferred date & time",
     "confirm": "Confirm",
     "close": "Close",
-    "duration_minutes": "{count} Mins"
+    "duration_minutes": "{count} Mins",
+    "already_booked": "You already have this booked for this product:",
+    "ask_more_message": "{date} | {time} added. Want to book another slot for this product?",
+    "add_another_slot": "Yes, add another slot",
+    "done_add_to_cart": "No, I'm done",
+    "remove_slot": "Remove this slot",
+    "add_another_slot_link": "+ Add another slot",
+    "multi_add_error": "Something went wrong adding your slots to cart. Please try again.",
+    "adding_to_cart": "Adding your slots to cart…"
   }
 }

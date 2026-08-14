@@ -24,9 +24,23 @@
   data-i18n-previous-month="{{ 'booking_widget.previous_month' | t }}"
   data-i18n-next-month="{{ 'booking_widget.next_month' | t }}"
   data-i18n-available-times="{{ 'booking_widget.available_times' | t }}"
+  data-i18n-already-booked="{{ 'booking_widget.already_booked' | t }}"
+  data-i18n-ask-more-message="{{ 'booking_widget.ask_more_message' | t }}"
+  data-i18n-add-another-slot="{{ 'booking_widget.add_another_slot' | t }}"
+  data-i18n-done-add-to-cart="{{ 'booking_widget.done_add_to_cart' | t }}"
+  data-i18n-remove-slot="{{ 'booking_widget.remove_slot' | t }}"
+  data-i18n-add-another-slot-link="{{ 'booking_widget.add_another_slot_link' | t }}"
+  data-i18n-multi-add-error="{{ 'booking_widget.multi_add_error' | t }}"
+  data-i18n-adding-to-cart="{{ 'booking_widget.adding_to_cart' | t }}"
 >
-  <p class="booking-widget__selection" data-booking-selection hidden></p>
+  <div class="booking-widget__cart-reminder" data-booking-cart-reminder hidden>
+    <p class="booking-widget__cart-reminder-title" data-booking-cart-reminder-title></p>
+    <ul class="booking-widget__cart-reminder-list" data-booking-cart-reminder-list></ul>
+  </div>
+
+  <div class="booking-widget__selection" data-booking-selection hidden></div>
   <button type="button" class="booking-widget__trigger" data-booking-trigger>{{ 'booking_widget.trigger_book' | t }}</button>
+  <p class="booking-widget__multi-add-status" data-booking-multi-add-status hidden></p>
   <p class="booking-widget__error" data-booking-error hidden></p>
 
   <!-- Popup modal -->
@@ -42,7 +56,7 @@
         <span class="booking-widget__timezone" data-booking-timezone></span>
       </div>
 
-      <div class="booking-widget__modal-body">
+      <div class="booking-widget__modal-body" data-booking-modal-body>
         <div class="booking-widget__calendar-pane">
           <div class="booking-widget__header">
             <button type="button" class="booking-widget__nav" data-booking-prev aria-label="{{ 'booking_widget.previous_month' | t }}">&lsaquo;</button>
@@ -68,9 +82,21 @@
         </div>
       </div>
 
+      <div class="booking-widget__ask-more" data-booking-ask-more hidden>
+        <p class="booking-widget__ask-more-message" data-booking-ask-more-message></p>
+        <div class="booking-widget__ask-more-actions">
+          <button type="button" class="booking-widget__btn booking-widget__btn--secondary" data-booking-ask-more-no>
+            {{ 'booking_widget.done_add_to_cart' | t }}
+          </button>
+          <button type="button" class="booking-widget__btn booking-widget__btn--confirm" data-booking-ask-more-yes>
+            {{ 'booking_widget.add_another_slot' | t }}
+          </button>
+        </div>
+      </div>
+
       {% render 'booking-widget-custom-fields' %}
 
-      <div class="booking-widget__modal-footer">
+      <div class="booking-widget__modal-footer" data-booking-modal-footer>
         <button type="button" class="booking-widget__btn booking-widget__btn--confirm" data-booking-confirm disabled>
           {{ 'booking_widget.confirm' | t }}
         </button>

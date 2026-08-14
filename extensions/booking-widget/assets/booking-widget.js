@@ -26,6 +26,16 @@
     previousMonth: "Previous month",
     nextMonth: "Next month",
     availableTimes: "Available times",
+    alreadyBooked: "You already have this booked for this product:",
+    askMoreMessage:
+      "{date} | {time} added. Want to book another slot for this product?",
+    addAnotherSlot: "Yes, add another slot",
+    doneAddToCart: "No, I'm done",
+    removeSlot: "Remove this slot",
+    addAnotherSlotLink: "+ Add another slot",
+    multiAddError:
+      "Something went wrong adding your slots to cart. Please try again.",
+    addingToCart: "Adding your slots to cart…",
   };
 
   function pad(n) {
@@ -85,6 +95,17 @@
       previousMonth: safe(d.i18nPreviousMonth, FALLBACK_STRINGS.previousMonth),
       nextMonth: safe(d.i18nNextMonth, FALLBACK_STRINGS.nextMonth),
       availableTimes: safe(d.i18nAvailableTimes, FALLBACK_STRINGS.availableTimes),
+      alreadyBooked: safe(d.i18nAlreadyBooked, FALLBACK_STRINGS.alreadyBooked),
+      askMoreMessage: safe(d.i18nAskMoreMessage, FALLBACK_STRINGS.askMoreMessage),
+      addAnotherSlot: safe(d.i18nAddAnotherSlot, FALLBACK_STRINGS.addAnotherSlot),
+      doneAddToCart: safe(d.i18nDoneAddToCart, FALLBACK_STRINGS.doneAddToCart),
+      removeSlot: safe(d.i18nRemoveSlot, FALLBACK_STRINGS.removeSlot),
+      addAnotherSlotLink: safe(
+        d.i18nAddAnotherSlotLink,
+        FALLBACK_STRINGS.addAnotherSlotLink,
+      ),
+      multiAddError: safe(d.i18nMultiAddError, FALLBACK_STRINGS.multiAddError),
+      addingToCart: safe(d.i18nAddingToCart, FALLBACK_STRINGS.addingToCart),
     };
   }
 
@@ -142,10 +163,20 @@
 
     var selectionEl = root.querySelector("[data-booking-selection]");
     var errorEl = root.querySelector("[data-booking-error]");
+    var multiAddStatusEl = root.querySelector("[data-booking-multi-add-status]");
+    var cartReminderEl = root.querySelector("[data-booking-cart-reminder]");
+    var cartReminderTitleEl = root.querySelector(
+      "[data-booking-cart-reminder-title]",
+    );
+    var cartReminderListEl = root.querySelector(
+      "[data-booking-cart-reminder-list]",
+    );
 
     var overlayEl = root.querySelector("[data-booking-overlay]");
     var closeBtn = root.querySelector("[data-booking-close]");
     var timezoneEl = root.querySelector("[data-booking-timezone]");
+    var modalBodyEl = root.querySelector("[data-booking-modal-body]");
+    var modalFooterEl = root.querySelector("[data-booking-modal-footer]");
     var calendarEl = root.querySelector("[data-booking-calendar]");
     var weekdaysEl = root.querySelector("[data-booking-weekdays]");
     var monthLabelEl = root.querySelector("[data-booking-month-label]");
@@ -155,6 +186,10 @@
     var nextBtn = root.querySelector("[data-booking-next]");
     var confirmBtn = root.querySelector("[data-booking-confirm]");
     var customFieldsEl = root.querySelector("[data-booking-custom-fields]");
+    var askMoreEl = root.querySelector("[data-booking-ask-more]");
+    var askMoreMessageEl = root.querySelector("[data-booking-ask-more-message]");
+    var askMoreYesBtn = root.querySelector("[data-booking-ask-more-yes]");
+    var askMoreNoBtn = root.querySelector("[data-booking-ask-more-no]");
 
     var today = new Date();
     var viewYear = today.getUTCFullYear();
@@ -164,8 +199,15 @@
 
     var pendingDate = null;
     var pendingSlot = null;
-    var confirmedDate = null;
-    var confirmedSlot = null;
+    // Slots the shopper has confirmed in this modal session but hasn't
+    // added to cart yet — can be more than one if they chose "add
+    // another slot" after confirming. Each entry is { date, slot }.
+    var confirmedSlots = [];
+
+    // The numeric product id, pulled out of the GID we already use for
+    // the availability/slots API calls, so we can match this product's
+    // line items in the Shopify cart (cart.js only exposes numeric ids).
+    var numericProductId = (productId || "").split("/").pop();
 
     // Custom field definitions fetched once from the app, and the
     // shopper's current answers, keyed by fieldKey. None are required —
@@ -249,7 +291,7 @@
     // never call requestSubmit() ourselves — we only ever block/allow the
     // theme's own normal flow (AJAX, cart drawer, redirect, whatever it
     // does) so it's otherwise completely unaffected.
-    function injectBookingFields(form) {
+    function injectBookingFields(form, entry) {
       var dateInput = form.querySelector(
         'input[name="properties[Booking Date]"]',
       );
@@ -268,8 +310,8 @@
         timeInput.name = "properties[Booking Time]";
         form.appendChild(timeInput);
       }
-      dateInput.value = confirmedDate;
-      timeInput.value = confirmedSlot.start;
+      dateInput.value = entry.date;
+      timeInput.value = entry.slot.start;
 
       customFields.forEach(function (field) {
         var value = customFieldValues[field.fieldKey];
@@ -288,6 +330,55 @@
       });
     }
 
+    // Builds the request body for a single "add to cart" call for one
+    // booked slot, based on the real theme form (so variant id, quantity,
+    // and any other apps' hidden fields all come along), with just the
+    // booking properties swapped in for this slot.
+    function buildFormDataForSlot(form, entry) {
+      var fd = new FormData(form);
+      fd.set("properties[Booking Date]", entry.date);
+      fd.set("properties[Booking Time]", entry.slot.start);
+      customFields.forEach(function (field) {
+        var value = customFieldValues[field.fieldKey];
+        if (!value) return;
+        fd.set("properties[" + field.label + "]", value);
+      });
+      return fd;
+    }
+
+    // A native form submit can only carry one set of line item
+    // properties, so multiple booked slots for the same product have to
+    // become multiple separate cart lines. We add them one at a time via
+    // Shopify's AJAX Cart API so a failure partway through (e.g. a slot
+    // that got booked by someone else in the meantime) is easy to catch.
+    function addSlotsToCartSequentially(form, entries, onDone) {
+      var action = form.getAttribute("action") || "/cart/add";
+      var index = 0;
+
+      function next() {
+        if (index >= entries.length) {
+          onDone(null);
+          return;
+        }
+        fetch(action, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: buildFormDataForSlot(form, entries[index]),
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error("add-to-cart failed");
+            return res.json();
+          })
+          .then(function () {
+            index += 1;
+            next();
+          })
+          .catch(onDone);
+      }
+
+      next();
+    }
+
     function cssEscape(value) {
       return window.CSS && CSS.escape
         ? CSS.escape(value)
@@ -296,7 +387,7 @@
 
     // Returns true if the add-to-cart attempt should be BLOCKED.
     function guardAddToCart(event) {
-      if (!confirmedDate || !confirmedSlot) {
+      if (confirmedSlots.length === 0) {
         event.preventDefault();
         // preventDefault() alone only cancels the native default action —
         // it does NOT stop other listeners (like the theme's own
@@ -310,8 +401,62 @@
         return true;
       }
       clearError();
-      if (nearbyForm) injectBookingFields(nearbyForm);
-      return false;
+
+      if (confirmedSlots.length === 1) {
+        // Single slot: leave the theme's own add-to-cart flow completely
+        // untouched (AJAX, cart drawer, redirect, upsells — whatever it
+        // normally does). We just make sure our two hidden fields are on
+        // the form before it submits.
+        if (nearbyForm) injectBookingFields(nearbyForm, confirmedSlots[0]);
+        // IMPORTANT: don't clear confirmedSlots here. Clicking a submit
+        // button fires a "click" event and then, synchronously as part
+        // of its default action, a "submit" event on the form — we guard
+        // both (see the two listeners below), so this function can run
+        // twice for the one interaction. Clearing on the first run would
+        // make the second run think nothing was selected and block the
+        // add. Defer the reset to a macrotask instead, so it only runs
+        // once both of those synchronous firings are done.
+        setTimeout(function () {
+          confirmedSlots = [];
+          updateSelectionDisplay();
+          // Some themes add to cart via AJAX without a page navigation,
+          // so re-check the cart shortly after in case this add
+          // succeeded — that's what keeps the "already booked" reminder
+          // up to date.
+          refreshCartReminder();
+        }, 1200);
+        return false;
+      }
+
+      // Multiple slots: take over, since a single form submit can't carry
+      // more than one set of booking properties.
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      if (!nearbyForm) {
+        showError(strings.multiAddError);
+        return true;
+      }
+
+      var entries = confirmedSlots.slice();
+      multiAddStatusEl.hidden = false;
+      multiAddStatusEl.textContent = strings.addingToCart;
+
+      addSlotsToCartSequentially(nearbyForm, entries, function (err) {
+        if (err) {
+          multiAddStatusEl.hidden = true;
+          showError(strings.multiAddError);
+          return;
+        }
+        // Reload so the theme's own cart UI (drawer, count bubble, mini
+        // cart, etc.) picks up the new lines exactly the way it would
+        // after any normal full-page add-to-cart — we don't try to guess
+        // which cart-refresh events this particular theme listens for.
+        window.location.reload();
+      });
+
+      return true;
     }
 
     document.addEventListener(
@@ -434,21 +579,45 @@
     }
 
     function openModal() {
-      pendingDate = confirmedDate;
-      pendingSlot = confirmedSlot;
+      pendingDate = null;
+      pendingSlot = null;
+      askMoreEl.hidden = true;
+      modalBodyEl.hidden = false;
+      modalFooterEl.hidden = false;
       overlayEl.hidden = false;
       document.body.classList.add("booking-widget-lock-scroll");
       updateConfirmButton();
       renderCustomFields();
       loadMonth();
-      if (pendingDate) {
-        loadSlots(pendingDate);
-      }
     }
 
     function closeModal() {
       overlayEl.hidden = true;
       document.body.classList.remove("booking-widget-lock-scroll");
+    }
+
+    function showAskMore(date, slot) {
+      askMoreMessageEl.textContent = format(strings.askMoreMessage, {
+        date: formatDateDisplay(date),
+        time: formatTimeRangeDisplay(slot.start, slot.end),
+      });
+      modalBodyEl.hidden = true;
+      modalFooterEl.hidden = true;
+      askMoreEl.hidden = false;
+    }
+
+    function resumeModalForAnotherSlot() {
+      askMoreEl.hidden = true;
+      modalBodyEl.hidden = false;
+      modalFooterEl.hidden = false;
+      pendingDate = null;
+      pendingSlot = null;
+      currentSlots = [];
+      durationEl.hidden = true;
+      setStatus(slotListEl, strings.noTimes);
+      updateConfirmButton();
+      renderCustomFields();
+      renderCalendar();
     }
 
     function loadMonth() {
@@ -647,18 +816,100 @@
     }
 
     function updateSelectionDisplay() {
-      if (confirmedDate && confirmedSlot) {
-        selectionEl.hidden = false;
-        triggerBtn.hidden = true;
-        selectionEl.textContent = format(strings.selected, {
-          date: formatDateDisplay(confirmedDate),
-          time: formatTimeRangeDisplay(confirmedSlot.start, confirmedSlot.end),
-        });
-      } else {
+      selectionEl.innerHTML = "";
+
+      if (confirmedSlots.length === 0) {
         selectionEl.hidden = true;
         triggerBtn.hidden = false;
-        selectionEl.textContent = "";
+        return;
       }
+
+      triggerBtn.hidden = true;
+      selectionEl.hidden = false;
+
+      confirmedSlots.forEach(function (entry, index) {
+        var chip = document.createElement("span");
+        chip.className = "booking-widget__selection-chip";
+
+        var label = document.createElement("span");
+        label.textContent = format(strings.selected, {
+          date: formatDateDisplay(entry.date),
+          time: formatTimeRangeDisplay(entry.slot.start, entry.slot.end),
+        });
+        chip.appendChild(label);
+
+        var removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "booking-widget__selection-remove";
+        removeBtn.setAttribute("aria-label", strings.removeSlot);
+        removeBtn.textContent = "\u00d7";
+        removeBtn.addEventListener("click", function () {
+          confirmedSlots.splice(index, 1);
+          updateSelectionDisplay();
+        });
+        chip.appendChild(removeBtn);
+
+        selectionEl.appendChild(chip);
+      });
+
+      var addMoreBtn = document.createElement("button");
+      addMoreBtn.type = "button";
+      addMoreBtn.className = "booking-widget__selection-add-more";
+      addMoreBtn.textContent = strings.addAnotherSlotLink;
+      addMoreBtn.addEventListener("click", function () {
+        openModal();
+      });
+      selectionEl.appendChild(addMoreBtn);
+    }
+
+    // ---- Reminder that a slot for this product is already sitting in
+    // the cart from an earlier visit/add. This reflects the real cart,
+    // not just in-page state, so it's still accurate after a reload or a
+    // fresh visit to the product page. ----
+    function refreshCartReminder() {
+      if (!cartReminderEl) return;
+      fetch("/cart.js", { headers: { Accept: "application/json" } })
+        .then(function (res) {
+          return res.json();
+        })
+        .then(function (cart) {
+          var items = (cart.items || []).filter(function (item) {
+            return (
+              String(item.product_id) === numericProductId &&
+              item.properties &&
+              item.properties["Booking Date"]
+            );
+          });
+          renderCartReminder(items);
+        })
+        .catch(function () {
+          // Non-critical — if we can't read the cart, just skip the
+          // reminder rather than blocking anything else on the page.
+        });
+    }
+
+    function renderCartReminder(items) {
+      cartReminderListEl.innerHTML = "";
+
+      if (items.length === 0) {
+        cartReminderEl.hidden = true;
+        return;
+      }
+
+      cartReminderTitleEl.textContent = strings.alreadyBooked;
+
+      items.forEach(function (item) {
+        var li = document.createElement("li");
+        var date = item.properties["Booking Date"];
+        var time = item.properties["Booking Time"] || "";
+        li.textContent = format(strings.selected, {
+          date: formatDateDisplay(date),
+          time: time,
+        });
+        cartReminderListEl.appendChild(li);
+      });
+
+      cartReminderEl.hidden = false;
     }
 
     function goToMonth(delta) {
@@ -680,9 +931,6 @@
       loadMonth();
     }
 
-    selectionEl.addEventListener("click", function () {
-      openModal();
-    });
     closeBtn.addEventListener("click", closeModal);
     overlayEl.addEventListener("click", function (event) {
       if (event.target === overlayEl) closeModal();
@@ -695,13 +943,25 @@
     });
     confirmBtn.addEventListener("click", function () {
       if (!pendingDate || !pendingSlot) return;
-      confirmedDate = pendingDate;
-      confirmedSlot = pendingSlot;
-      updateSelectionDisplay();
+      var date = pendingDate;
+      var slot = pendingSlot;
+      var alreadyQueued = confirmedSlots.some(function (entry) {
+        return entry.date === date && entry.slot.startsAt === slot.startsAt;
+      });
+      if (!alreadyQueued) {
+        confirmedSlots.push({ date: date, slot: slot });
+        updateSelectionDisplay();
+      }
+      showAskMore(date, slot);
+    });
+    askMoreYesBtn.addEventListener("click", resumeModalForAnotherSlot);
+    askMoreNoBtn.addEventListener("click", function () {
+      askMoreEl.hidden = true;
       closeModal();
     });
 
     updateSelectionDisplay();
+    refreshCartReminder();
   }
 
   function init() {
