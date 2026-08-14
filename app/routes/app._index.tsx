@@ -100,6 +100,78 @@ export default function Dashboard() {
         </s-section>
       )}
 
+      <s-section heading="App guide">
+        <s-paragraph>
+          A quick walkthrough of how to get bookings running end to end.
+        </s-paragraph>
+        <s-ordered-list>
+          <s-list-item>
+            <s-text>
+              <b>Enable booking on your products</b> — go to{" "}
+              <s-link href="/app/products">Products</s-link> and turn on
+              booking for each product customers should be able to book. You
+              can override the shop's default schedule per product if needed.
+            </s-text>
+          </s-list-item>
+          <s-list-item>
+            <s-text>
+              <b>Set your booking schedule</b> — in{" "}
+              <s-link href="/app/settings">Booking Settings</s-link>, choose
+              working days, daily hours, slot duration, buffer time between
+              slots, how far in advance customers can book, and how many
+              bookings are allowed per slot.
+            </s-text>
+          </s-list-item>
+          <s-list-item>
+            <s-text>
+              <b>Block off days you're unavailable</b> — add holidays or
+              one-off closures on the{" "}
+              <s-link href="/app/blackout-dates">Blackout Dates</s-link>{" "}
+              page, shop-wide or for a specific product.
+            </s-text>
+          </s-list-item>
+          <s-list-item>
+            <s-text>
+              <b>Collect extra info at booking time (optional)</b> — add
+              fields like notes, preferences, or special requests on the{" "}
+              <s-link href="/app/custom-fields">Custom Fields</s-link> page.
+              Customers fill these in when booking, and you'll see their
+              answers on each booking.
+            </s-text>
+          </s-list-item>
+          <s-list-item>
+            <s-text>
+              <b>Add the booking widget to your storefront</b> — in the
+              Shopify theme editor, add the "Booking Widget" block to your
+              bookable products' pages so customers can pick a date and time
+              before checkout.
+            </s-text>
+          </s-list-item>
+          <s-list-item>
+            <s-text>
+              <b>Turn on booking emails</b> — configure SMTP in{" "}
+              <s-link href="/app/settings">Booking Settings</s-link> so
+              customers automatically get confirmation, reminder, and
+              cancellation emails.
+            </s-text>
+          </s-list-item>
+          <s-list-item>
+            <s-text>
+              <b>Manage bookings as they come in</b> — view, search,
+              reschedule, or cancel bookings from{" "}
+              <s-link href="/app/booking-management">
+                Booking Management
+              </s-link>
+              . You can also add bookings manually from{" "}
+              <s-link href="/app/bookings/new">New Booking</s-link>. If two
+              customers ever land in the same slot, it's flagged as{" "}
+              <b>Overbooked</b> so you can review and resolve it — you'll
+              see a banner for that at the top of this page when it happens.
+            </s-text>
+          </s-list-item>
+        </s-ordered-list>
+      </s-section>
+
       <s-section heading="At a glance">
         <s-stack direction="inline" gap="loose">
           <s-box padding="base" borderWidth="base" borderRadius="base">
