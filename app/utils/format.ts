@@ -15,3 +15,30 @@ export function formatDateDisplay(dateStr: string): string {
 export function formatTimeRangeDisplay(start: string, end: string): string {
   return `${start} \u2013 ${end}`;
 }
+
+/**
+ * Booking creation timestamps (when the booking record was actually made,
+ * as opposed to the booked appointment date/time) are shown as
+ * "DD-MM-YYYY, HH:mm" in UTC, matching the fixed DD-MM-YYYY date format
+ * used everywhere else in the app.
+ */
+export function formatDateTimeDisplay(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+
+  return `${day}-${month}-${year}, ${hours}:${minutes}`;
+}
+
+/**
+ * Human-readable label for who actually made the booking: the customer
+ * from the storefront checkout, or an admin creating it manually.
+ */
+export function bookingSourceLabel(source: string): string {
+  return source === "ADMIN_MANUAL" ? "by admin" : "by customer";
+}

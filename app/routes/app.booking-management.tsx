@@ -4,7 +4,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, useRevalidator } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -19,7 +19,12 @@ import {
   type ListBookingsFilters,
 } from "../models/booking.server";
 import type { TimeSlot } from "../models/slotAvailability.server";
-import { formatDateDisplay, formatTimeRangeDisplay } from "../utils/format";
+import {
+  bookingSourceLabel,
+  formatDateDisplay,
+  formatDateTimeDisplay,
+  formatTimeRangeDisplay,
+} from "../utils/format";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -112,21 +117,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return { intent, ok: false as const, error: "Unknown action." };
 };
 
-function CustomFieldAnswers({
+function BookingNotes({
   responses,
   labels,
 }: {
   responses: unknown;
   labels: Record<string, string>;
 }) {
-  if (!responses || typeof responses !== "object") return null;
-  const entries = Object.entries(responses as Record<string, string>);
-  if (entries.length === 0) return null;
+  const entries =
+    responses && typeof responses === "object"
+      ? Object.entries(responses as Record<string, string>)
+      : [];
+
+  if (entries.length === 0) {
+    return <s-text tone="subdued">—</s-text>;
+  }
 
   return (
     <s-stack direction="block" gap="none">
       {entries.map(([fieldKey, value]) => (
-        <s-text key={fieldKey} tone="subdued">
+        <s-text key={fieldKey}>
           {(labels[fieldKey] ?? fieldKey) + ": " + value}
         </s-text>
       ))}
@@ -228,16 +238,16 @@ function BookingRow({
     <s-table-row>
       <s-table-cell>{booking.productTitle}</s-table-cell>
       <s-table-cell>
-        <s-stack direction="block" gap="none">
-          <s-text>
-            {booking.customerName ?? "—"}
-            {booking.customerEmail ? ` (${booking.customerEmail})` : ""}
-          </s-text>
-          <CustomFieldAnswers
-            responses={booking.customFieldResponses}
-            labels={customFieldLabels}
-          />
-        </s-stack>
+        <s-text>
+          {booking.customerName ?? "—"}
+          {booking.customerEmail ? ` (${booking.customerEmail})` : ""}
+        </s-text>
+      </s-table-cell>
+      <s-table-cell>
+        <BookingNotes
+          responses={booking.customFieldResponses}
+          labels={customFieldLabels}
+        />
       </s-table-cell>
       <s-table-cell>
         {isRescheduling ? (
@@ -284,6 +294,12 @@ function BookingRow({
         ) : (
           `${formatDateDisplay(booking.date)} ${formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}`
         )}
+      </s-table-cell>
+      <s-table-cell>
+        <s-stack direction="block" gap="none">
+          <s-text>{formatDateTimeDisplay(booking.createdAt)}</s-text>
+          <s-text tone="subdued">{bookingSourceLabel(booking.source)}</s-text>
+        </s-stack>
       </s-table-cell>
       <s-table-cell>
         <s-badge tone={badgeTone}>{booking.status}</s-badge>
@@ -338,6 +354,8 @@ function BookingRow({
 export default function BookingManagementPage() {
   const { bookings, products, customFieldLabels, filters } =
     useLoaderData<typeof loader>();
+  const revalidator = useRevalidator();
+  const isRefreshing = revalidator.state === "loading";
 
   const [search, setSearch] = useState(filters.search);
   const [status, setStatus] = useState(filters.status);
@@ -357,6 +375,14 @@ export default function BookingManagementPage() {
 
   return (
     <s-page heading="Booking Management">
+      <s-button
+        slot="secondary-actions"
+        onClick={() => revalidator.revalidate()}
+        {...(isRefreshing ? { loading: true } : {})}
+      >
+        Refresh
+      </s-button>
+
       <s-section heading="Filters">
         <s-stack direction="inline" gap="base">
           <s-text-field
@@ -413,7 +439,9 @@ export default function BookingManagementPage() {
             <s-table-header-row>
               <s-table-header>Product</s-table-header>
               <s-table-header>Customer</s-table-header>
+              <s-table-header>Notes</s-table-header>
               <s-table-header>When</s-table-header>
+              <s-table-header>Booked At</s-table-header>
               <s-table-header>Status</s-table-header>
               <s-table-header>Source</s-table-header>
               <s-table-header>Actions</s-table-header>
