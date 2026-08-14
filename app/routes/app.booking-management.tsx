@@ -4,7 +4,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher, useLoaderData, useRevalidator } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -352,10 +352,18 @@ function BookingRow({
 }
 
 export default function BookingManagementPage() {
-  const { bookings, products, customFieldLabels, filters } =
+  const { bookings: initialBookings, products, customFieldLabels, filters } =
     useLoaderData<typeof loader>();
-  const revalidator = useRevalidator();
-  const isRefreshing = revalidator.state === "loading";
+  const bookingsFetcher = useFetcher<typeof loader>();
+
+  const bookings = bookingsFetcher.data?.bookings ?? initialBookings;
+  const isRefreshingBookings = bookingsFetcher.state !== "idle";
+
+  const refreshBookings = () => {
+    bookingsFetcher.load(
+      window.location.pathname + window.location.search,
+    );
+  };
 
   const [search, setSearch] = useState(filters.search);
   const [status, setStatus] = useState(filters.status);
@@ -375,14 +383,6 @@ export default function BookingManagementPage() {
 
   return (
     <s-page heading="Booking Management">
-      <s-button
-        slot="secondary-actions"
-        onClick={() => revalidator.revalidate()}
-        {...(isRefreshing ? { loading: true } : {})}
-      >
-        Refresh
-      </s-button>
-
       <s-section heading="Filters">
         <s-stack direction="inline" gap="base">
           <s-text-field
@@ -431,7 +431,21 @@ export default function BookingManagementPage() {
         </s-stack>
       </s-section>
 
-      <s-section heading="Bookings">
+      <s-section accessibilityLabel="Bookings">
+        <s-stack
+          direction="inline"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="base"
+        >
+          <s-heading>Bookings</s-heading>
+          <s-button
+            onClick={refreshBookings}
+            {...(isRefreshingBookings ? { loading: true } : {})}
+          >
+            Refresh
+          </s-button>
+        </s-stack>
         {bookings.length === 0 ? (
           <s-paragraph>No bookings match these filters.</s-paragraph>
         ) : (
