@@ -110,21 +110,20 @@ function FieldEditor({
         placeholder="Number of guests"
         value={values.label}
         error={errors.label}
-        onChange={(e: FieldChangeEvent) =>
-          setValues((prev) => ({ ...prev, label: e.currentTarget.value }))
-        }
+        onChange={(e: FieldChangeEvent) => {
+          const value = e.currentTarget.value;
+          setValues((prev) => ({ ...prev, label: value }));
+        }}
       ></s-text-field>
 
       <s-stack direction="inline" gap="base">
         <s-select
           label="Field type"
           value={values.type}
-          onChange={(e: FieldChangeEvent) =>
-            setValues((prev) => ({
-              ...prev,
-              type: e.currentTarget.value as CustomFieldFormValues["type"],
-            }))
-          }
+          onChange={(e: FieldChangeEvent) => {
+            const value = e.currentTarget.value as CustomFieldFormValues["type"];
+            setValues((prev) => ({ ...prev, type: value }));
+          }}
         >
           <s-option value="TEXT">Short text</s-option>
           <s-option value="TEXTAREA">Long text</s-option>
@@ -147,9 +146,10 @@ function FieldEditor({
           details="Comma-separated, e.g. Small, Medium, Large"
           value={values.options}
           error={errors.options}
-          onChange={(e: FieldChangeEvent) =>
-            setValues((prev) => ({ ...prev, options: e.currentTarget.value }))
-          }
+          onChange={(e: FieldChangeEvent) => {
+            const value = e.currentTarget.value;
+            setValues((prev) => ({ ...prev, options: value }));
+          }}
         ></s-text-field>
       )}
 
