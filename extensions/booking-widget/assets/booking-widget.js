@@ -964,8 +964,38 @@
     refreshCartReminder();
   }
 
+  var BUY_BUTTON_CONTAINER_SELECTORS = [
+    "product-form",
+    "form[action*='/cart/add'] .product-form__buttons",
+    "form[action*='/cart/add']",
+    ".shopify-payment-button",
+    ".product__info-container",
+    ".product-form",
+  ];
+
+  function relocateNextToBuyButton(root) {
+    // If a theme/merchant already placed this element inline (e.g. an
+    // older manual block placement), leave it exactly where it is.
+    if (root.closest("form[action*='/cart/add']")) return;
+    if (root.dataset.bookingWidgetPlaced === "true") return;
+
+    for (var i = 0; i < BUY_BUTTON_CONTAINER_SELECTORS.length; i++) {
+      var target = document.querySelector(BUY_BUTTON_CONTAINER_SELECTORS[i]);
+      if (target && target.parentNode) {
+        target.insertAdjacentElement("afterend", root);
+        root.dataset.bookingWidgetPlaced = "true";
+        return;
+      }
+    }
+    // No known buy-button container found on this theme — leave the
+    // widget where the theme injected it rather than risk a bad layout.
+  }
+
   function init() {
-    document.querySelectorAll("[data-booking-widget]").forEach(initWidget);
+    document.querySelectorAll("[data-booking-widget]").forEach(function (root) {
+      relocateNextToBuyButton(root);
+      initWidget(root);
+    });
   }
 
   if (document.readyState === "loading") {

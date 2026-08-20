@@ -23,7 +23,11 @@ type FieldChangeEvent = { currentTarget: { value: string } };
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const settings = await getBookingSettings(session.shop);
-  return { values: toFormValues(settings) };
+  return {
+    values: toFormValues(settings),
+    shop: session.shop,
+    apiKey: process.env.SHOPIFY_API_KEY ?? "",
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -39,8 +43,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return { ok: true as const, errors: {}, values: toFormValues(saved) };
 };
 
+const BOOKING_WIDGET_BLOCK_HANDLE = "booking-widget";
+
 export default function BookingSettingsPage() {
-  const { values: initialValues } = useLoaderData<typeof loader>();
+  const { values: initialValues, shop, apiKey } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
@@ -234,6 +240,28 @@ export default function BookingSettingsPage() {
               setField("bookingEndDate", e.currentTarget.value || null)
             }
           ></s-date-field>
+        </s-stack>
+      </s-section>
+
+      <s-section heading="Storefront integration">
+        <s-paragraph>
+          Shopify keeps this switch inside the theme editor itself — apps
+          can't flip it directly. This link takes you straight to the right
+          screen.
+        </s-paragraph>
+        <s-stack direction="block" gap="small">
+          <s-text><b>Booking widget (app embed)</b></s-text>
+          <s-paragraph>
+            Adds the "Book your slot" widget to every bookable product
+            automatically — one switch turns it on for the whole store, and
+            off removes it everywhere. No manual placement needed.
+          </s-paragraph>
+          <s-link
+            href={`https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${apiKey}/${BOOKING_WIDGET_BLOCK_HANDLE}`}
+            target="_blank"
+          >
+            Open theme editor → App embeds
+          </s-link>
         </s-stack>
       </s-section>
 

@@ -1,3 +1,4 @@
+{% if product %}
 <div
   class="booking-widget"
   data-booking-widget
@@ -39,7 +40,7 @@
   </div>
 
   <div class="booking-widget__selection" data-booking-selection hidden></div>
-  <button type="button" class="booking-widget__trigger" data-booking-trigger>{{ 'booking_widget.trigger_book' | t }}</button>
+  <button type="button" class="button button--secondary button--full-width booking-widget__trigger" data-booking-trigger>{{ 'booking_widget.trigger_book' | t }}</button>
   <p class="booking-widget__multi-add-status" data-booking-multi-add-status hidden></p>
   <p class="booking-widget__error" data-booking-error hidden></p>
 
@@ -107,11 +108,15 @@
 
 {{ 'booking-widget.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'booking-widget.js' | asset_url }}" defer></script>
+{% endif %}
 
 {% schema %}
 {
   "name": "t:booking_widget.block_name",
-  "target": "section",
+  "target": "body",
+  "enabled_on": {
+    "templates": ["product"]
+  },
   "settings": []
 }
 {% endschema %}
