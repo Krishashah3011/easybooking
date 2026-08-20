@@ -237,6 +237,7 @@ function BookingRow({
   return (
     <s-table-row>
       <s-table-cell>{booking.productTitle}</s-table-cell>
+      <s-table-cell>{booking.location ?? "—"}</s-table-cell>
       <s-table-cell>
         <s-text>
           {booking.customerName ?? "—"}
@@ -483,6 +484,7 @@ export default function BookingManagementPage() {
           <s-table>
             <s-table-header-row>
               <s-table-header>Product</s-table-header>
+              <s-table-header>Location</s-table-header>
               <s-table-header>Customer</s-table-header>
               <s-table-header>Notes</s-table-header>
               <s-table-header>When</s-table-header>

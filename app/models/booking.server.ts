@@ -39,6 +39,7 @@ export type OrderPayload = {
 
 const BOOKING_DATE_PROPERTY = "Booking Date";
 const BOOKING_TIME_PROPERTY = "Booking Time";
+const BOOKING_LOCATION_PROPERTY = "Location";
 
 function toProductGid(productId: number | string): string {
   return `gid://shopify/Product/${productId}`;
@@ -52,6 +53,14 @@ export function extractBookingSelection(
   const time = properties.find((p) => p.name === BOOKING_TIME_PROPERTY)?.value;
   if (!date || !time) return null;
   return { date, time };
+}
+
+export function extractBookingLocation(lineItem: OrderLineItem): string | null {
+  const properties = lineItem.properties ?? [];
+  const location = properties.find(
+    (p) => p.name === BOOKING_LOCATION_PROPERTY,
+  )?.value;
+  return location || null;
 }
 
 function extractCustomFieldResponses(
@@ -280,6 +289,7 @@ export async function createBookingsFromOrder(
         customerEmail: customerInfo.customerEmail,
         customerPhone: customerInfo.customerPhone,
         isGuest: customerInfo.isGuest,
+        location: extractBookingLocation(lineItem),
         date: selection.date,
         slotStart: selection.time,
         slotEnd,

@@ -19,6 +19,11 @@
   data-i18n-trigger-book="{{ 'booking_widget.trigger_book' | t }}"
   data-i18n-modal-title="{{ 'booking_widget.modal_title' | t }}"
   data-i18n-modal-subtitle="{{ 'booking_widget.modal_subtitle' | t }}"
+  data-i18n-select-location="{{ 'booking_widget.select_location' | t }}"
+  data-i18n-select-location-placeholder="{{ 'booking_widget.select_location_placeholder' | t }}"
+  data-i18n-location-required="{{ 'booking_widget.location_required' | t }}"
+  data-i18n-next="{{ 'booking_widget.next' | t }}"
+  data-i18n-change-location="{{ 'booking_widget.change_location' | t }}"
   data-i18n-confirm="{{ 'booking_widget.confirm' | t }}"
   data-i18n-close="{{ 'booking_widget.close' | t }}"
   data-i18n-duration-minutes="{{ 'booking_widget.duration_minutes' | t }}"
@@ -58,26 +63,49 @@
       </div>
 
       <div class="booking-widget__modal-body" data-booking-modal-body>
-        <div class="booking-widget__calendar-pane">
-          <div class="booking-widget__header">
-            <button type="button" class="booking-widget__nav" data-booking-prev aria-label="{{ 'booking_widget.previous_month' | t }}">&lsaquo;</button>
-            <span class="booking-widget__month-label" data-booking-month-label></span>
-            <button type="button" class="booking-widget__nav" data-booking-next aria-label="{{ 'booking_widget.next_month' | t }}">&rsaquo;</button>
+        <div class="booking-widget__location-step" data-booking-location-step hidden>
+          <label class="booking-widget__location-label" for="booking-widget-location-select">{{ 'booking_widget.select_location' | t }}</label>
+          <div class="booking-widget__location-select-wrap">
+            <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
+            <select
+              id="booking-widget-location-select"
+              class="booking-widget__location-select"
+              data-booking-location-select
+            >
+              <option value="">{{ 'booking_widget.select_location_placeholder' | t }}</option>
+            </select>
           </div>
-          <div class="booking-widget__weekdays" data-booking-weekdays></div>
-          <div class="booking-widget__calendar" data-booking-calendar>
-            <p class="booking-widget__status" data-booking-status>
-              {{ 'booking_widget.loading_availability' | t }}
-            </p>
-          </div>
+          <p class="booking-widget__location-error" data-booking-location-error hidden></p>
         </div>
 
-        <div class="booking-widget__slots-pane">
-          <div class="booking-widget__duration" data-booking-duration hidden></div>
-          <div class="booking-widget__slots" data-booking-slots>
-            <p class="booking-widget__slots-label">{{ 'booking_widget.available_times' | t }}</p>
-            <div class="booking-widget__slot-list" data-booking-slot-list>
-              <p class="booking-widget__status">{{ 'booking_widget.no_times' | t }}</p>
+        <div class="booking-widget__datetime-step" data-booking-datetime-step>
+          <div class="booking-widget__location-summary" data-booking-location-summary hidden>
+            <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
+            <span class="booking-widget__location-summary-text" data-booking-location-summary-text></span>
+            <button type="button" class="booking-widget__location-change" data-booking-location-change>{{ 'booking_widget.change_location' | t }}</button>
+          </div>
+
+          <div class="booking-widget__calendar-pane">
+            <div class="booking-widget__header">
+              <button type="button" class="booking-widget__nav" data-booking-prev aria-label="{{ 'booking_widget.previous_month' | t }}">&lsaquo;</button>
+              <span class="booking-widget__month-label" data-booking-month-label></span>
+              <button type="button" class="booking-widget__nav" data-booking-next aria-label="{{ 'booking_widget.next_month' | t }}">&rsaquo;</button>
+            </div>
+            <div class="booking-widget__weekdays" data-booking-weekdays></div>
+            <div class="booking-widget__calendar" data-booking-calendar>
+              <p class="booking-widget__status" data-booking-status>
+                {{ 'booking_widget.loading_availability' | t }}
+              </p>
+            </div>
+          </div>
+
+          <div class="booking-widget__slots-pane">
+            <div class="booking-widget__duration" data-booking-duration hidden></div>
+            <div class="booking-widget__slots" data-booking-slots>
+              <p class="booking-widget__slots-label">{{ 'booking_widget.available_times' | t }}</p>
+              <div class="booking-widget__slot-list" data-booking-slot-list>
+                <p class="booking-widget__status">{{ 'booking_widget.no_times' | t }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -98,6 +126,9 @@
       {% render 'booking-widget-custom-fields' %}
 
       <div class="booking-widget__modal-footer" data-booking-modal-footer>
+        <button type="button" class="booking-widget__btn booking-widget__btn--confirm" data-booking-location-next hidden>
+          {{ 'booking_widget.next' | t }}
+        </button>
         <button type="button" class="booking-widget__btn booking-widget__btn--confirm" data-booking-confirm disabled>
           {{ 'booking_widget.confirm' | t }}
         </button>

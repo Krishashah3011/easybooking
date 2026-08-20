@@ -45,6 +45,18 @@ model BookingSettings {
   updatedAt DateTime @updatedAt
 }
 
+model BookingLocation {
+  id String @id @default(cuid())
+  shop String
+  name String
+  isEnabled Boolean @default(true)
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([shop, name])
+  @@index([shop])
+}
+
 model BookableProduct {
   id String @id @default(cuid())
   shop String
@@ -130,6 +142,7 @@ model Booking {
   customerEmail String?
   customerPhone String?
   isGuest       Boolean @default(true)
+  location     String?
   date         String
   slotStart    String
   slotEnd      String

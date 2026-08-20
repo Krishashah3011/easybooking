@@ -20,6 +20,7 @@ export default function App() {
         <s-link href="/app">Home</s-link>
         <s-link href="/app/settings">Booking Settings</s-link>
         <s-link href="/app/products">Products</s-link>
+        <s-link href="/app/locations">Locations</s-link>
         <s-link href="/app/blackout-dates">Blackout Dates</s-link>
         <s-link href="/app/custom-fields">Custom Fields</s-link>
         <s-link href="/app/bookings/new">New Booking</s-link>

@@ -20,6 +20,11 @@
     triggerBook: "Book your slot",
     modalTitle: "Appointment - Booking",
     modalSubtitle: "Select your preferred date & time",
+    selectLocation: "Select location",
+    selectLocationPlaceholder: "Select location",
+    locationRequired: "Please select a location to continue.",
+    next: "Next",
+    changeLocation: "Change",
     confirm: "Confirm",
     close: "Close",
     durationMinutes: "{count} Mins",
@@ -86,6 +91,17 @@
       triggerBook: safe(d.i18nTriggerBook, FALLBACK_STRINGS.triggerBook),
       modalTitle: safe(d.i18nModalTitle, FALLBACK_STRINGS.modalTitle),
       modalSubtitle: safe(d.i18nModalSubtitle, FALLBACK_STRINGS.modalSubtitle),
+      selectLocation: safe(d.i18nSelectLocation, FALLBACK_STRINGS.selectLocation),
+      selectLocationPlaceholder: safe(
+        d.i18nSelectLocationPlaceholder,
+        FALLBACK_STRINGS.selectLocationPlaceholder,
+      ),
+      locationRequired: safe(
+        d.i18nLocationRequired,
+        FALLBACK_STRINGS.locationRequired,
+      ),
+      next: safe(d.i18nNext, FALLBACK_STRINGS.next),
+      changeLocation: safe(d.i18nChangeLocation, FALLBACK_STRINGS.changeLocation),
       confirm: safe(d.i18nConfirm, FALLBACK_STRINGS.confirm),
       close: safe(d.i18nClose, FALLBACK_STRINGS.close),
       durationMinutes: safe(
@@ -177,6 +193,16 @@
     var timezoneEl = root.querySelector("[data-booking-timezone]");
     var modalBodyEl = root.querySelector("[data-booking-modal-body]");
     var modalFooterEl = root.querySelector("[data-booking-modal-footer]");
+    var locationStepEl = root.querySelector("[data-booking-location-step]");
+    var locationSelectEl = root.querySelector("[data-booking-location-select]");
+    var locationErrorEl = root.querySelector("[data-booking-location-error]");
+    var datetimeStepEl = root.querySelector("[data-booking-datetime-step]");
+    var locationSummaryEl = root.querySelector("[data-booking-location-summary]");
+    var locationSummaryTextEl = root.querySelector(
+      "[data-booking-location-summary-text]",
+    );
+    var locationChangeBtn = root.querySelector("[data-booking-location-change]");
+    var locationNextBtn = root.querySelector("[data-booking-location-next]");
     var calendarEl = root.querySelector("[data-booking-calendar]");
     var weekdaysEl = root.querySelector("[data-booking-weekdays]");
     var monthLabelEl = root.querySelector("[data-booking-month-label]");
@@ -196,6 +222,12 @@
     var viewMonth = today.getUTCMonth() + 1;
     var availableDates = [];
     var currentSlots = [];
+
+    // Locations fetched once from the app. If a shop hasn't configured
+    // any, the location step is skipped entirely and booking behaves
+    // exactly as it did before locations existed.
+    var locations = [];
+    var pendingLocation = null;
 
     var pendingDate = null;
     var pendingSlot = null;
@@ -313,6 +345,19 @@
       dateInput.value = entry.date;
       timeInput.value = entry.slot.start;
 
+      if (entry.location) {
+        var locationInput = form.querySelector(
+          'input[name="properties[Location]"]',
+        );
+        if (!locationInput) {
+          locationInput = document.createElement("input");
+          locationInput.type = "hidden";
+          locationInput.name = "properties[Location]";
+          form.appendChild(locationInput);
+        }
+        locationInput.value = entry.location;
+      }
+
       customFields.forEach(function (field) {
         var value = customFieldValues[field.fieldKey];
         if (!value) return;
@@ -338,6 +383,9 @@
       var fd = new FormData(form);
       fd.set("properties[Booking Date]", entry.date);
       fd.set("properties[Booking Time]", entry.slot.start);
+      if (entry.location) {
+        fd.set("properties[Location]", entry.location);
+      }
       customFields.forEach(function (field) {
         var value = customFieldValues[field.fieldKey];
         if (!value) return;
@@ -484,6 +532,7 @@
 
     timezoneEl.textContent = timezoneLabel();
     loadCustomFields();
+    loadLocations();
 
     function setStatus(container, message) {
       container.innerHTML = "";
@@ -507,6 +556,98 @@
           // questions, so fail silently rather than blocking the widget.
           customFields = [];
         });
+    }
+
+    function loadLocations() {
+      if (!locationStepEl || !locationSelectEl) return;
+      fetch(proxyBase + "/locations")
+        .then(function (res) {
+          return res.json();
+        })
+        .then(function (data) {
+          locations = data.locations || [];
+          populateLocationSelect();
+        })
+        .catch(function () {
+          // Non-critical — if locations can't be loaded, fall back to the
+          // no-locations behaviour so booking still works.
+          locations = [];
+        });
+    }
+
+    function populateLocationSelect() {
+      if (!locationSelectEl) return;
+      var currentValue = pendingLocation ? pendingLocation.id : "";
+      locationSelectEl.innerHTML = "";
+
+      var placeholderOpt = document.createElement("option");
+      placeholderOpt.value = "";
+      placeholderOpt.textContent = strings.selectLocationPlaceholder;
+      locationSelectEl.appendChild(placeholderOpt);
+
+      locations.forEach(function (location) {
+        var opt = document.createElement("option");
+        opt.value = location.id;
+        opt.textContent = location.name;
+        locationSelectEl.appendChild(opt);
+      });
+
+      locationSelectEl.value = currentValue;
+    }
+
+    function showLocationStep() {
+      if (!locationStepEl) return;
+      locationStepEl.hidden = false;
+      datetimeStepEl.hidden = true;
+      if (locationSummaryEl) locationSummaryEl.hidden = true;
+      if (locationErrorEl) {
+        locationErrorEl.hidden = true;
+        locationErrorEl.textContent = "";
+      }
+      if (locationNextBtn) locationNextBtn.hidden = false;
+      confirmBtn.hidden = true;
+    }
+
+    function showDatetimeStep() {
+      if (locationStepEl) locationStepEl.hidden = true;
+      datetimeStepEl.hidden = false;
+      if (locationNextBtn) locationNextBtn.hidden = true;
+      confirmBtn.hidden = false;
+
+      if (locationSummaryEl && locationSummaryTextEl) {
+        if (pendingLocation) {
+          locationSummaryTextEl.textContent = pendingLocation.name;
+          locationSummaryEl.hidden = false;
+        } else {
+          locationSummaryEl.hidden = true;
+        }
+      }
+    }
+
+    if (locationNextBtn) {
+      locationNextBtn.addEventListener("click", function () {
+        var selectedId = locationSelectEl.value;
+        var selected = locations.filter(function (loc) {
+          return loc.id === selectedId;
+        })[0];
+        if (!selected) {
+          if (locationErrorEl) {
+            locationErrorEl.hidden = false;
+            locationErrorEl.textContent = strings.locationRequired;
+          }
+          return;
+        }
+        pendingLocation = selected;
+        showDatetimeStep();
+        loadMonth();
+      });
+    }
+
+    if (locationChangeBtn) {
+      locationChangeBtn.addEventListener("click", function () {
+        populateLocationSelect();
+        showLocationStep();
+      });
     }
 
     function renderCustomFields() {
@@ -588,7 +729,14 @@
       document.body.classList.add("booking-widget-lock-scroll");
       updateConfirmButton();
       renderCustomFields();
-      loadMonth();
+
+      if (locationStepEl && locations.length > 0 && !pendingLocation) {
+        populateLocationSelect();
+        showLocationStep();
+      } else {
+        showDatetimeStep();
+        loadMonth();
+      }
     }
 
     function closeModal() {
@@ -949,7 +1097,11 @@
         return entry.date === date && entry.slot.startsAt === slot.startsAt;
       });
       if (!alreadyQueued) {
-        confirmedSlots.push({ date: date, slot: slot });
+        confirmedSlots.push({
+          date: date,
+          slot: slot,
+          location: pendingLocation ? pendingLocation.name : null,
+        });
         updateSelectionDisplay();
       }
       showAskMore(date, slot);
