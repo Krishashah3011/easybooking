@@ -50,24 +50,3 @@
 .linkActive:hover {
   color: #1c2b0e;
 }
-
-.spacer {
-  flex: 1 1 auto;
-}
-
-.accountLink {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #0f3559;
-  color: #ffffff;
-  text-decoration: none;
-}
-
-.accountLink:hover {
-  background: #123f68;
-}
