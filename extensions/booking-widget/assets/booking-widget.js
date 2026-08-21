@@ -4,7 +4,7 @@
   var LOW_AVAILABILITY_THRESHOLD = 2;
   var WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  var FALLBACK_STRINGS = {
+  var ENGLISH_STRINGS = {
     loadingAvailability: "Loading availability…",
     availabilityError: "Unable to load availability right now.",
     noAvailability: "No availability this month.",
@@ -41,6 +41,10 @@
     multiAddError:
       "Something went wrong adding your slots to cart. Please try again.",
     addingToCart: "Adding your slots to cart…",
+    quantityLabel: "Quantity",
+    quantityDecrease: "Decrease quantity",
+    quantityIncrease: "Increase quantity",
+    quantityMaxReached: "Only {count} left for this slot.",
   };
 
   function pad(n) {
@@ -53,76 +57,6 @@
         ? vars[key]
         : match;
     });
-  }
-
-  function readStrings(root) {
-    var d = root.dataset;
-
-    // Guard: if the Liquid `t` filter ever returns a missing-translation
-    // placeholder (stale deploy, cache, etc.), never show that raw string
-    // to the shopper — fall back to English instead.
-    function safe(value, fallback) {
-      if (!value) return fallback;
-      if (/^Translation missing/i.test(value)) return fallback;
-      return value;
-    }
-
-    return {
-      loadingAvailability: safe(
-        d.i18nLoadingAvailability,
-        FALLBACK_STRINGS.loadingAvailability,
-      ),
-      availabilityError: safe(
-        d.i18nAvailabilityError,
-        FALLBACK_STRINGS.availabilityError,
-      ),
-      noAvailability: safe(d.i18nNoAvailability, FALLBACK_STRINGS.noAvailability),
-      loadingTimes: safe(d.i18nLoadingTimes, FALLBACK_STRINGS.loadingTimes),
-      timesError: safe(d.i18nTimesError, FALLBACK_STRINGS.timesError),
-      noTimes: safe(d.i18nNoTimes, FALLBACK_STRINGS.noTimes),
-      booked: safe(d.i18nBooked, FALLBACK_STRINGS.booked),
-      spotLeft: safe(d.i18nSpotLeft, FALLBACK_STRINGS.spotLeft),
-      spotsLeft: safe(d.i18nSpotsLeft, FALLBACK_STRINGS.spotsLeft),
-      selectBeforeCart: safe(
-        d.i18nSelectBeforeCart,
-        FALLBACK_STRINGS.selectBeforeCart,
-      ),
-      selected: safe(d.i18nSelected, FALLBACK_STRINGS.selected),
-      triggerBook: safe(d.i18nTriggerBook, FALLBACK_STRINGS.triggerBook),
-      modalTitle: safe(d.i18nModalTitle, FALLBACK_STRINGS.modalTitle),
-      modalSubtitle: safe(d.i18nModalSubtitle, FALLBACK_STRINGS.modalSubtitle),
-      selectLocation: safe(d.i18nSelectLocation, FALLBACK_STRINGS.selectLocation),
-      selectLocationPlaceholder: safe(
-        d.i18nSelectLocationPlaceholder,
-        FALLBACK_STRINGS.selectLocationPlaceholder,
-      ),
-      locationRequired: safe(
-        d.i18nLocationRequired,
-        FALLBACK_STRINGS.locationRequired,
-      ),
-      next: safe(d.i18nNext, FALLBACK_STRINGS.next),
-      changeLocation: safe(d.i18nChangeLocation, FALLBACK_STRINGS.changeLocation),
-      confirm: safe(d.i18nConfirm, FALLBACK_STRINGS.confirm),
-      close: safe(d.i18nClose, FALLBACK_STRINGS.close),
-      durationMinutes: safe(
-        d.i18nDurationMinutes,
-        FALLBACK_STRINGS.durationMinutes,
-      ),
-      previousMonth: safe(d.i18nPreviousMonth, FALLBACK_STRINGS.previousMonth),
-      nextMonth: safe(d.i18nNextMonth, FALLBACK_STRINGS.nextMonth),
-      availableTimes: safe(d.i18nAvailableTimes, FALLBACK_STRINGS.availableTimes),
-      alreadyBooked: safe(d.i18nAlreadyBooked, FALLBACK_STRINGS.alreadyBooked),
-      askMoreMessage: safe(d.i18nAskMoreMessage, FALLBACK_STRINGS.askMoreMessage),
-      addAnotherSlot: safe(d.i18nAddAnotherSlot, FALLBACK_STRINGS.addAnotherSlot),
-      doneAddToCart: safe(d.i18nDoneAddToCart, FALLBACK_STRINGS.doneAddToCart),
-      removeSlot: safe(d.i18nRemoveSlot, FALLBACK_STRINGS.removeSlot),
-      addAnotherSlotLink: safe(
-        d.i18nAddAnotherSlotLink,
-        FALLBACK_STRINGS.addAnotherSlotLink,
-      ),
-      multiAddError: safe(d.i18nMultiAddError, FALLBACK_STRINGS.multiAddError),
-      addingToCart: safe(d.i18nAddingToCart, FALLBACK_STRINGS.addingToCart),
-    };
   }
 
   function formatTimeRangeDisplay(start, end) {
@@ -160,11 +94,10 @@
   function initWidget(root) {
     var productId = root.dataset.productId;
     var proxyBase = root.dataset.proxyBase;
-    var locale = root.dataset.locale || "en";
-    var strings = readStrings(root);
+    var strings = ENGLISH_STRINGS;
     var monthFormatter;
     try {
-      monthFormatter = new Intl.DateTimeFormat(locale, {
+      monthFormatter = new Intl.DateTimeFormat("en-US", {
         month: "long",
         year: "numeric",
         timeZone: "UTC",
@@ -216,6 +149,15 @@
     var askMoreMessageEl = root.querySelector("[data-booking-ask-more-message]");
     var askMoreYesBtn = root.querySelector("[data-booking-ask-more-yes]");
     var askMoreNoBtn = root.querySelector("[data-booking-ask-more-no]");
+    var quantityWrapEl = root.querySelector("[data-booking-quantity]");
+    var quantityInputEl = root.querySelector("[data-booking-quantity-input]");
+    var quantityDecreaseBtn = root.querySelector(
+      "[data-booking-quantity-decrease]",
+    );
+    var quantityIncreaseBtn = root.querySelector(
+      "[data-booking-quantity-increase]",
+    );
+    var quantityNoteEl = root.querySelector("[data-booking-quantity-note]");
 
     var today = new Date();
     var viewYear = today.getUTCFullYear();
@@ -231,9 +173,11 @@
 
     var pendingDate = null;
     var pendingSlot = null;
+    var pendingQuantity = 1;
     // Slots the shopper has confirmed in this modal session but hasn't
     // added to cart yet — can be more than one if they chose "add
-    // another slot" after confirming. Each entry is { date, slot }.
+    // another slot" after confirming. Each entry is { date, slot,
+    // location, quantity }.
     var confirmedSlots = [];
 
     // The numeric product id, pulled out of the GID we already use for
@@ -358,6 +302,15 @@
         locationInput.value = entry.location;
       }
 
+      var quantityInput = form.querySelector('input[name="quantity"]');
+      if (!quantityInput) {
+        quantityInput = document.createElement("input");
+        quantityInput.type = "hidden";
+        quantityInput.name = "quantity";
+        form.appendChild(quantityInput);
+      }
+      quantityInput.value = String(entry.quantity || 1);
+
       customFields.forEach(function (field) {
         var value = customFieldValues[field.fieldKey];
         if (!value) return;
@@ -376,13 +329,16 @@
     }
 
     // Builds the request body for a single "add to cart" call for one
-    // booked slot, based on the real theme form (so variant id, quantity,
-    // and any other apps' hidden fields all come along), with just the
-    // booking properties swapped in for this slot.
+    // booked slot, based on the real theme form (so variant id and any
+    // other apps' hidden fields all come along), with the booking
+    // properties and quantity swapped in for this slot — the shopper's
+    // chosen quantity always wins over whatever the native quantity
+    // field on the page currently holds.
     function buildFormDataForSlot(form, entry) {
       var fd = new FormData(form);
       fd.set("properties[Booking Date]", entry.date);
       fd.set("properties[Booking Time]", entry.slot.start);
+      fd.set("quantity", String(entry.quantity || 1));
       if (entry.location) {
         fd.set("properties[Location]", entry.location);
       }
@@ -722,6 +678,7 @@
     function openModal() {
       pendingDate = null;
       pendingSlot = null;
+      hideQuantityControl();
       askMoreEl.hidden = true;
       modalBodyEl.hidden = false;
       modalFooterEl.hidden = false;
@@ -760,6 +717,7 @@
       modalFooterEl.hidden = false;
       pendingDate = null;
       pendingSlot = null;
+      hideQuantityControl();
       currentSlots = [];
       durationEl.hidden = true;
       setStatus(slotListEl, strings.noTimes);
@@ -953,9 +911,66 @@
           renderSlots();
           updateConfirmButton();
           renderCustomFields();
+          showQuantityControl();
         });
 
         slotListEl.appendChild(row);
+      });
+    }
+
+    function maxQuantityForPendingSlot() {
+      if (!pendingSlot || typeof pendingSlot.remainingCapacity !== "number") {
+        return 1;
+      }
+      return Math.max(1, pendingSlot.remainingCapacity);
+    }
+
+    function setPendingQuantity(value) {
+      var max = maxQuantityForPendingSlot();
+      var next = Math.round(Number(value));
+      if (!Number.isFinite(next) || next < 1) next = 1;
+      if (next > max) next = max;
+      pendingQuantity = next;
+      if (quantityInputEl) quantityInputEl.value = String(pendingQuantity);
+      if (quantityDecreaseBtn) quantityDecreaseBtn.disabled = pendingQuantity <= 1;
+      if (quantityIncreaseBtn) quantityIncreaseBtn.disabled = pendingQuantity >= max;
+      if (quantityNoteEl) {
+        if (pendingQuantity >= max && max > 0) {
+          quantityNoteEl.textContent = format(strings.quantityMaxReached, {
+            count: max,
+          });
+          quantityNoteEl.hidden = false;
+        } else {
+          quantityNoteEl.hidden = true;
+        }
+      }
+    }
+
+    function showQuantityControl() {
+      if (!quantityWrapEl) return;
+      quantityWrapEl.hidden = false;
+      setPendingQuantity(1);
+    }
+
+    function hideQuantityControl() {
+      if (!quantityWrapEl) return;
+      quantityWrapEl.hidden = true;
+      pendingQuantity = 1;
+    }
+
+    if (quantityDecreaseBtn) {
+      quantityDecreaseBtn.addEventListener("click", function () {
+        setPendingQuantity(pendingQuantity - 1);
+      });
+    }
+    if (quantityIncreaseBtn) {
+      quantityIncreaseBtn.addEventListener("click", function () {
+        setPendingQuantity(pendingQuantity + 1);
+      });
+    }
+    if (quantityInputEl) {
+      quantityInputEl.addEventListener("change", function () {
+        setPendingQuantity(quantityInputEl.value);
       });
     }
 
@@ -980,10 +995,14 @@
         chip.className = "booking-widget__selection-chip";
 
         var label = document.createElement("span");
-        label.textContent = format(strings.selected, {
+        var chipText = format(strings.selected, {
           date: formatDateDisplay(entry.date),
           time: formatTimeRangeDisplay(entry.slot.start, entry.slot.end),
         });
+        if (entry.quantity && entry.quantity > 1) {
+          chipText += " \u00d7 " + entry.quantity;
+        }
+        label.textContent = chipText;
         chip.appendChild(label);
 
         var removeBtn = document.createElement("button");
@@ -1071,6 +1090,7 @@
       }
       pendingDate = null;
       pendingSlot = null;
+      hideQuantityControl();
       currentSlots = [];
       durationEl.hidden = true;
       setStatus(slotListEl, strings.noTimes);
@@ -1093,6 +1113,7 @@
       if (!pendingDate || !pendingSlot) return;
       var date = pendingDate;
       var slot = pendingSlot;
+      var quantity = pendingQuantity;
       var alreadyQueued = confirmedSlots.some(function (entry) {
         return entry.date === date && entry.slot.startsAt === slot.startsAt;
       });
@@ -1101,9 +1122,11 @@
           date: date,
           slot: slot,
           location: pendingLocation ? pendingLocation.name : null,
+          quantity: quantity,
         });
         updateSelectionDisplay();
       }
+      hideQuantityControl();
       showAskMore(date, slot);
     });
     askMoreYesBtn.addEventListener("click", resumeModalForAnotherSlot);

@@ -20,6 +20,7 @@ const ACTIVE_BOOKING_STATUSES = ["CONFIRMED", "RESCHEDULED"] as const;
 export type OrderLineItem = {
   id: number | string;
   product_id: number | string | null;
+  quantity?: number | string;
   properties?: { name: string; value: string }[] | null;
 };
 
@@ -100,14 +101,16 @@ async function countConfirmedBookingsForSlot(
   bookableProductId: string,
   slotStartsAt: Date,
 ): Promise<number> {
-  return prisma.booking.count({
+  const result = await prisma.booking.aggregate({
     where: {
       shop,
       bookableProductId,
       slotStartsAt,
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
     },
+    _sum: { quantity: true },
   });
+  return result._sum.quantity ?? 0;
 }
 
 export async function getBookedCountsInRange(
@@ -124,12 +127,12 @@ export async function getBookedCountsInRange(
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       slotStartsAt: { gte: rangeStart, lte: rangeEnd },
     },
-    _count: { _all: true },
+    _sum: { quantity: true },
   });
 
   const counts = new Map<string, number>();
   for (const row of grouped) {
-    counts.set(row.slotStartsAt.toISOString(), row._count._all);
+    counts.set(row.slotStartsAt.toISOString(), row._sum.quantity ?? 0);
   }
   return counts;
 }
@@ -268,8 +271,12 @@ export async function createBookingsFromOrder(
       bookableProduct.id,
       slotStartsAt,
     );
+    const quantity = (() => {
+      const n = Number(lineItem.quantity);
+      return Number.isInteger(n) && n > 0 ? n : 1;
+    })();
     const status =
-      alreadyBooked < effectiveSettings.maxBookingsPerSlot
+      alreadyBooked + quantity <= effectiveSettings.maxBookingsPerSlot
         ? "CONFIRMED"
         : "OVERBOOKED";
 
@@ -294,6 +301,7 @@ export async function createBookingsFromOrder(
         slotStart: selection.time,
         slotEnd,
         slotStartsAt,
+        quantity,
         status,
         source: "STOREFRONT_ORDER",
         customFieldResponses: customFieldResponses ?? undefined,
@@ -600,7 +608,7 @@ export async function rescheduleBooking(
     };
   }
 
-  const otherBookingsInSlot = await prisma.booking.count({
+  const otherBookingsInSlot = await prisma.booking.aggregate({
     where: {
       shop,
       bookableProductId: booking.bookableProductId,
@@ -608,8 +616,13 @@ export async function rescheduleBooking(
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       id: { not: id },
     },
+    _sum: { quantity: true },
   });
-  if (otherBookingsInSlot >= effectiveSettings.maxBookingsPerSlot) {
+  const otherQuantityInSlot = otherBookingsInSlot._sum.quantity ?? 0;
+  if (
+    otherQuantityInSlot + booking.quantity >
+    effectiveSettings.maxBookingsPerSlot
+  ) {
     return { ok: false, error: "That slot is already fully booked." };
   }
 
@@ -661,11 +674,11 @@ export async function listSlotsForReschedule(
       slotStartsAt: { gte: dayStart, lte: dayEnd },
       id: { not: bookingId },
     },
-    _count: { _all: true },
+    _sum: { quantity: true },
   });
   const bookedCounts = new Map<string, number>();
   for (const row of grouped) {
-    bookedCounts.set(row.slotStartsAt.toISOString(), row._count._all);
+    bookedCounts.set(row.slotStartsAt.toISOString(), row._sum.quantity ?? 0);
   }
 
   const slots = computeSlotsForDate(

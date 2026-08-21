@@ -4,40 +4,6 @@
   data-booking-widget
   data-product-id="gid://shopify/Product/{{ product.id }}"
   data-proxy-base="/apps/booking"
-  data-locale="{{ request.locale.iso_code }}"
-  data-i18n-loading-availability="{{ 'booking_widget.loading_availability' | t }}"
-  data-i18n-availability-error="{{ 'booking_widget.availability_error' | t }}"
-  data-i18n-no-availability="{{ 'booking_widget.no_availability' | t }}"
-  data-i18n-loading-times="{{ 'booking_widget.loading_times' | t }}"
-  data-i18n-times-error="{{ 'booking_widget.times_error' | t }}"
-  data-i18n-no-times="{{ 'booking_widget.no_times' | t }}"
-  data-i18n-booked="{{ 'booking_widget.booked' | t }}"
-  data-i18n-spot-left="{{ 'booking_widget.spot_left' | t }}"
-  data-i18n-spots-left="{{ 'booking_widget.spots_left' | t }}"
-  data-i18n-select-before-cart="{{ 'booking_widget.select_before_cart' | t }}"
-  data-i18n-selected="{{ 'booking_widget.selected' | t }}"
-  data-i18n-trigger-book="{{ 'booking_widget.trigger_book' | t }}"
-  data-i18n-modal-title="{{ 'booking_widget.modal_title' | t }}"
-  data-i18n-modal-subtitle="{{ 'booking_widget.modal_subtitle' | t }}"
-  data-i18n-select-location="{{ 'booking_widget.select_location' | t }}"
-  data-i18n-select-location-placeholder="{{ 'booking_widget.select_location_placeholder' | t }}"
-  data-i18n-location-required="{{ 'booking_widget.location_required' | t }}"
-  data-i18n-next="{{ 'booking_widget.next' | t }}"
-  data-i18n-change-location="{{ 'booking_widget.change_location' | t }}"
-  data-i18n-confirm="{{ 'booking_widget.confirm' | t }}"
-  data-i18n-close="{{ 'booking_widget.close' | t }}"
-  data-i18n-duration-minutes="{{ 'booking_widget.duration_minutes' | t }}"
-  data-i18n-previous-month="{{ 'booking_widget.previous_month' | t }}"
-  data-i18n-next-month="{{ 'booking_widget.next_month' | t }}"
-  data-i18n-available-times="{{ 'booking_widget.available_times' | t }}"
-  data-i18n-already-booked="{{ 'booking_widget.already_booked' | t }}"
-  data-i18n-ask-more-message="{{ 'booking_widget.ask_more_message' | t }}"
-  data-i18n-add-another-slot="{{ 'booking_widget.add_another_slot' | t }}"
-  data-i18n-done-add-to-cart="{{ 'booking_widget.done_add_to_cart' | t }}"
-  data-i18n-remove-slot="{{ 'booking_widget.remove_slot' | t }}"
-  data-i18n-add-another-slot-link="{{ 'booking_widget.add_another_slot_link' | t }}"
-  data-i18n-multi-add-error="{{ 'booking_widget.multi_add_error' | t }}"
-  data-i18n-adding-to-cart="{{ 'booking_widget.adding_to_cart' | t }}"
 >
   <div class="booking-widget__cart-reminder" data-booking-cart-reminder hidden>
     <p class="booking-widget__cart-reminder-title" data-booking-cart-reminder-title></p>
@@ -45,26 +11,26 @@
   </div>
 
   <div class="booking-widget__selection" data-booking-selection hidden></div>
-  <button type="button" class="button button--secondary button--full-width booking-widget__trigger" data-booking-trigger>{{ 'booking_widget.trigger_book' | t }}</button>
+  <button type="button" class="button button--secondary button--full-width booking-widget__trigger" data-booking-trigger>Book your slot</button>
   <p class="booking-widget__multi-add-status" data-booking-multi-add-status hidden></p>
   <p class="booking-widget__error" data-booking-error hidden></p>
 
   <!-- Popup modal -->
   <div class="booking-widget__overlay" data-booking-overlay hidden>
-    <div class="booking-widget__modal" role="dialog" aria-modal="true" aria-label="{{ 'booking_widget.modal_title' | t }}">
+    <div class="booking-widget__modal" role="dialog" aria-modal="true" aria-label="Appointment - Booking">
       <div class="booking-widget__modal-header">
-        <h2 class="booking-widget__modal-title">{{ 'booking_widget.modal_title' | t }}</h2>
-        <button type="button" class="booking-widget__close" data-booking-close aria-label="{{ 'booking_widget.close' | t }}">&times;</button>
+        <h2 class="booking-widget__modal-title">Appointment - Booking</h2>
+        <button type="button" class="booking-widget__close" data-booking-close aria-label="Close">&times;</button>
       </div>
 
       <div class="booking-widget__modal-subheader">
-        <p class="booking-widget__modal-subtitle">{{ 'booking_widget.modal_subtitle' | t }}</p>
+        <p class="booking-widget__modal-subtitle">Select your preferred date &amp; time</p>
         <span class="booking-widget__timezone" data-booking-timezone></span>
       </div>
 
       <div class="booking-widget__modal-body" data-booking-modal-body>
         <div class="booking-widget__location-step" data-booking-location-step hidden>
-          <label class="booking-widget__location-label" for="booking-widget-location-select">{{ 'booking_widget.select_location' | t }}</label>
+          <label class="booking-widget__location-label" for="booking-widget-location-select">Select location</label>
           <div class="booking-widget__location-select-wrap">
             <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
             <select
@@ -72,7 +38,7 @@
               class="booking-widget__location-select"
               data-booking-location-select
             >
-              <option value="">{{ 'booking_widget.select_location_placeholder' | t }}</option>
+              <option value="">Select location</option>
             </select>
           </div>
           <p class="booking-widget__location-error" data-booking-location-error hidden></p>
@@ -82,19 +48,19 @@
           <div class="booking-widget__location-summary" data-booking-location-summary hidden>
             <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
             <span class="booking-widget__location-summary-text" data-booking-location-summary-text></span>
-            <button type="button" class="booking-widget__location-change" data-booking-location-change>{{ 'booking_widget.change_location' | t }}</button>
+            <button type="button" class="booking-widget__location-change" data-booking-location-change>Change</button>
           </div>
 
           <div class="booking-widget__calendar-pane">
             <div class="booking-widget__header">
-              <button type="button" class="booking-widget__nav" data-booking-prev aria-label="{{ 'booking_widget.previous_month' | t }}">&lsaquo;</button>
+              <button type="button" class="booking-widget__nav" data-booking-prev aria-label="Previous month">&lsaquo;</button>
               <span class="booking-widget__month-label" data-booking-month-label></span>
-              <button type="button" class="booking-widget__nav" data-booking-next aria-label="{{ 'booking_widget.next_month' | t }}">&rsaquo;</button>
+              <button type="button" class="booking-widget__nav" data-booking-next aria-label="Next month">&rsaquo;</button>
             </div>
             <div class="booking-widget__weekdays" data-booking-weekdays></div>
             <div class="booking-widget__calendar" data-booking-calendar>
               <p class="booking-widget__status" data-booking-status>
-                {{ 'booking_widget.loading_availability' | t }}
+                Loading availability…
               </p>
             </div>
           </div>
@@ -102,10 +68,41 @@
           <div class="booking-widget__slots-pane">
             <div class="booking-widget__duration" data-booking-duration hidden></div>
             <div class="booking-widget__slots" data-booking-slots>
-              <p class="booking-widget__slots-label">{{ 'booking_widget.available_times' | t }}</p>
+              <p class="booking-widget__slots-label">Available times</p>
               <div class="booking-widget__slot-list" data-booking-slot-list>
-                <p class="booking-widget__status">{{ 'booking_widget.no_times' | t }}</p>
+                <p class="booking-widget__status">No times available on this date.</p>
               </div>
+            </div>
+
+            <div class="booking-widget__quantity" data-booking-quantity hidden>
+              <label class="booking-widget__quantity-label" for="booking-widget-quantity-{{ product.id }}">
+                Quantity
+              </label>
+              <div class="booking-widget__quantity-control">
+                <button
+                  type="button"
+                  class="booking-widget__quantity-btn"
+                  data-booking-quantity-decrease
+                  aria-label="Decrease quantity"
+                >&minus;</button>
+                <input
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  step="1"
+                  value="1"
+                  class="booking-widget__quantity-input"
+                  id="booking-widget-quantity-{{ product.id }}"
+                  data-booking-quantity-input
+                >
+                <button
+                  type="button"
+                  class="booking-widget__quantity-btn"
+                  data-booking-quantity-increase
+                  aria-label="Increase quantity"
+                >+</button>
+              </div>
+              <p class="booking-widget__quantity-note" data-booking-quantity-note hidden></p>
             </div>
           </div>
         </div>
@@ -115,10 +112,10 @@
         <p class="booking-widget__ask-more-message" data-booking-ask-more-message></p>
         <div class="booking-widget__ask-more-actions">
           <button type="button" class="booking-widget__btn booking-widget__btn--secondary" data-booking-ask-more-no>
-            {{ 'booking_widget.done_add_to_cart' | t }}
+            No, I'm done
           </button>
           <button type="button" class="booking-widget__btn booking-widget__btn--confirm" data-booking-ask-more-yes>
-            {{ 'booking_widget.add_another_slot' | t }}
+            Yes, add another slot
           </button>
         </div>
       </div>
@@ -127,10 +124,10 @@
 
       <div class="booking-widget__modal-footer" data-booking-modal-footer>
         <button type="button" class="booking-widget__btn booking-widget__btn--confirm" data-booking-location-next hidden>
-          {{ 'booking_widget.next' | t }}
+          Next
         </button>
         <button type="button" class="booking-widget__btn booking-widget__btn--confirm" data-booking-confirm disabled>
-          {{ 'booking_widget.confirm' | t }}
+          Confirm
         </button>
       </div>
     </div>
@@ -143,7 +140,7 @@
 
 {% schema %}
 {
-  "name": "t:booking_widget.block_name",
+  "name": "Booking Widget",
   "target": "body",
   "enabled_on": {
     "templates": ["product"]

@@ -147,6 +147,11 @@ model Booking {
   slotStart    String
   slotEnd      String
   slotStartsAt DateTime
+  /// How many units of this slot the line item covers. A line item bought
+  /// with quantity 3 consumes 3 units of the slot's capacity, not 1 —
+  /// without this, capacity checks and the admin bookings list undercount
+  /// how much of a slot is actually taken.
+  quantity Int @default(1)
   status BookingStatus @default(CONFIRMED)
   source BookingSource
   customFieldResponses Json?

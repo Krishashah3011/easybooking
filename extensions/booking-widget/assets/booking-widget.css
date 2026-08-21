@@ -392,6 +392,68 @@ body.booking-widget-lock-scroll {
   padding-right: 0.25rem;
 }
 
+.booking-widget__quantity {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.booking-widget__quantity-label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.booking-widget__quantity-control {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1.5px solid #111;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.booking-widget__quantity-btn {
+  width: 2.25rem;
+  border: none;
+  background: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.booking-widget__quantity-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.booking-widget__quantity-btn:disabled {
+  color: #bbb;
+  cursor: not-allowed;
+}
+
+.booking-widget__quantity-input {
+  width: 3rem;
+  border: none;
+  border-left: 1.5px solid #111;
+  border-right: 1.5px solid #111;
+  text-align: center;
+  font-family: inherit;
+  font-size: 0.95rem;
+  -moz-appearance: textfield;
+}
+
+.booking-widget__quantity-input::-webkit-outer-spin-button,
+.booking-widget__quantity-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.booking-widget__quantity-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #a15c00;
+}
+
 .booking-widget__slot-row {
   display: flex;
   align-items: center;
