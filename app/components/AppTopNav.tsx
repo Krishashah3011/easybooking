@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 
-import styles from "./AppTopNav.module.css";
+import "./AppTopNav.css";
 import {
   BookingsIcon,
   HomeIcon,
@@ -37,8 +37,8 @@ export function AppTopNav() {
   const { pathname } = useLocation();
 
   return (
-    <nav className={styles.bar} aria-label="App navigation">
-      <div className={styles.group}>
+    <nav className="bar" aria-label="App navigation">
+      <div className="group">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = isActive(pathname, item);
@@ -49,7 +49,7 @@ export function AppTopNav() {
               title={item.label}
               aria-label={item.label}
               aria-current={active ? "page" : undefined}
-              className={active ? `${styles.link} ${styles.linkActive}` : styles.link}
+              className={active ? "link linkActive" : "link"}
             >
               <Icon />
             </Link>
