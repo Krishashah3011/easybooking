@@ -26,7 +26,7 @@
     "confirm": "Confirm",
     "close": "Close",
     "duration_minutes": "{count} Mins",
-    "already_booked": "You already have this booked for this product:",
+    "already_booked": "This slots are added to Cart for this product:",
     "ask_more_message": "{date} | {time} added. Want to book another slot for this product?",
     "add_another_slot": "Yes, add another slot",
     "done_add_to_cart": "No, I'm done",

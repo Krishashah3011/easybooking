@@ -31,7 +31,7 @@
     previousMonth: "Previous month",
     nextMonth: "Next month",
     availableTimes: "Available times",
-    alreadyBooked: "You already have this booked for this product:",
+    alreadyBooked: "This slots are added to Cart for this product:",
     askMoreMessage:
       "{date} | {time} added. Want to book another slot for this product?",
     addAnotherSlot: "Yes, add another slot",
