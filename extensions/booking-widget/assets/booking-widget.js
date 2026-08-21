@@ -91,6 +91,24 @@
     }
   }
 
+  function locationTimezoneLabel(tz) {
+    if (!tz) return "";
+    try {
+      var dtf = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        timeZoneName: "shortOffset",
+      });
+      var parts = dtf.formatToParts(new Date());
+      var offset = "";
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === "timeZoneName") offset = parts[i].value;
+      }
+      return (offset ? "(" + offset + ") " : "") + tz;
+    } catch (e) {
+      return tz;
+    }
+  }
+
   function initWidget(root) {
     var productId = root.dataset.productId;
     var proxyBase = root.dataset.proxyBase;
@@ -127,14 +145,21 @@
     var modalBodyEl = root.querySelector("[data-booking-modal-body]");
     var modalFooterEl = root.querySelector("[data-booking-modal-footer]");
     var locationStepEl = root.querySelector("[data-booking-location-step]");
-    var locationSelectEl = root.querySelector("[data-booking-location-select]");
+    var locationComboboxEl = root.querySelector(
+      "[data-booking-location-combobox]",
+    );
+    var locationTriggerBtn = root.querySelector("[data-booking-location-trigger]");
+    var locationTriggerTextEl = root.querySelector(
+      "[data-booking-location-trigger-text]",
+    );
+    var locationChevronEl = root.querySelector("[data-booking-location-chevron]");
+    var locationListEl = root.querySelector("[data-booking-location-list]");
     var locationErrorEl = root.querySelector("[data-booking-location-error]");
     var datetimeStepEl = root.querySelector("[data-booking-datetime-step]");
     var locationSummaryEl = root.querySelector("[data-booking-location-summary]");
     var locationSummaryTextEl = root.querySelector(
       "[data-booking-location-summary-text]",
     );
-    var locationChangeBtn = root.querySelector("[data-booking-location-change]");
     var locationNextBtn = root.querySelector("[data-booking-location-next]");
     var calendarEl = root.querySelector("[data-booking-calendar]");
     var weekdaysEl = root.querySelector("[data-booking-weekdays]");
@@ -170,6 +195,7 @@
     // exactly as it did before locations existed.
     var locations = [];
     var pendingLocation = null;
+    var draftLocation = null;
 
     var pendingDate = null;
     var pendingSlot = null;
@@ -515,14 +541,14 @@
     }
 
     function loadLocations() {
-      if (!locationStepEl || !locationSelectEl) return;
+      if (!locationStepEl || !locationListEl) return;
       fetch(proxyBase + "/locations")
         .then(function (res) {
           return res.json();
         })
         .then(function (data) {
           locations = data.locations || [];
-          populateLocationSelect();
+          populateLocationList();
         })
         .catch(function () {
           // Non-critical — if locations can't be loaded, fall back to the
@@ -531,28 +557,100 @@
         });
     }
 
-    function populateLocationSelect() {
-      if (!locationSelectEl) return;
-      var currentValue = pendingLocation ? pendingLocation.id : "";
-      locationSelectEl.innerHTML = "";
+    function setLocationTriggerText(text, isPlaceholder) {
+      if (!locationTriggerTextEl) return;
+      locationTriggerTextEl.textContent = text;
+      locationTriggerTextEl.classList.toggle(
+        "booking-widget__location-trigger-text--placeholder",
+        Boolean(isPlaceholder),
+      );
+    }
 
-      var placeholderOpt = document.createElement("option");
-      placeholderOpt.value = "";
-      placeholderOpt.textContent = strings.selectLocationPlaceholder;
-      locationSelectEl.appendChild(placeholderOpt);
+    function populateLocationList() {
+      if (!locationListEl) return;
+      locationListEl.innerHTML = "";
+      var currentId = (draftLocation || pendingLocation || {}).id;
 
       locations.forEach(function (location) {
-        var opt = document.createElement("option");
-        opt.value = location.id;
-        opt.textContent = location.name;
-        locationSelectEl.appendChild(opt);
+        var li = document.createElement("li");
+        li.className = "booking-widget__location-option";
+        li.setAttribute("role", "option");
+        li.setAttribute("tabindex", "-1");
+        li.dataset.locationId = location.id;
+        li.textContent = location.name;
+        var isSelected = location.id === currentId;
+        li.setAttribute("aria-selected", isSelected ? "true" : "false");
+        if (isSelected) {
+          li.classList.add("booking-widget__location-option--selected");
+        }
+        li.addEventListener("click", function () {
+          draftLocation = location;
+          setLocationTriggerText(location.name, false);
+          closeLocationList();
+          if (locationErrorEl) {
+            locationErrorEl.hidden = true;
+            locationErrorEl.textContent = "";
+          }
+          if (locationComboboxEl) {
+            locationComboboxEl.classList.remove("booking-widget__location-combobox--error");
+          }
+        });
+        locationListEl.appendChild(li);
       });
-
-      locationSelectEl.value = currentValue;
     }
+
+    function openLocationList() {
+      if (!locationListEl || !locationTriggerBtn) return;
+      populateLocationList();
+      locationListEl.hidden = false;
+      locationTriggerBtn.setAttribute("aria-expanded", "true");
+      if (locationComboboxEl) {
+        locationComboboxEl.classList.add("booking-widget__location-combobox--open");
+      }
+    }
+
+    function closeLocationList() {
+      if (!locationListEl || !locationTriggerBtn) return;
+      locationListEl.hidden = true;
+      locationTriggerBtn.setAttribute("aria-expanded", "false");
+      if (locationComboboxEl) {
+        locationComboboxEl.classList.remove("booking-widget__location-combobox--open");
+      }
+    }
+
+    function toggleLocationList() {
+      if (locationListEl && locationListEl.hidden) {
+        openLocationList();
+      } else {
+        closeLocationList();
+      }
+    }
+
+    if (locationTriggerBtn) {
+      locationTriggerBtn.addEventListener("click", toggleLocationList);
+    }
+
+    document.addEventListener("click", function (event) {
+      if (!locationComboboxEl || locationListEl.hidden) return;
+      if (!locationComboboxEl.contains(event.target)) {
+        closeLocationList();
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && locationListEl && !locationListEl.hidden) {
+        closeLocationList();
+      }
+    });
 
     function showLocationStep() {
       if (!locationStepEl) return;
+      draftLocation = pendingLocation;
+      setLocationTriggerText(
+        pendingLocation ? pendingLocation.name : strings.selectLocationPlaceholder,
+        !pendingLocation,
+      );
+      closeLocationList();
       locationStepEl.hidden = false;
       datetimeStepEl.hidden = true;
       if (locationSummaryEl) locationSummaryEl.hidden = true;
@@ -560,12 +658,16 @@
         locationErrorEl.hidden = true;
         locationErrorEl.textContent = "";
       }
+      if (locationComboboxEl) {
+        locationComboboxEl.classList.remove("booking-widget__location-combobox--error");
+      }
       if (locationNextBtn) locationNextBtn.hidden = false;
       confirmBtn.hidden = true;
     }
 
     function showDatetimeStep() {
       if (locationStepEl) locationStepEl.hidden = true;
+      closeLocationList();
       datetimeStepEl.hidden = false;
       if (locationNextBtn) locationNextBtn.hidden = true;
       confirmBtn.hidden = false;
@@ -578,31 +680,46 @@
           locationSummaryEl.hidden = true;
         }
       }
+
+      if (timezoneEl) {
+        timezoneEl.textContent = pendingLocation
+          ? locationTimezoneLabel(pendingLocation.timezone)
+          : timezoneLabel();
+      }
     }
 
     if (locationNextBtn) {
       locationNextBtn.addEventListener("click", function () {
-        var selectedId = locationSelectEl.value;
-        var selected = locations.filter(function (loc) {
-          return loc.id === selectedId;
-        })[0];
-        if (!selected) {
+        if (!draftLocation) {
           if (locationErrorEl) {
             locationErrorEl.hidden = false;
             locationErrorEl.textContent = strings.locationRequired;
           }
+          if (locationComboboxEl) {
+            locationComboboxEl.classList.add("booking-widget__location-combobox--error");
+          }
           return;
         }
-        pendingLocation = selected;
+        var locationChanged =
+          !pendingLocation || pendingLocation.id !== draftLocation.id;
+        pendingLocation = draftLocation;
         showDatetimeStep();
+        if (locationChanged) {
+          // A different location can mean a different timezone, so the
+          // previously loaded month/day no longer applies.
+          pendingDate = null;
+          pendingSlot = null;
+          refreshQuantityForSelection();
+          updateConfirmButton();
+        }
         loadMonth();
       });
     }
 
-    if (locationChangeBtn) {
-      locationChangeBtn.addEventListener("click", function () {
-        populateLocationSelect();
+    if (locationSummaryEl) {
+      locationSummaryEl.addEventListener("click", function () {
         showLocationStep();
+        openLocationList();
       });
     }
 
@@ -678,7 +795,7 @@
     function openModal() {
       pendingDate = null;
       pendingSlot = null;
-      hideQuantityControl();
+      refreshQuantityForSelection();
       askMoreEl.hidden = true;
       modalBodyEl.hidden = false;
       modalFooterEl.hidden = false;
@@ -688,7 +805,6 @@
       renderCustomFields();
 
       if (locationStepEl && locations.length > 0 && !pendingLocation) {
-        populateLocationSelect();
         showLocationStep();
       } else {
         showDatetimeStep();
@@ -717,7 +833,7 @@
       modalFooterEl.hidden = false;
       pendingDate = null;
       pendingSlot = null;
-      hideQuantityControl();
+      refreshQuantityForSelection();
       currentSlots = [];
       durationEl.hidden = true;
       setStatus(slotListEl, strings.noTimes);
@@ -740,6 +856,9 @@
         viewYear +
         "&month=" +
         viewMonth;
+      if (pendingLocation) {
+        url += "&locationId=" + encodeURIComponent(pendingLocation.id);
+      }
 
       fetch(url)
         .then(function (res) {
@@ -828,6 +947,9 @@
         encodeURIComponent(productId) +
         "&date=" +
         dateStr;
+      if (pendingLocation) {
+        url += "&locationId=" + encodeURIComponent(pendingLocation.id);
+      }
 
       fetch(url)
         .then(function (res) {
@@ -911,16 +1033,18 @@
           renderSlots();
           updateConfirmButton();
           renderCustomFields();
-          showQuantityControl();
+          refreshQuantityForSelection();
         });
 
         slotListEl.appendChild(row);
       });
     }
 
+    var DEFAULT_MAX_QUANTITY = 99;
+
     function maxQuantityForPendingSlot() {
       if (!pendingSlot || typeof pendingSlot.remainingCapacity !== "number") {
-        return 1;
+        return DEFAULT_MAX_QUANTITY;
       }
       return Math.max(1, pendingSlot.remainingCapacity);
     }
@@ -946,16 +1070,12 @@
       }
     }
 
-    function showQuantityControl() {
-      if (!quantityWrapEl) return;
-      quantityWrapEl.hidden = false;
-      setPendingQuantity(1);
-    }
-
-    function hideQuantityControl() {
-      if (!quantityWrapEl) return;
-      quantityWrapEl.hidden = true;
-      pendingQuantity = 1;
+    // Quantity lives outside the modal now (always visible on the page,
+    // like a normal storefront quantity picker) — these just re-clamp the
+    // current value against whichever slot (if any) is selected, rather
+    // than hiding anything or forcing the value back to 1.
+    function refreshQuantityForSelection() {
+      setPendingQuantity(pendingQuantity);
     }
 
     if (quantityDecreaseBtn) {
@@ -973,6 +1093,7 @@
         setPendingQuantity(quantityInputEl.value);
       });
     }
+    setPendingQuantity(1);
 
     function updateConfirmButton() {
       confirmBtn.disabled = !(pendingDate && pendingSlot);
@@ -1090,7 +1211,7 @@
       }
       pendingDate = null;
       pendingSlot = null;
-      hideQuantityControl();
+      refreshQuantityForSelection();
       currentSlots = [];
       durationEl.hidden = true;
       setStatus(slotListEl, strings.noTimes);
@@ -1126,7 +1247,7 @@
         });
         updateSelectionDisplay();
       }
-      hideQuantityControl();
+      refreshQuantityForSelection();
       showAskMore(date, slot);
     });
     askMoreYesBtn.addEventListener("click", resumeModalForAnotherSlot);

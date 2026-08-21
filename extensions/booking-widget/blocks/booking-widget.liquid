@@ -11,6 +11,38 @@
   </div>
 
   <div class="booking-widget__selection" data-booking-selection hidden></div>
+
+  <div class="booking-widget__quantity" data-booking-quantity>
+    <label class="booking-widget__quantity-label" for="booking-widget-quantity-{{ product.id }}">
+      Quantity
+    </label>
+    <div class="booking-widget__quantity-control">
+      <button
+        type="button"
+        class="booking-widget__quantity-btn"
+        data-booking-quantity-decrease
+        aria-label="Decrease quantity"
+      >&minus;</button>
+      <input
+        type="number"
+        inputmode="numeric"
+        min="1"
+        step="1"
+        value="1"
+        class="booking-widget__quantity-input"
+        id="booking-widget-quantity-{{ product.id }}"
+        data-booking-quantity-input
+      >
+      <button
+        type="button"
+        class="booking-widget__quantity-btn"
+        data-booking-quantity-increase
+        aria-label="Increase quantity"
+      >+</button>
+    </div>
+    <p class="booking-widget__quantity-note" data-booking-quantity-note hidden></p>
+  </div>
+
   <button type="button" class="button button--secondary button--full-width booking-widget__trigger" data-booking-trigger>Book your slot</button>
   <p class="booking-widget__multi-add-status" data-booking-multi-add-status hidden></p>
   <p class="booking-widget__error" data-booking-error hidden></p>
@@ -82,37 +114,6 @@
               <div class="booking-widget__slot-list" data-booking-slot-list>
                 <p class="booking-widget__status">No times available on this date.</p>
               </div>
-            </div>
-
-            <div class="booking-widget__quantity" data-booking-quantity hidden>
-              <label class="booking-widget__quantity-label" for="booking-widget-quantity-{{ product.id }}">
-                Quantity
-              </label>
-              <div class="booking-widget__quantity-control">
-                <button
-                  type="button"
-                  class="booking-widget__quantity-btn"
-                  data-booking-quantity-decrease
-                  aria-label="Decrease quantity"
-                >&minus;</button>
-                <input
-                  type="number"
-                  inputmode="numeric"
-                  min="1"
-                  step="1"
-                  value="1"
-                  class="booking-widget__quantity-input"
-                  id="booking-widget-quantity-{{ product.id }}"
-                  data-booking-quantity-input
-                >
-                <button
-                  type="button"
-                  class="booking-widget__quantity-btn"
-                  data-booking-quantity-increase
-                  aria-label="Increase quantity"
-                >+</button>
-              </div>
-              <p class="booking-widget__quantity-note" data-booking-quantity-note hidden></p>
             </div>
           </div>
         </div>
