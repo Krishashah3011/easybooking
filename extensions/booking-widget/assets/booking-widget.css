@@ -430,7 +430,9 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__quantity {
-  margin: 0 0 1rem;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .booking-widget__quantity-label {
@@ -511,6 +513,55 @@ body.booking-widget-lock-scroll {
   margin: 0.5rem 0 0;
   font-size: 0.8rem;
   color: #a15c00;
+}
+
+.booking-widget__review-step {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.booking-widget__review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 0.75rem;
+}
+
+.booking-widget__review-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.booking-widget__review-back {
+  border: none;
+  background: none;
+  color: #111;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.booking-widget__review-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+.booking-widget__review-list dt {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.booking-widget__review-list dd {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
 }
 
 .booking-widget__slot-row {

@@ -180,6 +180,9 @@
       "[data-booking-quantity-increase]",
     );
     var quantityNoteEl = root.querySelector("[data-booking-quantity-note]");
+    var reviewStepEl = root.querySelector("[data-booking-review-step]");
+    var reviewListEl = root.querySelector("[data-booking-review-list]");
+    var reviewBackBtn = root.querySelector("[data-booking-review-back]");
 
     var today = new Date();
     var viewYear = today.getUTCFullYear();
@@ -199,6 +202,10 @@
     var pendingDate = null;
     var pendingSlot = null;
     var pendingQuantity = 1;
+    // True once the shopper has clicked Confirm on their slot+quantity
+    // and is looking at the review summary (with notes), rather than
+    // the calendar/slot picker.
+    var atReviewStep = false;
     // Slots the shopper has confirmed in this modal session but hasn't
     // added to cart yet — can be more than one if they chose "add
     // another slot" after confirming. Each entry is { date, slot,
@@ -601,6 +608,7 @@
 
     function showLocationStep() {
       if (!locationStepEl) return;
+      exitReviewStep();
       selectedLocationRecord = pendingLocation;
       if (locationTriggerTextEl) {
         if (pendingLocation) {
@@ -633,6 +641,7 @@
     }
 
     function showDatetimeStep() {
+      exitReviewStep();
       if (locationStepEl) locationStepEl.hidden = true;
       datetimeStepEl.hidden = false;
       if (locationNextBtn) locationNextBtn.hidden = true;
@@ -745,9 +754,10 @@
         customFieldsEl.appendChild(wrapper);
       });
 
-      // Only shown once a time slot is picked — asked as the natural next
-      // step after date + time, same as the confirm button appearing.
-      customFieldsEl.hidden = !pendingSlot;
+      // Only shown at the review step, after the shopper has confirmed
+      // their slot + quantity — asked as the last thing before the final
+      // Confirm.
+      customFieldsEl.hidden = !atReviewStep;
     }
 
     function showError(message) {
@@ -763,6 +773,8 @@
     function openModal() {
       pendingDate = null;
       pendingSlot = null;
+      atReviewStep = false;
+      if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
       askMoreEl.hidden = true;
       modalBodyEl.hidden = false;
@@ -792,6 +804,9 @@
       });
       modalBodyEl.hidden = true;
       modalFooterEl.hidden = true;
+      if (quantityWrapEl) quantityWrapEl.hidden = true;
+      if (reviewStepEl) reviewStepEl.hidden = true;
+      if (customFieldsEl) customFieldsEl.hidden = true;
       askMoreEl.hidden = false;
     }
 
@@ -801,6 +816,8 @@
       modalFooterEl.hidden = false;
       pendingDate = null;
       pendingSlot = null;
+      atReviewStep = false;
+      if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
       currentSlots = [];
       durationEl.hidden = true;
@@ -902,6 +919,7 @@
       renderCalendar();
       updateConfirmButton();
       renderCustomFields();
+      refreshQuantityForSelection();
       loadSlots(dateStr);
     }
 
@@ -972,13 +990,12 @@
           return;
         }
 
-        if (
-          typeof slot.remainingCapacity === "number" &&
-          slot.remainingCapacity <= LOW_AVAILABILITY_THRESHOLD
-        ) {
+        if (typeof slot.remainingCapacity === "number") {
+          var isLow = slot.remainingCapacity <= LOW_AVAILABILITY_THRESHOLD;
           var remainingTag = document.createElement("span");
           remainingTag.className =
-            "booking-widget__slot-tag booking-widget__slot-tag--low";
+            "booking-widget__slot-tag" +
+            (isLow ? " booking-widget__slot-tag--low" : "");
           remainingTag.textContent =
             slot.remainingCapacity === 1
               ? strings.spotLeft
@@ -1027,7 +1044,7 @@
       if (quantityDecreaseBtn) quantityDecreaseBtn.disabled = pendingQuantity <= 1;
       if (quantityIncreaseBtn) quantityIncreaseBtn.disabled = pendingQuantity >= max;
       if (quantityNoteEl) {
-        if (pendingQuantity >= max && max > 0) {
+        if (max <= 5) {
           quantityNoteEl.textContent = format(strings.quantityMaxReached, {
             count: max,
           });
@@ -1038,12 +1055,13 @@
       }
     }
 
-    // Quantity lives outside the modal now (always visible on the page,
-    // like a normal storefront quantity picker) — these just re-clamp the
-    // current value against whichever slot (if any) is selected, rather
-    // than hiding anything or forcing the value back to 1.
+    // Quantity lives inside the modal, right after the time slots, and
+    // only appears once a slot is picked — same as the custom fields
+    // section. Re-clamps the current value against whichever slot (if
+    // any) is now selected.
     function refreshQuantityForSelection() {
-      setPendingQuantity(pendingQuantity);
+      if (quantityWrapEl) quantityWrapEl.hidden = !pendingSlot;
+      setPendingQuantity(pendingSlot ? pendingQuantity : 1);
     }
 
     if (quantityDecreaseBtn) {
@@ -1064,7 +1082,63 @@
     setPendingQuantity(1);
 
     function updateConfirmButton() {
-      confirmBtn.disabled = !(pendingDate && pendingSlot);
+      confirmBtn.disabled = atReviewStep ? false : !(pendingDate && pendingSlot);
+    }
+
+    function buildReviewSummary() {
+      if (!reviewListEl) return;
+      reviewListEl.innerHTML = "";
+      if (!pendingDate || !pendingSlot) return;
+
+      var rows = [
+        pendingLocation ? { label: "Location", value: pendingLocation.name } : null,
+        { label: "Date", value: formatDateDisplay(pendingDate) },
+        {
+          label: "Time",
+          value: formatTimeRangeDisplay(pendingSlot.start, pendingSlot.end),
+        },
+        { label: "Quantity", value: String(pendingQuantity) },
+      ];
+
+      rows.forEach(function (row) {
+        if (!row) return;
+        var dt = document.createElement("dt");
+        dt.textContent = row.label;
+        var dd = document.createElement("dd");
+        dd.textContent = row.value;
+        reviewListEl.appendChild(dt);
+        reviewListEl.appendChild(dd);
+      });
+    }
+
+    // Moves from the calendar/slot/quantity picker to the review summary
+    // (with notes) — everything is already chosen at this point, this
+    // step is just a last look before it's added.
+    function showReviewStep() {
+      atReviewStep = true;
+      buildReviewSummary();
+      datetimeStepEl.hidden = true;
+      if (quantityWrapEl) quantityWrapEl.hidden = true;
+      if (reviewStepEl) reviewStepEl.hidden = false;
+      renderCustomFields();
+      updateConfirmButton();
+    }
+
+    // Back out of the review step to the picker, keeping the current
+    // date/slot/quantity selection intact.
+    function exitReviewStep() {
+      atReviewStep = false;
+      if (reviewStepEl) reviewStepEl.hidden = true;
+      renderCustomFields();
+    }
+
+    if (reviewBackBtn) {
+      reviewBackBtn.addEventListener("click", function () {
+        showDatetimeStep();
+        renderSlots();
+        refreshQuantityForSelection();
+        updateConfirmButton();
+      });
     }
 
     function updateSelectionDisplay() {
@@ -1200,6 +1274,12 @@
     });
     confirmBtn.addEventListener("click", function () {
       if (!pendingDate || !pendingSlot) return;
+
+      if (!atReviewStep) {
+        showReviewStep();
+        return;
+      }
+
       var date = pendingDate;
       var slot = pendingSlot;
       var quantity = pendingQuantity;
