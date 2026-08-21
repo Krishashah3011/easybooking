@@ -62,17 +62,13 @@
 
       <div class="booking-widget__modal-body" data-booking-modal-body>
         <div class="booking-widget__location-step" data-booking-location-step hidden>
-          <label class="booking-widget__location-label" for="booking-widget-location-select">Select location</label>
-          <div class="booking-widget__location-select-wrap">
+          <label class="booking-widget__location-label" id="booking-widget-location-label">Select location</label>
+          <div class="booking-widget__location-trigger" data-booking-location-trigger>
             <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
-            <select
-              id="booking-widget-location-select"
-              class="booking-widget__location-select"
-              data-booking-location-select
-            >
-              <option value="">Select location</option>
-            </select>
+            <span class="booking-widget__location-trigger-text" data-booking-location-trigger-text>Select location</span>
+            <span class="booking-widget__location-chevron" aria-hidden="true">&#9652;</span>
           </div>
+          <ul class="booking-widget__location-list" data-booking-location-list role="listbox" aria-labelledby="booking-widget-location-label"></ul>
           <p class="booking-widget__location-error" data-booking-location-error hidden></p>
         </div>
 

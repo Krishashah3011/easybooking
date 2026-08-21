@@ -145,7 +145,11 @@
     var modalBodyEl = root.querySelector("[data-booking-modal-body]");
     var modalFooterEl = root.querySelector("[data-booking-modal-footer]");
     var locationStepEl = root.querySelector("[data-booking-location-step]");
-    var locationSelectEl = root.querySelector("[data-booking-location-select]");
+    var locationTriggerEl = root.querySelector("[data-booking-location-trigger]");
+    var locationTriggerTextEl = root.querySelector(
+      "[data-booking-location-trigger-text]",
+    );
+    var locationListEl = root.querySelector("[data-booking-location-list]");
     var locationErrorEl = root.querySelector("[data-booking-location-error]");
     var datetimeStepEl = root.querySelector("[data-booking-datetime-step]");
     var locationSummaryEl = root.querySelector("[data-booking-location-summary]");
@@ -188,6 +192,9 @@
     // exactly as it did before locations existed.
     var locations = [];
     var pendingLocation = null;
+    // Draft selection while the location step is open, confirmed into
+    // pendingLocation only once "Next" is pressed.
+    var selectedLocationRecord = null;
 
     var pendingDate = null;
     var pendingSlot = null;
@@ -533,14 +540,14 @@
     }
 
     function loadLocations() {
-      if (!locationStepEl || !locationSelectEl) return;
+      if (!locationStepEl || !locationListEl) return;
       fetch(proxyBase + "/locations")
         .then(function (res) {
           return res.json();
         })
         .then(function (data) {
           locations = data.locations || [];
-          populateLocationSelect();
+          populateLocationList();
         })
         .catch(function () {
           // Non-critical — if locations can't be loaded, fall back to the
@@ -549,35 +556,77 @@
         });
     }
 
-    function populateLocationSelect() {
-      if (!locationSelectEl) return;
-      var currentValue = pendingLocation ? pendingLocation.id : "";
-      locationSelectEl.innerHTML = "";
-
-      var placeholderOpt = document.createElement("option");
-      placeholderOpt.value = "";
-      placeholderOpt.textContent = strings.selectLocationPlaceholder;
-      locationSelectEl.appendChild(placeholderOpt);
+    function populateLocationList() {
+      if (!locationListEl) return;
+      locationListEl.innerHTML = "";
+      var currentId = pendingLocation ? pendingLocation.id : null;
 
       locations.forEach(function (location) {
-        var opt = document.createElement("option");
-        opt.value = location.id;
-        opt.textContent = location.name;
-        locationSelectEl.appendChild(opt);
+        var li = document.createElement("li");
+        li.className = "booking-widget__location-option";
+        li.setAttribute("role", "option");
+        li.dataset.locationId = location.id;
+        li.textContent = location.name;
+        var isSelected = location.id === currentId;
+        li.setAttribute("aria-selected", isSelected ? "true" : "false");
+        if (isSelected) {
+          li.classList.add("booking-widget__location-option--selected");
+        }
+        li.addEventListener("click", function () {
+          selectLocation(location);
+        });
+        locationListEl.appendChild(li);
       });
+    }
 
-      locationSelectEl.value = currentValue;
+    function selectLocation(location) {
+      if (locationTriggerTextEl) {
+        locationTriggerTextEl.textContent = location.name;
+        locationTriggerTextEl.classList.remove(
+          "booking-widget__location-trigger-text--placeholder",
+        );
+      }
+      if (locationErrorEl) {
+        locationErrorEl.hidden = true;
+        locationErrorEl.textContent = "";
+      }
+      if (locationTriggerEl) {
+        locationTriggerEl.classList.remove(
+          "booking-widget__location-trigger--error",
+        );
+      }
+      populateLocationList();
+      selectedLocationRecord = location;
     }
 
     function showLocationStep() {
       if (!locationStepEl) return;
-      populateLocationSelect();
+      selectedLocationRecord = pendingLocation;
+      if (locationTriggerTextEl) {
+        if (pendingLocation) {
+          locationTriggerTextEl.textContent = pendingLocation.name;
+          locationTriggerTextEl.classList.remove(
+            "booking-widget__location-trigger-text--placeholder",
+          );
+        } else {
+          locationTriggerTextEl.textContent = strings.selectLocationPlaceholder;
+          locationTriggerTextEl.classList.add(
+            "booking-widget__location-trigger-text--placeholder",
+          );
+        }
+      }
+      populateLocationList();
       locationStepEl.hidden = false;
       datetimeStepEl.hidden = true;
       if (locationSummaryEl) locationSummaryEl.hidden = true;
       if (locationErrorEl) {
         locationErrorEl.hidden = true;
         locationErrorEl.textContent = "";
+      }
+      if (locationTriggerEl) {
+        locationTriggerEl.classList.remove(
+          "booking-widget__location-trigger--error",
+        );
       }
       if (locationNextBtn) locationNextBtn.hidden = false;
       confirmBtn.hidden = true;
@@ -607,14 +656,16 @@
 
     if (locationNextBtn) {
       locationNextBtn.addEventListener("click", function () {
-        var selectedId = locationSelectEl.value;
-        var selected = locations.filter(function (loc) {
-          return loc.id === selectedId;
-        })[0];
+        var selected = selectedLocationRecord;
         if (!selected) {
           if (locationErrorEl) {
             locationErrorEl.hidden = false;
             locationErrorEl.textContent = strings.locationRequired;
+          }
+          if (locationTriggerEl) {
+            locationTriggerEl.classList.add(
+              "booking-widget__location-trigger--error",
+            );
           }
           return;
         }

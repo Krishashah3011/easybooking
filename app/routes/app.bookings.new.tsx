@@ -683,12 +683,13 @@ export default function NewBookingPage() {
                 label={field.label}
                 {...(field.required ? { required: true } : {})}
                 value={customFieldValues[field.fieldKey] ?? ""}
-                onChange={(e: FieldChangeEvent) =>
+                onChange={(e: FieldChangeEvent) => {
+                  const value = e.currentTarget.value;
                   setCustomFieldValues((prev) => ({
                     ...prev,
-                    [field.fieldKey]: e.currentTarget.value,
-                  }))
-                }
+                    [field.fieldKey]: value,
+                  }));
+                }}
               ></s-text-field>
             ))}
           </s-stack>
