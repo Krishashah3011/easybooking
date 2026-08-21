@@ -2,12 +2,8 @@ import { Link, useLocation } from "react-router";
 
 import styles from "./AppTopNav.module.css";
 import {
-  BlackoutIcon,
   BookingsIcon,
-  CustomFieldsIcon,
   HomeIcon,
-  LocationIcon,
-  NewBookingIcon,
   ProductsIcon,
   ReportsIcon,
   SettingsIcon,
@@ -21,15 +17,14 @@ type NavItem = {
   matchPrefix?: boolean;
 };
 
+// Settings (Booking Settings/Locations/Blackout Dates/Custom Fields) and
+// Bookings (All Bookings/New Booking) each now live behind one icon with
+// sub-tabs underneath — see app.settings.tsx and app.bookings.tsx.
 const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Home", icon: HomeIcon },
-  { href: "/app/settings", label: "Booking Settings", icon: SettingsIcon },
+  { href: "/app/settings", label: "Settings", icon: SettingsIcon, matchPrefix: true },
   { href: "/app/products", label: "Products", icon: ProductsIcon, matchPrefix: true },
-  { href: "/app/locations", label: "Locations", icon: LocationIcon },
-  { href: "/app/blackout-dates", label: "Blackout Dates", icon: BlackoutIcon },
-  { href: "/app/custom-fields", label: "Custom Fields", icon: CustomFieldsIcon },
-  { href: "/app/bookings/new", label: "New Booking", icon: NewBookingIcon },
-  { href: "/app/booking-management", label: "Bookings", icon: BookingsIcon },
+  { href: "/app/bookings", label: "Bookings", icon: BookingsIcon, matchPrefix: true },
   { href: "/app/reports", label: "Reports", icon: ReportsIcon },
 ];
 

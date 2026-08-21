@@ -393,7 +393,7 @@ export default function BookingManagementPage() {
   };
 
   return (
-    <s-page heading="Booking Management">
+    <s-page heading="All Bookings">
       <s-section accessibilityLabel="Filters">
         <s-stack
           direction="inline"

@@ -76,7 +76,7 @@ export default function Dashboard() {
               ? "1 booking landed in an already-full slot and needs a look."
               : `${stats.overbookedCount} bookings landed in already-full slots and need a look.`}
           </s-paragraph>
-          <s-link href="/app/booking-management?status=OVERBOOKED">
+          <s-link href="/app/bookings?status=OVERBOOKED">
             Review overbooked bookings
           </s-link>
         </s-banner>
@@ -126,15 +126,15 @@ export default function Dashboard() {
             <s-text>
               <b>Block off days you're unavailable</b> — add holidays or
               one-off closures on the{" "}
-              <s-link href="/app/blackout-dates">Blackout Dates</s-link>{" "}
-              page, shop-wide or for a specific product.
+              <s-link href="/app/settings/blackout-dates">Blackout Dates</s-link>{" "}
+              tab, shop-wide or for a specific product.
             </s-text>
           </s-list-item>
           <s-list-item>
             <s-text>
               <b>Collect extra info at booking time (optional)</b> — add
               fields like notes, preferences, or special requests on the{" "}
-              <s-link href="/app/custom-fields">Custom Fields</s-link> page.
+              <s-link href="/app/settings/custom-fields">Custom Fields</s-link> tab.
               Customers fill these in when booking, and you'll see their
               answers on each booking.
             </s-text>
@@ -160,11 +160,11 @@ export default function Dashboard() {
             <s-text>
               <b>Manage bookings as they come in</b> — view, search,
               reschedule, or cancel bookings from{" "}
-              <s-link href="/app/booking-management">
-                Booking Management
+              <s-link href="/app/bookings">
+                Bookings
               </s-link>
-              . You can also add bookings manually from{" "}
-              <s-link href="/app/bookings/new">New Booking</s-link>. If two
+              . You can also add bookings manually from the{" "}
+              <s-link href="/app/bookings/new">New Booking</s-link> tab there. If two
               customers ever land in the same slot, it's flagged as{" "}
               <b>Overbooked</b> so you can review and resolve it — you'll
               see a banner for that at the top of this page when it happens.
@@ -219,17 +219,15 @@ export default function Dashboard() {
             </s-table-body>
           </s-table>
         )}
-        <s-link href="/app/booking-management">View all bookings</s-link>
+        <s-link href="/app/bookings">View all bookings</s-link>
       </s-section>
 
       <s-section slot="aside" heading="Quick links">
         <s-stack direction="block" gap="small">
-          <s-link href="/app/settings">Booking Settings</s-link>
+          <s-link href="/app/settings">Settings</s-link>
           <s-link href="/app/products">Products</s-link>
-          <s-link href="/app/blackout-dates">Blackout Dates</s-link>
-          <s-link href="/app/custom-fields">Custom Fields</s-link>
+          <s-link href="/app/bookings">Bookings</s-link>
           <s-link href="/app/bookings/new">New Booking</s-link>
-          <s-link href="/app/booking-management">Bookings</s-link>
           <s-link href="/app/reports">Reports</s-link>
         </s-stack>
       </s-section>

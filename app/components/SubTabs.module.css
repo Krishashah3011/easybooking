@@ -1,0 +1,39 @@
+.wrap {
+  padding: 0.75rem 1rem 0;
+}
+
+.pillBar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: #ffffff;
+  border: 1px solid #e3e5e7;
+  border-radius: 10px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #4a4e52;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.pill:hover {
+  background: #f1f2f4;
+}
+
+.pillActive {
+  background: #0f3559;
+  color: #ffffff;
+}
+
+.pillActive:hover {
+  background: #0f3559;
+}
