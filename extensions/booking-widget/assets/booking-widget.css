@@ -196,7 +196,7 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__datetime-step {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 1.5rem;
 }
 
