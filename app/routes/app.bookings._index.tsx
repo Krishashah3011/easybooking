@@ -288,7 +288,13 @@ function BookingRow({
                   {formatTimeRangeDisplay(slot.start, slot.end)}
                   {!slot.available && slot.start !== booking.slotStart
                     ? " (booked)"
-                    : ""}
+                    : typeof slot.remainingCapacity === "number"
+                      ? ` (${
+                          slot.remainingCapacity === 1
+                            ? "1 spot left"
+                            : `${slot.remainingCapacity} spots left`
+                        })`
+                      : ""}
                 </s-option>
               ))}
             </s-select>
@@ -353,6 +359,119 @@ function BookingRow({
   );
 }
 
+// Bookings end up in the same group two ways:
+// - Admin "New Booking" queued more than one slot in one submission and
+//   they share a groupId (see booking.server.ts / app.bookings.new.tsx).
+// - A single storefront order booked more than one slot/product and the
+//   resulting Booking rows share an orderId (one row per line item).
+// Anything else (a single-slot admin booking, a single-item order) has
+// neither and is treated as its own group of one.
+type BookingGroup = {
+  key: string;
+  bookings: BookingWithProductTitle[];
+};
+
+function groupBookings(bookings: BookingWithProductTitle[]): BookingGroup[] {
+  const order: string[] = [];
+  const byKey = new Map<string, BookingWithProductTitle[]>();
+
+  for (const booking of bookings) {
+    const key = booking.groupId
+      ? `g:${booking.groupId}`
+      : booking.orderId
+        ? `o:${booking.orderId}`
+        : `b:${booking.id}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.push(booking);
+    } else {
+      byKey.set(key, [booking]);
+      order.push(key);
+    }
+  }
+
+  return order.map((key) => ({ key, bookings: byKey.get(key)! }));
+}
+
+function GroupSummaryRow({
+  group,
+  customFieldLabels,
+  isExpanded,
+  onToggle,
+}: {
+  group: BookingGroup;
+  customFieldLabels: Record<string, string>;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const first = group.bookings[0];
+  const totalQuantity = group.bookings.reduce((sum, b) => sum + b.quantity, 0);
+  const productTitles = new Set(group.bookings.map((b) => b.productTitle));
+  const productLabel =
+    productTitles.size > 1 ? "Multiple products" : first.productTitle;
+  const groupLabel = first.orderName ? `Order ${first.orderName}` : null;
+  const statuses = new Set(group.bookings.map((b) => b.status));
+  const badgeTone =
+    statuses.size > 1
+      ? "neutral"
+      : first.status === "CONFIRMED"
+        ? "success"
+        : first.status === "RESCHEDULED"
+          ? "info"
+          : first.status === "OVERBOOKED"
+            ? "critical"
+            : "neutral";
+
+  return (
+    <s-table-row>
+      <s-table-cell>
+        <s-stack direction="block" gap="none">
+          <s-text>{productLabel}</s-text>
+          {groupLabel && <s-text tone="subdued">{groupLabel}</s-text>}
+        </s-stack>
+      </s-table-cell>
+      <s-table-cell>{first.location ?? "—"}</s-table-cell>
+      <s-table-cell>
+        <s-text>
+          {first.customerName ?? "—"}
+          {first.customerEmail ? ` (${first.customerEmail})` : ""}
+        </s-text>
+      </s-table-cell>
+      <s-table-cell>
+        <BookingNotes
+          responses={first.customFieldResponses}
+          labels={customFieldLabels}
+        />
+      </s-table-cell>
+      <s-table-cell>{totalQuantity}</s-table-cell>
+      <s-table-cell>
+        <s-button variant="tertiary" onClick={onToggle}>
+          {isExpanded
+            ? "Hide slots"
+            : `${group.bookings.length} slots — show all`}
+        </s-button>
+      </s-table-cell>
+      <s-table-cell>
+        <s-stack direction="block" gap="none">
+          <s-text>{formatDateTimeDisplay(first.createdAt)}</s-text>
+          <s-text tone="subdued">{bookingSourceLabel(first.source)}</s-text>
+        </s-stack>
+      </s-table-cell>
+      <s-table-cell>
+        {statuses.size > 1 ? (
+          <s-badge tone={badgeTone}>Mixed</s-badge>
+        ) : (
+          <s-badge tone={badgeTone}>{first.status}</s-badge>
+        )}
+      </s-table-cell>
+      <s-table-cell>{first.source}</s-table-cell>
+      <s-table-cell>
+        <s-text tone="subdued">See slots</s-text>
+      </s-table-cell>
+    </s-table-row>
+  );
+}
+
 export default function BookingManagementPage() {
   const { bookings: initialBookings, products, customFieldLabels, filters } =
     useLoaderData<typeof loader>();
@@ -360,6 +479,19 @@ export default function BookingManagementPage() {
 
   const bookings = bookingsFetcher.data?.bookings ?? initialBookings;
   const isRefreshingBookings = bookingsFetcher.state !== "idle";
+  const bookingGroups = groupBookings(bookings);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   const refreshBookings = () => {
     bookingsFetcher.load(
@@ -496,13 +628,33 @@ export default function BookingManagementPage() {
               <s-table-header>Actions</s-table-header>
             </s-table-header-row>
             <s-table-body>
-              {bookings.map((booking) => (
-                <BookingRow
-                  key={booking.id}
-                  booking={booking}
-                  customFieldLabels={customFieldLabels}
-                />
-              ))}
+              {bookingGroups.map((group) =>
+                group.bookings.length === 1 ? (
+                  <BookingRow
+                    key={group.key}
+                    booking={group.bookings[0]}
+                    customFieldLabels={customFieldLabels}
+                  />
+                ) : (
+                  <>
+                    <GroupSummaryRow
+                      key={group.key}
+                      group={group}
+                      customFieldLabels={customFieldLabels}
+                      isExpanded={expandedGroups.has(group.key)}
+                      onToggle={() => toggleGroup(group.key)}
+                    />
+                    {expandedGroups.has(group.key) &&
+                      group.bookings.map((booking) => (
+                        <BookingRow
+                          key={booking.id}
+                          booking={booking}
+                          customFieldLabels={customFieldLabels}
+                        />
+                      ))}
+                  </>
+                ),
+              )}
             </s-table-body>
           </s-table>
         )}

@@ -139,6 +139,11 @@ model Booking {
   orderId       String?
   orderName     String?
   lineItemId    String?
+  /// Ties together multiple Booking rows created from a single admin
+  /// "New Booking" submission that queued more than one date/time slot,
+  /// so the Bookings list can show them as one entry instead of several.
+  /// Null for single-slot bookings and storefront-order bookings.
+  groupId       String?
   customerName  String?
   customerEmail String?
   customerPhone String?
@@ -163,5 +168,6 @@ model Booking {
   @@index([shop])
   @@index([bookableProductId, slotStartsAt])
   @@index([orderId])
+  @@index([groupId])
   @@index([status, reminderSentAt, slotStartsAt])
 }

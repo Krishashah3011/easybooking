@@ -37,8 +37,14 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-type QueuedSlotInput = { date: string; slotStart: string; quantity: number };
+type QueuedSlotInput = {
+  bookableProductId: string;
+  date: string;
+  slotStart: string;
+  quantity: number;
+};
 type SlotResult = {
+  bookableProductId: string;
   date: string;
   slotStart: string;
   ok: boolean;
@@ -167,7 +173,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (intent === "createBooking") {
-    const bookableProductId = String(formData.get("bookableProductId") ?? "");
     const location = String(formData.get("location") ?? "") || null;
     const customerName = String(formData.get("customerName") ?? "");
     const customerEmail = String(formData.get("customerEmail") ?? "") || null;
@@ -197,10 +202,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       };
     }
 
+    // Multiple slots queued in one submission are the same customer booking
+    // several times/dates (and possibly different products) at once — tie
+    // them together so the Bookings list can show them as one entry instead
+    // of several unrelated rows.
+    const groupId = slots.length > 1 ? crypto.randomUUID() : undefined;
+
     const results: SlotResult[] = [];
     for (const slot of slots) {
       const result = await createManualBooking(session.shop, {
-        bookableProductId,
+        bookableProductId: slot.bookableProductId,
         date: slot.date,
         slotStart: slot.slotStart,
         quantity: slot.quantity,
@@ -209,8 +220,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         customerEmail,
         customerPhone,
         customFieldResponses,
+        groupId,
       });
       results.push({
+        bookableProductId: slot.bookableProductId,
         date: slot.date,
         slotStart: slot.slotStart,
         ok: result.ok,
@@ -255,7 +268,14 @@ export default function NewBookingPage() {
     Record<string, string>
   >({});
   const [queuedSlots, setQueuedSlots] = useState<
-    Array<{ date: string; slot: TimeSlot; quantity: number; error?: string }>
+    Array<{
+      bookableProductId: string;
+      productTitle: string;
+      date: string;
+      slot: TimeSlot;
+      quantity: number;
+      error?: string;
+    }>
   >([]);
   const [customerName, setCustomerName] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
@@ -303,7 +323,6 @@ export default function NewBookingPage() {
   useEffect(() => {
     setDate("");
     setSelectedSlot(null);
-    setQueuedSlots([]);
     loadAvailability(bookableProductId, viewYear, viewMonth);
   }, [bookableProductId, viewYear, viewMonth]);
 
@@ -343,7 +362,9 @@ export default function NewBookingPage() {
           .map((entry) => {
             const match = results.find(
               (r) =>
-                r.date === entry.date && r.slotStart === entry.slot.start,
+                r.bookableProductId === entry.bookableProductId &&
+                r.date === entry.date &&
+                r.slotStart === entry.slot.start,
             );
             if (!match) return entry;
             return match.ok ? null : { ...entry, error: match.error };
@@ -403,12 +424,17 @@ export default function NewBookingPage() {
   const handleAddToList = () => {
     if (!date || !selectedSlot) return;
     const alreadyQueued = queuedSlots.some(
-      (entry) => entry.date === date && entry.slot.startsAt === selectedSlot.startsAt,
+      (entry) =>
+        entry.bookableProductId === bookableProductId &&
+        entry.date === date &&
+        entry.slot.startsAt === selectedSlot.startsAt,
     );
     if (!alreadyQueued) {
+      const productTitle =
+        products.find((p) => p.id === bookableProductId)?.title ?? "";
       setQueuedSlots((prev) => [
         ...prev,
-        { date, slot: selectedSlot, quantity },
+        { bookableProductId, productTitle, date, slot: selectedSlot, quantity },
       ]);
     }
     setDate("");
@@ -425,7 +451,6 @@ export default function NewBookingPage() {
     setEmailTouched(true);
 
     if (
-      !bookableProductId ||
       queuedSlots.length === 0 ||
       !customerName.trim() ||
       !customerEmail.trim() ||
@@ -439,11 +464,11 @@ export default function NewBookingPage() {
     createFetcher.submit(
       {
         intent: "createBooking",
-        bookableProductId,
         location: selectedLocation?.name ?? "",
         customFieldResponses: JSON.stringify(customFieldValues),
         slots: JSON.stringify(
           queuedSlots.map((entry) => ({
+            bookableProductId: entry.bookableProductId,
             date: entry.date,
             slotStart: entry.slot.start,
             quantity: entry.quantity,
@@ -606,7 +631,15 @@ export default function NewBookingPage() {
                   }}
                 >
                   {formatTimeRangeDisplay(slot.start, slot.end)}
-                  {!slot.available ? " (Booked)" : ""}
+                  {!slot.available
+                    ? " (Booked)"
+                    : typeof slot.remainingCapacity === "number"
+                      ? ` (${
+                          slot.remainingCapacity === 1
+                            ? "1 spot left"
+                            : `${slot.remainingCapacity} spots left`
+                        })`
+                      : ""}
                 </s-button>
               ))}
             </s-stack>
@@ -650,13 +683,14 @@ export default function NewBookingPage() {
           <s-stack direction="block" gap="small">
             {queuedSlots.map((entry, index) => (
               <s-stack
-                key={entry.date + entry.slot.startsAt}
+                key={entry.bookableProductId + entry.date + entry.slot.startsAt}
                 direction="inline"
                 gap="small"
                 alignItems="center"
               >
                 <s-text>
-                  {entry.date} | {formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}
+                  <b>{entry.productTitle}</b> — {entry.date} |{" "}
+                  {formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}
                   {entry.quantity > 1 ? ` × ${entry.quantity}` : ""}
                 </s-text>
                 {entry.error && (

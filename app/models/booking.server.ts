@@ -360,6 +360,10 @@ export type ManualBookingInput = {
   customerEmail: string | null;
   customerPhone: string | null;
   customFieldResponses?: Record<string, string>;
+  // Shared across every slot created from the same "New Booking" submission
+  // when more than one date/time was queued, so they can be shown as one
+  // entry in the Bookings list. Leave undefined for a single-slot booking.
+  groupId?: string;
 };
 
 export type ManualBookingResult =
@@ -431,6 +435,7 @@ export async function createManualBooking(
       quantity,
       status: "CONFIRMED",
       source: "ADMIN_MANUAL",
+      groupId: input.groupId,
       customFieldResponses:
         Object.keys(responses).length > 0 ? responses : undefined,
     },
