@@ -6,7 +6,7 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticate } from "../shopify.server";
 import { AppTopNav } from "../components/AppTopNav";
 
-import navStyles from "../components/AppTopNav.module.css?url";
+import navStyles from "../components/AppTopNav.css?url";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: navStyles },

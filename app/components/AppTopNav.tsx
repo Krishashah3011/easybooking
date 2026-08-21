@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 
-import "./AppTopNav.module.css";
+import "./AppTopNav.css";
 import {
   BookingsIcon,
   HomeIcon,
