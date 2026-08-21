@@ -196,6 +196,7 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__datetime-step {
   display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
@@ -628,11 +629,6 @@ body.booking-widget-lock-scroll {
   flex-wrap: wrap;
 }
 
-@media (max-width: 640px) {
-  .booking-widget__datetime-step {
-    flex-direction: column;
-  }
-}
 .booking-widget__fields-pane {
   margin-top: 16px;
   padding-top: 16px;
