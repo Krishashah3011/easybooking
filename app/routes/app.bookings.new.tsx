@@ -338,8 +338,6 @@ export default function NewBookingPage() {
       setCustomerPhone("");
       setSubmitAttempted(false);
     } else {
-      // Keep only the slots that failed, with their error attached, so the
-      // admin can see what went wrong and retry just those.
       setQueuedSlots((prev) =>
         prev
           .map((entry) => {
@@ -737,13 +735,7 @@ export default function NewBookingPage() {
             </s-banner>
           )}
 
-          {/*
-            Deliberately never disabled: disabling it would silently block
-            the click instead of letting the user trigger validation and
-            see exactly what's missing. handleCreateBooking itself checks
-            required fields and surfaces errors on the fields + banner
-            above instead of submitting.
-          */}
+          {}
           <s-button variant="primary" onClick={handleCreateBooking}>
             {queuedSlots.length > 1
               ? `Create ${queuedSlots.length} bookings`

@@ -13,13 +13,9 @@ type NavItem = {
   href: string;
   label: string;
   icon: (props: { className?: string }) => JSX.Element;
-  // Matches nested routes too, e.g. /app/products/123 stays on "Products".
   matchPrefix?: boolean;
 };
 
-// Settings (Booking Settings/Locations/Blackout Dates/Custom Fields) and
-// Bookings (All Bookings/New Booking) each now live behind one icon with
-// sub-tabs underneath — see app.settings.tsx and app.bookings.tsx.
 const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Home", icon: HomeIcon },
   { href: "/app/settings", label: "Settings", icon: SettingsIcon, matchPrefix: true },

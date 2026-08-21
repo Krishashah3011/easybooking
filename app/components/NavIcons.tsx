@@ -1,7 +1,3 @@
-// Simple inline outline icon set used by AppTopNav.
-// Kept as plain SVG (no extra dependency) so the icon style matches
-// the outline/stroke look shown in the reference navbar.
-
 type IconProps = {
   className?: string;
 };

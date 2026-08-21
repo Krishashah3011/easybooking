@@ -5,8 +5,6 @@ import styles from "./SubTabs.module.css";
 export type SubTab = {
   to: string;
   label: string;
-  // Pass true for the tab that should own the base path (e.g. "/app/settings")
-  // so it doesn't stay highlighted while a sibling tab is active.
   end?: boolean;
 };
 

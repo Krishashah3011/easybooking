@@ -221,16 +221,6 @@ export default function Dashboard() {
         )}
         <s-link href="/app/bookings">View all bookings</s-link>
       </s-section>
-
-      <s-section slot="aside" heading="Quick links">
-        <s-stack direction="block" gap="small">
-          <s-link href="/app/settings">Settings</s-link>
-          <s-link href="/app/products">Products</s-link>
-          <s-link href="/app/bookings">Bookings</s-link>
-          <s-link href="/app/bookings/new">New Booking</s-link>
-          <s-link href="/app/reports">Reports</s-link>
-        </s-stack>
-      </s-section>
     </s-page>
   );
 }
