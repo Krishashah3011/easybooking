@@ -210,86 +210,33 @@ body.booking-widget-lock-scroll {
   margin-bottom: 0.6rem;
 }
 
-.booking-widget__location-combobox {
+.booking-widget__location-select-wrap {
   position: relative;
-}
-
-.booking-widget__location-trigger {
-  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+}
+
+.booking-widget__location-select-wrap .booking-widget__location-pin {
+  position: absolute;
+  left: 0.85rem;
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+.booking-widget__location-select {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.4rem;
   font-size: 0.9rem;
-  font-family: inherit;
   border: 1.5px solid rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   background: #fff;
+  appearance: none;
   cursor: pointer;
-  text-align: left;
 }
 
-.booking-widget__location-trigger:focus {
+.booking-widget__location-select:focus {
   outline: none;
   border-color: #111;
-}
-
-.booking-widget__location-combobox--open .booking-widget__location-trigger {
-  border-color: #111;
-}
-
-.booking-widget__location-combobox--error .booking-widget__location-trigger {
-  border-color: #c0392b;
-}
-
-.booking-widget__location-trigger-text {
-  flex: 1;
-}
-
-.booking-widget__location-trigger-text--placeholder {
-  color: rgba(0, 0, 0, 0.45);
-}
-
-.booking-widget__location-chevron {
-  font-size: 0.7rem;
-  transition: transform 0.15s ease;
-}
-
-.booking-widget__location-combobox--open .booking-widget__location-chevron {
-  transform: rotate(180deg);
-}
-
-.booking-widget__location-list {
-  position: absolute;
-  top: calc(100% + 0.25rem);
-  left: 0;
-  right: 0;
-  z-index: 5;
-  max-height: 220px;
-  overflow-y: auto;
-  margin: 0;
-  padding: 0.25rem;
-  list-style: none;
-  background: #fff;
-  border: 1.5px solid rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-}
-
-.booking-widget__location-option {
-  padding: 0.6rem 0.75rem;
-  font-size: 0.9rem;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.booking-widget__location-option:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.booking-widget__location-option--selected {
-  background: #111;
-  color: #fff;
 }
 
 .booking-widget__location-error {
@@ -308,10 +255,6 @@ body.booking-widget-lock-scroll {
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.02);
   width: 100%;
-  font-family: inherit;
-  font-size: 0.9rem;
-  cursor: pointer;
-  text-align: left;
 }
 
 .booking-widget__location-summary-text {
