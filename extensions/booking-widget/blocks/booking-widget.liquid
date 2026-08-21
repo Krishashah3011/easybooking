@@ -30,26 +30,36 @@
 
       <div class="booking-widget__modal-body" data-booking-modal-body>
         <div class="booking-widget__location-step" data-booking-location-step hidden>
-          <label class="booking-widget__location-label" for="booking-widget-location-select">Select location</label>
-          <div class="booking-widget__location-select-wrap">
-            <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
-            <select
-              id="booking-widget-location-select"
-              class="booking-widget__location-select"
-              data-booking-location-select
+          <label class="booking-widget__location-label" id="booking-widget-location-label">Select location</label>
+          <div class="booking-widget__location-combobox" data-booking-location-combobox>
+            <button
+              type="button"
+              class="booking-widget__location-trigger"
+              data-booking-location-trigger
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-labelledby="booking-widget-location-label"
             >
-              <option value="">Select location</option>
-            </select>
+              <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
+              <span class="booking-widget__location-trigger-text" data-booking-location-trigger-text>Select location</span>
+              <span class="booking-widget__location-chevron" data-booking-location-chevron aria-hidden="true">&#9662;</span>
+            </button>
+            <ul class="booking-widget__location-list" data-booking-location-list role="listbox" hidden></ul>
           </div>
           <p class="booking-widget__location-error" data-booking-location-error hidden></p>
         </div>
 
         <div class="booking-widget__datetime-step" data-booking-datetime-step>
-          <div class="booking-widget__location-summary" data-booking-location-summary hidden>
+          <button
+            type="button"
+            class="booking-widget__location-summary"
+            data-booking-location-summary
+            hidden
+          >
             <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
             <span class="booking-widget__location-summary-text" data-booking-location-summary-text></span>
-            <button type="button" class="booking-widget__location-change" data-booking-location-change>Change</button>
-          </div>
+            <span class="booking-widget__location-chevron" aria-hidden="true">&#9662;</span>
+          </button>
 
           <div class="booking-widget__calendar-pane">
             <div class="booking-widget__header">

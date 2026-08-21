@@ -1,0 +1,73 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #eef0f1;
+  border-bottom: 1px solid #dfe1e3;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 auto;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1.5px solid transparent;
+  color: #202223;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.link:hover {
+  border-color: #a7c957;
+  color: #4c6b1f;
+}
+
+.link:focus-visible {
+  outline: 2px solid #005bd3;
+  outline-offset: 2px;
+}
+
+.linkActive {
+  background: #a7c957;
+  border-color: #a7c957;
+  color: #1c2b0e;
+}
+
+.linkActive:hover {
+  color: #1c2b0e;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.accountLink {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #0f3559;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.accountLink:hover {
+  background: #123f68;
+}

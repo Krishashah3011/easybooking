@@ -1,10 +1,12 @@
 import type { BookingLocation } from "@prisma/client";
 import prisma from "../db.server";
+import { isValidTimezone } from "../utils/timezones";
 
 const MAX_NAME_LENGTH = 80;
 
 export type LocationFormValues = {
   name: string;
+  timezone: string;
   isEnabled: boolean;
 };
 
@@ -26,12 +28,20 @@ export async function listEnabledLocations(
   });
 }
 
+export async function getLocationById(
+  shop: string,
+  id: string,
+): Promise<BookingLocation | null> {
+  return prisma.bookingLocation.findFirst({ where: { id, shop } });
+}
+
 export function parseLocationForm(formData: FormData): {
   values: LocationFormValues;
   errors: LocationFieldErrors;
 } {
   const errors: LocationFieldErrors = {};
   const name = String(formData.get("name") ?? "").trim();
+  const timezone = String(formData.get("timezone") ?? "UTC").trim() || "UTC";
 
   if (!name) {
     errors.name = "Enter a location name.";
@@ -39,9 +49,13 @@ export function parseLocationForm(formData: FormData): {
     errors.name = `Keep it under ${MAX_NAME_LENGTH} characters.`;
   }
 
+  if (!isValidTimezone(timezone)) {
+    errors.timezone = "Pick a valid timezone.";
+  }
+
   const isEnabled = formData.get("isEnabled") !== "false";
 
-  return { values: { name, isEnabled }, errors };
+  return { values: { name, timezone, isEnabled }, errors };
 }
 
 export async function createLocation(
@@ -65,6 +79,7 @@ export async function createLocation(
     data: {
       shop,
       name: values.name,
+      timezone: values.timezone,
       isEnabled: values.isEnabled,
       sortOrder,
     },
@@ -93,7 +108,11 @@ export async function updateLocation(
 
   await prisma.bookingLocation.update({
     where: { id },
-    data: { name: values.name, isEnabled: values.isEnabled },
+    data: {
+      name: values.name,
+      timezone: values.timezone,
+      isEnabled: values.isEnabled,
+    },
   });
   return { ok: true };
 }
@@ -129,8 +148,9 @@ export async function reorderLocations(
 export type PublicLocation = {
   id: string;
   name: string;
+  timezone: string;
 };
 
 export function toPublicLocation(location: BookingLocation): PublicLocation {
-  return { id: location.id, name: location.name };
+  return { id: location.id, name: location.name, timezone: location.timezone };
 }

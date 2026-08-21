@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -17,15 +17,21 @@ import {
   type LocationFieldErrors,
   type LocationFormValues,
 } from "../models/bookingLocation.server";
+import { listTimezones, timezoneOffsetLabel } from "../utils/timezones";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-const EMPTY_FORM: LocationFormValues = { name: "", isEnabled: true };
+const EMPTY_FORM: LocationFormValues = {
+  name: "",
+  timezone: "UTC",
+  isEnabled: true,
+};
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const locations = await listLocations(session.shop);
-  return { locations };
+  const timezones = listTimezones();
+  return { locations, timezones };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -53,21 +59,61 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const result = await createLocation(session.shop, values);
   if (!result.ok) {
-    return { intent: "create" as const, ok: false as const, errors: { name: result.error }, values };
+    return {
+      intent: "create" as const,
+      ok: false as const,
+      errors: { name: result.error },
+      values,
+    };
   }
   return { intent: "create" as const, ok: true as const, values: EMPTY_FORM };
 };
+
+function TimezoneSelect({
+  value,
+  timezones,
+  onChange,
+}: {
+  value: string;
+  timezones: string[];
+  onChange: (value: string) => void;
+}) {
+  const options = useMemo(
+    () =>
+      timezones.map((tz) => {
+        const offset = timezoneOffsetLabel(tz);
+        return { tz, label: offset ? `${tz} (${offset})` : tz };
+      }),
+    [timezones],
+  );
+
+  return (
+    <s-select
+      label="Timezone"
+      value={value}
+      onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
+    >
+      {options.map((opt) => (
+        <s-option key={opt.tz} value={opt.tz}>
+          {opt.label}
+        </s-option>
+      ))}
+    </s-select>
+  );
+}
 
 function LocationEditor({
   initial,
   onCancel,
   submitLabel,
   locationId,
+  timezones,
 }: {
   initial: LocationFormValues;
   onCancel?: () => void;
   submitLabel: string;
   locationId?: string;
+  timezones: string[];
 }) {
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
@@ -93,6 +139,7 @@ function LocationEditor({
         intent: isEdit ? "update" : "create",
         ...(locationId ? { id: locationId } : {}),
         name: values.name,
+        timezone: values.timezone,
         isEnabled: String(values.isEnabled),
       },
       { method: "POST" },
@@ -111,6 +158,17 @@ function LocationEditor({
           setValues((prev) => ({ ...prev, name: value }));
         }}
       ></s-text-field>
+
+      <TimezoneSelect
+        value={values.timezone}
+        timezones={timezones}
+        onChange={(value) => setValues((prev) => ({ ...prev, timezone: value }))}
+      />
+      {errors.timezone && <s-text tone="critical">{errors.timezone}</s-text>}
+      <s-paragraph>
+        Booking hours and the times shoppers see for this location are
+        calculated in this timezone.
+      </s-paragraph>
 
       <s-checkbox
         label="Visible to shoppers"
@@ -136,8 +194,15 @@ function LocationEditor({
 
 function LocationRow({
   location,
+  timezones,
 }: {
-  location: { id: string; name: string; isEnabled: boolean };
+  location: {
+    id: string;
+    name: string;
+    timezone: string;
+    isEnabled: boolean;
+  };
+  timezones: string[];
 }) {
   const deleteFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
@@ -159,21 +224,32 @@ function LocationRow({
   if (isEditing) {
     return (
       <s-table-row>
-        <s-table-cell colSpan={3}>
+        <s-table-cell colSpan={4}>
           <LocationEditor
             locationId={location.id}
             submitLabel="Save"
             onCancel={() => setIsEditing(false)}
-            initial={{ name: location.name, isEnabled: location.isEnabled }}
+            timezones={timezones}
+            initial={{
+              name: location.name,
+              timezone: location.timezone,
+              isEnabled: location.isEnabled,
+            }}
           />
         </s-table-cell>
       </s-table-row>
     );
   }
 
+  const offset = timezoneOffsetLabel(location.timezone);
+
   return (
     <s-table-row>
       <s-table-cell>{location.name}</s-table-cell>
+      <s-table-cell>
+        {location.timezone}
+        {offset ? ` (${offset})` : ""}
+      </s-table-cell>
       <s-table-cell>{location.isEnabled ? "Visible" : "Hidden"}</s-table-cell>
       <s-table-cell>
         <s-stack direction="inline" gap="small">
@@ -190,7 +266,7 @@ function LocationRow({
 }
 
 export default function LocationsPage() {
-  const { locations } = useLoaderData<typeof loader>();
+  const { locations, timezones } = useLoaderData<typeof loader>();
 
   return (
     <s-page heading="Locations">
@@ -198,10 +274,16 @@ export default function LocationsPage() {
         <s-paragraph>
           Locations customers choose from before picking a date and time on
           the storefront booking widget — e.g. "California" or "New York".
+          Each location has its own timezone, so the calendar and time
+          slots shoppers see are always local to the location they pick.
           If no locations are added, the location step is skipped and
           booking works exactly as before.
         </s-paragraph>
-        <LocationEditor initial={EMPTY_FORM} submitLabel="Add location" />
+        <LocationEditor
+          initial={EMPTY_FORM}
+          submitLabel="Add location"
+          timezones={timezones}
+        />
       </s-section>
 
       <s-section heading="Current locations">
@@ -211,12 +293,17 @@ export default function LocationsPage() {
           <s-table>
             <s-table-header-row>
               <s-table-header>Name</s-table-header>
+              <s-table-header>Timezone</s-table-header>
               <s-table-header>Visibility</s-table-header>
               <s-table-header>Actions</s-table-header>
             </s-table-header-row>
             <s-table-body>
               {locations.map((location) => (
-                <LocationRow key={location.id} location={location} />
+                <LocationRow
+                  key={location.id}
+                  location={location}
+                  timezones={timezones}
+                />
               ))}
             </s-table-body>
           </s-table>

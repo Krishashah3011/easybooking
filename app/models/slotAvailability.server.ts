@@ -1,4 +1,5 @@
 import type { EffectiveBookingSettings } from "./bookableProduct.server";
+import { zonedTimeToUtc } from "../utils/timezones";
 
 export type TimeSlot = {
   start: string;
@@ -48,6 +49,7 @@ export function computeSlotsForDate(
   blackoutDates: Set<string>,
   now: Date = new Date(),
   bookedCounts: Map<string, number> = new Map(),
+  timeZone: string | null = null,
 ): TimeSlot[] {
   if (blackoutDates.has(dateStr)) return [];
   if (!settings.workingDays.includes(dayOfWeek(dateStr))) return [];
@@ -82,7 +84,7 @@ export function computeSlotsForDate(
     slotStartMin += stepMinutes
   ) {
     const slotEndMin = slotStartMin + settings.slotDurationMinutes;
-    const startsAt = new Date(`${dateStr}T${minutesToTime(slotStartMin)}:00Z`);
+    const startsAt = zonedTimeToUtc(dateStr, minutesToTime(slotStartMin), timeZone);
 
     if (startsAt < earliestBookableAt) continue;
 
@@ -108,6 +110,7 @@ export function getAvailableDatesInMonth(
   blackoutDates: Set<string>,
   now: Date = new Date(),
   bookedCounts: Map<string, number> = new Map(),
+  timeZone: string | null = null,
 ): string[] {
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const available: string[] = [];
@@ -120,6 +123,7 @@ export function getAvailableDatesInMonth(
       blackoutDates,
       now,
       bookedCounts,
+      timeZone,
     );
     if (slots.some((s) => s.available)) available.push(dateStr);
   }

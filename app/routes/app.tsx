@@ -4,6 +4,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate } from "../shopify.server";
+import { AppTopNav } from "../components/AppTopNav";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -16,17 +17,7 @@ export default function App() {
 
   return (
     <AppProvider embedded apiKey={apiKey}>
-      <s-app-nav>
-        <s-link href="/app">Home</s-link>
-        <s-link href="/app/settings">Booking Settings</s-link>
-        <s-link href="/app/products">Products</s-link>
-        <s-link href="/app/locations">Locations</s-link>
-        <s-link href="/app/blackout-dates">Blackout Dates</s-link>
-        <s-link href="/app/custom-fields">Custom Fields</s-link>
-        <s-link href="/app/bookings/new">New Booking</s-link>
-        <s-link href="/app/booking-management">Bookings</s-link>
-        <s-link href="/app/reports">Reports</s-link>
-      </s-app-nav>
+      <AppTopNav />
       <Outlet />
     </AppProvider>
   );

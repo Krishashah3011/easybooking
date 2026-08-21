@@ -3,6 +3,7 @@ import { authenticate } from "../shopify.server";
 import { resolveBookingContext } from "../models/booking-context.server";
 import { getAvailableDatesInMonth } from "../models/slotAvailability.server";
 import { getBookedCountsInRange } from "../models/booking.server";
+import { getLocationById } from "../models/bookingLocation.server";
 
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -15,6 +16,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const productId = url.searchParams.get("productId");
   const year = Number(url.searchParams.get("year"));
   const month = Number(url.searchParams.get("month"));
+  const locationId = url.searchParams.get("locationId");
 
   if (!productId || !Number.isInteger(year) || !Number.isInteger(month)) {
     return Response.json(
@@ -30,6 +32,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!context) {
     return Response.json({ availableDates: [] });
   }
+
+  const location = locationId
+    ? await getLocationById(session.shop, locationId)
+    : null;
 
   const monthStart = new Date(Date.UTC(year, month - 1, 1));
   const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
@@ -47,6 +53,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     context.blackoutDates,
     new Date(),
     bookedCounts,
+    location?.timezone ?? null,
   );
 
   return Response.json({ availableDates });
