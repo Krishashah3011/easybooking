@@ -250,6 +250,7 @@ function BookingRow({
           labels={customFieldLabels}
         />
       </s-table-cell>
+      <s-table-cell>{booking.quantity}</s-table-cell>
       <s-table-cell>
         {isRescheduling ? (
           <s-stack direction="inline" gap="small">
@@ -487,6 +488,7 @@ export default function BookingManagementPage() {
               <s-table-header>Location</s-table-header>
               <s-table-header>Customer</s-table-header>
               <s-table-header>Notes</s-table-header>
+              <s-table-header>Qty</s-table-header>
               <s-table-header>When</s-table-header>
               <s-table-header>Booked At</s-table-header>
               <s-table-header>Status</s-table-header>

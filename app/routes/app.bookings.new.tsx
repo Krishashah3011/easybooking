@@ -22,7 +22,12 @@ import {
   listShopBlackoutDates,
   listProductBlackoutDates,
 } from "../models/blackoutDate.server";
-import { createManualBooking, getBookedCountsInRange } from "../models/booking.server";
+import {
+  createManualBooking,
+  getBookedCountsInRange,
+} from "../models/booking.server";
+import { listEnabledLocations } from "../models/bookingLocation.server";
+import { listCustomFields, toPublicField } from "../models/customBookingField.server";
 import { formatTimeRangeDisplay } from "../utils/format";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
@@ -32,12 +37,26 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+type QueuedSlotInput = { date: string; slotStart: string; quantity: number };
+type SlotResult = {
+  date: string;
+  slotStart: string;
+  ok: boolean;
+  error?: string;
+};
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const allProducts = await listBookableProducts(session.shop);
   const enabledProducts = allProducts.filter((p) => p.isEnabled);
+  const [locations, customFields] = await Promise.all([
+    listEnabledLocations(session.shop),
+    listCustomFields(session.shop),
+  ]);
   return {
     products: enabledProducts.map((p) => ({ id: p.id, title: p.productTitle })),
+    locations: locations.map((l) => ({ id: l.id, name: l.name })),
+    customFields: customFields.map(toPublicField),
   };
 };
 
@@ -148,26 +167,74 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (intent === "createBooking") {
-    const result = await createManualBooking(session.shop, {
-      bookableProductId: String(formData.get("bookableProductId") ?? ""),
-      date: String(formData.get("date") ?? ""),
-      slotStart: String(formData.get("slotStart") ?? ""),
-      customerName: String(formData.get("customerName") ?? ""),
-      customerEmail: String(formData.get("customerEmail") ?? "") || null,
-      customerPhone: String(formData.get("customerPhone") ?? "") || null,
-    });
+    const bookableProductId = String(formData.get("bookableProductId") ?? "");
+    const location = String(formData.get("location") ?? "") || null;
+    const customerName = String(formData.get("customerName") ?? "");
+    const customerEmail = String(formData.get("customerEmail") ?? "") || null;
+    const customerPhone = String(formData.get("customerPhone") ?? "") || null;
 
-    if (!result.ok) {
-      return { intent, ok: false as const, error: result.error };
+    let customFieldResponses: Record<string, string> = {};
+    try {
+      customFieldResponses = JSON.parse(
+        String(formData.get("customFieldResponses") ?? "{}"),
+      );
+    } catch {
+      customFieldResponses = {};
     }
-    return { intent, ok: true as const, booking: result.booking };
+
+    let slots: QueuedSlotInput[] = [];
+    try {
+      slots = JSON.parse(String(formData.get("slots") ?? "[]"));
+    } catch {
+      slots = [];
+    }
+
+    if (slots.length === 0) {
+      return {
+        intent,
+        ok: false as const,
+        error: "Add at least one date/time before creating a booking.",
+      };
+    }
+
+    const results: SlotResult[] = [];
+    for (const slot of slots) {
+      const result = await createManualBooking(session.shop, {
+        bookableProductId,
+        date: slot.date,
+        slotStart: slot.slotStart,
+        quantity: slot.quantity,
+        location,
+        customerName,
+        customerEmail,
+        customerPhone,
+        customFieldResponses,
+      });
+      results.push({
+        date: slot.date,
+        slotStart: slot.slotStart,
+        ok: result.ok,
+        error: result.ok ? undefined : result.error,
+      });
+    }
+
+    const createdCount = results.filter((r) => r.ok).length;
+    const failedCount = results.length - createdCount;
+
+    return {
+      intent,
+      ok: failedCount === 0,
+      results,
+      createdCount,
+      failedCount,
+    };
   }
 
   return { intent, ok: false as const };
 };
 
 export default function NewBookingPage() {
-  const { products } = useLoaderData<typeof loader>();
+  const { products, locations, customFields } = useLoaderData<typeof loader>();
   const availabilityFetcher = useFetcher<typeof action>();
   const slotsFetcher = useFetcher<typeof action>();
   const createFetcher = useFetcher<typeof action>();
@@ -182,6 +249,14 @@ export default function NewBookingPage() {
   const [viewMonth, setViewMonth] = useState(today.getUTCMonth() + 1);
   const [date, setDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [locationId, setLocationId] = useState(locations[0]?.id ?? "");
+  const [customFieldValues, setCustomFieldValues] = useState<
+    Record<string, string>
+  >({});
+  const [queuedSlots, setQueuedSlots] = useState<
+    Array<{ date: string; slot: TimeSlot; quantity: number; error?: string }>
+  >([]);
   const [customerName, setCustomerName] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
@@ -200,10 +275,17 @@ export default function NewBookingPage() {
       ? slotsFetcher.data.slots
       : [];
 
+  const createResult =
+    createFetcher.data?.intent === "createBooking" ? createFetcher.data : null;
   const createError =
-    createFetcher.data?.intent === "createBooking" && !createFetcher.data.ok
-      ? createFetcher.data.error
-      : null;
+    createResult && "error" in createResult ? createResult.error : null;
+
+  const maxQuantity = Math.max(
+    1,
+    typeof selectedSlot?.remainingCapacity === "number"
+      ? selectedSlot.remainingCapacity
+      : 1,
+  );
 
   const loadAvailability = (productId: string, year: number, month: number) => {
     if (!productId) return;
@@ -221,26 +303,62 @@ export default function NewBookingPage() {
   useEffect(() => {
     setDate("");
     setSelectedSlot(null);
+    setQueuedSlots([]);
     loadAvailability(bookableProductId, viewYear, viewMonth);
   }, [bookableProductId, viewYear, viewMonth]);
 
   useEffect(() => {
-    if (createFetcher.data?.intent === "createBooking" && createFetcher.data.ok) {
-      shopify.toast.show("Booking created");
-      setSelectedSlot(null);
+    if (selectedSlot) {
+      setQuantity(1);
+    }
+  }, [selectedSlot]);
+
+  useEffect(() => {
+    if (createFetcher.data?.intent !== "createBooking") return;
+    const result = createFetcher.data;
+    if (!("results" in result) || !result.results) return;
+
+    const results = result.results;
+    const createdCount = result.createdCount ?? 0;
+    const failedCount = result.failedCount ?? 0;
+
+    shopify.toast.show(
+      failedCount > 0
+        ? `Created ${createdCount} of ${createdCount + failedCount} booking(s)`
+        : `Created ${createdCount} booking(s)`,
+    );
+
+    if (failedCount === 0) {
+      setQueuedSlots([]);
+      setCustomFieldValues({});
       setCustomerName("");
       setNameTouched(false);
       setCustomerEmail("");
       setEmailTouched(false);
       setCustomerPhone("");
       setSubmitAttempted(false);
-      loadAvailability(bookableProductId, viewYear, viewMonth);
-      if (date) {
-        slotsFetcher.submit(
-          { intent: "loadSlots", bookableProductId, date },
-          { method: "POST" },
-        );
-      }
+    } else {
+      // Keep only the slots that failed, with their error attached, so the
+      // admin can see what went wrong and retry just those.
+      setQueuedSlots((prev) =>
+        prev
+          .map((entry) => {
+            const match = results.find(
+              (r) =>
+                r.date === entry.date && r.slotStart === entry.slot.start,
+            );
+            if (!match) return entry;
+            return match.ok ? null : { ...entry, error: match.error };
+          })
+          .filter((entry): entry is (typeof prev)[number] => entry !== null),
+      );
+    }
+    loadAvailability(bookableProductId, viewYear, viewMonth);
+    if (date) {
+      slotsFetcher.submit(
+        { intent: "loadSlots", bookableProductId, date },
+        { method: "POST" },
+      );
     }
   }, [createFetcher.data, shopify]);
 
@@ -284,6 +402,25 @@ export default function NewBookingPage() {
         ? "Please enter a valid email address"
         : undefined;
 
+  const handleAddToList = () => {
+    if (!date || !selectedSlot) return;
+    const alreadyQueued = queuedSlots.some(
+      (entry) => entry.date === date && entry.slot.startsAt === selectedSlot.startsAt,
+    );
+    if (!alreadyQueued) {
+      setQueuedSlots((prev) => [
+        ...prev,
+        { date, slot: selectedSlot, quantity },
+      ]);
+    }
+    setDate("");
+    setSelectedSlot(null);
+  };
+
+  const handleRemoveQueued = (index: number) => {
+    setQueuedSlots((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleCreateBooking = () => {
     setSubmitAttempted(true);
     setNameTouched(true);
@@ -291,8 +428,7 @@ export default function NewBookingPage() {
 
     if (
       !bookableProductId ||
-      !date ||
-      !selectedSlot ||
+      queuedSlots.length === 0 ||
       !customerName.trim() ||
       !customerEmail.trim() ||
       !isValidEmail(customerEmail)
@@ -300,12 +436,21 @@ export default function NewBookingPage() {
       return;
     }
 
+    const selectedLocation = locations.find((l) => l.id === locationId);
+
     createFetcher.submit(
       {
         intent: "createBooking",
         bookableProductId,
-        date,
-        slotStart: selectedSlot.start,
+        location: selectedLocation?.name ?? "",
+        customFieldResponses: JSON.stringify(customFieldValues),
+        slots: JSON.stringify(
+          queuedSlots.map((entry) => ({
+            date: entry.date,
+            slotStart: entry.slot.start,
+            quantity: entry.quantity,
+          })),
+        ),
         customerName,
         customerEmail,
         customerPhone,
@@ -349,6 +494,24 @@ export default function NewBookingPage() {
           ))}
         </s-select>
       </s-section>
+
+      {locations.length > 0 && (
+        <s-section heading="Location">
+          <s-select
+            label="Location"
+            value={locationId}
+            onChange={(e: FieldChangeEvent) =>
+              setLocationId(e.currentTarget.value)
+            }
+          >
+            {locations.map((l) => (
+              <s-option key={l.id} value={l.id}>
+                {l.name}
+              </s-option>
+            ))}
+          </s-select>
+        </s-section>
+      )}
 
       <s-section heading="Date">
         <div
@@ -454,6 +617,87 @@ export default function NewBookingPage() {
       )}
 
       {selectedSlot && (
+        <s-section heading="Quantity">
+          <s-stack direction="inline" gap="base" alignItems="center">
+            <s-button
+              variant="tertiary"
+              {...(quantity <= 1 ? { disabled: true } : {})}
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            >
+              −
+            </s-button>
+            <span style={{ minWidth: "2rem", textAlign: "center" }}>
+              {quantity}
+            </span>
+            <s-button
+              variant="tertiary"
+              {...(quantity >= maxQuantity ? { disabled: true } : {})}
+              onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+            >
+              +
+            </s-button>
+            {maxQuantity <= 5 && (
+              <s-text tone="subdued">Only {maxQuantity} left for this slot.</s-text>
+            )}
+          </s-stack>
+
+          <s-button variant="primary" onClick={handleAddToList}>
+            Add to list
+          </s-button>
+        </s-section>
+      )}
+
+      {queuedSlots.length > 0 && (
+        <s-section heading="Slots to book">
+          <s-stack direction="block" gap="small">
+            {queuedSlots.map((entry, index) => (
+              <s-stack
+                key={entry.date + entry.slot.startsAt}
+                direction="inline"
+                gap="small"
+                alignItems="center"
+              >
+                <s-text>
+                  {entry.date} | {formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}
+                  {entry.quantity > 1 ? ` × ${entry.quantity}` : ""}
+                </s-text>
+                {entry.error && (
+                  <s-text tone="critical">{entry.error}</s-text>
+                )}
+                <s-button
+                  variant="tertiary"
+                  onClick={() => handleRemoveQueued(index)}
+                >
+                  Remove
+                </s-button>
+              </s-stack>
+            ))}
+          </s-stack>
+        </s-section>
+      )}
+
+      {customFields.length > 0 && (
+        <s-section heading="Notes">
+          <s-stack direction="block" gap="base">
+            {customFields.map((field) => (
+              <s-text-field
+                key={field.fieldKey}
+                label={field.label}
+                {...(field.required ? { required: true } : {})}
+                value={customFieldValues[field.fieldKey] ?? ""}
+                onChange={(e: FieldChangeEvent) =>
+                  setCustomFieldValues((prev) => ({
+                    ...prev,
+                    [field.fieldKey]: e.currentTarget.value,
+                  }))
+                }
+              ></s-text-field>
+            ))}
+          </s-stack>
+        </s-section>
+      )}
+
+      {queuedSlots.length > 0 && (
         <s-section heading="Customer details">
           <s-stack direction="inline" gap="base">
             <s-text-field
@@ -501,7 +745,9 @@ export default function NewBookingPage() {
             above instead of submitting.
           */}
           <s-button variant="primary" onClick={handleCreateBooking}>
-            Create booking
+            {queuedSlots.length > 1
+              ? `Create ${queuedSlots.length} bookings`
+              : "Create booking"}
           </s-button>
         </s-section>
       )}

@@ -354,6 +354,8 @@ export type ManualBookingInput = {
   bookableProductId: string;
   date: string;
   slotStart: string;
+  quantity?: number;
+  location?: string | null;
   customerName: string;
   customerEmail: string | null;
   customerPhone: string | null;
@@ -397,7 +399,11 @@ export async function createManualBooking(
     bookableProduct.id,
     new Date(matchedSlot.startsAt),
   );
-  if (alreadyBooked >= effectiveSettings.maxBookingsPerSlot) {
+  const quantity =
+    Number.isInteger(input.quantity) && (input.quantity as number) > 0
+      ? (input.quantity as number)
+      : 1;
+  if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
     return { ok: false, error: "That slot is already fully booked." };
   }
 
@@ -417,10 +423,12 @@ export async function createManualBooking(
       customerEmail: input.customerEmail,
       customerPhone: input.customerPhone,
       isGuest: true,
+      location: input.location || null,
       date: input.date,
       slotStart: matchedSlot.start,
       slotEnd: matchedSlot.end,
       slotStartsAt: new Date(matchedSlot.startsAt),
+      quantity,
       status: "CONFIRMED",
       source: "ADMIN_MANUAL",
       customFieldResponses:
