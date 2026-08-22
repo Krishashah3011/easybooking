@@ -11,6 +11,7 @@ import {
   confirmationEmail,
   reminderEmail,
   cancellationEmail,
+  rescheduledEmail,
 } from "./emailTemplates.server";
 import { listCustomFields } from "./customBookingField.server";
 import { formatDateDisplay } from "../utils/format";
@@ -195,6 +196,38 @@ async function sendBookingCancellation(
     slotStart: booking.slotStart,
     slotEnd: booking.slotEnd,
     shopName: shop,
+  });
+
+  await sendEmail({
+    to: booking.customerEmail,
+    subject,
+    text,
+    html,
+    fromName,
+  });
+}
+
+async function sendBookingRescheduled(
+  booking: Booking,
+  productTitle: string,
+  shop: string,
+  previousDate: string,
+  previousSlotStart: string,
+  previousSlotEnd: string,
+): Promise<void> {
+  if (!booking.customerEmail) return;
+
+  const { fromName } = await getShopEmailSettings(shop);
+  const { subject, text, html } = rescheduledEmail({
+    productTitle,
+    customerName: booking.customerName,
+    date: formatDateDisplay(booking.date),
+    slotStart: booking.slotStart,
+    slotEnd: booking.slotEnd,
+    shopName: shop,
+    previousDate: formatDateDisplay(previousDate),
+    previousSlotStart,
+    previousSlotEnd,
   });
 
   await sendEmail({
@@ -639,6 +672,10 @@ export async function rescheduleBooking(
     return { ok: false, error: "That slot is already fully booked." };
   }
 
+  const previousDate = booking.date;
+  const previousSlotStart = booking.slotStart;
+  const previousSlotEnd = booking.slotEnd;
+
   const updated = await prisma.booking.update({
     where: { id },
     data: {
@@ -650,6 +687,15 @@ export async function rescheduleBooking(
       reminderSentAt: null,
     },
   });
+
+  await sendBookingRescheduled(
+    updated,
+    booking.bookableProduct.productTitle,
+    shop,
+    previousDate,
+    previousSlotStart,
+    previousSlotEnd,
+  );
 
   return { ok: true, booking: updated };
 }

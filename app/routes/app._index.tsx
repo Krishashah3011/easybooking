@@ -7,6 +7,7 @@ import {
   countBookings,
   getUpcomingBookings,
 } from "../models/booking.server";
+import { getSmtpSettings } from "../models/smtpSettings.server";
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -23,22 +24,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const today = todayISO();
   const weekEnd = endOfWeekISO();
 
-  const [products, todayCount, weekCount, overbookedCount, upcoming] =
+  const [products, todayCount, weekCount, overbookedCount, upcoming, smtpSettings] =
     await Promise.all([
       listBookableProducts(session.shop),
       countBookings(session.shop, { dateFrom: today, dateTo: today }),
       countBookings(session.shop, { dateFrom: today, dateTo: weekEnd }),
       countBookings(session.shop, { status: "OVERBOOKED" }),
       getUpcomingBookings(session.shop, 5),
+      getSmtpSettings(session.shop),
     ]);
 
   const enabledProductCount = products.filter((p) => p.isEnabled).length;
   const smtpConfigured = Boolean(
-    process.env.SMTP_HOST &&
-      process.env.SMTP_PORT &&
-      process.env.SMTP_USER &&
-      process.env.SMTP_PASSWORD &&
-      process.env.SMTP_FROM_EMAIL,
+    smtpSettings?.host &&
+      smtpSettings.port &&
+      smtpSettings.username &&
+      smtpSettings.password &&
+      smtpSettings.fromEmail,
   );
 
   return {
@@ -116,7 +118,7 @@ export default function Dashboard() {
           <s-list-item>
             <s-text>
               <b>Set your booking schedule</b> — in{" "}
-              <s-link href="/app/settings">Booking Settings</s-link>, choose
+              <s-link href="/app/booking-settings">Booking Settings</s-link>, choose
               working days, daily hours, slot duration, buffer time between
               slots, how far in advance customers can book, and how many
               bookings are allowed per slot.
@@ -126,7 +128,7 @@ export default function Dashboard() {
             <s-text>
               <b>Block off days you're unavailable</b> — add holidays or
               one-off closures on the{" "}
-              <s-link href="/app/settings/blackout-dates">Blackout Dates</s-link>{" "}
+              <s-link href="/app/booking-settings/blackout-dates">Blackout Dates</s-link>{" "}
               tab, shop-wide or for a specific product.
             </s-text>
           </s-list-item>
@@ -134,7 +136,7 @@ export default function Dashboard() {
             <s-text>
               <b>Collect extra info at booking time (optional)</b> — add
               fields like notes, preferences, or special requests on the{" "}
-              <s-link href="/app/settings/custom-fields">Custom Fields</s-link> tab.
+              <s-link href="/app/booking-settings/custom-fields">Custom Fields</s-link> tab.
               Customers fill these in when booking, and you'll see their
               answers on each booking.
             </s-text>
@@ -142,7 +144,7 @@ export default function Dashboard() {
           <s-list-item>
             <s-text>
               <b>Turn on the booking widget</b> — in{" "}
-              <s-link href="/app/settings">Booking Settings</s-link>, use
+              <s-link href="/app/booking-settings">Booking Settings</s-link>, use
               the "Open theme editor → App embeds" link and switch the
               EasyBooking app embed on. It shows up automatically on every
               bookable product page — no manual placement needed.
@@ -151,7 +153,7 @@ export default function Dashboard() {
           <s-list-item>
             <s-text>
               <b>Turn on booking emails</b> — configure SMTP in{" "}
-              <s-link href="/app/settings">Booking Settings</s-link> so
+              <s-link href="/app/settings">Settings → SMTP Settings</s-link> so
               customers automatically get confirmation, reminder, and
               cancellation emails.
             </s-text>

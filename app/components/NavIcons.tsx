@@ -51,6 +51,18 @@ export function BookingsIcon({ className }: IconProps) {
   );
 }
 
+export function ScheduleIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="3" y="4" width="18" height="17" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M8 2.5v3M16 2.5v3" />
+      <circle cx="15.5" cy="15" r="3.2" />
+      <path d="M15.5 13.5V15l1 0.8" />
+    </svg>
+  );
+}
+
 export function ReportsIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>
