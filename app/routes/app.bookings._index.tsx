@@ -274,35 +274,10 @@ function BookingLine({
             <s-text tone="subdued">{booking.productTitle}</s-text>
           </s-stack>
 
-          <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <s-stack direction="inline" alignItems="center" gap="small">
-              {booking.status !== "CANCELLED" && (
-                <>
-                  {isRescheduling ? (
-                    <s-button
-                      variant="tertiary"
-                      onClick={() => setIsRescheduling(false)}
-                    >
-                      Cancel edit
-                    </s-button>
-                  ) : (
-                    <s-button
-                      variant="tertiary"
-                      onClick={() => {
-                        setIsRescheduling(true);
-                        setShowDetails(true);
-                      }}
-                    >
-                      Reschedule
-                    </s-button>
-                  )}
-                  <s-button variant="tertiary" tone="critical" onClick={handleCancel}>
-                    Cancel booking
-                  </s-button>
-                </>
-              )}
-            </s-stack>
-          </div>
+          <s-text tone="subdued">
+            {formatDateDisplay(booking.date)}{" "}
+            {formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}
+          </s-text>
         </s-stack>
       </div>
 
@@ -412,6 +387,31 @@ function BookingLine({
             <DetailRow label="Status">
               <s-badge tone={badgeTone}>{booking.status}</s-badge>
             </DetailRow>
+
+            {booking.status !== "CANCELLED" && (
+              <DetailRow label="Actions">
+                <s-stack direction="inline" alignItems="center" gap="small">
+                  {isRescheduling ? (
+                    <s-button
+                      variant="tertiary"
+                      onClick={() => setIsRescheduling(false)}
+                    >
+                      Cancel edit
+                    </s-button>
+                  ) : (
+                    <s-button
+                      variant="tertiary"
+                      onClick={() => setIsRescheduling(true)}
+                    >
+                      Reschedule
+                    </s-button>
+                  )}
+                  <s-button variant="tertiary" tone="critical" onClick={handleCancel}>
+                    Cancel booking
+                  </s-button>
+                </s-stack>
+              </DetailRow>
+            )}
           </s-stack>
 
           {rescheduleError && (

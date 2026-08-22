@@ -158,7 +158,6 @@
       "[data-booking-location-summary-text]",
     );
     var locationChangeBtn = root.querySelector("[data-booking-location-change]");
-    var locationNextBtn = root.querySelector("[data-booking-location-next]");
     var calendarEl = root.querySelector("[data-booking-calendar]");
     var weekdaysEl = root.querySelector("[data-booking-weekdays]");
     var monthLabelEl = root.querySelector("[data-booking-month-label]");
@@ -655,6 +654,9 @@
     }
 
     function selectLocation(location) {
+      var locationChanged = !pendingLocation || pendingLocation.id !== location.id;
+      pendingLocation = location;
+      selectedLocationRecord = location;
       if (locationTriggerTextEl) {
         locationTriggerTextEl.textContent = location.name;
         locationTriggerTextEl.classList.remove(
@@ -671,8 +673,17 @@
         );
       }
       populateLocationList();
-      selectedLocationRecord = location;
       closeLocationList();
+      showDatetimeStep();
+      if (locationChanged) {
+        // A different location can mean a different timezone, so the
+        // previously loaded month/day no longer applies.
+        pendingDate = null;
+        pendingSlot = null;
+        refreshQuantityForSelection();
+        updateConfirmButton();
+      }
+      loadMonth();
     }
 
     function showLocationStep() {
@@ -706,7 +717,6 @@
           "booking-widget__location-trigger--error",
         );
       }
-      if (locationNextBtn) locationNextBtn.hidden = false;
       confirmBtn.hidden = true;
       if (subheaderEl) subheaderEl.hidden = true;
     }
@@ -715,7 +725,6 @@
       exitReviewStep();
       if (locationStepEl) locationStepEl.hidden = true;
       datetimeStepEl.hidden = false;
-      if (locationNextBtn) locationNextBtn.hidden = true;
       confirmBtn.hidden = false;
       if (subheaderEl) subheaderEl.hidden = false;
 
@@ -733,37 +742,6 @@
           ? locationTimezoneLabel(pendingLocation.timezone)
           : timezoneLabel();
       }
-    }
-
-    if (locationNextBtn) {
-      locationNextBtn.addEventListener("click", function () {
-        var selected = selectedLocationRecord;
-        if (!selected) {
-          if (locationErrorEl) {
-            locationErrorEl.hidden = false;
-            locationErrorEl.textContent = strings.locationRequired;
-          }
-          if (locationTriggerEl) {
-            locationTriggerEl.classList.add(
-              "booking-widget__location-trigger--error",
-            );
-          }
-          return;
-        }
-        var locationChanged =
-          !pendingLocation || pendingLocation.id !== selected.id;
-        pendingLocation = selected;
-        showDatetimeStep();
-        if (locationChanged) {
-          // A different location can mean a different timezone, so the
-          // previously loaded month/day no longer applies.
-          pendingDate = null;
-          pendingSlot = null;
-          refreshQuantityForSelection();
-          updateConfirmButton();
-        }
-        loadMonth();
-      });
     }
 
     if (locationChangeBtn) {
@@ -1215,7 +1193,7 @@
     function showReviewStep() {
       atReviewStep = true;
       buildReviewSummary();
-      datetimeStepEl.hidden = true;
+      modalBodyEl.hidden = true;
       if (quantityWrapEl) quantityWrapEl.hidden = true;
       if (reviewStepEl) reviewStepEl.hidden = false;
       if (subheaderEl) subheaderEl.hidden = true;
@@ -1228,6 +1206,7 @@
     function exitReviewStep() {
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
+      modalBodyEl.hidden = false;
       renderCustomFields();
     }
 
