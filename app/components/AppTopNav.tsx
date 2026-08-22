@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router";
 
 import "./AppTopNav.css";
 import {
+  AccountIcon,
   BookingsIcon,
   HomeIcon,
   ProductsIcon,
@@ -35,6 +36,7 @@ function isActive(pathname: string, item: NavItem) {
 
 export function AppTopNav() {
   const { pathname } = useLocation();
+  const accountActive = pathname.startsWith("/app/account");
 
   return (
     <nav className="bar" aria-label="App navigation">
@@ -56,6 +58,16 @@ export function AppTopNav() {
           );
         })}
       </div>
+      <div className="spacer" />
+      <Link
+        to="/app/account"
+        title="Account"
+        aria-label="Account"
+        aria-current={accountActive ? "page" : undefined}
+        className={accountActive ? "link linkActive" : "link"}
+      >
+        <AccountIcon />
+      </Link>
     </nav>
   );
 }

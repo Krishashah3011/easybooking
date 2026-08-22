@@ -445,18 +445,18 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__quantity-label {
   display: block;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.85rem;
   margin: 0 0 0.5rem;
-  color: rgba(0, 0, 0, 0.75);
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .booking-widget__quantity-control {
   display: inline-flex;
   align-items: stretch;
   height: 3rem;
-  border: 1.5px solid rgba(0, 0, 0, 0.85);
-  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
   overflow: hidden;
   background: #fff;
 }
@@ -471,22 +471,22 @@ body.booking-widget-lock-scroll {
   background: #fff;
   font-size: 1.25rem;
   line-height: 1;
-  color: #111;
+  color: rgba(0, 0, 0, 0.55);
   cursor: pointer;
   transition: background-color 0.12s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .booking-widget__quantity-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .booking-widget__quantity-btn:active {
-  background: rgba(0, 0, 0, 0.09);
+  background: rgba(0, 0, 0, 0.07);
 }
 
 .booking-widget__quantity-btn:disabled {
-  color: rgba(0, 0, 0, 0.25);
+  color: rgba(0, 0, 0, 0.2);
   cursor: not-allowed;
   background: #fff;
 }
@@ -495,8 +495,8 @@ body.booking-widget-lock-scroll {
   width: 3.5rem;
   flex-shrink: 0;
   border: none;
-  border-left: 1.5px solid rgba(0, 0, 0, 0.85);
-  border-right: 1.5px solid rgba(0, 0, 0, 0.85);
+  border-left: 1px solid rgba(0, 0, 0, 0.18);
+  border-right: 1px solid rgba(0, 0, 0, 0.18);
   text-align: center;
   font-family: inherit;
   font-size: 1rem;

@@ -58,3 +58,12 @@ export function ReportsIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function AccountIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" />
+    </svg>
+  );
+}

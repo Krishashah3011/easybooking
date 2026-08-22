@@ -98,9 +98,6 @@ enum BookingStatus {
   CONFIRMED
   OVERBOOKED
   CANCELLED
-  /// Set when an admin reschedules a booking. Treated as fully active
-  /// everywhere CONFIRMED is (counts toward slot capacity, still gets
-  /// reminder emails) — it's a history label, not a distinct lifecycle state.
   RESCHEDULED
 }
 
@@ -139,10 +136,6 @@ model Booking {
   orderId       String?
   orderName     String?
   lineItemId    String?
-  /// Ties together multiple Booking rows created from a single admin
-  /// "New Booking" submission that queued more than one date/time slot,
-  /// so the Bookings list can show them as one entry instead of several.
-  /// Null for single-slot bookings and storefront-order bookings.
   groupId       String?
   customerName  String?
   customerEmail String?
@@ -153,10 +146,6 @@ model Booking {
   slotStart    String
   slotEnd      String
   slotStartsAt DateTime
-  /// How many units of this slot the line item covers. A line item bought
-  /// with quantity 3 consumes 3 units of the slot's capacity, not 1 —
-  /// without this, capacity checks and the admin bookings list undercount
-  /// how much of a slot is actually taken.
   quantity Int @default(1)
   status BookingStatus @default(CONFIRMED)
   source BookingSource
@@ -170,4 +159,16 @@ model Booking {
   @@index([orderId])
   @@index([groupId])
   @@index([status, reminderSentAt, slotStartsAt])
+}
+
+model ShopSettings {
+  id            String   @id @default(cuid())
+  shop          String   @unique
+  registered    Boolean  @default(false)
+  username      String?
+  accountEmail  String?
+  plan          String?
+  subscriptionId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
