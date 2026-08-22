@@ -13,6 +13,7 @@ import {
   deleteCustomField,
   listCustomFields,
   parseCustomFieldForm,
+  reorderCustomFields,
   updateCustomField,
   type CustomFieldFieldErrors,
   type CustomFieldFormValues,
@@ -37,7 +38,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = String(formData.get("intent") ?? "") as
-    "create" | "update" | "delete" | "";
+    "create" | "update" | "delete" | "reorder" | "";
+
+  if (intent === "reorder") {
+    let orderedIds: string[] = [];
+    try {
+      orderedIds = JSON.parse(String(formData.get("orderedIds") ?? "[]"));
+    } catch {
+      orderedIds = [];
+    }
+    await reorderCustomFields(session.shop, orderedIds);
+    return { intent, ok: true as const };
+  }
 
   if (intent === "delete") {
     const id = String(formData.get("id") ?? "");
@@ -169,6 +181,10 @@ function FieldEditor({
 
 function FieldRow({
   field,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
 }: {
   field: {
     id: string;
@@ -177,6 +193,10 @@ function FieldRow({
     required: boolean;
     options: string | null;
   };
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
 }) {
   const deleteFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
@@ -222,6 +242,22 @@ function FieldRow({
       <s-table-cell>{field.required ? "Yes" : "No"}</s-table-cell>
       <s-table-cell>
         <s-stack direction="inline" gap="small">
+          <s-button
+            variant="tertiary"
+            {...(isFirst ? { disabled: true } : {})}
+            onClick={onMoveUp}
+            accessibilityLabel={`Move ${field.label} up`}
+          >
+            ↑
+          </s-button>
+          <s-button
+            variant="tertiary"
+            {...(isLast ? { disabled: true } : {})}
+            onClick={onMoveDown}
+            accessibilityLabel={`Move ${field.label} down`}
+          >
+            ↓
+          </s-button>
           <s-button variant="tertiary" onClick={() => setIsEditing(true)}>
             Edit
           </s-button>
@@ -235,7 +271,35 @@ function FieldRow({
 }
 
 export default function CustomFieldsPage() {
-  const { fields } = useLoaderData<typeof loader>();
+  const { fields: loaderFields } = useLoaderData<typeof loader>();
+  const reorderFetcher = useFetcher<typeof action>();
+  const [fields, setFields] = useState(loaderFields);
+
+  useEffect(() => {
+    setFields(loaderFields);
+  }, [loaderFields]);
+
+  const persistOrder = (ordered: typeof fields) => {
+    reorderFetcher.submit(
+      {
+        intent: "reorder",
+        orderedIds: JSON.stringify(ordered.map((f) => f.id)),
+      },
+      { method: "POST" },
+    );
+  };
+
+  const moveField = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= fields.length) return;
+
+    const reordered = [...fields];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    setFields(reordered);
+    persistOrder(reordered);
+  };
 
   return (
     <s-page heading="Custom Booking Fields">
@@ -252,19 +316,32 @@ export default function CustomFieldsPage() {
         {fields.length === 0 ? (
           <s-paragraph>No custom fields yet.</s-paragraph>
         ) : (
-          <s-table>
-            <s-table-header-row>
-              <s-table-header>Label</s-table-header>
-              <s-table-header>Type</s-table-header>
-              <s-table-header>Required</s-table-header>
-              <s-table-header>Actions</s-table-header>
-            </s-table-header-row>
-            <s-table-body>
-              {fields.map((field) => (
-                <FieldRow key={field.id} field={field} />
-              ))}
-            </s-table-body>
-          </s-table>
+          <>
+            <s-paragraph>
+              Use the arrows to change the order these questions appear in
+              on the storefront.
+            </s-paragraph>
+            <s-table>
+              <s-table-header-row>
+                <s-table-header>Label</s-table-header>
+                <s-table-header>Type</s-table-header>
+                <s-table-header>Required</s-table-header>
+                <s-table-header>Actions</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {fields.map((field, index) => (
+                  <FieldRow
+                    key={field.id}
+                    field={field}
+                    isFirst={index === 0}
+                    isLast={index === fields.length - 1}
+                    onMoveUp={() => moveField(index, -1)}
+                    onMoveDown={() => moveField(index, 1)}
+                  />
+                ))}
+              </s-table-body>
+            </s-table>
+          </>
         )}
       </s-section>
     </s-page>

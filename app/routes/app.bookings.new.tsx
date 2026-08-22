@@ -8,20 +8,13 @@ import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import {
-  listBookableProducts,
-  resolveEffectiveSettings,
-} from "../models/bookableProduct.server";
-import { getBookingSettings } from "../models/bookingSettings.server";
+import { listBookableProducts } from "../models/bookableProduct.server";
 import {
   computeSlotsForDate,
   getAvailableDatesInMonth,
   type TimeSlot,
 } from "../models/slotAvailability.server";
-import {
-  listShopBlackoutDates,
-  listProductBlackoutDates,
-} from "../models/blackoutDate.server";
+import { resolveBookingContext } from "../models/booking-context.server";
 import {
   createManualBooking,
   getBookedCountsInRange,
@@ -70,25 +63,12 @@ async function resolveBlackoutDatesAndSettings(
   shop: string,
   bookableProductId: string,
 ) {
-  const bookableProduct = await listBookableProducts(shop).then((products) =>
-    products.find((p) => p.id === bookableProductId),
-  );
-  if (!bookableProduct) return null;
-
-  const [shopSettings, shopBlackouts, productBlackouts] = await Promise.all([
-    getBookingSettings(shop),
-    listShopBlackoutDates(shop),
-    listProductBlackoutDates(shop, bookableProductId),
-  ]);
-
-  const blackoutDates = new Set<string>([
-    ...shopBlackouts.map((b: { date: Date }) => b.date.toISOString().slice(0, 10)),
-    ...productBlackouts.map((b: { date: Date }) => b.date.toISOString().slice(0, 10)),
-  ]);
-
-  const effectiveSettings = resolveEffectiveSettings(shopSettings, bookableProduct);
-
-  return { effectiveSettings, blackoutDates };
+  const context = await resolveBookingContext(shop, bookableProductId);
+  if (!context) return null;
+  return {
+    effectiveSettings: context.effectiveSettings,
+    blackoutDates: context.blackoutDates,
+  };
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {

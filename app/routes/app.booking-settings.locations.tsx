@@ -13,6 +13,7 @@ import {
   deleteLocation,
   listLocations,
   parseLocationForm,
+  reorderLocations,
   updateLocation,
   type LocationFieldErrors,
   type LocationFormValues,
@@ -38,7 +39,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = String(formData.get("intent") ?? "") as
-    "create" | "update" | "delete" | "";
+    "create" | "update" | "delete" | "reorder" | "";
+
+  if (intent === "reorder") {
+    let orderedIds: string[] = [];
+    try {
+      orderedIds = JSON.parse(String(formData.get("orderedIds") ?? "[]"));
+    } catch {
+      orderedIds = [];
+    }
+    await reorderLocations(session.shop, orderedIds);
+    return { intent, ok: true as const };
+  }
 
   if (intent === "delete") {
     const id = String(formData.get("id") ?? "");
@@ -249,6 +261,10 @@ function LocationEditor({
 
 function LocationRow({
   location,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
 }: {
   location: {
     id: string;
@@ -256,6 +272,10 @@ function LocationRow({
     timezone: string;
     isEnabled: boolean;
   };
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
 }) {
   const deleteFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
@@ -305,6 +325,22 @@ function LocationRow({
       <s-table-cell>{location.isEnabled ? "Visible" : "Hidden"}</s-table-cell>
       <s-table-cell>
         <s-stack direction="inline" gap="small">
+          <s-button
+            variant="tertiary"
+            {...(isFirst ? { disabled: true } : {})}
+            onClick={onMoveUp}
+            accessibilityLabel={`Move ${location.name} up`}
+          >
+            ↑
+          </s-button>
+          <s-button
+            variant="tertiary"
+            {...(isLast ? { disabled: true } : {})}
+            onClick={onMoveDown}
+            accessibilityLabel={`Move ${location.name} down`}
+          >
+            ↓
+          </s-button>
           <s-button variant="tertiary" onClick={() => setIsEditing(true)}>
             Edit
           </s-button>
@@ -318,7 +354,35 @@ function LocationRow({
 }
 
 export default function LocationsPage() {
-  const { locations } = useLoaderData<typeof loader>();
+  const { locations: loaderLocations } = useLoaderData<typeof loader>();
+  const reorderFetcher = useFetcher<typeof action>();
+  const [locations, setLocations] = useState(loaderLocations);
+
+  useEffect(() => {
+    setLocations(loaderLocations);
+  }, [loaderLocations]);
+
+  const persistOrder = (ordered: typeof locations) => {
+    reorderFetcher.submit(
+      {
+        intent: "reorder",
+        orderedIds: JSON.stringify(ordered.map((l) => l.id)),
+      },
+      { method: "POST" },
+    );
+  };
+
+  const moveLocation = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= locations.length) return;
+
+    const reordered = [...locations];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    setLocations(reordered);
+    persistOrder(reordered);
+  };
 
   return (
     <s-page heading="Locations">
@@ -338,19 +402,32 @@ export default function LocationsPage() {
         {locations.length === 0 ? (
           <s-paragraph>No locations yet.</s-paragraph>
         ) : (
-          <s-table>
-            <s-table-header-row>
-              <s-table-header>Name</s-table-header>
-              <s-table-header>Timezone</s-table-header>
-              <s-table-header>Visibility</s-table-header>
-              <s-table-header>Actions</s-table-header>
-            </s-table-header-row>
-            <s-table-body>
-              {locations.map((location) => (
-                <LocationRow key={location.id} location={location} />
-              ))}
-            </s-table-body>
-          </s-table>
+          <>
+            <s-paragraph>
+              Use the arrows to change the order shoppers see these in on
+              the storefront.
+            </s-paragraph>
+            <s-table>
+              <s-table-header-row>
+                <s-table-header>Name</s-table-header>
+                <s-table-header>Timezone</s-table-header>
+                <s-table-header>Visibility</s-table-header>
+                <s-table-header>Actions</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {locations.map((location, index) => (
+                  <LocationRow
+                    key={location.id}
+                    location={location}
+                    isFirst={index === 0}
+                    isLast={index === locations.length - 1}
+                    onMoveUp={() => moveLocation(index, -1)}
+                    onMoveDown={() => moveLocation(index, 1)}
+                  />
+                ))}
+              </s-table-body>
+            </s-table>
+          </>
         )}
       </s-section>
     </s-page>
