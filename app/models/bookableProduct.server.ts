@@ -1,9 +1,28 @@
-import type { BookableProduct, BookingSettings } from "@prisma/client";
+import type {
+  BookableProduct,
+  BookingSettings,
+  BookingType,
+} from "@prisma/client";
 import prisma from "../db.server";
 import { parseWorkingDays } from "./bookingSettings.server";
 
+export const BOOKING_TYPES: BookingType[] = [
+  "SLOT",
+  "FULL_DAY",
+  "MULTI_DAY",
+  "BUNDLE",
+];
+
+export const BOOKING_TYPE_LABELS: Record<BookingType, string> = {
+  SLOT: "Minute / Hour bookings (time slots)",
+  FULL_DAY: "Full-day bookings (flat rate per day)",
+  MULTI_DAY: "Multi-day bookings (date range)",
+  BUNDLE: "Bundle bookings (pack of sessions)",
+};
+
 export type BookableProductFormValues = {
   isEnabled: boolean;
+  bookingType: BookingType;
   workingDays: number[] | null;
   dailyStartTime: string | null;
   dailyEndTime: string | null;
@@ -14,6 +33,13 @@ export type BookableProductFormValues = {
   maxBookingsPerSlot: number | null;
   bookingStartDate: string | null;
   bookingEndDate: string | null;
+  // MULTI_DAY only
+  minNights: number | null;
+  maxNights: number | null;
+  // BUNDLE only
+  bundleSessionCount: number | null;
+  bundleSessionDurationMinutes: number | null;
+  bundleValidityDays: number | null;
 };
 
 export type BookableProductFieldErrors = Partial<
@@ -77,6 +103,7 @@ export function toBookableProductFormValues(
 ): BookableProductFormValues {
   return {
     isEnabled: product.isEnabled,
+    bookingType: product.bookingType,
     workingDays: product.workingDays
       ? parseWorkingDays(product.workingDays)
       : null,
@@ -89,6 +116,11 @@ export function toBookableProductFormValues(
     maxBookingsPerSlot: product.maxBookingsPerSlot,
     bookingStartDate: toDateInputValue(product.bookingStartDate),
     bookingEndDate: toDateInputValue(product.bookingEndDate),
+    minNights: product.minNights,
+    maxNights: product.maxNights,
+    bundleSessionCount: product.bundleSessionCount,
+    bundleSessionDurationMinutes: product.bundleSessionDurationMinutes,
+    bundleValidityDays: product.bundleValidityDays,
   };
 }
 
@@ -106,6 +138,13 @@ export function parseBookableProductForm(formData: FormData): {
   const errors: BookableProductFieldErrors = {};
 
   const isEnabled = formData.get("isEnabled") === "true";
+
+  const bookingTypeRaw = String(formData.get("bookingType") ?? "SLOT");
+  const bookingType: BookingType = BOOKING_TYPES.includes(
+    bookingTypeRaw as BookingType,
+  )
+    ? (bookingTypeRaw as BookingType)
+    : "SLOT";
 
   const workingDaysRaw = String(formData.get("workingDays") ?? "");
   const workingDays =
@@ -190,9 +229,63 @@ export function parseBookableProductForm(formData: FormData): {
     errors.bookingEndDate = "End date must be after start date.";
   }
 
+  // MULTI_DAY only
+  const minNightsResult = parseOptionalInt(formData.get("minNights"));
+  const minNights = minNightsResult.value;
+  if (minNightsResult.invalid) {
+    errors.minNights = "Enter a whole number of nights.";
+  } else if (minNights !== null && minNights < 1) {
+    errors.minNights = "Minimum nights must be at least 1.";
+  }
+
+  const maxNightsResult = parseOptionalInt(formData.get("maxNights"));
+  const maxNights = maxNightsResult.value;
+  if (maxNightsResult.invalid) {
+    errors.maxNights = "Enter a whole number of nights.";
+  } else if (maxNights !== null && minNights !== null && maxNights < minNights) {
+    errors.maxNights = "Maximum nights can't be less than minimum nights.";
+  }
+
+  // BUNDLE only
+  const bundleSessionCountResult = parseOptionalInt(
+    formData.get("bundleSessionCount"),
+  );
+  const bundleSessionCount = bundleSessionCountResult.value;
+  if (bundleSessionCountResult.invalid) {
+    errors.bundleSessionCount = "Enter a whole number of sessions.";
+  } else if (bundleSessionCount !== null && bundleSessionCount < 2) {
+    errors.bundleSessionCount = "A bundle needs at least 2 sessions.";
+  }
+
+  const bundleSessionDurationMinutesResult = parseOptionalInt(
+    formData.get("bundleSessionDurationMinutes"),
+  );
+  const bundleSessionDurationMinutes =
+    bundleSessionDurationMinutesResult.value;
+  if (bundleSessionDurationMinutesResult.invalid) {
+    errors.bundleSessionDurationMinutes = "Enter a whole number of minutes.";
+  } else if (
+    bundleSessionDurationMinutes !== null &&
+    bundleSessionDurationMinutes < 5
+  ) {
+    errors.bundleSessionDurationMinutes =
+      "Session duration must be at least 5 minutes.";
+  }
+
+  const bundleValidityDaysResult = parseOptionalInt(
+    formData.get("bundleValidityDays"),
+  );
+  const bundleValidityDays = bundleValidityDaysResult.value;
+  if (bundleValidityDaysResult.invalid) {
+    errors.bundleValidityDays = "Enter a whole number of days.";
+  } else if (bundleValidityDays !== null && bundleValidityDays < 1) {
+    errors.bundleValidityDays = "Validity window must be at least 1 day.";
+  }
+
   return {
     values: {
       isEnabled,
+      bookingType,
       workingDays,
       dailyStartTime,
       dailyEndTime,
@@ -203,6 +296,11 @@ export function parseBookableProductForm(formData: FormData): {
       maxBookingsPerSlot,
       bookingStartDate,
       bookingEndDate,
+      minNights,
+      maxNights,
+      bundleSessionCount,
+      bundleSessionDurationMinutes,
+      bundleValidityDays,
     },
     errors,
   };
@@ -246,6 +344,7 @@ export async function upsertBookableProductOverrides(
   const data = {
     productTitle,
     isEnabled: values.isEnabled,
+    bookingType: values.bookingType,
     workingDays: values.workingDays ? values.workingDays.join(",") : null,
     dailyStartTime: values.dailyStartTime,
     dailyEndTime: values.dailyEndTime,
@@ -260,6 +359,11 @@ export async function upsertBookableProductOverrides(
     bookingEndDate: values.bookingEndDate
       ? new Date(values.bookingEndDate)
       : null,
+    minNights: values.minNights,
+    maxNights: values.maxNights,
+    bundleSessionCount: values.bundleSessionCount,
+    bundleSessionDurationMinutes: values.bundleSessionDurationMinutes,
+    bundleValidityDays: values.bundleValidityDays,
   };
 
   return prisma.bookableProduct.upsert({

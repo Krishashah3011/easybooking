@@ -289,24 +289,42 @@ export async function createBookingsFromOrder(
       shopSettings,
       bookableProduct,
     );
-    const slotsForDate = computeSlotsForDate(
-      effectiveSettings,
-      selection.date,
-      new Set(),
-    );
-    const matchedSlot = slotsForDate.find((s) => s.start === selection.time);
-    const slotStartsAt = matchedSlot
-      ? new Date(matchedSlot.startsAt)
-      : new Date(`${selection.date}T${selection.time}:00Z`);
-    const slotEnd =
-      matchedSlot?.end ??
-      addMinutes(selection.time, effectiveSettings.slotDurationMinutes);
 
-    const alreadyBooked = await countConfirmedBookingsForSlot(
-      shop,
-      bookableProduct.id,
-      slotStartsAt,
-    );
+    let slotStartsAt: Date;
+    let slotEnd: string;
+    let alreadyBooked: number;
+
+    if (bookableProduct.bookingType === "FULL_DAY") {
+      // A FULL_DAY booking has no time-slot math — the whole day is the
+      // unit, so we skip computeSlotsForDate entirely and just anchor
+      // the booking to midnight UTC of the chosen date.
+      slotStartsAt = new Date(`${selection.date}T00:00:00.000Z`);
+      slotEnd = "23:59";
+      alreadyBooked = await countConfirmedBookingsForSlot(
+        shop,
+        bookableProduct.id,
+        slotStartsAt,
+      );
+    } else {
+      const slotsForDate = computeSlotsForDate(
+        effectiveSettings,
+        selection.date,
+        new Set(),
+      );
+      const matchedSlot = slotsForDate.find((s) => s.start === selection.time);
+      slotStartsAt = matchedSlot
+        ? new Date(matchedSlot.startsAt)
+        : new Date(`${selection.date}T${selection.time}:00Z`);
+      slotEnd =
+        matchedSlot?.end ??
+        addMinutes(selection.time, effectiveSettings.slotDurationMinutes);
+      alreadyBooked = await countConfirmedBookingsForSlot(
+        shop,
+        bookableProduct.id,
+        slotStartsAt,
+      );
+    }
+
     const quantity = (() => {
       const n = Number(lineItem.quantity);
       return Number.isInteger(n) && n > 0 ? n : 1;

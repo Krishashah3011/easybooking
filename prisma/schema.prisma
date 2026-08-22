@@ -58,12 +58,20 @@ model BookingLocation {
   @@index([shop])
 }
 
+enum BookingType {
+  SLOT
+  FULL_DAY
+  MULTI_DAY
+  BUNDLE
+}
+
 model BookableProduct {
   id String @id @default(cuid())
   shop String
   productId String
   productTitle String
   isEnabled Boolean @default(false)
+  bookingType BookingType @default(SLOT)
   workingDays          String?
   dailyStartTime       String?
   dailyEndTime         String?
@@ -74,6 +82,13 @@ model BookableProduct {
   maxBookingsPerSlot   Int?
   bookingStartDate     DateTime?
   bookingEndDate       DateTime?
+  // MULTI_DAY only (date-range bookings, e.g. hotel rooms / rentals)
+  minNights            Int?
+  maxNights            Int?
+  // BUNDLE only (a pack of sessions sold as one purchase)
+  bundleSessionCount        Int?
+  bundleSessionDurationMinutes Int?
+  bundleValidityDays        Int?
   blackoutDates BlackoutDate[]
   bookings      Booking[]
   createdAt DateTime @default(now())
@@ -143,9 +158,11 @@ model Booking {
   isGuest       Boolean @default(true)
   location     String?
   date         String
+  endDate      String?
   slotStart    String
   slotEnd      String
   slotStartsAt DateTime
+  slotEndsAt   DateTime?
   quantity Int @default(1)
   status BookingStatus @default(CONFIRMED)
   source BookingSource

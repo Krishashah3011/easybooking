@@ -191,6 +191,13 @@
     var availableDates = [];
     var currentSlots = [];
 
+    // The type of product this widget is attached to, fetched from the
+    // app on the first availability call. "SLOT" (time-slot picker) is
+    // the original/default behaviour. "FULL_DAY" skips the time-slot
+    // step entirely — picking a date books the whole day.
+    var productBookingType = "SLOT";
+    var slotsPaneEl = root.querySelector("[data-booking-slots]");
+
     // Locations fetched once from the app. If a shop hasn't configured
     // any, the location step is skipped entirely and booking behaves
     // exactly as it did before locations existed.
@@ -918,6 +925,7 @@
         })
         .then(function (data) {
           availableDates = data.availableDates || [];
+          if (data.bookingType) productBookingType = data.bookingType;
           renderCalendar();
         })
         .catch(function () {
@@ -980,14 +988,35 @@
       calendarEl.appendChild(grid);
     }
 
+    // A FULL_DAY product has no time slots to pick — the whole day is
+    // the booking. We represent that as a slot object shaped just like
+    // a real time slot (start/end/startsAt) so every downstream step
+    // (review summary, cart line item properties, confirmedSlots) needs
+    // no special-casing at all.
+    function buildFullDaySlot(dateStr) {
+      return {
+        start: "00:00",
+        end: "23:59",
+        startsAt: dateStr + "T00:00:00.000Z",
+        remainingCapacity: null,
+        available: true,
+      };
+    }
+
     function selectDate(dateStr) {
       pendingDate = dateStr;
-      pendingSlot = null;
+      pendingSlot = productBookingType === "FULL_DAY" ? buildFullDaySlot(dateStr) : null;
       renderCalendar();
       updateConfirmButton();
       renderCustomFields();
       refreshQuantityForSelection();
-      loadSlots(dateStr);
+      if (productBookingType === "FULL_DAY") {
+        if (slotsPaneEl) slotsPaneEl.hidden = true;
+        durationEl.hidden = true;
+      } else {
+        if (slotsPaneEl) slotsPaneEl.hidden = false;
+        loadSlots(dateStr);
+      }
     }
 
     function loadSlots(dateStr) {
@@ -1160,10 +1189,12 @@
       var rows = [
         pendingLocation ? { label: "Location", value: pendingLocation.name } : null,
         { label: "Date", value: formatDateDisplay(pendingDate) },
-        {
-          label: "Time",
-          value: formatTimeRangeDisplay(pendingSlot.start, pendingSlot.end),
-        },
+        productBookingType === "FULL_DAY"
+          ? { label: "Booking", value: "Whole day" }
+          : {
+              label: "Time",
+              value: formatTimeRangeDisplay(pendingSlot.start, pendingSlot.end),
+            },
         { label: "Quantity", value: String(pendingQuantity) },
       ];
 

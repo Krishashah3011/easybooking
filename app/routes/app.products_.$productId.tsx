@@ -11,6 +11,8 @@ import { authenticate } from "../shopify.server";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
 import { getBookingSettings } from "../models/bookingSettings.server";
 import {
+  BOOKING_TYPES,
+  BOOKING_TYPE_LABELS,
   ensureBookableProduct,
   parseBookableProductForm,
   toBookableProductFormValues,
@@ -203,6 +205,7 @@ export default function BookableProductPage() {
         intent: "saveOverrides",
         productTitle,
         isEnabled: String(values.isEnabled),
+        bookingType: values.bookingType,
         workingDays: values.workingDays ? values.workingDays.join(",") : "",
         dailyStartTime: values.dailyStartTime ?? "",
         dailyEndTime: values.dailyEndTime ?? "",
@@ -222,6 +225,20 @@ export default function BookableProductPage() {
             : "",
         bookingStartDate: values.bookingStartDate ?? "",
         bookingEndDate: values.bookingEndDate ?? "",
+        minNights: values.minNights !== null ? String(values.minNights) : "",
+        maxNights: values.maxNights !== null ? String(values.maxNights) : "",
+        bundleSessionCount:
+          values.bundleSessionCount !== null
+            ? String(values.bundleSessionCount)
+            : "",
+        bundleSessionDurationMinutes:
+          values.bundleSessionDurationMinutes !== null
+            ? String(values.bundleSessionDurationMinutes)
+            : "",
+        bundleValidityDays:
+          values.bundleValidityDays !== null
+            ? String(values.bundleValidityDays)
+            : "",
       },
       { method: "POST" },
     );
@@ -269,6 +286,32 @@ export default function BookableProductPage() {
         ></s-switch>
       </s-section>
 
+      <s-section heading="Booking type">
+        <s-paragraph>
+          Choose how this product is booked. Changing this only affects what
+          settings apply below — existing bookings aren&apos;t touched.
+        </s-paragraph>
+        <s-select
+          label="Booking type"
+          value={values.bookingType}
+          onChange={(e: FieldChangeEvent) =>
+            setField(
+              "bookingType",
+              e.currentTarget.value as BookableProductFormValues["bookingType"],
+            )
+          }
+        >
+          {BOOKING_TYPES.map((type) => (
+            <s-option key={type} value={type}>
+              {BOOKING_TYPE_LABELS[type]}
+            </s-option>
+          ))}
+        </s-select>
+      </s-section>
+
+      {(values.bookingType === "SLOT" ||
+        values.bookingType === "FULL_DAY" ||
+        values.bookingType === "BUNDLE") && (
       <s-section heading="Working days">
         <s-paragraph>
           Leave every day unchecked below and this product will use the shop
@@ -289,7 +332,9 @@ export default function BookableProductPage() {
           <s-banner tone="critical">{errors.workingDays}</s-banner>
         )}
       </s-section>
+      )}
 
+      {(values.bookingType === "SLOT" || values.bookingType === "BUNDLE") && (
       <s-section heading="Daily booking window">
         <s-stack direction="inline" gap="base">
           <s-text-field
@@ -314,7 +359,9 @@ export default function BookableProductPage() {
           ></s-text-field>
         </s-stack>
       </s-section>
+      )}
 
+      {values.bookingType === "SLOT" && (
       <s-section heading="Slot configuration">
         <s-stack direction="inline" gap="base">
           <s-number-field
@@ -380,6 +427,117 @@ export default function BookableProductPage() {
           ></s-number-field>
         </s-stack>
       </s-section>
+      )}
+
+      {values.bookingType === "MULTI_DAY" && (
+      <s-section heading="Multi-day settings">
+        <s-paragraph>
+          The number of nights a customer can book in one go for this
+          product.
+        </s-paragraph>
+        <s-stack direction="inline" gap="base">
+          <s-number-field
+            label="Minimum nights"
+            value={values.minNights !== null ? String(values.minNights) : ""}
+            min={1}
+            step={1}
+            error={errors.minNights}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "minNights",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+          <s-number-field
+            label="Maximum nights"
+            value={values.maxNights !== null ? String(values.maxNights) : ""}
+            min={1}
+            step={1}
+            error={errors.maxNights}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "maxNights",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+        </s-stack>
+      </s-section>
+      )}
+
+      {values.bookingType === "BUNDLE" && (
+      <s-section heading="Bundle settings">
+        <s-paragraph>
+          How many sessions make up one bundle purchase, how long each
+          session runs, and how many days the customer has to use them all.
+        </s-paragraph>
+        <s-stack direction="inline" gap="base">
+          <s-number-field
+            label="Sessions per bundle"
+            value={
+              values.bundleSessionCount !== null
+                ? String(values.bundleSessionCount)
+                : ""
+            }
+            min={2}
+            step={1}
+            error={errors.bundleSessionCount}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "bundleSessionCount",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+          <s-number-field
+            label="Session duration (minutes)"
+            value={
+              values.bundleSessionDurationMinutes !== null
+                ? String(values.bundleSessionDurationMinutes)
+                : ""
+            }
+            min={5}
+            step={5}
+            error={errors.bundleSessionDurationMinutes}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "bundleSessionDurationMinutes",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+          <s-number-field
+            label="Validity window (days)"
+            details="How many days after purchase the customer can use all sessions"
+            value={
+              values.bundleValidityDays !== null
+                ? String(values.bundleValidityDays)
+                : ""
+            }
+            min={1}
+            step={1}
+            error={errors.bundleValidityDays}
+            onChange={(e: FieldChangeEvent) =>
+              setField(
+                "bundleValidityDays",
+                e.currentTarget.value === ""
+                  ? null
+                  : Number(e.currentTarget.value),
+              )
+            }
+          ></s-number-field>
+        </s-stack>
+      </s-section>
+      )}
 
       <s-section heading="Advance booking rules">
         <s-stack direction="inline" gap="base">

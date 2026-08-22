@@ -1,7 +1,10 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import { resolveBookingContext } from "../models/booking-context.server";
-import { getAvailableDatesInMonth } from "../models/slotAvailability.server";
+import {
+  getAvailableDatesInMonth,
+  getAvailableFullDayDatesInMonth,
+} from "../models/slotAvailability.server";
 import { getBookedCountsInRange } from "../models/booking.server";
 import { getLocationById } from "../models/bookingLocation.server";
 
@@ -46,15 +49,25 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     monthEnd,
   );
 
-  const availableDates = getAvailableDatesInMonth(
-    context.effectiveSettings,
-    year,
-    month,
-    context.blackoutDates,
-    new Date(),
-    bookedCounts,
-    location?.timezone ?? null,
-  );
+  const availableDates =
+    context.bookingType === "FULL_DAY"
+      ? getAvailableFullDayDatesInMonth(
+          context.effectiveSettings,
+          year,
+          month,
+          context.blackoutDates,
+          new Date(),
+          bookedCounts,
+        )
+      : getAvailableDatesInMonth(
+          context.effectiveSettings,
+          year,
+          month,
+          context.blackoutDates,
+          new Date(),
+          bookedCounts,
+          location?.timezone ?? null,
+        );
 
-  return Response.json({ availableDates });
+  return Response.json({ availableDates, bookingType: context.bookingType });
 };
