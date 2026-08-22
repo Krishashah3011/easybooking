@@ -1,30 +1,45 @@
 import nodemailer from "nodemailer";
+import { getSmtpSettings } from "../models/smtpSettings.server";
 
-let cachedTransporter: nodemailer.Transporter | null = null;
+const transporterCache = new Map<string, nodemailer.Transporter>();
+const transporterCacheKey = new Map<string, string>();
 
-function getTransporter(): nodemailer.Transporter | null {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASSWORD;
+async function getTransporter(
+  shop: string,
+): Promise<{ transporter: nodemailer.Transporter; fromEmail: string } | null> {
+  const settings = await getSmtpSettings(shop);
 
-  if (!host || !port || !user || !pass) {
+  if (
+    !settings?.host ||
+    !settings.port ||
+    !settings.username ||
+    !settings.password ||
+    !settings.fromEmail
+  ) {
     return null;
   }
 
-  if (!cachedTransporter) {
-    cachedTransporter = nodemailer.createTransport({
-      host,
-      port: Number(port),
-      secure: Number(port) === 465,
-      auth: { user, pass },
-    });
+  const cacheKey = `${settings.host}:${settings.port}:${settings.username}:${settings.password}`;
+  const cached = transporterCache.get(shop);
+  if (cached && transporterCacheKey.get(shop) === cacheKey) {
+    return { transporter: cached, fromEmail: settings.fromEmail };
   }
 
-  return cachedTransporter;
+  const transporter = nodemailer.createTransport({
+    host: settings.host,
+    port: settings.port,
+    secure: settings.port === 465,
+    auth: { user: settings.username, pass: settings.password },
+  });
+
+  transporterCache.set(shop, transporter);
+  transporterCacheKey.set(shop, cacheKey);
+
+  return { transporter, fromEmail: settings.fromEmail };
 }
 
 export type SendEmailInput = {
+  shop: string;
   to: string;
   subject: string;
   text: string;
@@ -33,21 +48,16 @@ export type SendEmailInput = {
 };
 
 export async function sendEmail(input: SendEmailInput): Promise<boolean> {
-  const transporter = getTransporter();
-  if (!transporter) {
+  const result = await getTransporter(input.shop);
+  if (!result) {
     console.warn(
-      "SMTP is not configured (SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASSWORD) — skipping email send.",
+      `SMTP is not configured for shop ${input.shop} — go to Settings > SMTP Settings to set it up. Skipping email send.`,
     );
     return false;
   }
 
-  const fromEmail = process.env.SMTP_FROM_EMAIL;
-  const fromName =
-    input.fromName?.trim() || process.env.SMTP_FROM_NAME || "Bookings";
-  if (!fromEmail) {
-    console.warn("SMTP_FROM_EMAIL is not set — skipping email send.");
-    return false;
-  }
+  const { transporter, fromEmail } = result;
+  const fromName = input.fromName?.trim() || "Bookings";
 
   try {
     await transporter.sendMail({

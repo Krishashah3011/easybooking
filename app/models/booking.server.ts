@@ -167,6 +167,7 @@ async function sendBookingConfirmation(
   });
 
   const sent = await sendEmail({
+    shop,
     to: booking.customerEmail,
     subject,
     text,
@@ -199,6 +200,7 @@ async function sendBookingCancellation(
   });
 
   await sendEmail({
+    shop,
     to: booking.customerEmail,
     subject,
     text,
@@ -231,6 +233,7 @@ async function sendBookingRescheduled(
   });
 
   await sendEmail({
+    shop,
     to: booking.customerEmail,
     subject,
     text,
@@ -704,7 +707,7 @@ export async function listSlotsForReschedule(
   shop: string,
   bookingId: string,
   date: string,
-): Promise<
+): Promise
   | { ok: true; slots: import("./slotAvailability.server").TimeSlot[] }
   | { ok: false; error: string }
 > {
@@ -786,6 +789,7 @@ export async function sendDueReminders(
     });
 
     const ok = await sendEmail({
+      shop: booking.shop,
       to: booking.customerEmail,
       subject,
       text,

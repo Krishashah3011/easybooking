@@ -161,6 +161,18 @@ model Booking {
   @@index([status, reminderSentAt, slotStartsAt])
 }
 
+model SmtpSettings {
+  id        String   @id @default(cuid())
+  shop      String   @unique
+  host      String?
+  port      Int?
+  username  String?
+  password  String?
+  fromEmail String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model ShopSettings {
   id            String   @id @default(cuid())
   shop          String   @unique
