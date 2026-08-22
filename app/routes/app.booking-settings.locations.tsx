@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -17,7 +17,8 @@ import {
   type LocationFieldErrors,
   type LocationFormValues,
 } from "../models/bookingLocation.server";
-import { listTimezones, timezoneOffsetLabel } from "../utils/timezones";
+import { timezoneOffsetLabel } from "../utils/timezones";
+import { COUNTRIES, findCountryByTimezone, type Country } from "../utils/countries";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -30,8 +31,7 @@ const EMPTY_FORM: LocationFormValues = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const locations = await listLocations(session.shop);
-  const timezones = listTimezones();
-  return { locations, timezones };
+  return { locations };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -69,33 +69,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return { intent: "create" as const, ok: true as const, values: EMPTY_FORM };
 };
 
-function TimezoneSelect({
+const SORTED_COUNTRIES = [...COUNTRIES].sort((a, b) =>
+  a.name.localeCompare(b.name),
+);
+
+function CountrySelect({
   value,
-  timezones,
+  extraOption,
   onChange,
 }: {
-  value: string;
-  timezones: string[];
-  onChange: (value: string) => void;
+  value: string; // country code, or "" if none matched
+  extraOption: { code: string; name: string } | null;
+  onChange: (code: string) => void;
 }) {
-  const options = useMemo(
-    () =>
-      timezones.map((tz) => {
-        const offset = timezoneOffsetLabel(tz);
-        return { tz, label: offset ? `${tz} (${offset})` : tz };
-      }),
-    [timezones],
-  );
-
   return (
     <s-select
-      label="Timezone"
+      label="Country"
       value={value}
       onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
     >
-      {options.map((opt) => (
-        <s-option key={opt.tz} value={opt.tz}>
-          {opt.label}
+      <s-option value="">Select a country</s-option>
+      {extraOption && (
+        <s-option value={extraOption.code}>{extraOption.name}</s-option>
+      )}
+      {SORTED_COUNTRIES.map((country) => (
+        <s-option key={country.code} value={country.code}>
+          {country.name}
+        </s-option>
+      ))}
+    </s-select>
+  );
+}
+
+function RegionSelect({
+  country,
+  value,
+  onChange,
+}: {
+  country: Country;
+  value: string;
+  onChange: (tz: string) => void;
+}) {
+  return (
+    <s-select
+      label="Region"
+      value={value}
+      onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
+    >
+      {country.timezones.map((zone) => (
+        <s-option key={zone.tz} value={zone.tz}>
+          {zone.label} ({timezoneOffsetLabel(zone.tz)})
         </s-option>
       ))}
     </s-select>
@@ -107,17 +130,30 @@ function LocationEditor({
   onCancel,
   submitLabel,
   locationId,
-  timezones,
 }: {
   initial: LocationFormValues;
   onCancel?: () => void;
   submitLabel: string;
   locationId?: string;
-  timezones: string[];
 }) {
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
   const [values, setValues] = useState<LocationFormValues>(initial);
+
+  // The stored timezone might not be one we have a country mapping for
+  // (e.g. it was picked from the old raw-timezone list before this UI
+  // existed). In that case, show it as a one-off "Custom" option rather
+  // than silently swapping it for a real country's default zone.
+  const matchedCountry = findCountryByTimezone(initial.timezone);
+  const [countryCode, setCountryCode] = useState<string>(
+    matchedCountry?.code ?? (initial.timezone ? "__custom__" : ""),
+  );
+  const customOption =
+    !matchedCountry && initial.timezone
+      ? { code: "__custom__", name: `Custom (${initial.timezone})` }
+      : null;
+  const selectedCountry =
+    SORTED_COUNTRIES.find((c) => c.code === countryCode) ?? null;
 
   const isEdit = Boolean(locationId);
   const errors: LocationFieldErrors =
@@ -128,10 +164,20 @@ function LocationEditor({
       shopify.toast.show(isEdit ? "Location updated" : "Location added");
       if (!isEdit) {
         setValues(EMPTY_FORM);
+        setCountryCode("");
       }
       onCancel?.();
     }
   }, [fetcher.data]);
+
+  const handleCountryChange = (code: string) => {
+    setCountryCode(code);
+    if (code === "__custom__") return; // keep the existing custom timezone
+    const country = SORTED_COUNTRIES.find((c) => c.code === code);
+    if (country) {
+      setValues((prev) => ({ ...prev, timezone: country.timezones[0].tz }));
+    }
+  };
 
   const handleSubmit = () => {
     fetcher.submit(
@@ -159,11 +205,20 @@ function LocationEditor({
         }}
       ></s-text-field>
 
-      <TimezoneSelect
-        value={values.timezone}
-        timezones={timezones}
-        onChange={(value) => setValues((prev) => ({ ...prev, timezone: value }))}
+      <CountrySelect
+        value={countryCode}
+        extraOption={customOption}
+        onChange={handleCountryChange}
       />
+
+      {selectedCountry && selectedCountry.timezones.length > 1 && (
+        <RegionSelect
+          country={selectedCountry}
+          value={values.timezone}
+          onChange={(tz) => setValues((prev) => ({ ...prev, timezone: tz }))}
+        />
+      )}
+
       {errors.timezone && <s-text tone="critical">{errors.timezone}</s-text>}
       <s-paragraph>
         Booking hours and the times shoppers see for this location are
@@ -194,7 +249,6 @@ function LocationEditor({
 
 function LocationRow({
   location,
-  timezones,
 }: {
   location: {
     id: string;
@@ -202,7 +256,6 @@ function LocationRow({
     timezone: string;
     isEnabled: boolean;
   };
-  timezones: string[];
 }) {
   const deleteFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
@@ -229,7 +282,6 @@ function LocationRow({
             locationId={location.id}
             submitLabel="Save"
             onCancel={() => setIsEditing(false)}
-            timezones={timezones}
             initial={{
               name: location.name,
               timezone: location.timezone,
@@ -266,7 +318,7 @@ function LocationRow({
 }
 
 export default function LocationsPage() {
-  const { locations, timezones } = useLoaderData<typeof loader>();
+  const { locations } = useLoaderData<typeof loader>();
 
   return (
     <s-page heading="Locations">
@@ -279,11 +331,7 @@ export default function LocationsPage() {
           If no locations are added, the location step is skipped and
           booking works exactly as before.
         </s-paragraph>
-        <LocationEditor
-          initial={EMPTY_FORM}
-          submitLabel="Add location"
-          timezones={timezones}
-        />
+        <LocationEditor initial={EMPTY_FORM} submitLabel="Add location" />
       </s-section>
 
       <s-section heading="Current locations">
@@ -299,11 +347,7 @@ export default function LocationsPage() {
             </s-table-header-row>
             <s-table-body>
               {locations.map((location) => (
-                <LocationRow
-                  key={location.id}
-                  location={location}
-                  timezones={timezones}
-                />
+                <LocationRow key={location.id} location={location} />
               ))}
             </s-table-body>
           </s-table>
