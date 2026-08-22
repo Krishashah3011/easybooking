@@ -710,7 +710,7 @@ export async function listSlotsForReschedule(
 ): Promise
   | { ok: true; slots: import("./slotAvailability.server").TimeSlot[] }
   | { ok: false; error: string }
-> {
+  {
   const booking = await prisma.booking.findFirst({
     where: { id: bookingId, shop },
     include: { bookableProduct: true },
