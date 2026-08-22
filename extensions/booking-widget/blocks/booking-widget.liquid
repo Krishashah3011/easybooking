@@ -24,7 +24,7 @@
         <button type="button" class="booking-widget__close" data-booking-close aria-label="Close">&times;</button>
       </div>
 
-      <div class="booking-widget__modal-subheader">
+      <div class="booking-widget__modal-subheader" data-booking-subheader>
         <p class="booking-widget__modal-subtitle">Select your preferred date &amp; time</p>
         <span class="booking-widget__timezone" data-booking-timezone></span>
       </div>
@@ -32,12 +32,27 @@
       <div class="booking-widget__modal-body" data-booking-modal-body>
         <div class="booking-widget__location-step" data-booking-location-step hidden>
           <label class="booking-widget__location-label" id="booking-widget-location-label">Select location</label>
-          <div class="booking-widget__location-trigger" data-booking-location-trigger>
+          <div
+            class="booking-widget__location-trigger"
+            data-booking-location-trigger
+            role="button"
+            tabindex="0"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="booking-widget-location-list-{{ product.id }}"
+          >
             <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
             <span class="booking-widget__location-trigger-text" data-booking-location-trigger-text>Select location</span>
-            <span class="booking-widget__location-chevron" aria-hidden="true">&#9652;</span>
+            <span class="booking-widget__location-chevron" aria-hidden="true">&#9662;</span>
           </div>
-          <ul class="booking-widget__location-list" data-booking-location-list role="listbox" aria-labelledby="booking-widget-location-label"></ul>
+          <ul
+            class="booking-widget__location-list"
+            id="booking-widget-location-list-{{ product.id }}"
+            data-booking-location-list
+            role="listbox"
+            aria-labelledby="booking-widget-location-label"
+            hidden
+          ></ul>
           <p class="booking-widget__location-error" data-booking-location-error hidden></p>
         </div>
 
@@ -125,7 +140,15 @@
         </div>
       </div>
 
-      {% render 'booking-widget-custom-fields' %}
+      {% comment %}
+        Custom booking fields container. Filled in dynamically by
+        booking-widget.js once a date and time slot have been picked,
+        with whatever extra questions the merchant has defined on the
+        app's Custom Fields admin page (e.g. "Note for your
+        appointment"). None of these are required — they're optional,
+        collected alongside the date/time selection.
+      {% endcomment %}
+      <div class="booking-widget__fields-pane" data-booking-custom-fields hidden></div>
 
       <div class="booking-widget__modal-footer" data-booking-modal-footer>
         <button type="button" class="booking-widget__btn booking-widget__btn--confirm" data-booking-location-next hidden>

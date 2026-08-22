@@ -144,7 +144,24 @@ function BookingNotes({
   );
 }
 
-function BookingRow({
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
+      <span style={{ minWidth: "90px", flexShrink: 0 }}>
+        <s-text tone="subdued">{label}</s-text>
+      </span>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function BookingLine({
   booking,
   customFieldLabels,
 }: {
@@ -159,6 +176,7 @@ function BookingRow({
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [newDate, setNewDate] = useState(booking.date);
   const [newSlotStart, setNewSlotStart] = useState(booking.slotStart);
+  const [showDetails, setShowDetails] = useState(false);
 
   const rescheduleError =
     rescheduleFetcher.data?.intent === "reschedule" &&
@@ -235,90 +253,123 @@ function BookingRow({
           : "neutral";
 
   return (
-    <s-table-row>
-      <s-table-cell>{booking.productTitle}</s-table-cell>
-      <s-table-cell>{booking.location ?? "—"}</s-table-cell>
-      <s-table-cell>
-        <s-text>
-          {booking.customerName ?? "—"}
-          {booking.customerEmail ? ` (${booking.customerEmail})` : ""}
-        </s-text>
-      </s-table-cell>
-      <s-table-cell>
-        <BookingNotes
-          responses={booking.customFieldResponses}
-          labels={customFieldLabels}
-        />
-      </s-table-cell>
-      <s-table-cell>{booking.quantity}</s-table-cell>
-      <s-table-cell>
-        {isRescheduling ? (
-          <s-stack direction="inline" gap="small">
-            <s-date-field
-              label="New date"
-              labelAccessibilityVisibility="exclusive"
-              value={newDate}
-              onChange={(e: FieldChangeEvent) =>
-                setNewDate(e.currentTarget.value)
-              }
-            ></s-date-field>
-            <s-select
-              label="New time"
-              labelAccessibilityVisibility="exclusive"
-              value={newSlotStart}
-              disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
-              onChange={(e: FieldChangeEvent) =>
-                setNewSlotStart(e.currentTarget.value)
-              }
-            >
-              {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
-                <s-option value="">Loading times…</s-option>
-              )}
-              {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
-                <s-option value="">No times on this date</s-option>
-              )}
-              {rescheduleSlots.map((slot) => (
-                <s-option
-                  key={slot.startsAt}
-                  value={slot.start}
-                  {...(!slot.available && slot.start !== booking.slotStart
-                    ? { disabled: true }
-                    : {})}
-                >
-                  {formatTimeRangeDisplay(slot.start, slot.end)}
-                  {!slot.available && slot.start !== booking.slotStart
-                    ? " (booked)"
-                    : typeof slot.remainingCapacity === "number"
-                      ? ` (${
-                          slot.remainingCapacity === 1
-                            ? "1 spot left"
-                            : `${slot.remainingCapacity} spots left`
-                        })`
-                      : ""}
-                </s-option>
-              ))}
-            </s-select>
+    <s-box padding="base" borderWidth="base" borderRadius="base">
+      <div
+        onClick={() => setShowDetails((v) => !v)}
+        style={{ cursor: "pointer" }}
+      >
+        <s-stack
+          direction="inline"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="base"
+        >
+          <s-stack direction="inline" alignItems="center" gap="small">
+            <span aria-hidden="true" style={{ display: "inline-block", width: "1rem" }}>
+              {showDetails ? "⌄" : "›"}
+            </span>
+            <span style={{ fontWeight: 600 }}>
+              {booking.customerName ?? "—"}
+            </span>
+            <s-text tone="subdued">{booking.productTitle}</s-text>
           </s-stack>
-        ) : (
-          `${formatDateDisplay(booking.date)} ${formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}`
-        )}
-      </s-table-cell>
-      <s-table-cell>
-        <s-stack direction="block" gap="none">
-          <s-text>{formatDateTimeDisplay(booking.createdAt)}</s-text>
-          <s-text tone="subdued">{bookingSourceLabel(booking.source)}</s-text>
-        </s-stack>
-      </s-table-cell>
-      <s-table-cell>
-        <s-badge tone={badgeTone}>{booking.status}</s-badge>
-      </s-table-cell>
-      <s-table-cell>{booking.source}</s-table-cell>
-      <s-table-cell>
-        <s-stack direction="inline" gap="small">
-          {booking.status !== "CANCELLED" && (
-            <>
-              {isRescheduling ? (
+
+          <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <s-stack direction="inline" alignItems="center" gap="small">
+              {booking.status !== "CANCELLED" && (
                 <>
+                  {isRescheduling ? (
+                    <s-button
+                      variant="tertiary"
+                      onClick={() => setIsRescheduling(false)}
+                    >
+                      Cancel edit
+                    </s-button>
+                  ) : (
+                    <s-button
+                      variant="tertiary"
+                      onClick={() => {
+                        setIsRescheduling(true);
+                        setShowDetails(true);
+                      }}
+                    >
+                      Reschedule
+                    </s-button>
+                  )}
+                  <s-button variant="tertiary" tone="critical" onClick={handleCancel}>
+                    Cancel booking
+                  </s-button>
+                </>
+              )}
+            </s-stack>
+          </div>
+        </s-stack>
+      </div>
+
+      {showDetails && (
+        <div
+          style={{
+            marginTop: "0.75rem",
+            paddingTop: "0.75rem",
+            borderTop: "1px solid #e1e1e1",
+          }}
+        >
+          <s-stack direction="block" gap="small">
+            <DetailRow label="Customer">
+              <s-text>{booking.customerEmail ?? "—"}</s-text>
+            </DetailRow>
+
+            <DetailRow label="Location">
+              <s-text>{booking.location ?? "—"}</s-text>
+            </DetailRow>
+
+            <DetailRow label="Date">
+              {isRescheduling ? (
+                <s-stack direction="inline" alignItems="center" gap="small">
+                  <s-date-field
+                    label="New date"
+                    labelAccessibilityVisibility="exclusive"
+                    value={newDate}
+                    onChange={(e: FieldChangeEvent) =>
+                      setNewDate(e.currentTarget.value)
+                    }
+                  ></s-date-field>
+                  <s-select
+                    label="New time"
+                    labelAccessibilityVisibility="exclusive"
+                    value={newSlotStart}
+                    disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
+                    onChange={(e: FieldChangeEvent) =>
+                      setNewSlotStart(e.currentTarget.value)
+                    }
+                  >
+                    {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                      <s-option value="">Loading times…</s-option>
+                    )}
+                    {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                      <s-option value="">No times on this date</s-option>
+                    )}
+                    {rescheduleSlots.map((slot) => (
+                      <s-option
+                        key={slot.startsAt}
+                        value={slot.start}
+                        {...(!slot.available && slot.start !== booking.slotStart
+                          ? { disabled: true }
+                          : {})}
+                      >
+                        {formatTimeRangeDisplay(slot.start, slot.end)}
+                        {!slot.available && slot.start !== booking.slotStart
+                          ? " (booked)"
+                          : typeof slot.remainingCapacity === "number"
+                            ? ` (${
+                                slot.remainingCapacity === 1
+                                  ? "1 spot left"
+                                  : `${slot.remainingCapacity} spots left`
+                              })`
+                            : ""}
+                      </s-option>
+                    ))}
+                  </s-select>
                   <s-button
                     variant="primary"
                     onClick={handleReschedule}
@@ -326,36 +377,51 @@ function BookingRow({
                   >
                     Save
                   </s-button>
-                  <s-button
-                    variant="tertiary"
-                    onClick={() => setIsRescheduling(false)}
-                  >
-                    Cancel edit
-                  </s-button>
-                </>
+                </s-stack>
               ) : (
-                <s-button
-                  variant="tertiary"
-                  onClick={() => setIsRescheduling(true)}
-                >
-                  Reschedule
-                </s-button>
+                <s-text>{formatDateDisplay(booking.date)}</s-text>
               )}
-              <s-button
-                variant="tertiary"
-                tone="critical"
-                onClick={handleCancel}
-              >
-                Cancel booking
-              </s-button>
-            </>
+            </DetailRow>
+
+            {!isRescheduling && (
+              <DetailRow label="Time">
+                <s-text>
+                  {formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}
+                </s-text>
+              </DetailRow>
+            )}
+
+            <DetailRow label="Quantity">
+              <s-text>{booking.quantity}</s-text>
+            </DetailRow>
+
+            <DetailRow label="Notes">
+              <BookingNotes
+                responses={booking.customFieldResponses}
+                labels={customFieldLabels}
+              />
+            </DetailRow>
+
+            <DetailRow label="Booked at">
+              <s-text>
+                {formatDateTimeDisplay(booking.createdAt)} ·{" "}
+                {bookingSourceLabel(booking.source)}
+              </s-text>
+            </DetailRow>
+
+            <DetailRow label="Status">
+              <s-badge tone={badgeTone}>{booking.status}</s-badge>
+            </DetailRow>
+          </s-stack>
+
+          {rescheduleError && (
+            <div style={{ marginTop: "0.5rem" }}>
+              <s-banner tone="critical">{rescheduleError}</s-banner>
+            </div>
           )}
-        </s-stack>
-        {rescheduleError && (
-          <s-banner tone="critical">{rescheduleError}</s-banner>
-        )}
-      </s-table-cell>
-    </s-table-row>
+        </div>
+      )}
+    </s-box>
   );
 }
 
@@ -393,7 +459,7 @@ function groupBookings(bookings: BookingWithProductTitle[]): BookingGroup[] {
   return order.map((key) => ({ key, bookings: byKey.get(key)! }));
 }
 
-function GroupSummaryRow({
+function GroupCard({
   group,
   customFieldLabels,
   isExpanded,
@@ -405,7 +471,6 @@ function GroupSummaryRow({
   onToggle: () => void;
 }) {
   const first = group.bookings[0];
-  const totalQuantity = group.bookings.reduce((sum, b) => sum + b.quantity, 0);
   const productTitles = new Set(group.bookings.map((b) => b.productTitle));
   const productLabel =
     productTitles.size > 1 ? "Multiple products" : first.productTitle;
@@ -423,52 +488,56 @@ function GroupSummaryRow({
             : "neutral";
 
   return (
-    <s-table-row>
-      <s-table-cell>
-        <s-stack direction="block" gap="none">
-          <s-text>{productLabel}</s-text>
-          {groupLabel && <s-text tone="subdued">{groupLabel}</s-text>}
+    <s-box padding="base" borderWidth="base" borderRadius="base">
+      <div onClick={onToggle} style={{ cursor: "pointer" }}>
+        <s-stack
+          direction="inline"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="base"
+        >
+          <s-stack direction="inline" alignItems="center" gap="small">
+            <span aria-hidden="true" style={{ display: "inline-block", width: "1rem" }}>
+              {isExpanded ? "⌄" : "›"}
+            </span>
+            <span style={{ fontWeight: 600 }}>{first.customerName ?? "—"}</span>
+            <s-text tone="subdued">{productLabel}</s-text>
+          </s-stack>
+
+          <s-stack direction="inline" alignItems="center" gap="small">
+            <s-text tone="subdued">
+              {group.bookings.length} slots
+              {groupLabel ? ` · ${groupLabel}` : ""}
+            </s-text>
+            {statuses.size > 1 ? (
+              <s-badge tone={badgeTone}>Mixed</s-badge>
+            ) : (
+              <s-badge tone={badgeTone}>{first.status}</s-badge>
+            )}
+          </s-stack>
         </s-stack>
-      </s-table-cell>
-      <s-table-cell>{first.location ?? "—"}</s-table-cell>
-      <s-table-cell>
-        <s-text>
-          {first.customerName ?? "—"}
-          {first.customerEmail ? ` (${first.customerEmail})` : ""}
-        </s-text>
-      </s-table-cell>
-      <s-table-cell>
-        <BookingNotes
-          responses={first.customFieldResponses}
-          labels={customFieldLabels}
-        />
-      </s-table-cell>
-      <s-table-cell>{totalQuantity}</s-table-cell>
-      <s-table-cell>
-        <s-button variant="tertiary" onClick={onToggle}>
-          {isExpanded
-            ? "Hide slots"
-            : `${group.bookings.length} slots — show all`}
-        </s-button>
-      </s-table-cell>
-      <s-table-cell>
-        <s-stack direction="block" gap="none">
-          <s-text>{formatDateTimeDisplay(first.createdAt)}</s-text>
-          <s-text tone="subdued">{bookingSourceLabel(first.source)}</s-text>
-        </s-stack>
-      </s-table-cell>
-      <s-table-cell>
-        {statuses.size > 1 ? (
-          <s-badge tone={badgeTone}>Mixed</s-badge>
-        ) : (
-          <s-badge tone={badgeTone}>{first.status}</s-badge>
-        )}
-      </s-table-cell>
-      <s-table-cell>{first.source}</s-table-cell>
-      <s-table-cell>
-        <s-text tone="subdued">See slots</s-text>
-      </s-table-cell>
-    </s-table-row>
+      </div>
+
+      {isExpanded && (
+        <div
+          style={{
+            marginTop: "0.75rem",
+            paddingTop: "0.75rem",
+            borderTop: "1px solid #e1e1e1",
+          }}
+        >
+          <s-stack direction="block" gap="small">
+            {group.bookings.map((booking) => (
+              <BookingLine
+                key={booking.id}
+                booking={booking}
+                customFieldLabels={customFieldLabels}
+              />
+            ))}
+          </s-stack>
+        </div>
+      )}
+    </s-box>
   );
 }
 
@@ -614,49 +683,25 @@ export default function BookingManagementPage() {
         {bookings.length === 0 ? (
           <s-paragraph>No bookings match these filters.</s-paragraph>
         ) : (
-          <s-table>
-            <s-table-header-row>
-              <s-table-header>Product</s-table-header>
-              <s-table-header>Location</s-table-header>
-              <s-table-header>Customer</s-table-header>
-              <s-table-header>Notes</s-table-header>
-              <s-table-header>Qty</s-table-header>
-              <s-table-header>When</s-table-header>
-              <s-table-header>Booked At</s-table-header>
-              <s-table-header>Status</s-table-header>
-              <s-table-header>Source</s-table-header>
-              <s-table-header>Actions</s-table-header>
-            </s-table-header-row>
-            <s-table-body>
-              {bookingGroups.map((group) =>
-                group.bookings.length === 1 ? (
-                  <BookingRow
-                    key={group.key}
-                    booking={group.bookings[0]}
-                    customFieldLabels={customFieldLabels}
-                  />
-                ) : (
-                  <>
-                    <GroupSummaryRow
-                      key={group.key}
-                      group={group}
-                      customFieldLabels={customFieldLabels}
-                      isExpanded={expandedGroups.has(group.key)}
-                      onToggle={() => toggleGroup(group.key)}
-                    />
-                    {expandedGroups.has(group.key) &&
-                      group.bookings.map((booking) => (
-                        <BookingRow
-                          key={booking.id}
-                          booking={booking}
-                          customFieldLabels={customFieldLabels}
-                        />
-                      ))}
-                  </>
-                ),
-              )}
-            </s-table-body>
-          </s-table>
+          <s-stack direction="block" gap="small">
+            {bookingGroups.map((group) =>
+              group.bookings.length === 1 ? (
+                <BookingLine
+                  key={group.key}
+                  booking={group.bookings[0]}
+                  customFieldLabels={customFieldLabels}
+                />
+              ) : (
+                <GroupCard
+                  key={group.key}
+                  group={group}
+                  customFieldLabels={customFieldLabels}
+                  isExpanded={expandedGroups.has(group.key)}
+                  onToggle={() => toggleGroup(group.key)}
+                />
+              ),
+            )}
+          </s-stack>
         )}
       </s-section>
     </s-page>

@@ -132,6 +132,7 @@ body.booking-widget-lock-scroll {
   background: #fff;
   width: 100%;
   max-width: 700px;
+  height: 640px;
   max-height: 90vh;
   border-radius: 4px;
   display: flex;
@@ -221,6 +222,8 @@ body.booking-widget-lock-scroll {
   border-radius: 6px;
   background: #fdeeee;
   color: #111;
+  cursor: pointer;
+  user-select: none;
 }
 
 .booking-widget__location-trigger--error {
@@ -251,6 +254,11 @@ body.booking-widget-lock-scroll {
   flex: none;
   font-size: 0.7rem;
   color: rgba(0, 0, 0, 0.6);
+  transition: transform 0.15s ease;
+}
+
+.booking-widget__location-trigger--open .booking-widget__location-chevron {
+  transform: rotate(180deg);
 }
 
 .booking-widget__location-list {
@@ -681,9 +689,8 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__fields-pane {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e1e1e1;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -701,10 +708,11 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__field-input {
-  padding: 8px 10px;
-  border: 1px solid #ccc;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
   border-radius: 4px;
-  font: inherit;
+  font-family: inherit;
+  font-size: 0.9rem;
   width: 100%;
   box-sizing: border-box;
 }

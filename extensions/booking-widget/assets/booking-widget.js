@@ -142,6 +142,7 @@
     var overlayEl = root.querySelector("[data-booking-overlay]");
     var closeBtn = root.querySelector("[data-booking-close]");
     var timezoneEl = root.querySelector("[data-booking-timezone]");
+    var subheaderEl = root.querySelector("[data-booking-subheader]");
     var modalBodyEl = root.querySelector("[data-booking-modal-body]");
     var modalFooterEl = root.querySelector("[data-booking-modal-footer]");
     var locationStepEl = root.querySelector("[data-booking-location-step]");
@@ -563,6 +564,66 @@
         });
     }
 
+    function isLocationListOpen() {
+      return !!locationListEl && !locationListEl.hidden;
+    }
+
+    function openLocationList() {
+      if (!locationListEl) return;
+      locationListEl.hidden = false;
+      if (locationTriggerEl) {
+        locationTriggerEl.classList.add("booking-widget__location-trigger--open");
+        locationTriggerEl.setAttribute("aria-expanded", "true");
+      }
+    }
+
+    function closeLocationList() {
+      if (!locationListEl) return;
+      locationListEl.hidden = true;
+      if (locationTriggerEl) {
+        locationTriggerEl.classList.remove("booking-widget__location-trigger--open");
+        locationTriggerEl.setAttribute("aria-expanded", "false");
+      }
+    }
+
+    function toggleLocationList() {
+      if (isLocationListOpen()) {
+        closeLocationList();
+      } else {
+        openLocationList();
+      }
+    }
+
+    if (locationTriggerEl) {
+      locationTriggerEl.addEventListener("click", toggleLocationList);
+      locationTriggerEl.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggleLocationList();
+        } else if (event.key === "Escape") {
+          closeLocationList();
+        }
+      });
+    }
+
+    document.addEventListener("click", function (event) {
+      if (!isLocationListOpen()) return;
+      if (
+        locationTriggerEl &&
+        (locationTriggerEl === event.target ||
+          locationTriggerEl.contains(event.target))
+      ) {
+        return;
+      }
+      if (
+        locationListEl &&
+        (locationListEl === event.target || locationListEl.contains(event.target))
+      ) {
+        return;
+      }
+      closeLocationList();
+    });
+
     function populateLocationList() {
       if (!locationListEl) return;
       locationListEl.innerHTML = "";
@@ -604,11 +665,13 @@
       }
       populateLocationList();
       selectedLocationRecord = location;
+      closeLocationList();
     }
 
     function showLocationStep() {
       if (!locationStepEl) return;
       exitReviewStep();
+      closeLocationList();
       selectedLocationRecord = pendingLocation;
       if (locationTriggerTextEl) {
         if (pendingLocation) {
@@ -638,6 +701,7 @@
       }
       if (locationNextBtn) locationNextBtn.hidden = false;
       confirmBtn.hidden = true;
+      if (subheaderEl) subheaderEl.hidden = true;
     }
 
     function showDatetimeStep() {
@@ -646,6 +710,7 @@
       datetimeStepEl.hidden = false;
       if (locationNextBtn) locationNextBtn.hidden = true;
       confirmBtn.hidden = false;
+      if (subheaderEl) subheaderEl.hidden = false;
 
       if (locationSummaryEl && locationSummaryTextEl) {
         if (pendingLocation) {
@@ -807,6 +872,7 @@
       if (quantityWrapEl) quantityWrapEl.hidden = true;
       if (reviewStepEl) reviewStepEl.hidden = true;
       if (customFieldsEl) customFieldsEl.hidden = true;
+      if (subheaderEl) subheaderEl.hidden = true;
       askMoreEl.hidden = false;
     }
 
@@ -814,6 +880,7 @@
       askMoreEl.hidden = true;
       modalBodyEl.hidden = false;
       modalFooterEl.hidden = false;
+      if (subheaderEl) subheaderEl.hidden = false;
       pendingDate = null;
       pendingSlot = null;
       atReviewStep = false;
@@ -1120,6 +1187,7 @@
       datetimeStepEl.hidden = true;
       if (quantityWrapEl) quantityWrapEl.hidden = true;
       if (reviewStepEl) reviewStepEl.hidden = false;
+      if (subheaderEl) subheaderEl.hidden = true;
       renderCustomFields();
       updateConfirmButton();
     }
