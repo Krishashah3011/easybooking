@@ -9,10 +9,9 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
+import { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "../models/bookingTypes";
 import { getBookingSettings } from "../models/bookingSettings.server";
 import {
-  BOOKING_TYPES,
-  BOOKING_TYPE_LABELS,
   ensureBookableProduct,
   parseBookableProductForm,
   toBookableProductFormValues,

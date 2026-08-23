@@ -45,6 +45,13 @@
     quantityDecrease: "Decrease quantity",
     quantityIncrease: "Increase quantity",
     quantityMaxReached: "Only {count} left for this slot.",
+    nightsSelected: "{count} nights selected",
+    multiDayRangeUnavailable: "Some nights in that range aren't available. Please pick a different range.",
+    multiDayMinNights: "Minimum stay is {count} nights.",
+    multiDayMaxNights: "Maximum stay is {count} nights.",
+    sessionProgress: "Session {current} of {total} — pick a date and time",
+    sessionConfirmed: "Session {number}",
+    bundleSelected: "Bundle: {count} sessions",
   };
 
   function pad(n) {
@@ -196,6 +203,21 @@
     // step entirely — picking a date books the whole day.
     var productBookingType = "SLOT";
     var slotsPaneEl = root.querySelector("[data-booking-slots]");
+    // Every available date we've ever fetched, across all months the
+    // shopper has navigated to — needed for MULTI_DAY so we can
+    // validate a check-in/check-out range even if it spans a month
+    // boundary the calendar isn't currently showing.
+    var availableDatesByDay = {};
+    var multiDayMinNights = null;
+    var multiDayMaxNights = null;
+    // MULTI_DAY only: the check-out date once a full range is picked.
+    // Cleared whenever a fresh check-in is started.
+    var pendingEndDate = null;
+    // BUNDLE only: sessions confirmed so far in this pack, while the
+    // shopper is still picking the remaining ones. Cleared once the
+    // whole pack is added to cart (or the modal is reopened fresh).
+    var bundleSessions = [];
+    var bundleSessionCount = null;
 
     // Locations fetched once from the app. If a shop hasn't configured
     // any, the location step is skipped entirely and booking behaves
@@ -328,6 +350,45 @@
       dateInput.value = entry.date;
       timeInput.value = entry.slot.start;
 
+      if (entry.slot.endDate) {
+        var checkoutInput = form.querySelector(
+          'input[name="properties[Checkout Date]"]',
+        );
+        if (!checkoutInput) {
+          checkoutInput = document.createElement("input");
+          checkoutInput.type = "hidden";
+          checkoutInput.name = "properties[Checkout Date]";
+          form.appendChild(checkoutInput);
+        }
+        checkoutInput.value = entry.slot.endDate;
+      }
+
+      if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
+        entry.slot.bundleSessions.slice(1).forEach(function (session, i) {
+          var n = i + 2;
+          var sDateInput = form.querySelector(
+            'input[name="properties[Session ' + n + ' Date]"]',
+          );
+          var sTimeInput = form.querySelector(
+            'input[name="properties[Session ' + n + ' Time]"]',
+          );
+          if (!sDateInput) {
+            sDateInput = document.createElement("input");
+            sDateInput.type = "hidden";
+            sDateInput.name = "properties[Session " + n + " Date]";
+            form.appendChild(sDateInput);
+          }
+          if (!sTimeInput) {
+            sTimeInput = document.createElement("input");
+            sTimeInput.type = "hidden";
+            sTimeInput.name = "properties[Session " + n + " Time]";
+            form.appendChild(sTimeInput);
+          }
+          sDateInput.value = session.date;
+          sTimeInput.value = session.slot.start;
+        });
+      }
+
       if (entry.location) {
         var locationInput = form.querySelector(
           'input[name="properties[Location]"]',
@@ -378,6 +439,16 @@
       fd.set("properties[Booking Date]", entry.date);
       fd.set("properties[Booking Time]", entry.slot.start);
       fd.set("quantity", String(entry.quantity || 1));
+      if (entry.slot.endDate) {
+        fd.set("properties[Checkout Date]", entry.slot.endDate);
+      }
+      if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
+        entry.slot.bundleSessions.slice(1).forEach(function (session, i) {
+          var n = i + 2;
+          fd.set("properties[Session " + n + " Date]", session.date);
+          fd.set("properties[Session " + n + " Time]", session.slot.start);
+        });
+      }
       if (entry.location) {
         fd.set("properties[Location]", entry.location);
       }
@@ -680,6 +751,8 @@
         // previously loaded month/day no longer applies.
         pendingDate = null;
         pendingSlot = null;
+        pendingEndDate = null;
+        bundleSessions = [];
         refreshQuantityForSelection();
         updateConfirmButton();
       }
@@ -823,6 +896,8 @@
     function openModal() {
       pendingDate = null;
       pendingSlot = null;
+      pendingEndDate = null;
+      bundleSessions = [];
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
@@ -868,6 +943,8 @@
       if (subheaderEl) subheaderEl.hidden = false;
       pendingDate = null;
       pendingSlot = null;
+      pendingEndDate = null;
+      bundleSessions = [];
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
@@ -904,6 +981,12 @@
         .then(function (data) {
           availableDates = data.availableDates || [];
           if (data.bookingType) productBookingType = data.bookingType;
+          if (typeof data.minNights === "number") multiDayMinNights = data.minNights;
+          if (typeof data.maxNights === "number") multiDayMaxNights = data.maxNights;
+          if (typeof data.bundleSessionCount === "number") bundleSessionCount = data.bundleSessionCount;
+          availableDates.forEach(function (d) {
+            availableDatesByDay[d] = true;
+          });
           renderCalendar();
         })
         .catch(function () {
@@ -912,7 +995,17 @@
     }
 
     function renderCalendar() {
-      if (availableDates.length === 0) {
+      var choosingMultiDayCheckout =
+        productBookingType === "MULTI_DAY" && pendingDate && !pendingEndDate;
+
+      // Same-day turnover: a date can be perfectly good as a CHECKOUT
+      // even if it's fully booked as a NIGHT (someone else checks in
+      // that same day after the current guest leaves in the morning).
+      // So while choosing checkout, don't gate on the night-level
+      // availableDates list at all — the actual per-night check still
+      // happens for every night strictly between check-in and
+      // check-out inside selectMultiDayDate.
+      if (availableDates.length === 0 && !choosingMultiDayCheckout) {
         setStatus(calendarEl, strings.noAvailability);
         return;
       }
@@ -942,13 +1035,21 @@
         btn.textContent = String(day);
         btn.className = "booking-widget__day";
 
-        if (availableSet[dateStr]) {
+        var isCheckoutCandidate =
+          choosingMultiDayCheckout && dateStr > pendingDate;
+        var isClickable = availableSet[dateStr] || isCheckoutCandidate;
+
+        if (isClickable) {
           btn.classList.add("booking-widget__day--available");
           btn.addEventListener(
             "click",
             (function (ds) {
               return function () {
-                selectDate(ds);
+                if (productBookingType === "MULTI_DAY") {
+                  selectMultiDayDate(ds);
+                } else {
+                  selectDate(ds);
+                }
               };
             })(dateStr),
           );
@@ -956,7 +1057,18 @@
           btn.disabled = true;
         }
 
-        if (dateStr === pendingDate) {
+        if (productBookingType === "MULTI_DAY") {
+          if (dateStr === pendingDate || dateStr === pendingEndDate) {
+            btn.classList.add("booking-widget__day--selected");
+          } else if (
+            pendingDate &&
+            pendingEndDate &&
+            dateStr > pendingDate &&
+            dateStr < pendingEndDate
+          ) {
+            btn.classList.add("booking-widget__day--in-range");
+          }
+        } else if (dateStr === pendingDate) {
           btn.classList.add("booking-widget__day--selected");
         }
 
@@ -964,6 +1076,81 @@
       }
 
       calendarEl.appendChild(grid);
+    }
+
+    // MULTI_DAY only. First click picks check-in; a second click on a
+    // later date attempts to close out check-out, validating every
+    // night in between is actually available and that the range
+    // respects the product's min/max nights. Any click while a full
+    // range is already selected — or a click on/before the current
+    // check-in — starts a fresh check-in instead.
+    function selectMultiDayDate(dateStr) {
+      var choosingCheckout = pendingDate && !pendingEndDate && dateStr > pendingDate;
+
+      if (!choosingCheckout) {
+        pendingDate = dateStr;
+        pendingEndDate = null;
+        pendingSlot = null;
+        clearError();
+        renderCalendar();
+        updateConfirmButton();
+        renderCustomFields();
+        refreshQuantityForSelection();
+        durationEl.hidden = true;
+        return;
+      }
+
+      var nights = 0;
+      var cursor = pendingDate;
+      var allNightsAvailable = true;
+      while (cursor < dateStr) {
+        if (!availableDatesByDay[cursor]) {
+          allNightsAvailable = false;
+          break;
+        }
+        nights += 1;
+        var d = new Date(cursor + "T00:00:00.000Z");
+        d.setUTCDate(d.getUTCDate() + 1);
+        cursor = d.toISOString().slice(0, 10);
+      }
+
+      if (!allNightsAvailable) {
+        showError(strings.multiDayRangeUnavailable);
+        return;
+      }
+      if (multiDayMinNights !== null && nights < multiDayMinNights) {
+        showError(format(strings.multiDayMinNights, { count: multiDayMinNights }));
+        return;
+      }
+      if (multiDayMaxNights !== null && nights > multiDayMaxNights) {
+        showError(format(strings.multiDayMaxNights, { count: multiDayMaxNights }));
+        return;
+      }
+
+      clearError();
+      pendingEndDate = dateStr;
+      pendingSlot = buildMultiDaySlot(pendingDate, pendingEndDate);
+      renderCalendar();
+      updateConfirmButton();
+      renderCustomFields();
+      refreshQuantityForSelection();
+      durationEl.hidden = false;
+      durationEl.textContent = format(strings.nightsSelected, { count: nights });
+    }
+
+    // A MULTI_DAY booking has no time-of-day component — represented as
+    // a slot object shaped like a real time slot (so review/cart code
+    // needs no special-casing), plus an explicit endDate the cart
+    // property injection and order webhook read for check-out.
+    function buildMultiDaySlot(checkinStr, checkoutStr) {
+      return {
+        start: "00:00",
+        end: "00:00",
+        startsAt: checkinStr + "T00:00:00.000Z",
+        endDate: checkoutStr,
+        remainingCapacity: null,
+        available: true,
+      };
     }
 
     // A FULL_DAY product has no time slots to pick — the whole day is
@@ -1033,9 +1220,16 @@
       }
 
       durationEl.hidden = false;
-      durationEl.textContent = format(strings.durationMinutes, {
-        count: slotDurationMinutes(currentSlots[0]),
-      });
+      if (productBookingType === "BUNDLE" && bundleSessionCount) {
+        durationEl.textContent = format(strings.sessionProgress, {
+          current: bundleSessions.length + 1,
+          total: bundleSessionCount,
+        });
+      } else {
+        durationEl.textContent = format(strings.durationMinutes, {
+          count: slotDurationMinutes(currentSlots[0]),
+        });
+      }
 
       currentSlots.forEach(function (slot) {
         var row = document.createElement("label");
@@ -1164,17 +1358,46 @@
       reviewListEl.innerHTML = "";
       if (!pendingDate || !pendingSlot) return;
 
-      var rows = [
-        pendingLocation ? { label: "Location", value: pendingLocation.name } : null,
-        { label: "Date", value: formatDateDisplay(pendingDate) },
-        productBookingType === "FULL_DAY"
-          ? { label: "Booking", value: "Whole day" }
-          : {
-              label: "Time",
-              value: formatTimeRangeDisplay(pendingSlot.start, pendingSlot.end),
-            },
-        { label: "Quantity", value: String(pendingQuantity) },
-      ];
+      var rows;
+      if (productBookingType === "BUNDLE") {
+        rows = [
+          pendingLocation
+            ? { label: "Location", value: pendingLocation.name }
+            : null,
+        ];
+        bundleSessions.forEach(function (session, index) {
+          rows.push({
+            label: format(strings.sessionConfirmed, { number: index + 1 }),
+            value:
+              formatDateDisplay(session.date) +
+              " · " +
+              formatTimeRangeDisplay(session.slot.start, session.slot.end),
+          });
+        });
+      } else if (productBookingType === "MULTI_DAY") {
+        rows = [
+          pendingLocation
+            ? { label: "Location", value: pendingLocation.name }
+            : null,
+          { label: "Check-in", value: formatDateDisplay(pendingDate) },
+          { label: "Check-out", value: formatDateDisplay(pendingSlot.endDate) },
+          { label: "Quantity", value: String(pendingQuantity) },
+        ];
+      } else {
+        rows = [
+          pendingLocation
+            ? { label: "Location", value: pendingLocation.name }
+            : null,
+          { label: "Date", value: formatDateDisplay(pendingDate) },
+          productBookingType === "FULL_DAY"
+            ? { label: "Booking", value: "Whole day" }
+            : {
+                label: "Time",
+                value: formatTimeRangeDisplay(pendingSlot.start, pendingSlot.end),
+              },
+          { label: "Quantity", value: String(pendingQuantity) },
+        ];
+      }
 
       rows.forEach(function (row) {
         if (!row) return;
@@ -1212,6 +1435,18 @@
 
     if (reviewBackBtn) {
       reviewBackBtn.addEventListener("click", function () {
+        if (productBookingType === "BUNDLE" && bundleSessions.length > 0) {
+          // Pop the last session back out so the shopper can change it,
+          // rather than losing their place in the pack.
+          var last = bundleSessions.pop();
+          pendingDate = last.date;
+          pendingSlot = last.slot;
+          showDatetimeStep();
+          loadSlots(pendingDate);
+          refreshQuantityForSelection();
+          updateConfirmButton();
+          return;
+        }
         showDatetimeStep();
         renderSlots();
         refreshQuantityForSelection();
@@ -1236,10 +1471,17 @@
         chip.className = "booking-widget__selection-chip";
 
         var label = document.createElement("span");
-        var chipText = format(strings.selected, {
-          date: formatDateDisplay(entry.date),
-          time: formatTimeRangeDisplay(entry.slot.start, entry.slot.end),
-        });
+        var chipText;
+        if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
+          chipText = format(strings.bundleSelected, {
+            count: entry.slot.bundleSessions.length,
+          });
+        } else {
+          chipText = format(strings.selected, {
+            date: formatDateDisplay(entry.date),
+            time: formatTimeRangeDisplay(entry.slot.start, entry.slot.end),
+          });
+        }
         if (entry.quantity && entry.quantity > 1) {
           chipText += " \u00d7 " + entry.quantity;
         }
@@ -1331,6 +1573,8 @@
       }
       pendingDate = null;
       pendingSlot = null;
+      pendingEndDate = null;
+      bundleSessions = [];
       refreshQuantityForSelection();
       currentSlots = [];
       durationEl.hidden = true;
@@ -1352,6 +1596,56 @@
     });
     confirmBtn.addEventListener("click", function () {
       if (!pendingDate || !pendingSlot) return;
+
+      if (productBookingType === "BUNDLE") {
+        var totalSessions = bundleSessionCount || 1;
+
+        if (!atReviewStep) {
+          bundleSessions.push({ date: pendingDate, slot: pendingSlot });
+          var remaining = totalSessions - bundleSessions.length;
+
+          if (remaining > 0) {
+            // More sessions still to pick — reset the calendar for the
+            // next one, staying on the datetime step.
+            pendingDate = null;
+            pendingSlot = null;
+            renderCalendar();
+            updateConfirmButton();
+            renderCustomFields();
+            refreshQuantityForSelection();
+            if (slotsPaneEl) slotsPaneEl.hidden = false;
+            setStatus(slotListEl, strings.noTimes);
+            durationEl.hidden = false;
+            durationEl.textContent = format(strings.sessionProgress, {
+              current: bundleSessions.length + 1,
+              total: totalSessions,
+            });
+            return;
+          }
+
+          // That was the last session — show the combined review.
+          showReviewStep();
+          return;
+        }
+
+        // Final confirm: bundle every session picked into ONE cart
+        // line (one purchase, quantity 1) rather than the usual
+        // "confirmedSlots" per-cart-line queue used for separate slots.
+        var firstSession = bundleSessions[0];
+        var combinedSlot = Object.assign({}, firstSession.slot, {
+          bundleSessions: bundleSessions.slice(),
+        });
+        confirmedSlots.push({
+          date: firstSession.date,
+          slot: combinedSlot,
+          location: pendingLocation ? pendingLocation.name : null,
+          quantity: 1,
+        });
+        updateSelectionDisplay();
+        bundleSessions = [];
+        closeModal();
+        return;
+      }
 
       if (!atReviewStep) {
         showReviewStep();

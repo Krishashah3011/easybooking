@@ -157,6 +157,59 @@ export function getAvailableFullDayDatesInMonth(
   return available;
 }
 
+export function computeMultiDayNightAvailability(
+  settings: EffectiveBookingSettings,
+  dateStr: string,
+  blackoutDates: Set<string>,
+  now: Date = new Date(),
+  bookedCount: number = 0,
+): { available: boolean; remainingCapacity: number } {
+  // Multi-day products (hotel rooms, rentals) are typically open every
+  // day of the week, so — unlike SLOT/FULL_DAY — this deliberately does
+  // NOT check settings.workingDays.
+  if (blackoutDates.has(dateStr)) return { available: false, remainingCapacity: 0 };
+  if (
+    !isWithinDateWindow(dateStr, settings.bookingStartDate, settings.bookingEndDate)
+  ) {
+    return { available: false, remainingCapacity: 0 };
+  }
+
+  const maxAdvanceDate = new Date(now);
+  maxAdvanceDate.setUTCDate(maxAdvanceDate.getUTCDate() + settings.maxAdvanceDays);
+  if (dateStr > maxAdvanceDate.toISOString().slice(0, 10)) {
+    return { available: false, remainingCapacity: 0 };
+  }
+
+  const todayStr = now.toISOString().slice(0, 10);
+  if (settings.minAdvanceHours > 0 && dateStr <= todayStr) {
+    return { available: false, remainingCapacity: 0 };
+  }
+
+  const remainingCapacity = Math.max(0, settings.maxBookingsPerSlot - bookedCount);
+  return { available: remainingCapacity > 0, remainingCapacity };
+}
+
+export function getAvailableMultiDayNightsInMonth(
+  settings: EffectiveBookingSettings,
+  year: number,
+  month: number,
+  blackoutDates: Set<string>,
+  now: Date = new Date(),
+  bookedNightCounts: Map<string, number> = new Map(),
+): string[] {
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const available: string[] = [];
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const bookedCount = bookedNightCounts.get(dateStr) ?? 0;
+    const result = computeMultiDayNightAvailability(settings, dateStr, blackoutDates, now, bookedCount);
+    if (result.available) available.push(dateStr);
+  }
+
+  return available;
+}
+
 export function getAvailableDatesInMonth(
   settings: EffectiveBookingSettings,
   year: number,

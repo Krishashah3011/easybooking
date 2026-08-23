@@ -12,6 +12,9 @@ import {
 export type BookingContext = {
   bookableProductId: string;
   bookingType: "SLOT" | "FULL_DAY" | "MULTI_DAY" | "BUNDLE";
+  minNights: number | null;
+  maxNights: number | null;
+  bundleSessionCount: number | null;
   effectiveSettings: EffectiveBookingSettings;
   blackoutDates: Set<string>;
 };
@@ -42,6 +45,9 @@ export async function resolveBookingContext(
   return {
     bookableProductId: bookableProduct.id,
     bookingType: bookableProduct.bookingType,
+    minNights: bookableProduct.minNights,
+    maxNights: bookableProduct.maxNights,
+    bundleSessionCount: bookableProduct.bundleSessionCount,
     effectiveSettings: resolveEffectiveSettings(shopSettings, bookableProduct),
     blackoutDates,
   };

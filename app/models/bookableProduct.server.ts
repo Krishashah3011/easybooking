@@ -5,20 +5,9 @@ import type {
 } from "@prisma/client";
 import prisma from "../db.server";
 import { parseWorkingDays } from "./bookingSettings.server";
+import { BOOKING_TYPES } from "./bookingTypes";
 
-export const BOOKING_TYPES: BookingType[] = [
-  "SLOT",
-  "FULL_DAY",
-  "MULTI_DAY",
-  "BUNDLE",
-];
-
-export const BOOKING_TYPE_LABELS: Record<BookingType, string> = {
-  SLOT: "Minute / Hour bookings (time slots)",
-  FULL_DAY: "Full-day bookings (flat rate per day)",
-  MULTI_DAY: "Multi-day bookings (date range)",
-  BUNDLE: "Bundle bookings (pack of sessions)",
-};
+export { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "./bookingTypes";
 
 export type BookableProductFormValues = {
   isEnabled: boolean;
@@ -383,8 +372,14 @@ export function resolveEffectiveSettings(
       : parseWorkingDays(shopSettings.workingDays),
     dailyStartTime: product?.dailyStartTime ?? shopSettings.dailyStartTime,
     dailyEndTime: product?.dailyEndTime ?? shopSettings.dailyEndTime,
+    // A BUNDLE product's "slot duration" is really its per-session
+    // length, set on the Bundle settings section rather than the
+    // regular Slot configuration section — fall back to it here so
+    // BUNDLE can reuse the exact same slot-generation logic as SLOT.
     slotDurationMinutes:
-      product?.slotDurationMinutes ?? shopSettings.slotDurationMinutes,
+      product?.bookingType === "BUNDLE" && product.bundleSessionDurationMinutes
+        ? product.bundleSessionDurationMinutes
+        : (product?.slotDurationMinutes ?? shopSettings.slotDurationMinutes),
     bufferMinutes: product?.bufferMinutes ?? shopSettings.bufferMinutes,
     minAdvanceHours: product?.minAdvanceHours ?? shopSettings.minAdvanceHours,
     maxAdvanceDays: product?.maxAdvanceDays ?? shopSettings.maxAdvanceDays,

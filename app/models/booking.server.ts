@@ -42,6 +42,7 @@ export type OrderPayload = {
 const BOOKING_DATE_PROPERTY = "Booking Date";
 const BOOKING_TIME_PROPERTY = "Booking Time";
 const BOOKING_LOCATION_PROPERTY = "Location";
+const BOOKING_CHECKOUT_DATE_PROPERTY = "Checkout Date";
 
 function toProductGid(productId: number | string): string {
   return `gid://shopify/Product/${productId}`;
@@ -49,12 +50,15 @@ function toProductGid(productId: number | string): string {
 
 export function extractBookingSelection(
   lineItem: OrderLineItem,
-): { date: string; time: string } | null {
+): { date: string; time: string; checkoutDate: string | null } | null {
   const properties = lineItem.properties ?? [];
   const date = properties.find((p) => p.name === BOOKING_DATE_PROPERTY)?.value;
   const time = properties.find((p) => p.name === BOOKING_TIME_PROPERTY)?.value;
+  const checkoutDate =
+    properties.find((p) => p.name === BOOKING_CHECKOUT_DATE_PROPERTY)?.value ??
+    null;
   if (!date || !time) return null;
-  return { date, time };
+  return { date, time, checkoutDate };
 }
 
 export function extractBookingLocation(lineItem: OrderLineItem): string | null {
@@ -63,6 +67,31 @@ export function extractBookingLocation(lineItem: OrderLineItem): string | null {
     (p) => p.name === BOOKING_LOCATION_PROPERTY,
   )?.value;
   return location || null;
+}
+
+// A BUNDLE line item carries its first session under the normal
+// "Booking Date"/"Booking Time" properties (kept for backward
+// compatibility with the admin bookings list and email templates), and
+// every session after that under "Session 2 Date"/"Session 2 Time",
+// "Session 3 Date"/"Session 3 Time", and so on.
+export function extractBundleSessions(
+  lineItem: OrderLineItem,
+  sessionCount: number,
+): { date: string; time: string }[] {
+  const properties = lineItem.properties ?? [];
+  const sessions: { date: string; time: string }[] = [];
+
+  const firstDate = properties.find((p) => p.name === BOOKING_DATE_PROPERTY)?.value;
+  const firstTime = properties.find((p) => p.name === BOOKING_TIME_PROPERTY)?.value;
+  if (firstDate && firstTime) sessions.push({ date: firstDate, time: firstTime });
+
+  for (let i = 2; i <= sessionCount; i++) {
+    const date = properties.find((p) => p.name === `Session ${i} Date`)?.value;
+    const time = properties.find((p) => p.name === `Session ${i} Time`)?.value;
+    if (date && time) sessions.push({ date, time });
+  }
+
+  return sessions;
 }
 
 function extractCustomFieldResponses(
@@ -136,6 +165,70 @@ export async function getBookedCountsInRange(
     counts.set(row.slotStartsAt.toISOString(), row._sum.quantity ?? 0);
   }
   return counts;
+}
+
+// MULTI_DAY bookings span a date range (one Booking row per purchase,
+// `date` = check-in, `endDate` = check-out) rather than one row per
+// night, so we can't group by slotStartsAt like the counter above.
+// Instead we pull every active multi-day booking that overlaps the
+// requested range at all, then expand each one across the individual
+// nights it covers to build a per-night count.
+export async function getBookedNightCountsInRange(
+  shop: string,
+  bookableProductId: string,
+  rangeStart: Date,
+  rangeEnd: Date,
+): Promise<Map<string, number>> {
+  const rangeStartStr = rangeStart.toISOString().slice(0, 10);
+  const rangeEndStr = rangeEnd.toISOString().slice(0, 10);
+
+  const overlapping = await prisma.booking.findMany({
+    where: {
+      shop,
+      bookableProductId,
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      date: { lte: rangeEndStr },
+      endDate: { gte: rangeStartStr },
+    },
+    select: { date: true, endDate: true, quantity: true },
+  });
+
+  const counts = new Map<string, number>();
+  for (const booking of overlapping) {
+    if (!booking.endDate) continue;
+    let cursor = booking.date < rangeStartStr ? rangeStartStr : booking.date;
+    const stop = booking.endDate > rangeEndStr ? rangeEndStr : booking.endDate;
+    while (cursor < stop) {
+      counts.set(cursor, (counts.get(cursor) ?? 0) + booking.quantity);
+      const d = new Date(`${cursor}T00:00:00.000Z`);
+      d.setUTCDate(d.getUTCDate() + 1);
+      cursor = d.toISOString().slice(0, 10);
+    }
+  }
+  return counts;
+}
+
+// Approximate capacity check used only at order-creation time: how many
+// units are already committed to ANY night this new booking would
+// touch. Good enough for flagging OVERBOOKED for merchant review,
+// without needing a full per-night breakdown at write time.
+async function countOverlappingMultiDayBookings(
+  shop: string,
+  bookableProductId: string,
+  checkin: string,
+  checkout: string,
+): Promise<number> {
+  const overlapping = await prisma.booking.findMany({
+    where: {
+      shop,
+      bookableProductId,
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      date: { lt: checkout },
+      endDate: { gt: checkin },
+    },
+    select: { quantity: true },
+  });
+  return overlapping.reduce((sum, b) => sum + b.quantity, 0);
 }
 
 async function getShopEmailSettings(
@@ -290,11 +383,107 @@ export async function createBookingsFromOrder(
       bookableProduct,
     );
 
+    const customFieldResponses = extractCustomFieldResponses(
+      lineItem,
+      customFields,
+    );
+    const quantity = (() => {
+      const n = Number(lineItem.quantity);
+      return Number.isInteger(n) && n > 0 ? n : 1;
+    })();
+
+    if (bookableProduct.bookingType === "BUNDLE") {
+      // A BUNDLE purchase is one cart line covering several sessions —
+      // each session gets its own Booking row (so it shows up correctly
+      // on the calendar/capacity checks like any other slot booking),
+      // all tied together with a shared groupId so the admin can see
+      // them as one pack.
+      const sessionCount = bookableProduct.bundleSessionCount ?? 1;
+      const sessions = extractBundleSessions(lineItem, sessionCount);
+      if (sessions.length === 0) {
+        console.log(
+          `Skipping line item ${lineItem.id}: no bundle sessions found`,
+        );
+        continue;
+      }
+
+      const groupId = `${order.id}-${lineItem.id}`;
+      for (const session of sessions) {
+        const slotsForDate = computeSlotsForDate(
+          effectiveSettings,
+          session.date,
+          new Set(),
+        );
+        const matchedSlot = slotsForDate.find((s) => s.start === session.time);
+        const sessionSlotStartsAt = matchedSlot
+          ? new Date(matchedSlot.startsAt)
+          : new Date(`${session.date}T${session.time}:00Z`);
+        const sessionSlotEnd =
+          matchedSlot?.end ??
+          addMinutes(session.time, effectiveSettings.slotDurationMinutes);
+        const sessionAlreadyBooked = await countConfirmedBookingsForSlot(
+          shop,
+          bookableProduct.id,
+          sessionSlotStartsAt,
+        );
+        const sessionStatus =
+          sessionAlreadyBooked + quantity <= effectiveSettings.maxBookingsPerSlot
+            ? "CONFIRMED"
+            : "OVERBOOKED";
+
+        const booking = await prisma.booking.create({
+          data: {
+            shop,
+            bookableProductId: bookableProduct.id,
+            orderId: String(order.id),
+            orderName: order.name ?? null,
+            lineItemId: String(lineItem.id),
+            groupId,
+            customerName: customerInfo.customerName,
+            customerEmail: customerInfo.customerEmail,
+            customerPhone: customerInfo.customerPhone,
+            isGuest: customerInfo.isGuest,
+            location: extractBookingLocation(lineItem),
+            date: session.date,
+            slotStart: session.time,
+            slotEnd: sessionSlotEnd,
+            slotStartsAt: sessionSlotStartsAt,
+            quantity,
+            status: sessionStatus,
+            source: "STOREFRONT_ORDER",
+            customFieldResponses: customFieldResponses ?? undefined,
+          },
+        });
+        created.push(booking);
+        if (sessionStatus === "CONFIRMED") {
+          await sendBookingConfirmation(booking, bookableProduct.productTitle, shop);
+        }
+      }
+      continue;
+    }
+
     let slotStartsAt: Date;
     let slotEnd: string;
     let alreadyBooked: number;
+    let bookingEndDateField: string | null = null;
 
-    if (bookableProduct.bookingType === "FULL_DAY") {
+    if (bookableProduct.bookingType === "MULTI_DAY") {
+      // A MULTI_DAY booking is a check-in/check-out range, not a single
+      // slot — the whole thing lives in one Booking row (date =
+      // check-in, endDate = check-out), so capacity is checked against
+      // every other booking that overlaps any night in this range
+      // rather than a single slotStartsAt match.
+      const checkout = selection.checkoutDate ?? selection.date;
+      bookingEndDateField = checkout;
+      slotStartsAt = new Date(`${selection.date}T00:00:00.000Z`);
+      slotEnd = "00:00";
+      alreadyBooked = await countOverlappingMultiDayBookings(
+        shop,
+        bookableProduct.id,
+        selection.date,
+        checkout,
+      );
+    } else if (bookableProduct.bookingType === "FULL_DAY") {
       // A FULL_DAY booking has no time-slot math — the whole day is the
       // unit, so we skip computeSlotsForDate entirely and just anchor
       // the booking to midnight UTC of the chosen date.
@@ -325,19 +514,10 @@ export async function createBookingsFromOrder(
       );
     }
 
-    const quantity = (() => {
-      const n = Number(lineItem.quantity);
-      return Number.isInteger(n) && n > 0 ? n : 1;
-    })();
     const status =
       alreadyBooked + quantity <= effectiveSettings.maxBookingsPerSlot
         ? "CONFIRMED"
         : "OVERBOOKED";
-
-    const customFieldResponses = extractCustomFieldResponses(
-      lineItem,
-      customFields,
-    );
 
     const booking = await prisma.booking.create({
       data: {
@@ -352,6 +532,7 @@ export async function createBookingsFromOrder(
         isGuest: customerInfo.isGuest,
         location: extractBookingLocation(lineItem),
         date: selection.date,
+        endDate: bookingEndDateField,
         slotStart: selection.time,
         slotEnd,
         slotStartsAt,

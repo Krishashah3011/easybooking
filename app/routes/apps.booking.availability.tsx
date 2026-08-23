@@ -4,8 +4,12 @@ import { resolveBookingContext } from "../models/booking-context.server";
 import {
   getAvailableDatesInMonth,
   getAvailableFullDayDatesInMonth,
+  getAvailableMultiDayNightsInMonth,
 } from "../models/slotAvailability.server";
-import { getBookedCountsInRange } from "../models/booking.server";
+import {
+  getBookedCountsInRange,
+  getBookedNightCountsInRange,
+} from "../models/booking.server";
 import { getLocationById } from "../models/bookingLocation.server";
 
 
@@ -42,32 +46,62 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const monthStart = new Date(Date.UTC(year, month - 1, 1));
   const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
-  const bookedCounts = await getBookedCountsInRange(
-    session.shop,
-    context.bookableProductId,
-    monthStart,
-    monthEnd,
-  );
 
-  const availableDates =
-    context.bookingType === "FULL_DAY"
-      ? getAvailableFullDayDatesInMonth(
-          context.effectiveSettings,
-          year,
-          month,
-          context.blackoutDates,
-          new Date(),
-          bookedCounts,
-        )
-      : getAvailableDatesInMonth(
-          context.effectiveSettings,
-          year,
-          month,
-          context.blackoutDates,
-          new Date(),
-          bookedCounts,
-          location?.timezone ?? null,
-        );
+  let availableDates: string[];
 
-  return Response.json({ availableDates, bookingType: context.bookingType });
+  if (context.bookingType === "FULL_DAY") {
+    const bookedCounts = await getBookedCountsInRange(
+      session.shop,
+      context.bookableProductId,
+      monthStart,
+      monthEnd,
+    );
+    availableDates = getAvailableFullDayDatesInMonth(
+      context.effectiveSettings,
+      year,
+      month,
+      context.blackoutDates,
+      new Date(),
+      bookedCounts,
+    );
+  } else if (context.bookingType === "MULTI_DAY") {
+    const bookedNightCounts = await getBookedNightCountsInRange(
+      session.shop,
+      context.bookableProductId,
+      monthStart,
+      monthEnd,
+    );
+    availableDates = getAvailableMultiDayNightsInMonth(
+      context.effectiveSettings,
+      year,
+      month,
+      context.blackoutDates,
+      new Date(),
+      bookedNightCounts,
+    );
+  } else {
+    const bookedCounts = await getBookedCountsInRange(
+      session.shop,
+      context.bookableProductId,
+      monthStart,
+      monthEnd,
+    );
+    availableDates = getAvailableDatesInMonth(
+      context.effectiveSettings,
+      year,
+      month,
+      context.blackoutDates,
+      new Date(),
+      bookedCounts,
+      location?.timezone ?? null,
+    );
+  }
+
+  return Response.json({
+    availableDates,
+    bookingType: context.bookingType,
+    minNights: context.minNights,
+    maxNights: context.maxNights,
+    bundleSessionCount: context.bundleSessionCount,
+  });
 };
