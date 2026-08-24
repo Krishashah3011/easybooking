@@ -22,7 +22,7 @@ import {
   getBookedCountsInRange,
   getBookedNightCountsInRange,
 } from "../models/booking.server";
-import { listEnabledLocations } from "../models/bookingLocation.server";
+import { listEnabledLocations, getLocationById } from "../models/bookingLocation.server";
 import { listCustomFields, toPublicField } from "../models/customBookingField.server";
 import { formatTimeRangeDisplay } from "../utils/format";
 
@@ -67,6 +67,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
+// Mirrors resolveBookingLocation() in booking.server.ts: never throws, just
+// falls back to null (naive UTC) if no location was picked yet or the id
+// doesn't resolve — a merchant mid-way through the form shouldn't be
+// blocked from seeing slots just because they haven't chosen a location.
+async function resolveLocationTimeZone(
+  shop: string,
+  locationId: string | null,
+): Promise<string | null> {
+  if (!locationId) return null;
+  const location = await getLocationById(shop, locationId);
+  return location?.timezone ?? null;
+}
+
 async function resolveBlackoutDatesAndSettings(
   shop: string,
   bookableProductId: string,
@@ -91,6 +104,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (intent === "loadAvailability") {
     const bookableProductId = String(formData.get("bookableProductId") ?? "");
+    const locationId = String(formData.get("locationId") ?? "") || null;
     const year = Number(formData.get("year"));
     const month = Number(formData.get("month"));
     if (!bookableProductId || !Number.isInteger(year) || !Number.isInteger(month)) {
@@ -146,6 +160,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         monthStart,
         monthEnd,
       );
+      const timeZone = await resolveLocationTimeZone(session.shop, locationId);
       availableDates = getAvailableDatesInMonth(
         resolved.effectiveSettings,
         year,
@@ -153,6 +168,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         resolved.blackoutDates,
         new Date(),
         bookedCounts,
+        timeZone,
       );
     }
 
@@ -161,6 +177,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (intent === "loadSlots") {
     const bookableProductId = String(formData.get("bookableProductId") ?? "");
+    const locationId = String(formData.get("locationId") ?? "") || null;
     const date = String(formData.get("date") ?? "");
     if (!bookableProductId || !date) {
       return { intent, ok: false as const, slots: [] as TimeSlot[] };
@@ -182,6 +199,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       dayStart,
       dayEnd,
     );
+    const timeZone = await resolveLocationTimeZone(session.shop, locationId);
 
     const slots = computeSlotsForDate(
       resolved.effectiveSettings,
@@ -189,6 +207,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       resolved.blackoutDates,
       new Date(),
       bookedCounts,
+      timeZone,
     );
 
     return { intent, ok: true as const, slots };
@@ -340,6 +359,7 @@ export default function NewBookingPage() {
       {
         intent: "loadAvailability",
         bookableProductId: productId,
+        locationId,
         year: String(year),
         month: String(month),
       },
@@ -351,13 +371,29 @@ export default function NewBookingPage() {
     setDate("");
     setSelectedSlot(null);
     loadAvailability(bookableProductId, viewYear, viewMonth);
-  }, [bookableProductId, viewYear, viewMonth]);
+    // Availability (which dates have open slots) depends on the location's
+    // timezone, same as the slots themselves — re-fetch whenever the
+    // merchant switches location, not just product/month.
+  }, [bookableProductId, viewYear, viewMonth, locationId]);
 
   useEffect(() => {
     if (selectedSlot) {
       setQuantity(1);
     }
   }, [selectedSlot]);
+
+  useEffect(() => {
+    // A date may already be selected before the merchant switches
+    // location — refetch its slots so they reflect the new timezone
+    // instead of leaving stale ones from the previous location on screen.
+    if (!date || selectedBookingType !== "SLOT") return;
+    setSelectedSlot(null);
+    slotsFetcher.submit(
+      { intent: "loadSlots", bookableProductId, locationId, date },
+      { method: "POST" },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationId]);
 
   useEffect(() => {
     if (createFetcher.data?.intent !== "createBooking") return;
@@ -402,7 +438,7 @@ export default function NewBookingPage() {
     loadAvailability(bookableProductId, viewYear, viewMonth);
     if (date) {
       slotsFetcher.submit(
-        { intent: "loadSlots", bookableProductId, date },
+        { intent: "loadSlots", bookableProductId, locationId, date },
         { method: "POST" },
       );
     }
@@ -446,7 +482,7 @@ export default function NewBookingPage() {
     }
     setSelectedSlot(null);
     slotsFetcher.submit(
-      { intent: "loadSlots", bookableProductId, date: dateStr },
+      { intent: "loadSlots", bookableProductId, locationId, date: dateStr },
       { method: "POST" },
     );
   };

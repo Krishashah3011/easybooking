@@ -1054,10 +1054,23 @@ export async function rescheduleBooking(
     shopSettings,
     booking.bookableProduct,
   );
+  // Reschedule has to recompute slots in the same timezone the original
+  // booking was made under — otherwise a slot that looks valid in the
+  // location's local time can silently shift or fail to match once run
+  // through naive UTC. booking.locationId is null for legacy bookings
+  // made before this column existed, or if the location was since
+  // deleted (SetNull); in either case fall back to UTC rather than
+  // blocking the reschedule.
+  const rescheduleTimeZone = booking.locationId
+    ? (await getLocationById(shop, booking.locationId))?.timezone ?? null
+    : null;
   const slotsForDate = computeSlotsForDate(
     effectiveSettings,
     newDate,
     new Set(),
+    new Date(),
+    new Map(),
+    rescheduleTimeZone,
   );
   const matchedSlot = slotsForDate.find((s) => s.start === newSlotStart);
   if (!matchedSlot) {
