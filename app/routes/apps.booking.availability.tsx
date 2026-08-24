@@ -5,6 +5,8 @@ import {
   getAvailableDatesInMonth,
   getAvailableFullDayDatesInMonth,
   getAvailableMultiDayNightsInMonth,
+  getFullDayCapacityInMonth,
+  getMultiDayCapacityInMonth,
 } from "../models/slotAvailability.server";
 import {
   getBookedCountsInRange,
@@ -48,6 +50,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
   let availableDates: string[];
+  let remainingCapacityByDate: Record<string, number> | undefined;
 
   if (context.bookingType === "FULL_DAY") {
     const bookedCounts = await getBookedCountsInRange(
@@ -64,6 +67,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       new Date(),
       bookedCounts,
     );
+    remainingCapacityByDate = getFullDayCapacityInMonth(
+      context.effectiveSettings,
+      year,
+      month,
+      context.blackoutDates,
+      new Date(),
+      bookedCounts,
+    );
   } else if (context.bookingType === "MULTI_DAY") {
     const bookedNightCounts = await getBookedNightCountsInRange(
       session.shop,
@@ -72,6 +83,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       monthEnd,
     );
     availableDates = getAvailableMultiDayNightsInMonth(
+      context.effectiveSettings,
+      year,
+      month,
+      context.blackoutDates,
+      new Date(),
+      bookedNightCounts,
+    );
+    remainingCapacityByDate = getMultiDayCapacityInMonth(
       context.effectiveSettings,
       year,
       month,
@@ -104,5 +123,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     maxNights: context.maxNights,
     bundleSessionCount: context.bundleSessionCount,
     bundleValidityDays: context.bundleValidityDays,
+    ...(remainingCapacityByDate ? { remainingCapacityByDate } : {}),
   });
 };

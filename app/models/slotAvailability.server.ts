@@ -189,6 +189,32 @@ export function computeMultiDayNightAvailability(
   return { available: remainingCapacity > 0, remainingCapacity };
 }
 
+// Same scan as getAvailableFullDayDatesInMonth, but returns remaining
+// capacity for every day in the month (not just the available ones) so
+// the storefront can show "X available" while the shopper is choosing a
+// quantity, instead of only a plain available/unavailable flag.
+export function getFullDayCapacityInMonth(
+  settings: EffectiveBookingSettings,
+  year: number,
+  month: number,
+  blackoutDates: Set<string>,
+  now: Date = new Date(),
+  bookedCounts: Map<string, number> = new Map(),
+): Record<string, number> {
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const capacity: Record<string, number> = {};
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const startsAt = `${dateStr}T00:00:00.000Z`;
+    const bookedCount = bookedCounts.get(startsAt) ?? 0;
+    const result = computeFullDayAvailability(settings, dateStr, blackoutDates, now, bookedCount);
+    capacity[dateStr] = result.remainingCapacity;
+  }
+
+  return capacity;
+}
+
 export function getAvailableMultiDayNightsInMonth(
   settings: EffectiveBookingSettings,
   year: number,
@@ -208,6 +234,29 @@ export function getAvailableMultiDayNightsInMonth(
   }
 
   return available;
+}
+
+// Same as getFullDayCapacityInMonth, but for MULTI_DAY nights (e.g. how
+// many identical rooms/units are still free for each night).
+export function getMultiDayCapacityInMonth(
+  settings: EffectiveBookingSettings,
+  year: number,
+  month: number,
+  blackoutDates: Set<string>,
+  now: Date = new Date(),
+  bookedNightCounts: Map<string, number> = new Map(),
+): Record<string, number> {
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const capacity: Record<string, number> = {};
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const bookedCount = bookedNightCounts.get(dateStr) ?? 0;
+    const result = computeMultiDayNightAvailability(settings, dateStr, blackoutDates, now, bookedCount);
+    capacity[dateStr] = result.remainingCapacity;
+  }
+
+  return capacity;
 }
 
 export function getAvailableDatesInMonth(

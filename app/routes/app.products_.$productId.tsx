@@ -198,6 +198,19 @@ export default function BookableProductPage() {
     });
   };
 
+  const allWeekdaysSelected = WEEKDAY_LABELS.every((day) =>
+    (values.workingDays ?? []).includes(day.value),
+  );
+
+  const toggleSelectAllWorkingDays = () => {
+    setValues((prev) => ({
+      ...prev,
+      workingDays: allWeekdaysSelected
+        ? []
+        : WEEKDAY_LABELS.map((day) => day.value),
+    }));
+  };
+
   const handleSave = () => {
     overridesFetcher.submit(
       {
@@ -317,6 +330,13 @@ export default function BookableProductPage() {
           default instead. Check any day to set a custom schedule just for this
           product.
         </s-paragraph>
+        <s-stack direction="inline" gap="base">
+          <s-checkbox
+            label="Select all"
+            checked={allWeekdaysSelected}
+            onChange={toggleSelectAllWorkingDays}
+          ></s-checkbox>
+        </s-stack>
         <s-stack direction="inline" gap="base">
           {WEEKDAY_LABELS.map((day) => (
             <s-checkbox
@@ -453,6 +473,7 @@ export default function BookableProductPage() {
       )}
 
       {values.bookingType === "MULTI_DAY" && (
+      <>
       <s-section heading="Multi-day settings">
         <s-paragraph>
           The number of nights a customer can book in one go for this
@@ -491,6 +512,29 @@ export default function BookableProductPage() {
           ></s-number-field>
         </s-stack>
       </s-section>
+
+      <s-section heading="Capacity">
+        <s-number-field
+          label="Rooms/units available"
+          placeholder={String(shopDefaults.maxBookingsPerSlot)}
+          details="How many identical rooms or units can be booked for the same night (e.g. number of rooms of this type). Blank = use shop default"
+          value={
+            values.maxBookingsPerSlot !== null
+              ? String(values.maxBookingsPerSlot)
+              : ""
+          }
+          min={1}
+          step={1}
+          error={errors.maxBookingsPerSlot}
+          onChange={(e: FieldChangeEvent) =>
+            setField(
+              "maxBookingsPerSlot",
+              e.currentTarget.value === "" ? null : Number(e.currentTarget.value),
+            )
+          }
+        ></s-number-field>
+      </s-section>
+      </>
       )}
 
       {values.bookingType === "BUNDLE" && (

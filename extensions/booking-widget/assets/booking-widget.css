@@ -441,6 +441,32 @@ body.booking-widget-lock-scroll {
   border-radius: 0;
 }
 
+/* FULL_DAY / MULTI_DAY: this-month-and-next side by side instead of a
+   single month with prev/next — there's no time-slot pane taking up
+   the other half of the row for these types, so there's room. */
+.booking-widget__calendar--dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.booking-widget__month-pane-label {
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.booking-widget__weekdays--pane {
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 560px) {
+  .booking-widget__calendar--dual {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
 .booking-widget__duration {
   display: flex;
   align-items: center;

@@ -81,6 +81,19 @@ export default function BookingSettingsPage() {
     });
   };
 
+  const allWeekdaysSelected = WEEKDAY_LABELS.every((day) =>
+    values.workingDays.includes(day.value),
+  );
+
+  const toggleSelectAllWorkingDays = () => {
+    setValues((prev) => ({
+      ...prev,
+      workingDays: allWeekdaysSelected
+        ? []
+        : WEEKDAY_LABELS.map((day) => day.value),
+    }));
+  };
+
   const handleSave = () => {
     fetcher.submit(
       {
@@ -115,6 +128,13 @@ export default function BookingSettingsPage() {
         <s-paragraph>
           Choose which days of the week customers can book appointments on.
         </s-paragraph>
+        <s-stack direction="inline" gap="base">
+          <s-checkbox
+            label="Select all"
+            checked={allWeekdaysSelected}
+            onChange={toggleSelectAllWorkingDays}
+          ></s-checkbox>
+        </s-stack>
         <s-stack direction="inline" gap="base">
           {WEEKDAY_LABELS.map((day) => (
             <s-checkbox

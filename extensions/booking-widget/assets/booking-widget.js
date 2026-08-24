@@ -45,6 +45,8 @@
     quantityDecrease: "Decrease quantity",
     quantityIncrease: "Increase quantity",
     quantityMaxReached: "Only {count} left for this slot.",
+    unitAvailable: "1 available",
+    unitsAvailable: "{count} available",
     nightsSelected: "{count} nights selected",
     multiDayRangeUnavailable: "Some nights in that range aren't available. Please pick a different range.",
     multiDayMinNights: "Minimum stay is {count} nights.",
@@ -209,6 +211,16 @@
     // validate a check-in/check-out range even if it spans a month
     // boundary the calendar isn't currently showing.
     var availableDatesByDay = {};
+    // Remaining capacity (e.g. rooms/units still free) per date, merged
+    // across every month fetched so far. Only populated for FULL_DAY and
+    // MULTI_DAY — SLOT/BUNDLE capacity lives on the per-slot object
+    // instead. Keyed by YYYY-MM-DD.
+    var remainingCapacityByDate = {};
+    // FULL_DAY and MULTI_DAY have no time-of-day step, so instead of a
+    // single month with prev/next, they show this month and next month
+    // side by side. secondMonthAvailableDates is non-null only while
+    // that dual view is active for the currently loaded pair of months.
+    var secondMonthAvailableDates = null;
     var multiDayMinNights = null;
     var multiDayMaxNights = null;
     // MULTI_DAY only: the check-out date once a full range is picked.
@@ -962,46 +974,93 @@
       renderCalendar();
     }
 
-    function loadMonth() {
-      monthLabelEl.textContent = monthFormatter.format(
-        new Date(Date.UTC(viewYear, viewMonth - 1, 1)),
-      );
-      setStatus(calendarEl, strings.loadingAvailability);
+    // FULL_DAY and MULTI_DAY have no time-slot step, so they get a
+    // two-month calendar instead of a single month with prev/next — see
+    // loadMonth/renderCalendar below.
+    function isTwoMonthType(type) {
+      return type === "FULL_DAY" || type === "MULTI_DAY";
+    }
 
+    function addMonths(year, month, delta) {
+      var d = new Date(Date.UTC(year, month - 1 + delta, 1));
+      return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
+    }
+
+    function fetchAvailability(year, month) {
       var url =
         proxyBase +
         "/availability?productId=" +
         encodeURIComponent(productId) +
         "&year=" +
-        viewYear +
+        year +
         "&month=" +
-        viewMonth;
+        month;
       if (pendingLocation) {
         url += "&locationId=" + encodeURIComponent(pendingLocation.id);
       }
+      return fetch(url).then(function (res) {
+        return res.json();
+      });
+    }
 
-      fetch(url)
-        .then(function (res) {
-          return res.json();
-        })
+    // Applies one month's availability response to shared widget state
+    // (booking type, min/max nights, bundle info, and the accumulated
+    // availableDatesByDay / remainingCapacityByDate maps) and returns
+    // just that month's list of available dates.
+    function applyAvailabilityData(data) {
+      var dates = data.availableDates || [];
+      if (data.bookingType) productBookingType = data.bookingType;
+      if (typeof data.minNights === "number") multiDayMinNights = data.minNights;
+      if (typeof data.maxNights === "number") multiDayMaxNights = data.maxNights;
+      if (typeof data.bundleSessionCount === "number") bundleSessionCount = data.bundleSessionCount;
+      if (typeof data.bundleValidityDays === "number") {
+        bundleValidityDays = data.bundleValidityDays;
+        if (!bundleValidityDeadline) {
+          var deadline = new Date(today);
+          deadline.setUTCDate(deadline.getUTCDate() + bundleValidityDays);
+          bundleValidityDeadline = deadline.toISOString().slice(0, 10);
+        }
+      }
+      dates.forEach(function (d) {
+        availableDatesByDay[d] = true;
+      });
+      if (data.remainingCapacityByDate) {
+        Object.keys(data.remainingCapacityByDate).forEach(function (d) {
+          remainingCapacityByDate[d] = data.remainingCapacityByDate[d];
+        });
+      }
+      return dates;
+    }
+
+    // Shows/hides the time-slot pane based on the current booking type —
+    // FULL_DAY and MULTI_DAY never have one, so hiding it frees up the
+    // width for the two-month calendar.
+    function applyLayoutForType() {
+      if (slotsPaneEl) slotsPaneEl.hidden = isTwoMonthType(productBookingType);
+    }
+
+    function loadMonth() {
+      setStatus(calendarEl, strings.loadingAvailability);
+
+      fetchAvailability(viewYear, viewMonth)
         .then(function (data) {
-          availableDates = data.availableDates || [];
-          if (data.bookingType) productBookingType = data.bookingType;
-          if (typeof data.minNights === "number") multiDayMinNights = data.minNights;
-          if (typeof data.maxNights === "number") multiDayMaxNights = data.maxNights;
-          if (typeof data.bundleSessionCount === "number") bundleSessionCount = data.bundleSessionCount;
-          if (typeof data.bundleValidityDays === "number") {
-            bundleValidityDays = data.bundleValidityDays;
-            if (!bundleValidityDeadline) {
-              var deadline = new Date(today);
-              deadline.setUTCDate(deadline.getUTCDate() + bundleValidityDays);
-              bundleValidityDeadline = deadline.toISOString().slice(0, 10);
-            }
+          availableDates = applyAvailabilityData(data);
+          applyLayoutForType();
+
+          if (isTwoMonthType(productBookingType)) {
+            var second = addMonths(viewYear, viewMonth, 1);
+            fetchAvailability(second.year, second.month)
+              .then(function (data2) {
+                secondMonthAvailableDates = applyAvailabilityData(data2);
+                renderCalendar();
+              })
+              .catch(function () {
+                setStatus(calendarEl, strings.availabilityError);
+              });
+          } else {
+            secondMonthAvailableDates = null;
+            renderCalendar();
           }
-          availableDates.forEach(function (d) {
-            availableDatesByDay[d] = true;
-          });
-          renderCalendar();
         })
         .catch(function () {
           setStatus(calendarEl, strings.availabilityError);
@@ -1022,93 +1081,159 @@
       });
     }
 
+    // Shared by both the single-month and two-month calendar layouts.
+    // Uses the accumulated availableDatesByDay map (not just the
+    // currently-loaded month) so it works no matter which month(s) are
+    // on screen.
+    function buildDayButton(dateStr, choosingMultiDayCheckout) {
+      var day = Number(dateStr.slice(8, 10));
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = String(day);
+      btn.className = "booking-widget__day";
+
+      var isCheckoutCandidate =
+        choosingMultiDayCheckout && dateStr > pendingDate;
+      var withinBundleValidity =
+        productBookingType !== "BUNDLE" ||
+        !bundleValidityDeadline ||
+        dateStr <= bundleValidityDeadline;
+      var isClickable =
+        (availableDatesByDay[dateStr] || isCheckoutCandidate) &&
+        withinBundleValidity;
+
+      if (isClickable) {
+        btn.classList.add("booking-widget__day--available");
+        btn.addEventListener("click", function () {
+          if (productBookingType === "MULTI_DAY") {
+            selectMultiDayDate(dateStr);
+          } else {
+            selectDate(dateStr);
+          }
+        });
+      } else {
+        btn.disabled = true;
+      }
+
+      if (productBookingType === "MULTI_DAY") {
+        if (dateStr === pendingDate || dateStr === pendingEndDate) {
+          btn.classList.add("booking-widget__day--selected");
+        } else if (
+          pendingDate &&
+          pendingEndDate &&
+          dateStr > pendingDate &&
+          dateStr < pendingEndDate
+        ) {
+          btn.classList.add("booking-widget__day--in-range");
+        }
+      } else if (dateStr === pendingDate) {
+        btn.classList.add("booking-widget__day--selected");
+      }
+
+      return btn;
+    }
+
+    function buildGrid(year, month, choosingMultiDayCheckout) {
+      var grid = document.createElement("div");
+      grid.className = "booking-widget__grid";
+
+      var daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      var firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+
+      for (var i = 0; i < firstWeekday; i++) {
+        grid.appendChild(document.createElement("span"));
+      }
+      for (var day = 1; day <= daysInMonth; day++) {
+        var dateStr = year + "-" + pad(month) + "-" + pad(day);
+        grid.appendChild(buildDayButton(dateStr, choosingMultiDayCheckout));
+      }
+
+      return grid;
+    }
+
+    function buildWeekdaysRow() {
+      var row = document.createElement("div");
+      row.className = "booking-widget__weekdays booking-widget__weekdays--pane";
+      WEEKDAY_LABELS.forEach(function (label) {
+        var span = document.createElement("span");
+        span.textContent = label;
+        row.appendChild(span);
+      });
+      return row;
+    }
+
+    // One pane of the two-month (FULL_DAY / MULTI_DAY) calendar: its own
+    // month heading, weekday row, and day grid (or a "no availability"
+    // note in place of the grid).
+    function buildMonthPane(year, month, choosingMultiDayCheckout, showNoAvailability) {
+      var pane = document.createElement("div");
+      pane.className = "booking-widget__month-pane";
+
+      var heading = document.createElement("div");
+      heading.className = "booking-widget__month-pane-label";
+      heading.textContent = monthFormatter.format(
+        new Date(Date.UTC(year, month - 1, 1)),
+      );
+      pane.appendChild(heading);
+      pane.appendChild(buildWeekdaysRow());
+
+      if (showNoAvailability) {
+        var status = document.createElement("p");
+        status.className = "booking-widget__status";
+        status.textContent = strings.noAvailability;
+        pane.appendChild(status);
+      } else {
+        pane.appendChild(buildGrid(year, month, choosingMultiDayCheckout));
+      }
+
+      return pane;
+    }
+
     function renderCalendar() {
       var choosingMultiDayCheckout =
         productBookingType === "MULTI_DAY" && pendingDate && !pendingEndDate;
 
-      // Same-day turnover: a date can be perfectly good as a CHECKOUT
-      // even if it's fully booked as a NIGHT (someone else checks in
-      // that same day after the current guest leaves in the morning).
-      // So while choosing checkout, don't gate on the night-level
-      // availableDates list at all — the actual per-night check still
-      // happens for every night strictly between check-in and
-      // check-out inside selectMultiDayDate.
+      calendarEl.innerHTML = "";
+
+      if (isTwoMonthType(productBookingType) && secondMonthAvailableDates !== null) {
+        // No time-slot step for these two types, so show this month and
+        // next month side by side instead of one month with prev/next —
+        // there's room for it, and it saves a round trip when the
+        // shopper's date is in the next month.
+        monthLabelEl.hidden = true;
+        weekdaysEl.hidden = true;
+        calendarEl.classList.add("booking-widget__calendar--dual");
+
+        var second = addMonths(viewYear, viewMonth, 1);
+        // Same-day turnover (MULTI_DAY): while choosing checkout, don't
+        // show "no availability" — a checkout-only date can still be
+        // clickable even in an otherwise fully-booked month.
+        var pane1NoAvail = availableDates.length === 0 && !choosingMultiDayCheckout;
+        var pane2NoAvail =
+          secondMonthAvailableDates.length === 0 && !choosingMultiDayCheckout;
+
+        calendarEl.appendChild(
+          buildMonthPane(viewYear, viewMonth, choosingMultiDayCheckout, pane1NoAvail),
+        );
+        calendarEl.appendChild(
+          buildMonthPane(second.year, second.month, choosingMultiDayCheckout, pane2NoAvail),
+        );
+        return;
+      }
+
+      monthLabelEl.hidden = false;
+      weekdaysEl.hidden = false;
+      calendarEl.classList.remove("booking-widget__calendar--dual");
+      monthLabelEl.textContent = monthFormatter.format(
+        new Date(Date.UTC(viewYear, viewMonth - 1, 1)),
+      );
+
       if (availableDates.length === 0 && !choosingMultiDayCheckout) {
         setStatus(calendarEl, strings.noAvailability);
         return;
       }
 
-      var availableSet = {};
-      availableDates.forEach(function (d) {
-        availableSet[d] = true;
-      });
-
-      var daysInMonth = new Date(Date.UTC(viewYear, viewMonth, 0)).getUTCDate();
-      var firstWeekday = new Date(
-        Date.UTC(viewYear, viewMonth - 1, 1),
-      ).getUTCDay();
-
-      calendarEl.innerHTML = "";
-      var grid = document.createElement("div");
-      grid.className = "booking-widget__grid";
-
-      for (var i = 0; i < firstWeekday; i++) {
-        grid.appendChild(document.createElement("span"));
-      }
-
-      for (var day = 1; day <= daysInMonth; day++) {
-        var dateStr = viewYear + "-" + pad(viewMonth) + "-" + pad(day);
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = String(day);
-        btn.className = "booking-widget__day";
-
-        var isCheckoutCandidate =
-          choosingMultiDayCheckout && dateStr > pendingDate;
-        var withinBundleValidity =
-          productBookingType !== "BUNDLE" ||
-          !bundleValidityDeadline ||
-          dateStr <= bundleValidityDeadline;
-        var isClickable =
-          (availableSet[dateStr] || isCheckoutCandidate) && withinBundleValidity;
-
-        if (isClickable) {
-          btn.classList.add("booking-widget__day--available");
-          btn.addEventListener(
-            "click",
-            (function (ds) {
-              return function () {
-                if (productBookingType === "MULTI_DAY") {
-                  selectMultiDayDate(ds);
-                } else {
-                  selectDate(ds);
-                }
-              };
-            })(dateStr),
-          );
-        } else {
-          btn.disabled = true;
-        }
-
-        if (productBookingType === "MULTI_DAY") {
-          if (dateStr === pendingDate || dateStr === pendingEndDate) {
-            btn.classList.add("booking-widget__day--selected");
-          } else if (
-            pendingDate &&
-            pendingEndDate &&
-            dateStr > pendingDate &&
-            dateStr < pendingEndDate
-          ) {
-            btn.classList.add("booking-widget__day--in-range");
-          }
-        } else if (dateStr === pendingDate) {
-          btn.classList.add("booking-widget__day--selected");
-        }
-
-        grid.appendChild(btn);
-      }
-
-      calendarEl.appendChild(grid);
+      calendarEl.appendChild(buildGrid(viewYear, viewMonth, choosingMultiDayCheckout));
     }
 
     // MULTI_DAY only. First click picks check-in; a second click on a
@@ -1171,6 +1296,27 @@
       durationEl.textContent = format(strings.nightsSelected, { count: nights });
     }
 
+    // The lowest remaining capacity across every night from checkin
+    // (inclusive) to checkout (exclusive) — e.g. if 5 rooms are free on
+    // the first night but only 2 on the second, only 2 rooms can be
+    // booked for the whole stay. Returns null if no capacity data is
+    // available for any night in the range (falls back to the generic
+    // default elsewhere).
+    function minRemainingCapacityForRange(checkinStr, checkoutStr) {
+      var min = null;
+      var cursor = checkinStr;
+      while (cursor < checkoutStr) {
+        var cap = remainingCapacityByDate[cursor];
+        if (typeof cap === "number" && (min === null || cap < min)) {
+          min = cap;
+        }
+        var d = new Date(cursor + "T00:00:00.000Z");
+        d.setUTCDate(d.getUTCDate() + 1);
+        cursor = d.toISOString().slice(0, 10);
+      }
+      return min;
+    }
+
     // A MULTI_DAY booking has no time-of-day component — represented as
     // a slot object shaped like a real time slot (so review/cart code
     // needs no special-casing), plus an explicit endDate the cart
@@ -1181,7 +1327,7 @@
         end: "00:00",
         startsAt: checkinStr + "T00:00:00.000Z",
         endDate: checkoutStr,
-        remainingCapacity: null,
+        remainingCapacity: minRemainingCapacityForRange(checkinStr, checkoutStr),
         available: true,
       };
     }
@@ -1192,11 +1338,12 @@
     // (review summary, cart line item properties, confirmedSlots) needs
     // no special-casing at all.
     function buildFullDaySlot(dateStr) {
+      var cap = remainingCapacityByDate[dateStr];
       return {
         start: "00:00",
         end: "23:59",
         startsAt: dateStr + "T00:00:00.000Z",
-        remainingCapacity: null,
+        remainingCapacity: typeof cap === "number" ? cap : null,
         available: true,
       };
     }
@@ -1342,7 +1489,22 @@
       if (quantityDecreaseBtn) quantityDecreaseBtn.disabled = pendingQuantity <= 1;
       if (quantityIncreaseBtn) quantityIncreaseBtn.disabled = pendingQuantity >= max;
       if (quantityNoteEl) {
-        if (max <= 5) {
+        // FULL_DAY / MULTI_DAY: always show how many rooms/units are
+        // available for the chosen date(s) — like a room booking, the
+        // shopper needs this to decide how many to request, not just a
+        // low-stock warning.
+        var showsCapacityAlways =
+          isTwoMonthType(productBookingType) &&
+          pendingSlot &&
+          typeof pendingSlot.remainingCapacity === "number";
+
+        if (showsCapacityAlways) {
+          quantityNoteEl.textContent =
+            max === 1
+              ? strings.unitAvailable
+              : format(strings.unitsAvailable, { count: max });
+          quantityNoteEl.hidden = false;
+        } else if (max <= 5) {
           quantityNoteEl.textContent = format(strings.quantityMaxReached, {
             count: max,
           });
