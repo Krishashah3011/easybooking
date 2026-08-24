@@ -827,6 +827,7 @@ export type BookingWithProductTitle = Booking & {
 export type ListBookingsFilters = {
   status?: "CONFIRMED" | "OVERBOOKED" | "CANCELLED" | "RESCHEDULED";
   bookableProductId?: string;
+  bookingType?: BookingType;
   search?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -845,6 +846,9 @@ export async function listBookings(
         gte: filters.dateFrom || undefined,
         lte: filters.dateTo || undefined,
       },
+      ...(filters.bookingType
+        ? { bookableProduct: { bookingType: filters.bookingType } }
+        : {}),
       ...(filters.search
         ? {
             OR: [

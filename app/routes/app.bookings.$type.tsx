@@ -4,6 +4,7 @@ import type {
 } from "react-router";
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import type { BookingType } from "@prisma/client";
 import { authenticate } from "../shopify.server";
 import { listBookableProducts } from "../models/bookableProduct.server";
 import { listCustomFields } from "../models/customBookingField.server";
@@ -11,12 +12,28 @@ import { listBookings, type ListBookingsFilters } from "../models/booking.server
 import { bookingListAction } from "../utils/bookingListAction.server";
 import { BookingsListPage } from "../components/BookingsList";
 
-// Combined, all-booking-types view. It's no longer one of the Bookings
-// subtabs (those are New Booking + one tab per booking type), but it stays
-// reachable directly at /app/bookings so existing deep links keep working —
-// e.g. the dashboard's "View all bookings" and "Review overbooked bookings"
-// links, which intentionally span every type.
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+// URL slug -> BookingType, and the reverse for headings/messages. Keep the
+// slugs in sync with the tab list in app.bookings.tsx.
+const TYPE_BY_SLUG: Record<string, BookingType> = {
+  slot: "SLOT",
+  "full-day": "FULL_DAY",
+  "multi-day": "MULTI_DAY",
+  bundle: "BUNDLE",
+};
+
+const HEADING_BY_TYPE: Record<BookingType, string> = {
+  SLOT: "Slot Bookings",
+  FULL_DAY: "Full-Day Bookings",
+  MULTI_DAY: "Multi-Day Bookings",
+  BUNDLE: "Bundle Bookings",
+};
+
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  const bookingType = TYPE_BY_SLUG[params.type ?? ""];
+  if (!bookingType) {
+    throw new Response("Not found", { status: 404 });
+  }
+
   const { session } = await authenticate.admin(request);
   const url = new URL(request.url);
 
@@ -32,6 +49,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     search,
     dateFrom,
     dateTo,
+    bookingType,
   };
 
   const [bookings, products, customFields] = await Promise.all([
@@ -41,8 +59,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   ]);
 
   return {
+    heading: HEADING_BY_TYPE[bookingType],
     bookings,
-    products: products.map((p) => ({ id: p.id, title: p.productTitle })),
+    // Only offer products of this booking type in the product filter —
+    // picking a product of another type would always return zero results.
+    products: products
+      .filter((p) => p.bookingType === bookingType)
+      .map((p) => ({ id: p.id, title: p.productTitle })),
     customFieldLabels: Object.fromEntries(
       customFields.map((f) => [f.fieldKey, f.label]),
     ) as Record<string, string>,
@@ -58,17 +81,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = bookingListAction;
 
-export default function BookingManagementPage() {
-  const { bookings, products, customFieldLabels, filters } =
+export default function TypeBookingsPage() {
+  const { heading, bookings, products, customFieldLabels, filters } =
     useLoaderData<typeof loader>();
 
   return (
     <BookingsListPage
-      heading="All Bookings"
+      heading={heading}
       bookings={bookings}
       products={products}
       customFieldLabels={customFieldLabels}
       filters={filters}
+      emptyMessage={`No ${heading.toLowerCase()} match these filters.`}
     />
   );
 }
