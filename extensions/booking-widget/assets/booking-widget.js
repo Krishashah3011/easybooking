@@ -420,6 +420,23 @@
         locationInput.value = entry.location;
       }
 
+      if (entry.locationId) {
+        // Underscore prefix hides this from the customer's cart/order
+        // confirmation and the Shopify admin order timeline — it's only
+        // there so the order webhook can look up the exact
+        // BookingLocation row (and its timezone) reliably.
+        var locationIdInput = form.querySelector(
+          'input[name="properties[_Location Id]"]',
+        );
+        if (!locationIdInput) {
+          locationIdInput = document.createElement("input");
+          locationIdInput.type = "hidden";
+          locationIdInput.name = "properties[_Location Id]";
+          form.appendChild(locationIdInput);
+        }
+        locationIdInput.value = entry.locationId;
+      }
+
       var quantityInput = form.querySelector('input[name="quantity"]');
       if (!quantityInput) {
         quantityInput = document.createElement("input");
@@ -469,6 +486,9 @@
       }
       if (entry.location) {
         fd.set("properties[Location]", entry.location);
+      }
+      if (entry.locationId) {
+        fd.set("properties[_Location Id]", entry.locationId);
       }
       customFields.forEach(function (field) {
         var value = customFieldValues[field.fieldKey];
@@ -1828,6 +1848,7 @@
           date: firstSession.date,
           slot: combinedSlot,
           location: pendingLocation ? pendingLocation.name : null,
+          locationId: pendingLocation ? pendingLocation.id : null,
           quantity: 1,
         });
         updateSelectionDisplay();
@@ -1852,6 +1873,7 @@
           date: date,
           slot: slot,
           location: pendingLocation ? pendingLocation.name : null,
+          locationId: pendingLocation ? pendingLocation.id : null,
           quantity: quantity,
         });
         updateSelectionDisplay();

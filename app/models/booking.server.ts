@@ -15,6 +15,7 @@ import {
   rescheduledEmail,
 } from "./emailTemplates.server";
 import { listCustomFields } from "./customBookingField.server";
+import { getLocationById } from "./bookingLocation.server";
 import { formatDateDisplay } from "../utils/format";
 import { getDisplayStatus } from "../utils/bookingStatus";
 
@@ -45,6 +46,13 @@ export type OrderPayload = {
 const BOOKING_DATE_PROPERTY = "Booking Date";
 const BOOKING_TIME_PROPERTY = "Booking Time";
 const BOOKING_LOCATION_PROPERTY = "Location";
+// Underscore-prefixed line item properties are hidden from the customer's
+// cart/order confirmation and the Shopify admin order timeline — this one
+// exists purely so the order webhook can look up the exact BookingLocation
+// row (and therefore its timezone) instead of guessing from the
+// display-name string in BOOKING_LOCATION_PROPERTY, which isn't a stable
+// identifier (locations can be renamed).
+const BOOKING_LOCATION_ID_PROPERTY = "_Location Id";
 const BOOKING_CHECKOUT_DATE_PROPERTY = "Checkout Date";
 
 function toProductGid(productId: number | string): string {
@@ -70,6 +78,36 @@ export function extractBookingLocation(lineItem: OrderLineItem): string | null {
     (p) => p.name === BOOKING_LOCATION_PROPERTY,
   )?.value;
   return location || null;
+}
+
+export function extractBookingLocationId(lineItem: OrderLineItem): string | null {
+  const properties = lineItem.properties ?? [];
+  const locationId = properties.find(
+    (p) => p.name === BOOKING_LOCATION_ID_PROPERTY,
+  )?.value;
+  return locationId || null;
+}
+
+// Resolves the real BookingLocation record (and therefore its timezone)
+// for a line item, preferring the hidden id property and falling back to
+// nothing rather than guessing by name. Returns null — never throws — so a
+// missing/stale/deleted location never blocks the order from creating a
+// booking; it just means that booking's times fall back to naive UTC and
+// gets logged loudly so it's easy to spot during rollout.
+async function resolveBookingLocation(
+  shop: string,
+  lineItem: OrderLineItem,
+): Promise<{ id: string; name: string; timezone: string } | null> {
+  const locationId = extractBookingLocationId(lineItem);
+  if (!locationId) return null;
+  const location = await getLocationById(shop, locationId);
+  if (!location) {
+    console.warn(
+      `Line item ${lineItem.id}: Location Id "${locationId}" from cart properties doesn't match any BookingLocation for ${shop} (deleted, or belongs to another shop?) — falling back to UTC for this booking's times.`,
+    );
+    return null;
+  }
+  return { id: location.id, name: location.name, timezone: location.timezone };
 }
 
 // A BUNDLE line item carries its first session under the normal
@@ -429,6 +467,13 @@ export async function createBookingsFromOrder(
       bookableProduct,
     );
 
+    const resolvedLocation = await resolveBookingLocation(shop, lineItem);
+    if (!resolvedLocation) {
+      console.warn(
+        `Order ${order.id} line item ${lineItem.id}: no valid location resolved — this booking's date/time will be computed in raw UTC, not a real business timezone.`,
+      );
+    }
+
     const customFieldResponses = extractCustomFieldResponses(
       lineItem,
       customFields,
@@ -475,6 +520,9 @@ export async function createBookingsFromOrder(
           effectiveSettings,
           session.date,
           new Set(),
+          new Date(),
+          new Map(),
+          resolvedLocation?.timezone ?? null,
         );
         const matchedSlot = slotsForDate.find((s) => s.start === session.time);
         const sessionSlotStartsAt = matchedSlot
@@ -513,7 +561,8 @@ export async function createBookingsFromOrder(
             customerEmail: customerInfo.customerEmail,
             customerPhone: customerInfo.customerPhone,
             isGuest: customerInfo.isGuest,
-            location: extractBookingLocation(lineItem),
+            location: extractBookingLocation(lineItem) ?? resolvedLocation?.name ?? null,
+            locationId: resolvedLocation?.id ?? null,
             date: session.date,
             slotStart: session.time,
             slotEnd: sessionSlotEnd,
@@ -580,6 +629,9 @@ export async function createBookingsFromOrder(
         effectiveSettings,
         selection.date,
         new Set(),
+        new Date(),
+        new Map(),
+        resolvedLocation?.timezone ?? null,
       );
       const matchedSlot = slotsForDate.find((s) => s.start === selection.time);
       slotStartsAt = matchedSlot
@@ -611,7 +663,8 @@ export async function createBookingsFromOrder(
         customerEmail: customerInfo.customerEmail,
         customerPhone: customerInfo.customerPhone,
         isGuest: customerInfo.isGuest,
-        location: extractBookingLocation(lineItem),
+        location: extractBookingLocation(lineItem) ?? resolvedLocation?.name ?? null,
+        locationId: resolvedLocation?.id ?? null,
         date: selection.date,
         endDate: bookingEndDateField,
         slotStart: selection.time,

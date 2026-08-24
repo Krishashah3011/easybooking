@@ -52,6 +52,7 @@ model BookingLocation {
   timezone String @default("UTC")
   isEnabled Boolean @default(true)
   sortOrder Int @default(0)
+  bookings  Booking[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@unique([shop, name])
@@ -156,7 +157,19 @@ model Booking {
   customerEmail String?
   customerPhone String?
   isGuest       Boolean @default(true)
+  // Cached display label — kept so existing list/detail views that just
+  // read this string on its own keep working. It's a snapshot of the
+  // location's name at booking time, not the source of truth.
   location     String?
+  // Source of truth for which BookingLocation (and therefore which
+  // timezone) this booking was made under. Nullable because bookings
+  // created before this column existed have no location on record, and
+  // because a location can later be deleted (SetNull) without deleting
+  // its booking history. Every *new* booking going forward is required,
+  // at the application level, to set this — see the booking-creation
+  // and reschedule code.
+  locationId   String?
+  bookingLocation BookingLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   date         String
   endDate      String?
   slotStart    String
@@ -176,6 +189,7 @@ model Booking {
   @@index([orderId])
   @@index([groupId])
   @@index([status, reminderSentAt, slotStartsAt])
+  @@index([locationId])
 }
 
 model SmtpSettings {
