@@ -103,5 +103,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     minNights: context.minNights,
     maxNights: context.maxNights,
     bundleSessionCount: context.bundleSessionCount,
+    bundleValidityDays: context.bundleValidityDays,
   });
 };

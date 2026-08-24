@@ -9,7 +9,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
-import { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "../utils/bookingTypes";
+import { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "../models/bookingTypes";
 import { getBookingSettings } from "../models/bookingSettings.server";
 import {
   ensureBookableProduct,
@@ -425,6 +425,30 @@ export default function BookableProductPage() {
             }
           ></s-number-field>
         </s-stack>
+      </s-section>
+      )}
+
+      {values.bookingType === "FULL_DAY" && (
+      <s-section heading="Capacity">
+        <s-number-field
+          label="Max bookings per day"
+          placeholder={String(shopDefaults.maxBookingsPerSlot)}
+          details="How many units of this product can be booked for the same day (e.g. number of identical venues/rooms). Blank = use shop default"
+          value={
+            values.maxBookingsPerSlot !== null
+              ? String(values.maxBookingsPerSlot)
+              : ""
+          }
+          min={1}
+          step={1}
+          error={errors.maxBookingsPerSlot}
+          onChange={(e: FieldChangeEvent) =>
+            setField(
+              "maxBookingsPerSlot",
+              e.currentTarget.value === "" ? null : Number(e.currentTarget.value),
+            )
+          }
+        ></s-number-field>
       </s-section>
       )}
 

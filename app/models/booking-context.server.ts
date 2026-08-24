@@ -15,6 +15,7 @@ export type BookingContext = {
   minNights: number | null;
   maxNights: number | null;
   bundleSessionCount: number | null;
+  bundleValidityDays: number | null;
   effectiveSettings: EffectiveBookingSettings;
   blackoutDates: Set<string>;
 };
@@ -48,6 +49,7 @@ export async function resolveBookingContext(
     minNights: bookableProduct.minNights,
     maxNights: bookableProduct.maxNights,
     bundleSessionCount: bookableProduct.bundleSessionCount,
+    bundleValidityDays: bookableProduct.bundleValidityDays,
     effectiveSettings: resolveEffectiveSettings(shopSettings, bookableProduct),
     blackoutDates,
   };

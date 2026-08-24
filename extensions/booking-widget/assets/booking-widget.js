@@ -50,6 +50,7 @@
     multiDayMinNights: "Minimum stay is {count} nights.",
     multiDayMaxNights: "Maximum stay is {count} nights.",
     sessionProgress: "Session {current} of {total} — pick a date and time",
+    sessionProgressWithDeadline: "Session {current} of {total} — pick a date and time (by {deadline})",
     sessionConfirmed: "Session {number}",
     bundleSelected: "Bundle: {count} sessions",
   };
@@ -218,6 +219,11 @@
     // whole pack is added to cart (or the modal is reopened fresh).
     var bundleSessions = [];
     var bundleSessionCount = null;
+    var bundleValidityDays = null;
+    // Computed once bundleValidityDays is known: the last date (YYYY-MM-DD)
+    // a session can be scheduled for, counting from today (the purchase
+    // date), not from whichever session is currently being picked.
+    var bundleValidityDeadline = null;
 
     // Locations fetched once from the app. If a shop hasn't configured
     // any, the location step is skipped entirely and booking behaves
@@ -984,6 +990,14 @@
           if (typeof data.minNights === "number") multiDayMinNights = data.minNights;
           if (typeof data.maxNights === "number") multiDayMaxNights = data.maxNights;
           if (typeof data.bundleSessionCount === "number") bundleSessionCount = data.bundleSessionCount;
+          if (typeof data.bundleValidityDays === "number") {
+            bundleValidityDays = data.bundleValidityDays;
+            if (!bundleValidityDeadline) {
+              var deadline = new Date(today);
+              deadline.setUTCDate(deadline.getUTCDate() + bundleValidityDays);
+              bundleValidityDeadline = deadline.toISOString().slice(0, 10);
+            }
+          }
           availableDates.forEach(function (d) {
             availableDatesByDay[d] = true;
           });
@@ -992,6 +1006,20 @@
         .catch(function () {
           setStatus(calendarEl, strings.availabilityError);
         });
+    }
+
+    function sessionProgressText() {
+      if (bundleValidityDeadline) {
+        return format(strings.sessionProgressWithDeadline, {
+          current: bundleSessions.length + 1,
+          total: bundleSessionCount,
+          deadline: formatDateDisplay(bundleValidityDeadline),
+        });
+      }
+      return format(strings.sessionProgress, {
+        current: bundleSessions.length + 1,
+        total: bundleSessionCount,
+      });
     }
 
     function renderCalendar() {
@@ -1037,7 +1065,12 @@
 
         var isCheckoutCandidate =
           choosingMultiDayCheckout && dateStr > pendingDate;
-        var isClickable = availableSet[dateStr] || isCheckoutCandidate;
+        var withinBundleValidity =
+          productBookingType !== "BUNDLE" ||
+          !bundleValidityDeadline ||
+          dateStr <= bundleValidityDeadline;
+        var isClickable =
+          (availableSet[dateStr] || isCheckoutCandidate) && withinBundleValidity;
 
         if (isClickable) {
           btn.classList.add("booking-widget__day--available");
@@ -1221,10 +1254,7 @@
 
       durationEl.hidden = false;
       if (productBookingType === "BUNDLE" && bundleSessionCount) {
-        durationEl.textContent = format(strings.sessionProgress, {
-          current: bundleSessions.length + 1,
-          total: bundleSessionCount,
-        });
+        durationEl.textContent = sessionProgressText();
       } else {
         durationEl.textContent = format(strings.durationMinutes, {
           count: slotDurationMinutes(currentSlots[0]),
@@ -1616,10 +1646,7 @@
             if (slotsPaneEl) slotsPaneEl.hidden = false;
             setStatus(slotListEl, strings.noTimes);
             durationEl.hidden = false;
-            durationEl.textContent = format(strings.sessionProgress, {
-              current: bundleSessions.length + 1,
-              total: totalSessions,
-            });
+            durationEl.textContent = sessionProgressText();
             return;
           }
 
