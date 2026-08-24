@@ -32,6 +32,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     search,
     dateFrom,
     dateTo,
+    // Keep this combined view focused on what's still pending — completed
+    // bookings live on their own page at /app/bookings/completed.
+    completed: false,
   };
 
   const [bookings, products, customFields] = await Promise.all([

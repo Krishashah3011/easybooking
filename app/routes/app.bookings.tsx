@@ -12,6 +12,7 @@ export default function BookingsLayout() {
           { to: "/app/bookings/full-day", label: "Full-Day Bookings" },
           { to: "/app/bookings/multi-day", label: "Multi-Day Bookings" },
           { to: "/app/bookings/bundle", label: "Bundle Bookings" },
+          { to: "/app/bookings/completed", label: "Completed Bookings" },
         ]}
       />
       <Outlet />

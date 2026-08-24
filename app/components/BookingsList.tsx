@@ -3,9 +3,11 @@ import { useFetcher } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import type { BookingWithProductTitle } from "../models/booking.server";
 import type { TimeSlot } from "../models/slotAvailability.server";
+import { BOOKING_TYPE_LABELS } from "../models/bookingTypes";
 import {
   bookingSourceLabel,
   formatBookingWhenDisplay,
+  formatDateDisplay,
   formatDateTimeDisplay,
   formatTimeRangeDisplay,
 } from "../utils/format";
@@ -154,12 +156,14 @@ function BookingLine({
     );
   };
 
+  const isCompleted = booking.displayStatus === "COMPLETED";
+
   const badgeTone =
-    booking.status === "CONFIRMED"
+    booking.displayStatus === "CONFIRMED"
       ? "success"
-      : booking.status === "RESCHEDULED"
+      : booking.displayStatus === "RESCHEDULED"
         ? "info"
-        : booking.status === "OVERBOOKED"
+        : booking.displayStatus === "OVERBOOKED"
           ? "critical"
           : "neutral";
 
@@ -185,9 +189,12 @@ function BookingLine({
             <s-text tone="subdued">{booking.productTitle}</s-text>
           </s-stack>
 
-          <s-text tone="subdued">
-            {formatBookingWhenDisplay(booking)}
-          </s-text>
+          <s-stack direction="inline" alignItems="center" gap="small">
+            <s-text tone="subdued">
+              {formatBookingWhenDisplay(booking)}
+            </s-text>
+            {isCompleted && <s-badge tone="neutral">Completed</s-badge>}
+          </s-stack>
         </s-stack>
       </div>
 
@@ -265,6 +272,20 @@ function BookingLine({
               </s-stack>
             )}
 
+            <DetailRow label="Type">
+              <s-text>{BOOKING_TYPE_LABELS[booking.bookingType]}</s-text>
+            </DetailRow>
+
+            <DetailRow label="Date">
+              <s-text>
+                {booking.bookingType === "MULTI_DAY"
+                  ? `${formatDateDisplay(booking.date)} \u2192 ${
+                      booking.endDate ? formatDateDisplay(booking.endDate) : "—"
+                    }`
+                  : formatDateDisplay(booking.date)}
+              </s-text>
+            </DetailRow>
+
             {booking.bookingType === "FULL_DAY" && (
               <DetailRow label="Booking">
                 <s-text>Whole day</s-text>
@@ -299,10 +320,10 @@ function BookingLine({
             </DetailRow>
 
             <DetailRow label="Status">
-              <s-badge tone={badgeTone}>{booking.status}</s-badge>
+              <s-badge tone={badgeTone}>{booking.displayStatus}</s-badge>
             </DetailRow>
 
-            {booking.status !== "CANCELLED" && (
+            {booking.status !== "CANCELLED" && !isCompleted && (
               <s-stack
                 direction="inline"
                 justifyContent="end"
@@ -393,15 +414,15 @@ function GroupCard({
   const productTitles = new Set(group.bookings.map((b) => b.productTitle));
   const productLabel =
     productTitles.size > 1 ? "Multiple products" : first.productTitle;
-  const statuses = new Set(group.bookings.map((b) => b.status));
+  const statuses = new Set(group.bookings.map((b) => b.displayStatus));
   const badgeTone =
     statuses.size > 1
       ? "neutral"
-      : first.status === "CONFIRMED"
+      : first.displayStatus === "CONFIRMED"
         ? "success"
-        : first.status === "RESCHEDULED"
+        : first.displayStatus === "RESCHEDULED"
           ? "info"
-          : first.status === "OVERBOOKED"
+          : first.displayStatus === "OVERBOOKED"
             ? "critical"
             : "neutral";
 
@@ -429,7 +450,7 @@ function GroupCard({
             {statuses.size > 1 ? (
               <s-badge tone={badgeTone}>Mixed</s-badge>
             ) : (
-              <s-badge tone={badgeTone}>{first.status}</s-badge>
+              <s-badge tone={badgeTone}>{first.displayStatus}</s-badge>
             )}
           </s-stack>
         </s-stack>

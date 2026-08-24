@@ -16,6 +16,7 @@ import {
 } from "./emailTemplates.server";
 import { listCustomFields } from "./customBookingField.server";
 import { formatDateDisplay } from "../utils/format";
+import { getDisplayStatus } from "../utils/bookingStatus";
 
 const ACTIVE_BOOKING_STATUSES = ["CONFIRMED", "RESCHEDULED"] as const;
 
@@ -822,6 +823,10 @@ export async function listBookingsForProduct(
 export type BookingWithProductTitle = Booking & {
   productTitle: string;
   bookingType: BookingType;
+  // Derived, not stored: the stored `status`, except an active booking
+  // (CONFIRMED/RESCHEDULED/OVERBOOKED) whose date/time has fully passed
+  // shows as "COMPLETED" instead. See utils/bookingStatus.ts.
+  displayStatus: string;
 };
 
 export type ListBookingsFilters = {
@@ -831,6 +836,9 @@ export type ListBookingsFilters = {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
+  // true = only completed bookings; false = exclude completed bookings;
+  // undefined = don't filter on completion at all.
+  completed?: boolean;
 };
 
 export async function listBookings(
@@ -871,16 +879,27 @@ export async function listBookings(
     take: 100,
   });
 
-  return bookings.map(
+  const withDisplayStatus = bookings.map(
     ({
       bookableProduct,
       ...booking
-    }: Booking & { bookableProduct: { productTitle: string; bookingType: BookingType } }) => ({
-      ...booking,
-      productTitle: bookableProduct.productTitle,
-      bookingType: bookableProduct.bookingType,
-    }),
+    }: Booking & { bookableProduct: { productTitle: string; bookingType: BookingType } }) => {
+      const withType = {
+        ...booking,
+        productTitle: bookableProduct.productTitle,
+        bookingType: bookableProduct.bookingType,
+      };
+      return { ...withType, displayStatus: getDisplayStatus(withType) };
+    },
   );
+
+  if (filters.completed === true) {
+    return withDisplayStatus.filter((b) => b.displayStatus === "COMPLETED");
+  }
+  if (filters.completed === false) {
+    return withDisplayStatus.filter((b) => b.displayStatus !== "COMPLETED");
+  }
+  return withDisplayStatus;
 }
 
 export async function getUpcomingBookings(
@@ -902,11 +921,14 @@ export async function getUpcomingBookings(
     ({
       bookableProduct,
       ...booking
-    }: Booking & { bookableProduct: { productTitle: string; bookingType: BookingType } }) => ({
-      ...booking,
-      productTitle: bookableProduct.productTitle,
-      bookingType: bookableProduct.bookingType,
-    }),
+    }: Booking & { bookableProduct: { productTitle: string; bookingType: BookingType } }) => {
+      const withType = {
+        ...booking,
+        productTitle: bookableProduct.productTitle,
+        bookingType: bookableProduct.bookingType,
+      };
+      return { ...withType, displayStatus: getDisplayStatus(withType) };
+    },
   );
 }
 
