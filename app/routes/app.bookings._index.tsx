@@ -253,10 +253,10 @@ function BookingLine({
           : "neutral";
 
   return (
-    <s-box padding="base" borderWidth="base" borderRadius="base">
+    <s-box borderWidth="base" borderRadius="base">
       <div
         onClick={() => setShowDetails((v) => !v)}
-        style={{ cursor: "pointer" }}
+        style={{ cursor: "pointer", padding: "1rem" }}
       >
         <s-stack
           direction="inline"
@@ -283,7 +283,8 @@ function BookingLine({
       {showDetails && (
         <div
           style={{
-            marginTop: "0.75rem",
+            padding: "0 1rem 1rem",
+            marginTop: "-0.25rem",
             paddingTop: "0.75rem",
             borderTop: "1px solid #e1e1e1",
           }}
@@ -391,7 +392,12 @@ function BookingLine({
             </DetailRow>
 
             {booking.status !== "CANCELLED" && (
-              <s-stack direction="inline" alignItems="center" gap="small">
+              <s-stack
+                direction="inline"
+                justifyContent="end"
+                alignItems="center"
+                gap="small"
+              >
                 {isRescheduling ? (
                   <s-button
                     variant="tertiary"
@@ -476,7 +482,6 @@ function GroupCard({
   const productTitles = new Set(group.bookings.map((b) => b.productTitle));
   const productLabel =
     productTitles.size > 1 ? "Multiple products" : first.productTitle;
-  const groupLabel = first.orderName ? `Order ${first.orderName}` : null;
   const statuses = new Set(group.bookings.map((b) => b.status));
   const badgeTone =
     statuses.size > 1
@@ -490,8 +495,8 @@ function GroupCard({
             : "neutral";
 
   return (
-    <s-box padding="base" borderWidth="base" borderRadius="base">
-      <div onClick={onToggle} style={{ cursor: "pointer" }}>
+    <s-box borderWidth="base" borderRadius="base">
+      <div onClick={onToggle} style={{ cursor: "pointer", padding: "1rem" }}>
         <s-stack
           direction="inline"
           justifyContent="space-between"
@@ -509,7 +514,6 @@ function GroupCard({
           <s-stack direction="inline" alignItems="center" gap="small">
             <s-text tone="subdued">
               {group.bookings.length} slots
-              {groupLabel ? ` · ${groupLabel}` : ""}
             </s-text>
             {statuses.size > 1 ? (
               <s-badge tone={badgeTone}>Mixed</s-badge>
@@ -523,7 +527,8 @@ function GroupCard({
       {isExpanded && (
         <div
           style={{
-            marginTop: "0.75rem",
+            padding: "0 1rem 1rem",
+            marginTop: "-0.25rem",
             paddingTop: "0.75rem",
             borderTop: "1px solid #e1e1e1",
           }}
