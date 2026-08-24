@@ -31,6 +31,7 @@ export type OrderPayload = {
   name?: string;
   email?: string | null;
   phone?: string | null;
+  created_at?: string | null;
   customer?: {
     first_name?: string | null;
     last_name?: string | null;
@@ -451,6 +452,21 @@ export async function createBookingsFromOrder(
         continue;
       }
 
+      // Same check the storefront widget already enforces on the
+      // calendar — re-verified here since the widget's restriction is
+      // client-side and shouldn't be the only thing standing between a
+      // session date and the database. Sessions past the deadline are
+      // still recorded (so nothing silently vanishes) but flagged
+      // OVERBOOKED, the same status used for capacity conflicts, so the
+      // merchant sees them for review in the bookings list.
+      let bundleValidityDeadlineStr: string | null = null;
+      if (bookableProduct.bundleValidityDays != null) {
+        const purchaseDate = order.created_at ? new Date(order.created_at) : new Date();
+        const deadline = new Date(purchaseDate);
+        deadline.setUTCDate(deadline.getUTCDate() + bookableProduct.bundleValidityDays);
+        bundleValidityDeadlineStr = deadline.toISOString().slice(0, 10);
+      }
+
       const groupId = `${order.id}-${lineItem.id}`;
       const bundleBookings: Booking[] = [];
       for (const session of sessions) {
@@ -471,10 +487,18 @@ export async function createBookingsFromOrder(
           bookableProduct.id,
           sessionSlotStartsAt,
         );
+        const outsideValidityWindow =
+          bundleValidityDeadlineStr !== null && session.date > bundleValidityDeadlineStr;
         const sessionStatus =
-          sessionAlreadyBooked + quantity <= effectiveSettings.maxBookingsPerSlot
-            ? "CONFIRMED"
-            : "OVERBOOKED";
+          outsideValidityWindow ||
+          sessionAlreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot
+            ? "OVERBOOKED"
+            : "CONFIRMED";
+        if (outsideValidityWindow) {
+          console.warn(
+            `Order ${order.id} line item ${lineItem.id}: session on ${session.date} falls outside the ${bookableProduct.bundleValidityDays}-day validity window (deadline ${bundleValidityDeadlineStr}) — marked OVERBOOKED for merchant review.`,
+          );
+        }
 
         const booking = await prisma.booking.create({
           data: {
