@@ -193,7 +193,7 @@ function BookingLine({
             <s-text tone="subdued">
               {formatBookingWhenDisplay(booking)}
             </s-text>
-            {isCompleted && <s-badge tone="neutral">Completed</s-badge>}
+            <s-badge tone={badgeTone}>{booking.displayStatus}</s-badge>
           </s-stack>
         </s-stack>
       </div>
