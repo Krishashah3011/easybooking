@@ -23,6 +23,8 @@
     selectLocation: "Select location",
     selectLocationPlaceholder: "Select location",
     locationRequired: "Please select a location to continue.",
+    noLocationsConfigured:
+      "Booking isn't available for this product yet. Please check back soon.",
     next: "Next",
     changeLocation: "Change",
     confirm: "Confirm",
@@ -140,6 +142,7 @@
 
     var selectionEl = root.querySelector("[data-booking-selection]");
     var errorEl = root.querySelector("[data-booking-error]");
+    var unavailableEl = root.querySelector("[data-booking-unavailable]");
     var multiAddStatusEl = root.querySelector("[data-booking-multi-add-status]");
     var cartReminderEl = root.querySelector("[data-booking-cart-reminder]");
     var cartReminderTitleEl = root.querySelector(
@@ -237,10 +240,13 @@
     // date), not from whichever session is currently being picked.
     var bundleValidityDeadline = null;
 
-    // Locations fetched once from the app. If a shop hasn't configured
-    // any, the location step is skipped entirely and booking behaves
-    // exactly as it did before locations existed.
+    // Locations fetched once from the app. A shop must have at least one
+    // configured before booking can happen at all — see loadLocations()
+    // below, which hides the trigger button and shows a "not available"
+    // message instead of silently letting a shopper book with no location
+    // (and therefore no timezone) on record.
     var locations = [];
+    var locationsLoaded = false;
     var pendingLocation = null;
     // Draft selection while the location step is open, confirmed into
     // pendingLocation only once "Next" is pressed.
@@ -670,13 +676,38 @@
         })
         .then(function (data) {
           locations = data.locations || [];
+          locationsLoaded = true;
           populateLocationList();
+          updateAvailability();
         })
         .catch(function () {
-          // Non-critical — if locations can't be loaded, fall back to the
-          // no-locations behaviour so booking still works.
+          // We genuinely don't know whether this shop has locations
+          // configured — the request itself failed. Treat that the same
+          // as "not available yet" rather than falling back to the old
+          // no-location booking path: better to show nothing than to let
+          // a shopper book a slot with no timezone-correct location on
+          // record. A page refresh will retry.
           locations = [];
+          locationsLoaded = true;
+          updateAvailability();
         });
+    }
+
+    // Booking requires a location to exist so every slot can be
+    // anchored to a real timezone. Until we know the shop has at least
+    // one, keep the trigger button hidden (not disabled — disabled
+    // invites "why can't I click this?" support questions) and show a
+    // plain explanatory message instead.
+    function updateAvailability() {
+      if (!locationsLoaded) return;
+      var hasLocations = locations.length > 0;
+      if (triggerBtn) triggerBtn.hidden = !hasLocations;
+      if (unavailableEl) {
+        unavailableEl.hidden = hasLocations;
+        if (!hasLocations) {
+          unavailableEl.textContent = strings.noLocationsConfigured;
+        }
+      }
     }
 
     function isLocationListOpen() {
@@ -947,6 +978,11 @@
       updateConfirmButton();
       renderCustomFields();
 
+      // By the time the trigger button is even visible, loadLocations()
+      // has already confirmed locations.length > 0 (see
+      // updateAvailability()) — this condition is defense-in-depth, not
+      // the primary gate, in case openModal() is ever reached another
+      // way (e.g. "add another slot" mid-flow).
       if (locationStepEl && locations.length > 0 && !pendingLocation) {
         showLocationStep();
       } else {
@@ -1671,7 +1707,12 @@
 
       if (confirmedSlots.length === 0) {
         selectionEl.hidden = true;
-        triggerBtn.hidden = false;
+        // Don't blindly re-show the trigger — respect whatever
+        // updateAvailability() last decided based on whether the shop
+        // has any locations configured.
+        if (triggerBtn) {
+          triggerBtn.hidden = !(locationsLoaded && locations.length > 0);
+        }
         return;
       }
 

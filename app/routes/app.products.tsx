@@ -1,15 +1,18 @@
+import { useEffect } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
   listBookableProducts,
   setBookableProductEnabled,
 } from "../models/bookableProduct.server";
+import { listEnabledLocations } from "../models/bookingLocation.server";
 
 type ProductListItem = {
   id: string;
@@ -52,7 +55,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }),
   );
 
-  return { products };
+  const enabledLocations = await listEnabledLocations(session.shop);
+
+  return { products, hasLocations: enabledLocations.length > 0 };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -67,6 +72,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return { ok: false as const };
   }
 
+  // Same guardrail as the per-product detail page — this is the toggle
+  // that actually bypassed it before, since it calls
+  // setBookableProductEnabled directly. Kept in sync deliberately rather
+  // than routed through the detail page's action, since this table needs
+  // to stay usable for turning products off with a single click.
+  if (isEnabled) {
+    const enabledLocations = await listEnabledLocations(session.shop);
+    if (enabledLocations.length === 0) {
+      return {
+        ok: false as const,
+        error:
+          "Add at least one location in Booking Settings before enabling booking for a product.",
+      };
+    }
+  }
+
   await setBookableProductEnabled(
     session.shop,
     productId,
@@ -78,13 +99,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function BookingProductsPage() {
-  const { products } = useLoaderData<typeof loader>();
+  const { products, hasLocations } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
+  const shopify = useAppBridge();
 
   const isSubmitting = fetcher.state !== "idle";
   const pendingProductId = isSubmitting
     ? String(fetcher.formData?.get("productId") ?? "")
     : "";
+
+  useEffect(() => {
+    if (fetcher.data && !fetcher.data.ok && "error" in fetcher.data) {
+      shopify.toast.show(fetcher.data.error, { isError: true });
+    }
+  }, [fetcher.data, shopify]);
 
   const toggle = (product: ProductListItem) => {
     fetcher.submit(
@@ -105,6 +133,18 @@ export default function BookingProductsPage() {
           needs anything different from your shop&apos;s default Booking
           Settings.
         </s-paragraph>
+
+        {!hasLocations && (
+          <s-banner tone="warning" heading="No locations configured">
+            <s-paragraph>
+              Add at least one location before enabling booking on a
+              product — every slot needs one to know its timezone.
+            </s-paragraph>
+            <s-link href="/app/booking-settings/locations">
+              Go to Locations
+            </s-link>
+          </s-banner>
+        )}
 
         {products.length === 0 ? (
           <s-paragraph>No products found in this store yet.</s-paragraph>
@@ -131,7 +171,8 @@ export default function BookingProductsPage() {
                     <s-switch
                       checked={product.isEnabled}
                       onChange={() => toggle(product)}
-                      {...(pendingProductId === product.id
+                      {...(pendingProductId === product.id ||
+                      (!hasLocations && !product.isEnabled)
                         ? { disabled: true }
                         : {})}
                     ></s-switch>

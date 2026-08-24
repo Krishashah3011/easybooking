@@ -8,6 +8,7 @@ import {
   getUpcomingBookings,
 } from "../models/booking.server";
 import { getSmtpSettings } from "../models/smtpSettings.server";
+import { listEnabledLocations } from "../models/bookingLocation.server";
 import { formatBookingWhenDisplay } from "../utils/format";
 
 function todayISO(): string {
@@ -25,7 +26,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const today = todayISO();
   const weekEnd = endOfWeekISO();
 
-  const [products, todayCount, weekCount, overbookedCount, upcoming, smtpSettings] =
+  const [products, todayCount, weekCount, overbookedCount, upcoming, smtpSettings, enabledLocations] =
     await Promise.all([
       listBookableProducts(session.shop),
       countBookings(session.shop, { dateFrom: today, dateTo: today }),
@@ -33,6 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       countBookings(session.shop, { status: "OVERBOOKED" }),
       getUpcomingBookings(session.shop, 5),
       getSmtpSettings(session.shop),
+      listEnabledLocations(session.shop),
     ]);
 
   const enabledProductCount = products.filter((p) => p.isEnabled).length;
@@ -47,14 +49,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     stats: { todayCount, weekCount, overbookedCount, enabledProductCount },
     smtpConfigured,
+    hasLocations: enabledLocations.length > 0,
     upcoming,
   };
 };
 
 export default function Dashboard() {
-  const { stats, smtpConfigured, upcoming } = useLoaderData<typeof loader>();
+  const { stats, smtpConfigured, hasLocations, upcoming } = useLoaderData<typeof loader>();
 
   const setupSteps = [
+    {
+      done: hasLocations,
+      label: "Add at least one location so booking times use the right timezone",
+      href: "/app/booking-settings/locations",
+      cta: "Go to Locations",
+    },
     {
       done: stats.enabledProductCount > 0,
       label: "Enable at least one product for booking",

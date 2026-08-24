@@ -119,6 +119,12 @@
   margin: 0.5rem 0;
 }
 
+.booking-widget__unavailable {
+  color: #6d7175;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
 /* Overlay + modal */
 .booking-widget__overlay {
   position: fixed;

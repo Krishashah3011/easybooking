@@ -25,6 +25,7 @@ import {
   listProductBlackoutDates,
   parseBlackoutDateForm,
 } from "../models/blackoutDate.server";
+import { listEnabledLocations } from "../models/bookingLocation.server";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -54,15 +55,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     productId,
     product.title,
   );
-  const [shopSettings, blackoutDates] = await Promise.all([
+  const [shopSettings, blackoutDates, enabledLocations] = await Promise.all([
     getBookingSettings(session.shop),
     listProductBlackoutDates(session.shop, bookableProduct.id),
+    listEnabledLocations(session.shop),
   ]);
 
   return {
     productId,
     productTitle: product.title as string,
     values: toBookableProductFormValues(bookableProduct),
+    hasLocations: enabledLocations.length > 0,
     shopDefaults: {
       workingDays: shopSettings.workingDays,
       dailyStartTime: shopSettings.dailyStartTime,
@@ -96,6 +99,29 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     if (Object.keys(errors).length > 0) {
       return { intent, ok: false as const, errors, values };
+    }
+
+    // Enabling booking with no location on record means every booking
+    // for this product would fall back to naive UTC — same gap Phase 2/3
+    // just closed for order creation, reschedule, and manual admin
+    // booking. Block it here rather than let a merchant discover the
+    // problem later via a wrong-looking confirmation email. This is the
+    // authoritative check — the switch is also disabled client-side, but
+    // that's only a courtesy in case this ever gets bypassed (stale tab,
+    // direct form post, etc.).
+    if (values.isEnabled) {
+      const enabledLocations = await listEnabledLocations(session.shop);
+      if (enabledLocations.length === 0) {
+        return {
+          intent,
+          ok: false as const,
+          errors: {
+            isEnabled:
+              "Add at least one location in Booking Settings before enabling booking for a product.",
+          },
+          values,
+        };
+      }
     }
 
     const saved = await upsertBookableProductOverrides(
@@ -140,6 +166,7 @@ export default function BookableProductPage() {
     productId,
     productTitle,
     values: initialValues,
+    hasLocations,
     shopDefaults,
     blackoutDates,
   } = useLoaderData<typeof loader>();
@@ -291,11 +318,26 @@ export default function BookableProductPage() {
       </s-button>
 
       <s-section heading="Booking">
+        {!hasLocations && (
+          <s-banner tone="warning" heading="No locations configured">
+            <s-paragraph>
+              Booking needs at least one location so every slot has a
+              timezone to anchor to.
+            </s-paragraph>
+            <s-link href="/app/booking-settings/locations">
+              Go to Locations
+            </s-link>
+          </s-banner>
+        )}
         <s-switch
           label="Booking enabled for this product"
           checked={values.isEnabled}
+          disabled={!hasLocations && !values.isEnabled}
           onChange={() => setField("isEnabled", !values.isEnabled)}
         ></s-switch>
+        {errors.isEnabled && (
+          <s-banner tone="critical">{errors.isEnabled}</s-banner>
+        )}
       </s-section>
 
       <s-section heading="Booking type">
