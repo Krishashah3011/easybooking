@@ -12,12 +12,15 @@ import { listBookableProducts } from "../models/bookableProduct.server";
 import {
   computeSlotsForDate,
   getAvailableDatesInMonth,
+  getAvailableFullDayDatesInMonth,
+  getAvailableMultiDayNightsInMonth,
   type TimeSlot,
 } from "../models/slotAvailability.server";
 import { resolveBookingContext } from "../models/booking-context.server";
 import {
   createManualBooking,
   getBookedCountsInRange,
+  getBookedNightCountsInRange,
 } from "../models/booking.server";
 import { listEnabledLocations } from "../models/bookingLocation.server";
 import { listCustomFields, toPublicField } from "../models/customBookingField.server";
@@ -34,6 +37,7 @@ type QueuedSlotInput = {
   bookableProductId: string;
   date: string;
   slotStart: string;
+  endDate?: string | null;
   quantity: number;
 };
 type SlotResult = {
@@ -53,7 +57,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     listCustomFields(session.shop),
   ]);
   return {
-    products: enabledProducts.map((p) => ({ id: p.id, title: p.productTitle })),
+    products: enabledProducts.map((p) => ({
+      id: p.id,
+      title: p.productTitle,
+      bookingType: p.bookingType,
+    })),
     locations: locations.map((l) => ({ id: l.id, name: l.name })),
     customFields: customFields.map(toPublicField),
   };
@@ -66,6 +74,7 @@ async function resolveBlackoutDatesAndSettings(
   const context = await resolveBookingContext(shop, bookableProductId);
   if (!context) return null;
   return {
+    bookingType: context.bookingType,
     effectiveSettings: context.effectiveSettings,
     blackoutDates: context.blackoutDates,
   };
@@ -98,21 +107,54 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const monthStart = new Date(Date.UTC(year, month - 1, 1));
     const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
-    const bookedCounts = await getBookedCountsInRange(
-      session.shop,
-      bookableProductId,
-      monthStart,
-      monthEnd,
-    );
 
-    const availableDates = getAvailableDatesInMonth(
-      resolved.effectiveSettings,
-      year,
-      month,
-      resolved.blackoutDates,
-      new Date(),
-      bookedCounts,
-    );
+    let availableDates: string[];
+    if (resolved.bookingType === "FULL_DAY") {
+      const bookedCounts = await getBookedCountsInRange(
+        session.shop,
+        bookableProductId,
+        monthStart,
+        monthEnd,
+      );
+      availableDates = getAvailableFullDayDatesInMonth(
+        resolved.effectiveSettings,
+        year,
+        month,
+        resolved.blackoutDates,
+        new Date(),
+        bookedCounts,
+      );
+    } else if (resolved.bookingType === "MULTI_DAY") {
+      const bookedNightCounts = await getBookedNightCountsInRange(
+        session.shop,
+        bookableProductId,
+        monthStart,
+        monthEnd,
+      );
+      availableDates = getAvailableMultiDayNightsInMonth(
+        resolved.effectiveSettings,
+        year,
+        month,
+        resolved.blackoutDates,
+        new Date(),
+        bookedNightCounts,
+      );
+    } else {
+      const bookedCounts = await getBookedCountsInRange(
+        session.shop,
+        bookableProductId,
+        monthStart,
+        monthEnd,
+      );
+      availableDates = getAvailableDatesInMonth(
+        resolved.effectiveSettings,
+        year,
+        month,
+        resolved.blackoutDates,
+        new Date(),
+        bookedCounts,
+      );
+    }
 
     return { intent, ok: true as const, availableDates };
   }
@@ -194,6 +236,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         bookableProductId: slot.bookableProductId,
         date: slot.date,
         slotStart: slot.slotStart,
+        endDate: slot.endDate ?? null,
         quantity: slot.quantity,
         location,
         customerName,
@@ -238,9 +281,12 @@ export default function NewBookingPage() {
   const [bookableProductId, setBookableProductId] = useState(
     products[0]?.id ?? "",
   );
+  const selectedProduct = products.find((p) => p.id === bookableProductId);
+  const selectedBookingType = selectedProduct?.bookingType ?? "SLOT";
   const [viewYear, setViewYear] = useState(today.getUTCFullYear());
   const [viewMonth, setViewMonth] = useState(today.getUTCMonth() + 1);
   const [date, setDate] = useState("");
+  const [checkoutDate, setCheckoutDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [locationId, setLocationId] = useState(locations[0]?.id ?? "");
@@ -253,6 +299,7 @@ export default function NewBookingPage() {
       productTitle: string;
       date: string;
       slot: TimeSlot;
+      endDate?: string | null;
       quantity: number;
       error?: string;
     }>
@@ -377,11 +424,46 @@ export default function NewBookingPage() {
 
   const selectDate = (dateStr: string) => {
     setDate(dateStr);
+    setCheckoutDate("");
+    if (selectedBookingType === "FULL_DAY") {
+      // No time-of-day for a whole-day booking — treat the day itself
+      // as the "slot" so the rest of the add-to-queue flow needs no
+      // special-casing.
+      setSelectedSlot({
+        start: "00:00",
+        end: "23:59",
+        startsAt: `${dateStr}T00:00:00.000Z`,
+        available: true,
+        remainingCapacity: null,
+      } as TimeSlot);
+      return;
+    }
+    if (selectedBookingType === "MULTI_DAY") {
+      // Check-out is picked separately below; the "slot" is just a
+      // placeholder until a valid check-out date is entered.
+      setSelectedSlot(null);
+      return;
+    }
     setSelectedSlot(null);
     slotsFetcher.submit(
       { intent: "loadSlots", bookableProductId, date: dateStr },
       { method: "POST" },
     );
+  };
+
+  const handleSetCheckoutDate = (value: string) => {
+    setCheckoutDate(value);
+    if (date && value && value > date) {
+      setSelectedSlot({
+        start: "00:00",
+        end: "00:00",
+        startsAt: `${date}T00:00:00.000Z`,
+        available: true,
+        remainingCapacity: null,
+      } as TimeSlot);
+    } else {
+      setSelectedSlot(null);
+    }
   };
 
   const isValidEmail = (value: string) =>
@@ -403,6 +485,7 @@ export default function NewBookingPage() {
 
   const handleAddToList = () => {
     if (!date || !selectedSlot) return;
+    if (selectedBookingType === "MULTI_DAY" && !checkoutDate) return;
     const alreadyQueued = queuedSlots.some(
       (entry) =>
         entry.bookableProductId === bookableProductId &&
@@ -414,10 +497,18 @@ export default function NewBookingPage() {
         products.find((p) => p.id === bookableProductId)?.title ?? "";
       setQueuedSlots((prev) => [
         ...prev,
-        { bookableProductId, productTitle, date, slot: selectedSlot, quantity },
+        {
+          bookableProductId,
+          productTitle,
+          date,
+          slot: selectedSlot,
+          endDate: selectedBookingType === "MULTI_DAY" ? checkoutDate : null,
+          quantity,
+        },
       ]);
     }
     setDate("");
+    setCheckoutDate("");
     setSelectedSlot(null);
   };
 
@@ -451,6 +542,7 @@ export default function NewBookingPage() {
             bookableProductId: entry.bookableProductId,
             date: entry.date,
             slotStart: entry.slot.start,
+            endDate: entry.endDate ?? null,
             quantity: entry.quantity,
           })),
         ),
@@ -591,41 +683,66 @@ export default function NewBookingPage() {
         )}
       </s-section>
 
-      {date && (
-        <s-section heading="Available times">
-          {slots.length === 0 ? (
-            <s-paragraph>No slots at all on this date.</s-paragraph>
-          ) : (
-            <s-stack direction="inline" gap="base">
-              {slots.map((slot) => (
-                <s-button
-                  key={slot.startsAt}
-                  variant={
-                    selectedSlot?.startsAt === slot.startsAt
-                      ? "primary"
-                      : "secondary"
-                  }
-                  {...(!slot.available ? { disabled: true } : {})}
-                  onClick={() => {
-                    if (slot.available) setSelectedSlot(slot);
-                  }}
-                >
-                  {formatTimeRangeDisplay(slot.start, slot.end)}
-                  {!slot.available
-                    ? " (Booked)"
-                    : typeof slot.remainingCapacity === "number"
-                      ? ` (${
-                          slot.remainingCapacity === 1
-                            ? "1 spot left"
-                            : `${slot.remainingCapacity} spots left`
-                        })`
-                      : ""}
-                </s-button>
-              ))}
-            </s-stack>
+      {date && selectedBookingType === "MULTI_DAY" && (
+        <s-section heading="Check-out date">
+          <s-text-field
+            label="Check-out"
+            type="date"
+            value={checkoutDate}
+            onChange={(e: FieldChangeEvent) =>
+              handleSetCheckoutDate(e.currentTarget.value)
+            }
+          ></s-text-field>
+          {checkoutDate && checkoutDate <= date && (
+            <s-banner tone="critical">
+              Check-out must be after check-in.
+            </s-banner>
           )}
         </s-section>
       )}
+
+      {date && selectedBookingType === "FULL_DAY" && (
+        <s-section heading="Booking">
+          <s-paragraph>Whole day {"\u2014"} {date}</s-paragraph>
+        </s-section>
+      )}
+
+      {date &&
+        (selectedBookingType === "SLOT" || selectedBookingType === "BUNDLE") && (
+          <s-section heading="Available times">
+            {slots.length === 0 ? (
+              <s-paragraph>No slots at all on this date.</s-paragraph>
+            ) : (
+              <s-stack direction="inline" gap="base">
+                {slots.map((slot) => (
+                  <s-button
+                    key={slot.startsAt}
+                    variant={
+                      selectedSlot?.startsAt === slot.startsAt
+                        ? "primary"
+                        : "secondary"
+                    }
+                    {...(!slot.available ? { disabled: true } : {})}
+                    onClick={() => {
+                      if (slot.available) setSelectedSlot(slot);
+                    }}
+                  >
+                    {formatTimeRangeDisplay(slot.start, slot.end)}
+                    {!slot.available
+                      ? " (Booked)"
+                      : typeof slot.remainingCapacity === "number"
+                        ? ` (${
+                            slot.remainingCapacity === 1
+                              ? "1 spot left"
+                              : `${slot.remainingCapacity} spots left`
+                          })`
+                        : ""}
+                  </s-button>
+                ))}
+              </s-stack>
+            )}
+          </s-section>
+        )}
 
       {selectedSlot && (
         <s-section heading="Quantity">
@@ -669,8 +786,19 @@ export default function NewBookingPage() {
                 alignItems="center"
               >
                 <s-text>
-                  <b>{entry.productTitle}</b> — {entry.date} |{" "}
-                  {formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}
+                  <b>{entry.productTitle}</b> —{" "}
+                  {(() => {
+                    const entryType =
+                      products.find((p) => p.id === entry.bookableProductId)
+                        ?.bookingType ?? "SLOT";
+                    if (entryType === "FULL_DAY") {
+                      return `${entry.date} \u00b7 Whole day`;
+                    }
+                    if (entryType === "MULTI_DAY") {
+                      return `${entry.date} \u2192 ${entry.endDate ?? "—"}`;
+                    }
+                    return `${entry.date} | ${formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}`;
+                  })()}
                   {entry.quantity > 1 ? ` × ${entry.quantity}` : ""}
                 </s-text>
                 {entry.error && (

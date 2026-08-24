@@ -40,6 +40,51 @@ export function confirmationEmail(data: BookingEmailData): {
   return { subject, text, html };
 }
 
+export type BundleSessionInfo = { date: string; slotStart: string; slotEnd: string };
+
+export type BundleBookingEmailData = {
+  productTitle: string;
+  customerName: string | null;
+  sessions: BundleSessionInfo[];
+  shopName: string;
+};
+
+export function bundleConfirmationEmail(data: BundleBookingEmailData): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = `Booking confirmed: ${data.productTitle} (${data.sessions.length} sessions)`;
+  const sessionLines = data.sessions.map(
+    (s) => `- ${s.date}, ${s.slotStart}\u2013${s.slotEnd}`,
+  );
+  const text = [
+    greeting(data.customerName),
+    "",
+    `Your booking is confirmed:`,
+    `- ${data.productTitle}`,
+    ...sessionLines,
+    "",
+    `Thanks for booking with ${data.shopName}.`,
+  ].join("\n");
+
+  const sessionListHtml = data.sessions
+    .map(
+      (s) =>
+        `<li>${escapeHtml(s.date)}, ${escapeHtml(s.slotStart)}\u2013${escapeHtml(s.slotEnd)}</li>`,
+    )
+    .join("");
+  const html = `
+    <p>${greeting(data.customerName)}</p>
+    <p>Your booking is confirmed:</p>
+    <p><strong>${escapeHtml(data.productTitle)}</strong></p>
+    <ul>${sessionListHtml}</ul>
+    <p>Thanks for booking with ${escapeHtml(data.shopName)}.</p>
+  `.trim();
+
+  return { subject, text, html };
+}
+
 export function reminderEmail(data: BookingEmailData): {
   subject: string;
   text: string;

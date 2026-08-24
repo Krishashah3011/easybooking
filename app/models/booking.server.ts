@@ -1,4 +1,4 @@
-import type { Booking } from "@prisma/client";
+import type { Booking, BookingType } from "@prisma/client";
 import prisma from "../db.server";
 import {
   getBookableProduct,
@@ -9,6 +9,7 @@ import { computeSlotsForDate } from "./slotAvailability.server";
 import { sendEmail } from "../utils/mailer.server";
 import {
   confirmationEmail,
+  bundleConfirmationEmail,
   reminderEmail,
   cancellationEmail,
   rescheduledEmail,
@@ -275,6 +276,49 @@ async function sendBookingConfirmation(
   }
 }
 
+// A BUNDLE purchase creates one Booking row per session, but the
+// customer should only get ONE email listing every session — not one
+// email per session. Called once after all of a bundle's rows are
+// created, sends a single summary and stamps confirmationSentAt on
+// every row in the group so reminder/cancellation logic still treats
+// each row normally afterward.
+async function sendBundleBookingConfirmation(
+  bookings: Booking[],
+  productTitle: string,
+  shop: string,
+): Promise<void> {
+  if (bookings.length === 0) return;
+  const first = bookings[0];
+  if (!first.customerEmail) return;
+
+  const { fromName } = await getShopEmailSettings(shop);
+  const { subject, text, html } = bundleConfirmationEmail({
+    productTitle,
+    customerName: first.customerName,
+    sessions: bookings.map((b) => ({
+      date: formatDateDisplay(b.date),
+      slotStart: b.slotStart,
+      slotEnd: b.slotEnd,
+    })),
+    shopName: shop,
+  });
+
+  const sent = await sendEmail({
+    shop,
+    to: first.customerEmail,
+    subject,
+    text,
+    html,
+    fromName,
+  });
+  if (sent) {
+    await prisma.booking.updateMany({
+      where: { id: { in: bookings.map((b) => b.id) } },
+      data: { confirmationSentAt: new Date() },
+    });
+  }
+}
+
 async function sendBookingCancellation(
   booking: Booking,
   productTitle: string,
@@ -408,6 +452,7 @@ export async function createBookingsFromOrder(
       }
 
       const groupId = `${order.id}-${lineItem.id}`;
+      const bundleBookings: Booking[] = [];
       for (const session of sessions) {
         const slotsForDate = computeSlotsForDate(
           effectiveSettings,
@@ -455,9 +500,20 @@ export async function createBookingsFromOrder(
           },
         });
         created.push(booking);
-        if (sessionStatus === "CONFIRMED") {
-          await sendBookingConfirmation(booking, bookableProduct.productTitle, shop);
-        }
+        bundleBookings.push(booking);
+      }
+
+      // One email for the whole pack, not one per session — otherwise a
+      // 4-session bundle would send the customer 4 separate emails.
+      const confirmedBundleBookings = bundleBookings.filter(
+        (b) => b.status === "CONFIRMED",
+      );
+      if (confirmedBundleBookings.length > 0) {
+        await sendBundleBookingConfirmation(
+          confirmedBundleBookings,
+          bookableProduct.productTitle,
+          shop,
+        );
       }
       continue;
     }
@@ -589,6 +645,8 @@ export type ManualBookingInput = {
   bookableProductId: string;
   date: string;
   slotStart: string;
+  // MULTI_DAY only: the check-out date. Ignored for every other type.
+  endDate?: string | null;
   quantity?: number;
   location?: string | null;
   customerName: string;
@@ -620,37 +678,81 @@ export async function createManualBooking(
     shopSettings,
     bookableProduct,
   );
-  const slotsForDate = computeSlotsForDate(
-    effectiveSettings,
-    input.date,
-    new Set(),
-  );
-  const matchedSlot = slotsForDate.find((s) => s.start === input.slotStart);
-  if (!matchedSlot) {
-    return {
-      ok: false,
-      error: "That date/time isn't a valid slot for this product.",
-    };
-  }
-
-  const alreadyBooked = await countConfirmedBookingsForSlot(
-    shop,
-    bookableProduct.id,
-    new Date(matchedSlot.startsAt),
-  );
   const quantity =
     Number.isInteger(input.quantity) && (input.quantity as number) > 0
       ? (input.quantity as number)
       : 1;
-  if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
-    return { ok: false, error: "That slot is already fully booked." };
-  }
 
   const customFields = await listCustomFields(shop);
   const responses = input.customFieldResponses ?? {};
   for (const field of customFields) {
     if (field.required && !responses[field.fieldKey]?.trim()) {
       return { ok: false, error: `"${field.label}" is required.` };
+    }
+  }
+
+  let slotStartsAt: Date;
+  let slotEnd: string;
+  let bookingEndDateField: string | null = null;
+
+  if (bookableProduct.bookingType === "FULL_DAY") {
+    slotStartsAt = new Date(`${input.date}T00:00:00.000Z`);
+    slotEnd = "23:59";
+    const alreadyBooked = await countConfirmedBookingsForSlot(
+      shop,
+      bookableProduct.id,
+      slotStartsAt,
+    );
+    if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
+      return { ok: false, error: "That day is already fully booked." };
+    }
+  } else if (bookableProduct.bookingType === "MULTI_DAY") {
+    if (!input.endDate) {
+      return { ok: false, error: "Pick a check-out date." };
+    }
+    if (input.endDate <= input.date) {
+      return { ok: false, error: "Check-out must be after check-in." };
+    }
+    bookingEndDateField = input.endDate;
+    slotStartsAt = new Date(`${input.date}T00:00:00.000Z`);
+    slotEnd = "00:00";
+    const alreadyBooked = await countOverlappingMultiDayBookings(
+      shop,
+      bookableProduct.id,
+      input.date,
+      input.endDate,
+    );
+    if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
+      return { ok: false, error: "Those dates overlap an existing booking." };
+    }
+  } else {
+    // SLOT and BUNDLE both use the normal time-slot engine — a BUNDLE
+    // product's slot length already comes from its own session-duration
+    // setting via resolveEffectiveSettings, so no extra branching is
+    // needed here; queuing several sessions for the same bundle product
+    // (from the "New Booking" page's existing multi-slot queue) is what
+    // creates a bundle-style grouped set of bookings.
+    const slotsForDate = computeSlotsForDate(
+      effectiveSettings,
+      input.date,
+      new Set(),
+    );
+    const matchedSlot = slotsForDate.find((s) => s.start === input.slotStart);
+    if (!matchedSlot) {
+      return {
+        ok: false,
+        error: "That date/time isn't a valid slot for this product.",
+      };
+    }
+    slotStartsAt = new Date(matchedSlot.startsAt);
+    slotEnd = matchedSlot.end;
+    const alreadyBooked = await countConfirmedBookingsForSlot(
+      shop,
+      bookableProduct.id,
+      slotStartsAt,
+    );
+    if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
+      return { ok: false, error: "That slot is already fully booked." };
     }
   }
 
@@ -664,9 +766,10 @@ export async function createManualBooking(
       isGuest: true,
       location: input.location || null,
       date: input.date,
-      slotStart: matchedSlot.start,
-      slotEnd: matchedSlot.end,
-      slotStartsAt: new Date(matchedSlot.startsAt),
+      endDate: bookingEndDateField,
+      slotStart: bookableProduct.bookingType === "FULL_DAY" ? "00:00" : input.slotStart,
+      slotEnd,
+      slotStartsAt,
       quantity,
       status: "CONFIRMED",
       source: "ADMIN_MANUAL",
@@ -692,7 +795,10 @@ export async function listBookingsForProduct(
   });
 }
 
-export type BookingWithProductTitle = Booking & { productTitle: string };
+export type BookingWithProductTitle = Booking & {
+  productTitle: string;
+  bookingType: BookingType;
+};
 
 export type ListBookingsFilters = {
   status?: "CONFIRMED" | "OVERBOOKED" | "CANCELLED" | "RESCHEDULED";
@@ -732,7 +838,7 @@ export async function listBookings(
           }
         : {}),
     },
-    include: { bookableProduct: { select: { productTitle: true } } },
+    include: { bookableProduct: { select: { productTitle: true, bookingType: true } } },
     orderBy: { slotStartsAt: "desc" },
     take: 100,
   });
@@ -741,9 +847,10 @@ export async function listBookings(
     ({
       bookableProduct,
       ...booking
-    }: Booking & { bookableProduct: { productTitle: string } }) => ({
+    }: Booking & { bookableProduct: { productTitle: string; bookingType: BookingType } }) => ({
       ...booking,
       productTitle: bookableProduct.productTitle,
+      bookingType: bookableProduct.bookingType,
     }),
   );
 }
@@ -758,7 +865,7 @@ export async function getUpcomingBookings(
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       slotStartsAt: { gte: new Date() },
     },
-    include: { bookableProduct: { select: { productTitle: true } } },
+    include: { bookableProduct: { select: { productTitle: true, bookingType: true } } },
     orderBy: { slotStartsAt: "asc" },
     take: limit,
   });
@@ -767,9 +874,10 @@ export async function getUpcomingBookings(
     ({
       bookableProduct,
       ...booking
-    }: Booking & { bookableProduct: { productTitle: string } }) => ({
+    }: Booking & { bookableProduct: { productTitle: string; bookingType: BookingType } }) => ({
       ...booking,
       productTitle: bookableProduct.productTitle,
+      bookingType: bookableProduct.bookingType,
     }),
   );
 }

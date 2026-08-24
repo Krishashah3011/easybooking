@@ -5,9 +5,9 @@ import type {
 } from "@prisma/client";
 import prisma from "../db.server";
 import { parseWorkingDays } from "./bookingSettings.server";
-import { BOOKING_TYPES } from "./bookingTypes";
+import { BOOKING_TYPES } from "../utils/bookingTypes";
 
-export { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "./bookingTypes";
+export { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "../utils/bookingTypes";
 
 export type BookableProductFormValues = {
   isEnabled: boolean;

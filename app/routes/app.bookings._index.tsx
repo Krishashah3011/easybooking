@@ -21,6 +21,7 @@ import {
 import type { TimeSlot } from "../models/slotAvailability.server";
 import {
   bookingSourceLabel,
+  formatBookingWhenDisplay,
   formatDateDisplay,
   formatDateTimeDisplay,
   formatTimeRangeDisplay,
@@ -275,8 +276,7 @@ function BookingLine({
           </s-stack>
 
           <s-text tone="subdued">
-            {formatDateDisplay(booking.date)}{" "}
-            {formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}
+            {formatBookingWhenDisplay(booking)}
           </s-text>
         </s-stack>
       </div>
@@ -298,7 +298,7 @@ function BookingLine({
               <s-text>{booking.location ?? "—"}</s-text>
             </DetailRow>
 
-            <DetailRow label="Date">
+            <DetailRow label={booking.bookingType === "MULTI_DAY" ? "Check-in" : "Date"}>
               {isRescheduling ? (
                 <s-stack direction="inline" alignItems="center" gap="small">
                   <s-date-field
@@ -358,13 +358,28 @@ function BookingLine({
               )}
             </DetailRow>
 
-            {!isRescheduling && (
-              <DetailRow label="Time">
+            {booking.bookingType === "MULTI_DAY" && !isRescheduling && (
+              <DetailRow label="Check-out">
                 <s-text>
-                  {formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}
+                  {booking.endDate ? formatDateDisplay(booking.endDate) : "—"}
                 </s-text>
               </DetailRow>
             )}
+
+            {booking.bookingType === "FULL_DAY" && !isRescheduling && (
+              <DetailRow label="Booking">
+                <s-text>Whole day</s-text>
+              </DetailRow>
+            )}
+
+            {(booking.bookingType === "SLOT" || booking.bookingType === "BUNDLE") &&
+              !isRescheduling && (
+                <DetailRow label="Time">
+                  <s-text>
+                    {formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}
+                  </s-text>
+                </DetailRow>
+              )}
 
             <DetailRow label="Quantity">
               <s-text>{booking.quantity}</s-text>
@@ -399,12 +414,14 @@ function BookingLine({
                       Cancel edit
                     </s-button>
                   ) : (
-                    <s-button
-                      variant="tertiary"
-                      onClick={() => setIsRescheduling(true)}
-                    >
-                      Reschedule
-                    </s-button>
+                    booking.bookingType === "SLOT" && (
+                      <s-button
+                        variant="tertiary"
+                        onClick={() => setIsRescheduling(true)}
+                      >
+                        Reschedule
+                      </s-button>
+                    )
                   )}
                   <s-button variant="tertiary" tone="critical" onClick={handleCancel}>
                     Cancel booking

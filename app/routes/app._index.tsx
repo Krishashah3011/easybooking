@@ -8,6 +8,7 @@ import {
   getUpcomingBookings,
 } from "../models/booking.server";
 import { getSmtpSettings } from "../models/smtpSettings.server";
+import { formatBookingWhenDisplay } from "../utils/format";
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -214,7 +215,7 @@ export default function Dashboard() {
                   <s-table-cell>{booking.productTitle}</s-table-cell>
                   <s-table-cell>{booking.customerName ?? "—"}</s-table-cell>
                   <s-table-cell>
-                    {booking.date} {booking.slotStart}–{booking.slotEnd}
+                    {formatBookingWhenDisplay(booking)}
                   </s-table-cell>
                 </s-table-row>
               ))}

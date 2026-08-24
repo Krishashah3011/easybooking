@@ -36,6 +36,31 @@ export function formatDateTimeDisplay(value: string | Date): string {
 }
 
 /**
+ * Human-readable "when" label for a booking, adapted to its booking
+ * type: a FULL_DAY booking has no meaningful time-of-day, a MULTI_DAY
+ * booking is a check-in/check-out range rather than a single date, and
+ * SLOT/BUNDLE bookings show the normal time range.
+ */
+export function formatBookingWhenDisplay(booking: {
+  bookingType: string;
+  date: string;
+  endDate?: string | null;
+  slotStart: string;
+  slotEnd: string;
+}): string {
+  if (booking.bookingType === "FULL_DAY") {
+    return `${formatDateDisplay(booking.date)} · Whole day`;
+  }
+  if (booking.bookingType === "MULTI_DAY") {
+    const checkout = booking.endDate
+      ? formatDateDisplay(booking.endDate)
+      : "—";
+    return `${formatDateDisplay(booking.date)} \u2192 ${checkout}`;
+  }
+  return `${formatDateDisplay(booking.date)} ${formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}`;
+}
+
+/**
  * Human-readable label for who actually made the booking: the customer
  * from the storefront checkout, or an admin creating it manually.
  */
