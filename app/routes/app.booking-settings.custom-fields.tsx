@@ -101,6 +101,8 @@ function FieldEditor({
     }
   }, [fetcher.data]);
 
+  const isSaving = fetcher.state !== "idle";
+
   const handleSubmit = () => {
     fetcher.submit(
       {
@@ -166,11 +168,19 @@ function FieldEditor({
       )}
 
       <s-stack direction="inline" gap="small">
-        <s-button variant="primary" onClick={handleSubmit}>
+        <s-button
+          variant="primary"
+          onClick={handleSubmit}
+          {...(isSaving ? { loading: true } : {})}
+        >
           {submitLabel}
         </s-button>
         {onCancel && (
-          <s-button variant="tertiary" onClick={onCancel}>
+          <s-button
+            variant="tertiary"
+            onClick={onCancel}
+            {...(isSaving ? { disabled: true } : {})}
+          >
             Cancel
           </s-button>
         )}
@@ -185,6 +195,7 @@ function FieldRow({
   onMoveDown,
   isFirst,
   isLast,
+  isReordering,
 }: {
   field: {
     id: string;
@@ -197,10 +208,13 @@ function FieldRow({
   onMoveDown: () => void;
   isFirst: boolean;
   isLast: boolean;
+  isReordering: boolean;
 }) {
   const deleteFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
   const [isEditing, setIsEditing] = useState(false);
+  const isDeleting = deleteFetcher.state !== "idle";
+  const isBusy = isDeleting || isReordering;
 
   useEffect(() => {
     if (deleteFetcher.data?.intent === "delete" && deleteFetcher.data.ok) {
@@ -244,7 +258,7 @@ function FieldRow({
         <s-stack direction="inline" gap="small">
           <s-button
             variant="tertiary"
-            {...(isFirst ? { disabled: true } : {})}
+            {...(isFirst || isBusy ? { disabled: true } : {})}
             onClick={onMoveUp}
             accessibilityLabel={`Move ${field.label} up`}
           >
@@ -252,16 +266,26 @@ function FieldRow({
           </s-button>
           <s-button
             variant="tertiary"
-            {...(isLast ? { disabled: true } : {})}
+            {...(isLast || isBusy ? { disabled: true } : {})}
             onClick={onMoveDown}
             accessibilityLabel={`Move ${field.label} down`}
           >
             ↓
           </s-button>
-          <s-button variant="tertiary" onClick={() => setIsEditing(true)}>
+          <s-button
+            variant="tertiary"
+            onClick={() => setIsEditing(true)}
+            {...(isBusy ? { disabled: true } : {})}
+          >
             Edit
           </s-button>
-          <s-button variant="tertiary" tone="critical" onClick={handleDelete}>
+          <s-button
+            variant="tertiary"
+            tone="critical"
+            onClick={handleDelete}
+            {...(isReordering ? { disabled: true } : {})}
+            {...(isDeleting ? { loading: true } : {})}
+          >
             Delete
           </s-button>
         </s-stack>
@@ -274,6 +298,7 @@ export default function CustomFieldsPage() {
   const { fields: loaderFields } = useLoaderData<typeof loader>();
   const reorderFetcher = useFetcher<typeof action>();
   const [fields, setFields] = useState(loaderFields);
+  const isReordering = reorderFetcher.state !== "idle";
 
   useEffect(() => {
     setFields(loaderFields);
@@ -337,6 +362,7 @@ export default function CustomFieldsPage() {
                     isLast={index === fields.length - 1}
                     onMoveUp={() => moveField(index, -1)}
                     onMoveDown={() => moveField(index, 1)}
+                    isReordering={isReordering}
                   />
                 ))}
               </s-table-body>

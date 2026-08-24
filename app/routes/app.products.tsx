@@ -81,6 +81,11 @@ export default function BookingProductsPage() {
   const { products } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
 
+  const isSubmitting = fetcher.state !== "idle";
+  const pendingProductId = isSubmitting
+    ? String(fetcher.formData?.get("productId") ?? "")
+    : "";
+
   const toggle = (product: ProductListItem) => {
     fetcher.submit(
       {
@@ -126,6 +131,9 @@ export default function BookingProductsPage() {
                     <s-switch
                       checked={product.isEnabled}
                       onChange={() => toggle(product)}
+                      {...(pendingProductId === product.id
+                        ? { disabled: true }
+                        : {})}
                     ></s-switch>
                   </s-table-cell>
                   <s-table-cell>

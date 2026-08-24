@@ -71,6 +71,15 @@ export default function BlackoutDatesPage() {
     }
   }, [fetcher.data]);
 
+  const isSubmitting = fetcher.state !== "idle";
+  const pendingIntent = isSubmitting
+    ? String(fetcher.formData?.get("intent") ?? "")
+    : "";
+  const pendingDeleteId = isSubmitting
+    ? String(fetcher.formData?.get("id") ?? "")
+    : "";
+  const isAdding = pendingIntent === "add";
+
   const handleAdd = () => {
     if (!date) return;
     fetcher.submit({ intent: "add", date, reason }, { method: "POST" });
@@ -101,7 +110,13 @@ export default function BlackoutDatesPage() {
             value={reason}
             onChange={(e: FieldChangeEvent) => setReason(e.currentTarget.value)}
           ></s-text-field>
-          <s-button onClick={handleAdd}>Add blackout date</s-button>
+          <s-button
+            onClick={handleAdd}
+            {...(isSubmitting ? { disabled: true } : {})}
+            {...(isAdding ? { loading: true } : {})}
+          >
+            Add blackout date
+          </s-button>
         </s-stack>
 
         {blackoutDates.length === 0 ? (
@@ -123,6 +138,10 @@ export default function BlackoutDatesPage() {
                       variant="tertiary"
                       tone="critical"
                       onClick={() => handleDelete(b.id)}
+                      {...(isSubmitting ? { disabled: true } : {})}
+                      {...(pendingIntent === "delete" && pendingDeleteId === b.id
+                        ? { loading: true }
+                        : {})}
                     >
                       Remove
                     </s-button>

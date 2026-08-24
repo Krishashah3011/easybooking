@@ -182,6 +182,8 @@ function LocationEditor({
     }
   }, [fetcher.data]);
 
+  const isSaving = fetcher.state !== "idle";
+
   const handleCountryChange = (code: string) => {
     setCountryCode(code);
     if (code === "__custom__") return; // keep the existing custom timezone
@@ -246,11 +248,19 @@ function LocationEditor({
       ></s-checkbox>
 
       <s-stack direction="inline" gap="small">
-        <s-button variant="primary" onClick={handleSubmit}>
+        <s-button
+          variant="primary"
+          onClick={handleSubmit}
+          {...(isSaving ? { loading: true } : {})}
+        >
           {submitLabel}
         </s-button>
         {onCancel && (
-          <s-button variant="tertiary" onClick={onCancel}>
+          <s-button
+            variant="tertiary"
+            onClick={onCancel}
+            {...(isSaving ? { disabled: true } : {})}
+          >
             Cancel
           </s-button>
         )}
@@ -265,6 +275,7 @@ function LocationRow({
   onMoveDown,
   isFirst,
   isLast,
+  isReordering,
 }: {
   location: {
     id: string;
@@ -276,10 +287,13 @@ function LocationRow({
   onMoveDown: () => void;
   isFirst: boolean;
   isLast: boolean;
+  isReordering: boolean;
 }) {
   const deleteFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
   const [isEditing, setIsEditing] = useState(false);
+  const isDeleting = deleteFetcher.state !== "idle";
+  const isBusy = isDeleting || isReordering;
 
   useEffect(() => {
     if (deleteFetcher.data?.intent === "delete" && deleteFetcher.data.ok) {
@@ -327,7 +341,7 @@ function LocationRow({
         <s-stack direction="inline" gap="small">
           <s-button
             variant="tertiary"
-            {...(isFirst ? { disabled: true } : {})}
+            {...(isFirst || isBusy ? { disabled: true } : {})}
             onClick={onMoveUp}
             accessibilityLabel={`Move ${location.name} up`}
           >
@@ -335,16 +349,26 @@ function LocationRow({
           </s-button>
           <s-button
             variant="tertiary"
-            {...(isLast ? { disabled: true } : {})}
+            {...(isLast || isBusy ? { disabled: true } : {})}
             onClick={onMoveDown}
             accessibilityLabel={`Move ${location.name} down`}
           >
             ↓
           </s-button>
-          <s-button variant="tertiary" onClick={() => setIsEditing(true)}>
+          <s-button
+            variant="tertiary"
+            onClick={() => setIsEditing(true)}
+            {...(isBusy ? { disabled: true } : {})}
+          >
             Edit
           </s-button>
-          <s-button variant="tertiary" tone="critical" onClick={handleDelete}>
+          <s-button
+            variant="tertiary"
+            tone="critical"
+            onClick={handleDelete}
+            {...(isReordering ? { disabled: true } : {})}
+            {...(isDeleting ? { loading: true } : {})}
+          >
             Delete
           </s-button>
         </s-stack>
@@ -357,6 +381,7 @@ export default function LocationsPage() {
   const { locations: loaderLocations } = useLoaderData<typeof loader>();
   const reorderFetcher = useFetcher<typeof action>();
   const [locations, setLocations] = useState(loaderLocations);
+  const isReordering = reorderFetcher.state !== "idle";
 
   useEffect(() => {
     setLocations(loaderLocations);
@@ -423,6 +448,7 @@ export default function LocationsPage() {
                     isLast={index === locations.length - 1}
                     onMoveUp={() => moveLocation(index, -1)}
                     onMoveDown={() => moveLocation(index, 1)}
+                    isReordering={isReordering}
                   />
                 ))}
               </s-table-body>

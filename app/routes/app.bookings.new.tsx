@@ -571,6 +571,8 @@ export default function NewBookingPage() {
   const daysInMonth = new Date(Date.UTC(viewYear, viewMonth, 0)).getUTCDate();
   const firstWeekday = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).getUTCDay();
   const isLoadingAvailability = availabilityFetcher.state !== "idle";
+  const isLoadingSlots = slotsFetcher.state !== "idle";
+  const isCreatingBooking = createFetcher.state !== "idle";
 
   return (
     <s-page heading="New Booking">
@@ -710,7 +712,9 @@ export default function NewBookingPage() {
       {date &&
         (selectedBookingType === "SLOT" || selectedBookingType === "BUNDLE") && (
           <s-section heading="Available times">
-            {slots.length === 0 ? (
+            {isLoadingSlots ? (
+              <s-paragraph>Loading available times…</s-paragraph>
+            ) : slots.length === 0 ? (
               <s-paragraph>No slots at all on this date.</s-paragraph>
             ) : (
               <s-stack direction="inline" gap="base">
@@ -807,6 +811,7 @@ export default function NewBookingPage() {
                 <s-button
                   variant="tertiary"
                   onClick={() => handleRemoveQueued(index)}
+                  {...(isCreatingBooking ? { disabled: true } : {})}
                 >
                   Remove
                 </s-button>
@@ -879,7 +884,11 @@ export default function NewBookingPage() {
           )}
 
           {}
-          <s-button variant="primary" onClick={handleCreateBooking}>
+          <s-button
+            variant="primary"
+            onClick={handleCreateBooking}
+            {...(isCreatingBooking ? { loading: true } : {})}
+          >
             {queuedSlots.length > 1
               ? `Create ${queuedSlots.length} bookings`
               : "Create booking"}
