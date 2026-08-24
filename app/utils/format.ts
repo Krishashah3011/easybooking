@@ -57,7 +57,7 @@ export function formatBookingWhenDisplay(booking: {
       : "—";
     return `${formatDateDisplay(booking.date)} \u2192 ${checkout}`;
   }
-  return `${formatDateDisplay(booking.date)} ${formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}`;
+  return formatDateDisplay(booking.date);
 }
 
 /**

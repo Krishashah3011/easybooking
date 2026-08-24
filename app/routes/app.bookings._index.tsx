@@ -22,7 +22,6 @@ import type { TimeSlot } from "../models/slotAvailability.server";
 import {
   bookingSourceLabel,
   formatBookingWhenDisplay,
-  formatDateDisplay,
   formatDateTimeDisplay,
   formatTimeRangeDisplay,
 } from "../utils/format";
@@ -298,75 +297,63 @@ function BookingLine({
               <s-text>{booking.location ?? "—"}</s-text>
             </DetailRow>
 
-            <DetailRow label={booking.bookingType === "MULTI_DAY" ? "Check-in" : "Date"}>
-              {isRescheduling ? (
-                <s-stack direction="inline" alignItems="center" gap="small">
-                  <s-date-field
-                    label="New date"
-                    labelAccessibilityVisibility="exclusive"
-                    value={newDate}
-                    onChange={(e: FieldChangeEvent) =>
-                      setNewDate(e.currentTarget.value)
-                    }
-                  ></s-date-field>
-                  <s-select
-                    label="New time"
-                    labelAccessibilityVisibility="exclusive"
-                    value={newSlotStart}
-                    disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
-                    onChange={(e: FieldChangeEvent) =>
-                      setNewSlotStart(e.currentTarget.value)
-                    }
-                  >
-                    {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
-                      <s-option value="">Loading times…</s-option>
-                    )}
-                    {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
-                      <s-option value="">No times on this date</s-option>
-                    )}
-                    {rescheduleSlots.map((slot) => (
-                      <s-option
-                        key={slot.startsAt}
-                        value={slot.start}
-                        {...(!slot.available && slot.start !== booking.slotStart
-                          ? { disabled: true }
-                          : {})}
-                      >
-                        {formatTimeRangeDisplay(slot.start, slot.end)}
-                        {!slot.available && slot.start !== booking.slotStart
-                          ? " (booked)"
-                          : typeof slot.remainingCapacity === "number"
-                            ? ` (${
-                                slot.remainingCapacity === 1
-                                  ? "1 spot left"
-                                  : `${slot.remainingCapacity} spots left`
-                              })`
-                            : ""}
-                      </s-option>
-                    ))}
-                  </s-select>
-                  <s-button
-                    variant="primary"
-                    onClick={handleReschedule}
-                    {...(!newSlotStart ? { disabled: true } : {})}
-                  >
-                    Save
-                  </s-button>
-                </s-stack>
-              ) : (
-                <s-text>{formatDateDisplay(booking.date)}</s-text>
-              )}
-            </DetailRow>
-
-            {booking.bookingType === "MULTI_DAY" && !isRescheduling && (
-              <DetailRow label="Check-out">
-                <s-text>
-                  {booking.endDate ? formatDateDisplay(booking.endDate) : "—"}
-                </s-text>
-              </DetailRow>
+            {isRescheduling && (
+              <s-stack direction="inline" alignItems="center" gap="small">
+                <s-date-field
+                  label="New date"
+                  labelAccessibilityVisibility="exclusive"
+                  value={newDate}
+                  onChange={(e: FieldChangeEvent) =>
+                    setNewDate(e.currentTarget.value)
+                  }
+                ></s-date-field>
+                <s-select
+                  label="New time"
+                  labelAccessibilityVisibility="exclusive"
+                  value={newSlotStart}
+                  disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
+                  onChange={(e: FieldChangeEvent) =>
+                    setNewSlotStart(e.currentTarget.value)
+                  }
+                >
+                  {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                    <s-option value="">Loading times…</s-option>
+                  )}
+                  {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                    <s-option value="">No times on this date</s-option>
+                  )}
+                  {rescheduleSlots.map((slot) => (
+                    <s-option
+                      key={slot.startsAt}
+                      value={slot.start}
+                      {...(!slot.available && slot.start !== booking.slotStart
+                        ? { disabled: true }
+                        : {})}
+                    >
+                      {formatTimeRangeDisplay(slot.start, slot.end)}
+                      {!slot.available && slot.start !== booking.slotStart
+                        ? " (booked)"
+                        : typeof slot.remainingCapacity === "number"
+                          ? ` (${
+                              slot.remainingCapacity === 1
+                                ? "1 spot left"
+                                : `${slot.remainingCapacity} spots left`
+                            })`
+                          : ""}
+                    </s-option>
+                  ))}
+                </s-select>
+                <s-button
+                  variant="primary"
+                  onClick={handleReschedule}
+                  {...(!newSlotStart ? { disabled: true } : {})}
+                >
+                  Save
+                </s-button>
+              </s-stack>
             )}
 
-            {booking.bookingType === "FULL_DAY" && !isRescheduling && (
+            {booking.bookingType === "FULL_DAY" && (
               <DetailRow label="Booking">
                 <s-text>Whole day</s-text>
               </DetailRow>
@@ -404,30 +391,28 @@ function BookingLine({
             </DetailRow>
 
             {booking.status !== "CANCELLED" && (
-              <DetailRow label="Actions">
-                <s-stack direction="inline" alignItems="center" gap="small">
-                  {isRescheduling ? (
+              <s-stack direction="inline" alignItems="center" gap="small">
+                {isRescheduling ? (
+                  <s-button
+                    variant="tertiary"
+                    onClick={() => setIsRescheduling(false)}
+                  >
+                    Cancel edit
+                  </s-button>
+                ) : (
+                  booking.bookingType === "SLOT" && (
                     <s-button
                       variant="tertiary"
-                      onClick={() => setIsRescheduling(false)}
+                      onClick={() => setIsRescheduling(true)}
                     >
-                      Cancel edit
+                      Reschedule
                     </s-button>
-                  ) : (
-                    booking.bookingType === "SLOT" && (
-                      <s-button
-                        variant="tertiary"
-                        onClick={() => setIsRescheduling(true)}
-                      >
-                        Reschedule
-                      </s-button>
-                    )
-                  )}
-                  <s-button variant="tertiary" tone="critical" onClick={handleCancel}>
-                    Cancel booking
-                  </s-button>
-                </s-stack>
-              </DetailRow>
+                  )
+                )}
+                <s-button variant="tertiary" tone="critical" onClick={handleCancel}>
+                  Cancel booking
+                </s-button>
+              </s-stack>
             )}
           </s-stack>
 
