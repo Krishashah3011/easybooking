@@ -1,192 +1,97 @@
-import type { BookingSettings } from "@prisma/client";
+import type { SmtpSettings } from "@prisma/client";
 import prisma from "../db.server";
-export { parseWorkingDays } from "../utils/workingDays";
-import { parseWorkingDays } from "../utils/workingDays";
 
-export const DEFAULT_BOOKING_SETTINGS = {
-  workingDays: "1,2,3,4,5",
-  dailyStartTime: "09:00",
-  dailyEndTime: "17:00",
-  slotDurationMinutes: 30,
-  bufferMinutes: 0,
-  minAdvanceHours: 0,
-  maxAdvanceDays: 30,
-  maxBookingsPerSlot: 1,
-  bookingStartDate: null as Date | null,
-  bookingEndDate: null as Date | null,
-  emailFromName: null as string | null,
+export const DEFAULT_SMTP_SETTINGS = {
+  host: null as string | null,
+  port: null as number | null,
+  username: null as string | null,
+  password: null as string | null,
+  fromEmail: null as string | null,
 };
 
-export type BookingSettingsFormValues = {
-  workingDays: number[];
-  dailyStartTime: string;
-  dailyEndTime: string;
-  slotDurationMinutes: number;
-  bufferMinutes: number;
-  minAdvanceHours: number;
-  maxAdvanceDays: number;
-  maxBookingsPerSlot: number;
-  bookingStartDate: string | null;
-  bookingEndDate: string | null;
-  emailFromName: string | null;
+export type SmtpSettingsFormValues = {
+  host: string;
+  port: string;
+  username: string;
+  password: string;
+  fromEmail: string;
 };
 
-export type BookingSettingsFieldErrors = Partial<
-  Record<keyof BookingSettingsFormValues, string>
+export type SmtpSettingsFieldErrors = Partial<
+  Record<keyof SmtpSettingsFormValues, string>
 >;
 
-export async function getBookingSettings(
+export async function getSmtpSettings(
   shop: string,
-): Promise<BookingSettings> {
-  const existing = await prisma.bookingSettings.findUnique({
-    where: { shop },
-  });
-
-  if (existing) {
-    return existing;
-  }
-
-  return prisma.bookingSettings.create({
-    data: { shop, ...DEFAULT_BOOKING_SETTINGS },
-  });
+): Promise<SmtpSettings | null> {
+  return prisma.smtpSettings.findUnique({ where: { shop } });
 }
 
 export function toFormValues(
-  settings: BookingSettings,
-): BookingSettingsFormValues {
+  settings: SmtpSettings | null,
+): SmtpSettingsFormValues {
   return {
-    workingDays: parseWorkingDays(settings.workingDays),
-    dailyStartTime: settings.dailyStartTime,
-    dailyEndTime: settings.dailyEndTime,
-    slotDurationMinutes: settings.slotDurationMinutes,
-    bufferMinutes: settings.bufferMinutes,
-    minAdvanceHours: settings.minAdvanceHours,
-    maxAdvanceDays: settings.maxAdvanceDays,
-    maxBookingsPerSlot: settings.maxBookingsPerSlot,
-    bookingStartDate: toDateInputValue(settings.bookingStartDate),
-    bookingEndDate: toDateInputValue(settings.bookingEndDate),
-    emailFromName: settings.emailFromName,
+    host: settings?.host ?? "",
+    port: settings?.port != null ? String(settings.port) : "",
+    username: settings?.username ?? "",
+    password: settings?.password ?? "",
+    fromEmail: settings?.fromEmail ?? "",
   };
 }
 
-function toDateInputValue(date: Date | null): string | null {
-  if (!date) return null;
-  return date.toISOString().slice(0, 10);
-}
+const PORT_RE = /^\d+$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
-const MAX_FROM_NAME_LENGTH = 60;
-
-export function parseBookingSettingsForm(formData: FormData): {
-  values: BookingSettingsFormValues;
-  errors: BookingSettingsFieldErrors;
+export function parseSmtpSettingsForm(formData: FormData): {
+  values: SmtpSettingsFormValues;
+  errors: SmtpSettingsFieldErrors;
 } {
-  const errors: BookingSettingsFieldErrors = {};
+  const errors: SmtpSettingsFieldErrors = {};
 
-  const workingDays = String(formData.get("workingDays") ?? "")
-    .split(",")
-    .map((v) => Number(v.trim()))
-    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
-  if (workingDays.length === 0) {
-    errors.workingDays = "Select at least one working day.";
+  const host = String(formData.get("host") ?? "").trim();
+  if (!host) {
+    errors.host = "SMTP host is required.";
   }
 
-  const dailyStartTime = String(formData.get("dailyStartTime") ?? "");
-  const dailyEndTime = String(formData.get("dailyEndTime") ?? "");
-  if (!TIME_RE.test(dailyStartTime)) {
-    errors.dailyStartTime = "Enter a valid start time (HH:mm).";
-  }
-  if (!TIME_RE.test(dailyEndTime)) {
-    errors.dailyEndTime = "Enter a valid end time (HH:mm).";
-  }
-  if (
-    !errors.dailyStartTime &&
-    !errors.dailyEndTime &&
-    dailyEndTime <= dailyStartTime
-  ) {
-    errors.dailyEndTime = "End time must be after start time.";
+  const port = String(formData.get("port") ?? "").trim();
+  if (!port || !PORT_RE.test(port) || Number(port) < 1 || Number(port) > 65535) {
+    errors.port = "Enter a valid port number.";
   }
 
-  const slotDurationMinutes = Number(formData.get("slotDurationMinutes"));
-  if (!Number.isInteger(slotDurationMinutes) || slotDurationMinutes < 5) {
-    errors.slotDurationMinutes = "Slot duration must be at least 5 minutes.";
+  const username = String(formData.get("username") ?? "").trim();
+  if (!username) {
+    errors.username = "SMTP username is required.";
   }
 
-  const bufferMinutes = Number(formData.get("bufferMinutes"));
-  if (!Number.isInteger(bufferMinutes) || bufferMinutes < 0) {
-    errors.bufferMinutes = "Buffer time can't be negative.";
+  const password = String(formData.get("password") ?? "");
+  if (!password) {
+    errors.password = "SMTP password is required.";
   }
 
-  const minAdvanceHours = Number(formData.get("minAdvanceHours"));
-  if (!Number.isInteger(minAdvanceHours) || minAdvanceHours < 0) {
-    errors.minAdvanceHours = "Minimum advance time can't be negative.";
+  const fromEmail = String(formData.get("fromEmail") ?? "").trim();
+  if (!fromEmail || !EMAIL_RE.test(fromEmail)) {
+    errors.fromEmail = "Enter a valid \"from\" email address.";
   }
-
-  const maxAdvanceDays = Number(formData.get("maxAdvanceDays"));
-  if (!Number.isInteger(maxAdvanceDays) || maxAdvanceDays < 1) {
-    errors.maxAdvanceDays = "Maximum advance days must be at least 1.";
-  }
-
-  const maxBookingsPerSlot = Number(formData.get("maxBookingsPerSlot"));
-  if (!Number.isInteger(maxBookingsPerSlot) || maxBookingsPerSlot < 1) {
-    errors.maxBookingsPerSlot = "Capacity per slot must be at least 1.";
-  }
-
-  const bookingStartDateRaw = String(formData.get("bookingStartDate") ?? "");
-  const bookingEndDateRaw = String(formData.get("bookingEndDate") ?? "");
-  const bookingStartDate = bookingStartDateRaw || null;
-  const bookingEndDate = bookingEndDateRaw || null;
-  if (bookingStartDate && bookingEndDate && bookingEndDate < bookingStartDate) {
-    errors.bookingEndDate = "End date must be after start date.";
-  }
-
-  const emailFromNameRaw = String(formData.get("emailFromName") ?? "").trim();
-  if (emailFromNameRaw.length > MAX_FROM_NAME_LENGTH) {
-    errors.emailFromName = `Keep it under ${MAX_FROM_NAME_LENGTH} characters.`;
-  }
-  const emailFromName = emailFromNameRaw || null;
 
   return {
-    values: {
-      workingDays,
-      dailyStartTime,
-      dailyEndTime,
-      slotDurationMinutes,
-      bufferMinutes,
-      minAdvanceHours,
-      maxAdvanceDays,
-      maxBookingsPerSlot,
-      bookingStartDate,
-      bookingEndDate,
-      emailFromName,
-    },
+    values: { host, port, username, password, fromEmail },
     errors,
   };
 }
 
-export async function upsertBookingSettings(
+export async function upsertSmtpSettings(
   shop: string,
-  values: BookingSettingsFormValues,
-): Promise<BookingSettings> {
+  values: SmtpSettingsFormValues,
+): Promise<SmtpSettings> {
   const data = {
-    workingDays: values.workingDays.join(","),
-    dailyStartTime: values.dailyStartTime,
-    dailyEndTime: values.dailyEndTime,
-    slotDurationMinutes: values.slotDurationMinutes,
-    bufferMinutes: values.bufferMinutes,
-    minAdvanceHours: values.minAdvanceHours,
-    maxAdvanceDays: values.maxAdvanceDays,
-    maxBookingsPerSlot: values.maxBookingsPerSlot,
-    bookingStartDate: values.bookingStartDate
-      ? new Date(values.bookingStartDate)
-      : null,
-    bookingEndDate: values.bookingEndDate
-      ? new Date(values.bookingEndDate)
-      : null,
-    emailFromName: values.emailFromName,
+    host: values.host,
+    port: Number(values.port),
+    username: values.username,
+    password: values.password,
+    fromEmail: values.fromEmail,
   };
 
-  return prisma.bookingSettings.upsert({
+  return prisma.smtpSettings.upsert({
     where: { shop },
     create: { shop, ...data },
     update: data,
