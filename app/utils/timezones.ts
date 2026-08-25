@@ -110,10 +110,6 @@ export function zonedTimeToUtc(
   const naiveUtc = new Date(`${dateStr}T${timeStr}:00Z`);
   if (!timeZone || !isValidTimezone(timeZone)) return naiveUtc;
 
-  // First pass: assume the zone's current offset, then correct once more
-  // since the offset itself is a function of the (still unknown) instant —
-  // two iterations converge for every real-world zone, including ones
-  // with a DST transition on the given day.
   let guess = naiveUtc;
   for (let i = 0; i < 2; i++) {
     const offset = offsetMinutesAt(guess, timeZone);

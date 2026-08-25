@@ -1179,9 +1179,6 @@
       return null;
     }
 
-    // Shows the configured min/max stay length while the shopper is still
-    // picking a check-in/check-out range (storefront side of the min/max
-    // days messaging requirement). Returns true if a message was shown.
     function showMultiDayRangeInfo() {
       if (productBookingType !== "MULTI_DAY") return false;
       var text = multiDayRangeInfoText();
@@ -1446,8 +1443,6 @@
     }
 
     function refreshQuantityForSelection() {
-      // For bundle bookings, quantity can only be chosen while selecting the
-      // 1st session; once a session has been confirmed, quantity is locked.
       var isBundleFollowupSession =
         productBookingType === "BUNDLE" && bundleSessions.length > 0;
       if (quantityWrapEl) {
@@ -1721,8 +1716,6 @@
 
         if (!atReviewStep) {
           if (bundleSessions.length === 0) {
-            // Quantity is only editable while choosing the 1st session —
-            // lock it in now before it gets reset for later sessions.
             bundleQuantity = pendingQuantity;
           }
           bundleSessions.push({ date: pendingDate, slot: pendingSlot });
