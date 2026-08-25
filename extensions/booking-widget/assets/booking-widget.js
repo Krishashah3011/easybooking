@@ -228,6 +228,7 @@
 
     var productBookingType = "SLOT";
     var slotsPaneEl = root.querySelector("[data-booking-slots]");
+    var slotsPaneWrapEl = root.querySelector("[data-booking-slots-pane]");
     var availableDatesByDay = {};
     var remainingCapacityByDate = {};
     var secondMonthAvailableDates = null;
@@ -975,7 +976,9 @@
     }
 
     function applyLayoutForType() {
-      if (slotsPaneEl) slotsPaneEl.hidden = isTwoMonthType(productBookingType);
+      var twoMonth = isTwoMonthType(productBookingType);
+      if (slotsPaneEl) slotsPaneEl.hidden = twoMonth;
+      if (slotsPaneWrapEl) slotsPaneWrapEl.hidden = twoMonth;
     }
 
     function loadMonth() {
