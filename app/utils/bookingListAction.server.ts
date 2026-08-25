@@ -7,10 +7,6 @@ import {
 } from "../models/booking.server";
 import type { TimeSlot } from "../models/slotAvailability.server";
 
-// Shared by every bookings list route (the combined "All Bookings" index and
-// each per-type subpage: /app/bookings/slot, /full-day, /multi-day, /bundle)
-// so the cancel / reschedule / load-slots behavior stays identical everywhere
-// instead of being copy-pasted per route.
 export async function bookingListAction({ request }: ActionFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();

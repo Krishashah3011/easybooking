@@ -101,14 +101,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return { intent, ok: false as const, errors, values };
     }
 
-    // Enabling booking with no location on record means every booking
-    // for this product would fall back to naive UTC — same gap Phase 2/3
-    // just closed for order creation, reschedule, and manual admin
-    // booking. Block it here rather than let a merchant discover the
-    // problem later via a wrong-looking confirmation email. This is the
-    // authoritative check — the switch is also disabled client-side, but
-    // that's only a courtesy in case this ever gets bypassed (stale tab,
-    // direct form post, etc.).
     if (values.isEnabled) {
       const enabledLocations = await listEnabledLocations(session.shop);
       if (enabledLocations.length === 0) {

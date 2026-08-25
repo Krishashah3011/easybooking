@@ -22,10 +22,8 @@ export type BookableProductFormValues = {
   maxBookingsPerSlot: number | null;
   bookingStartDate: string | null;
   bookingEndDate: string | null;
-  // MULTI_DAY only
   minNights: number | null;
   maxNights: number | null;
-  // BUNDLE only
   bundleSessionCount: number | null;
   bundleSessionDurationMinutes: number | null;
   bundleValidityDays: number | null;
@@ -218,7 +216,6 @@ export function parseBookableProductForm(formData: FormData): {
     errors.bookingEndDate = "End date must be after start date.";
   }
 
-  // MULTI_DAY only
   const minNightsResult = parseOptionalInt(formData.get("minNights"));
   const minNights = minNightsResult.value;
   if (minNightsResult.invalid) {
@@ -235,7 +232,6 @@ export function parseBookableProductForm(formData: FormData): {
     errors.maxNights = "Maximum nights can't be less than minimum nights.";
   }
 
-  // BUNDLE only
   const bundleSessionCountResult = parseOptionalInt(
     formData.get("bundleSessionCount"),
   );
@@ -362,20 +358,27 @@ export async function upsertBookableProductOverrides(
   });
 }
 
+export type LocationHoursOverride = {
+  workingDays: string | null;
+  dailyStartTime: string | null;
+  dailyEndTime: string | null;
+};
+
 export function resolveEffectiveSettings(
   shopSettings: BookingSettings,
   product: BookableProduct | null,
+  location?: LocationHoursOverride | null,
 ): EffectiveBookingSettings {
   return {
-    workingDays: product?.workingDays
-      ? parseWorkingDays(product.workingDays)
-      : parseWorkingDays(shopSettings.workingDays),
-    dailyStartTime: product?.dailyStartTime ?? shopSettings.dailyStartTime,
-    dailyEndTime: product?.dailyEndTime ?? shopSettings.dailyEndTime,
-    // A BUNDLE product's "slot duration" is really its per-session
-    // length, set on the Bundle settings section rather than the
-    // regular Slot configuration section — fall back to it here so
-    // BUNDLE can reuse the exact same slot-generation logic as SLOT.
+    workingDays: location?.workingDays
+      ? parseWorkingDays(location.workingDays)
+      : product?.workingDays
+        ? parseWorkingDays(product.workingDays)
+        : parseWorkingDays(shopSettings.workingDays),
+    dailyStartTime:
+      location?.dailyStartTime ?? product?.dailyStartTime ?? shopSettings.dailyStartTime,
+    dailyEndTime:
+      location?.dailyEndTime ?? product?.dailyEndTime ?? shopSettings.dailyEndTime,
     slotDurationMinutes:
       product?.bookingType === "BUNDLE" && product.bundleSessionDurationMinutes
         ? product.bundleSessionDurationMinutes

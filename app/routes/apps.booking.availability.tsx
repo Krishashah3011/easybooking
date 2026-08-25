@@ -12,7 +12,6 @@ import {
   getBookedCountsInRange,
   getBookedNightCountsInRange,
 } from "../models/booking.server";
-import { getLocationById } from "../models/bookingLocation.server";
 
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -37,14 +36,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return Response.json({ error: "month must be 1-12" }, { status: 400 });
   }
 
-  const context = await resolveBookingContext(session.shop, productId);
+  const context = await resolveBookingContext(session.shop, productId, locationId);
   if (!context) {
     return Response.json({ availableDates: [] });
   }
-
-  const location = locationId
-    ? await getLocationById(session.shop, locationId)
-    : null;
 
   const monthStart = new Date(Date.UTC(year, month - 1, 1));
   const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
@@ -112,7 +107,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       context.blackoutDates,
       new Date(),
       bookedCounts,
-      location?.timezone ?? null,
+      context.location?.timezone ?? null,
     );
   }
 

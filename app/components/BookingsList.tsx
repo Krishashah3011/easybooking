@@ -365,13 +365,6 @@ function BookingLine({
   );
 }
 
-// Bookings end up in the same group two ways:
-// - Admin "New Booking" queued more than one slot in one submission and
-//   they share a groupId (see booking.server.ts / app.bookings.new.tsx).
-// - A single storefront order booked more than one slot/product and the
-//   resulting Booking rows share an orderId (one row per line item).
-// Anything else (a single-slot admin booking, a single-item order) has
-// neither and is treated as its own group of one.
 type BookingGroup = {
   key: string;
   bookings: BookingWithProductTitle[];

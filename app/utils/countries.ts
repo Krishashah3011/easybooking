@@ -1,26 +1,10 @@
-// Country → timezone data for the "pick a country" location UX.
-//
-// Most countries observe a single timezone, so picking the country is
-// enough to pick the timezone. A handful of countries span multiple
-// zones (US, Canada, Russia, Australia, Brazil, Mexico) — those list
-// more than one zone, and the admin UI shows a second "Timezone"
-// dropdown (labelled by region/city) only when the selected country
-// has more than one.
-//
-// This only feeds the admin form — the underlying BookingLocation
-// record still just stores a plain IANA timezone string, exactly as
-// before, so nothing downstream (storefront slot computation) needs
-// to change.
-
 export type CountryTimezone = {
   tz: string;
-  // Region/city label shown in the secondary dropdown for multi-zone
-  // countries, e.g. "Eastern (New York)".
   label: string;
 };
 
 export type Country = {
-  code: string; // ISO 3166-1 alpha-2
+  code: string;
   name: string;
   timezones: CountryTimezone[];
 };

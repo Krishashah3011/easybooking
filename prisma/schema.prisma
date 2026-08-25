@@ -41,6 +41,7 @@ model BookingSettings {
   bookingStartDate DateTime?
   bookingEndDate   DateTime?
   emailFromName String?
+  locationPrefillDone Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -52,6 +53,9 @@ model BookingLocation {
   timezone String @default("UTC")
   isEnabled Boolean @default(true)
   sortOrder Int @default(0)
+  workingDays    String?
+  dailyStartTime String?
+  dailyEndTime   String?
   bookings  Booking[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -83,10 +87,8 @@ model BookableProduct {
   maxBookingsPerSlot   Int?
   bookingStartDate     DateTime?
   bookingEndDate       DateTime?
-  // MULTI_DAY only (date-range bookings, e.g. hotel rooms / rentals)
   minNights            Int?
   maxNights            Int?
-  // BUNDLE only (a pack of sessions sold as one purchase)
   bundleSessionCount        Int?
   bundleSessionDurationMinutes Int?
   bundleValidityDays        Int?
@@ -157,17 +159,7 @@ model Booking {
   customerEmail String?
   customerPhone String?
   isGuest       Boolean @default(true)
-  // Cached display label — kept so existing list/detail views that just
-  // read this string on its own keep working. It's a snapshot of the
-  // location's name at booking time, not the source of truth.
   location     String?
-  // Source of truth for which BookingLocation (and therefore which
-  // timezone) this booking was made under. Nullable because bookings
-  // created before this column existed have no location on record, and
-  // because a location can later be deleted (SetNull) without deleting
-  // its booking history. Every *new* booking going forward is required,
-  // at the application level, to set this — see the booking-creation
-  // and reschedule code.
   locationId   String?
   bookingLocation BookingLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   date         String

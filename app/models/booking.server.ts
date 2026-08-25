@@ -46,12 +46,6 @@ export type OrderPayload = {
 const BOOKING_DATE_PROPERTY = "Booking Date";
 const BOOKING_TIME_PROPERTY = "Booking Time";
 const BOOKING_LOCATION_PROPERTY = "Location";
-// Underscore-prefixed line item properties are hidden from the customer's
-// cart/order confirmation and the Shopify admin order timeline — this one
-// exists purely so the order webhook can look up the exact BookingLocation
-// row (and therefore its timezone) instead of guessing from the
-// display-name string in BOOKING_LOCATION_PROPERTY, which isn't a stable
-// identifier (locations can be renamed).
 const BOOKING_LOCATION_ID_PROPERTY = "_Location Id";
 const BOOKING_CHECKOUT_DATE_PROPERTY = "Checkout Date";
 
@@ -88,16 +82,17 @@ export function extractBookingLocationId(lineItem: OrderLineItem): string | null
   return locationId || null;
 }
 
-// Resolves the real BookingLocation record (and therefore its timezone)
-// for a line item, preferring the hidden id property and falling back to
-// nothing rather than guessing by name. Returns null — never throws — so a
-// missing/stale/deleted location never blocks the order from creating a
-// booking; it just means that booking's times fall back to naive UTC and
-// gets logged loudly so it's easy to spot during rollout.
 async function resolveBookingLocation(
   shop: string,
   lineItem: OrderLineItem,
-): Promise<{ id: string; name: string; timezone: string } | null> {
+): Promise<{
+  id: string;
+  name: string;
+  timezone: string;
+  workingDays: string | null;
+  dailyStartTime: string | null;
+  dailyEndTime: string | null;
+} | null> {
   const locationId = extractBookingLocationId(lineItem);
   if (!locationId) return null;
   const location = await getLocationById(shop, locationId);
@@ -107,14 +102,16 @@ async function resolveBookingLocation(
     );
     return null;
   }
-  return { id: location.id, name: location.name, timezone: location.timezone };
+  return {
+    id: location.id,
+    name: location.name,
+    timezone: location.timezone,
+    workingDays: location.workingDays,
+    dailyStartTime: location.dailyStartTime,
+    dailyEndTime: location.dailyEndTime,
+  };
 }
 
-// A BUNDLE line item carries its first session under the normal
-// "Booking Date"/"Booking Time" properties (kept for backward
-// compatibility with the admin bookings list and email templates), and
-// every session after that under "Session 2 Date"/"Session 2 Time",
-// "Session 3 Date"/"Session 3 Time", and so on.
 export function extractBundleSessions(
   lineItem: OrderLineItem,
   sessionCount: number,
@@ -208,12 +205,6 @@ export async function getBookedCountsInRange(
   return counts;
 }
 
-// MULTI_DAY bookings span a date range (one Booking row per purchase,
-// `date` = check-in, `endDate` = check-out) rather than one row per
-// night, so we can't group by slotStartsAt like the counter above.
-// Instead we pull every active multi-day booking that overlaps the
-// requested range at all, then expand each one across the individual
-// nights it covers to build a per-night count.
 export async function getBookedNightCountsInRange(
   shop: string,
   bookableProductId: string,
@@ -249,10 +240,6 @@ export async function getBookedNightCountsInRange(
   return counts;
 }
 
-// Approximate capacity check used only at order-creation time: how many
-// units are already committed to ANY night this new booking would
-// touch. Good enough for flagging OVERBOOKED for merchant review,
-// without needing a full per-night breakdown at write time.
 async function countOverlappingMultiDayBookings(
   shop: string,
   bookableProductId: string,
@@ -316,12 +303,6 @@ async function sendBookingConfirmation(
   }
 }
 
-// A BUNDLE purchase creates one Booking row per session, but the
-// customer should only get ONE email listing every session — not one
-// email per session. Called once after all of a bundle's rows are
-// created, sends a single summary and stamps confirmationSentAt on
-// every row in the group so reminder/cancellation logic still treats
-// each row normally afterward.
 async function sendBundleBookingConfirmation(
   bookings: Booking[],
   productTitle: string,
@@ -462,17 +443,18 @@ export async function createBookingsFromOrder(
       continue;
     }
 
-    const effectiveSettings = resolveEffectiveSettings(
-      shopSettings,
-      bookableProduct,
-    );
-
     const resolvedLocation = await resolveBookingLocation(shop, lineItem);
     if (!resolvedLocation) {
       console.warn(
         `Order ${order.id} line item ${lineItem.id}: no valid location resolved — this booking's date/time will be computed in raw UTC, not a real business timezone.`,
       );
     }
+
+    const effectiveSettings = resolveEffectiveSettings(
+      shopSettings,
+      bookableProduct,
+      resolvedLocation,
+    );
 
     const customFieldResponses = extractCustomFieldResponses(
       lineItem,
@@ -484,11 +466,6 @@ export async function createBookingsFromOrder(
     })();
 
     if (bookableProduct.bookingType === "BUNDLE") {
-      // A BUNDLE purchase is one cart line covering several sessions —
-      // each session gets its own Booking row (so it shows up correctly
-      // on the calendar/capacity checks like any other slot booking),
-      // all tied together with a shared groupId so the admin can see
-      // them as one pack.
       const sessionCount = bookableProduct.bundleSessionCount ?? 1;
       const sessions = extractBundleSessions(lineItem, sessionCount);
       if (sessions.length === 0) {
@@ -498,13 +475,6 @@ export async function createBookingsFromOrder(
         continue;
       }
 
-      // Same check the storefront widget already enforces on the
-      // calendar — re-verified here since the widget's restriction is
-      // client-side and shouldn't be the only thing standing between a
-      // session date and the database. Sessions past the deadline are
-      // still recorded (so nothing silently vanishes) but flagged
-      // OVERBOOKED, the same status used for capacity conflicts, so the
-      // merchant sees them for review in the bookings list.
       let bundleValidityDeadlineStr: string | null = null;
       if (bookableProduct.bundleValidityDays != null) {
         const purchaseDate = order.created_at ? new Date(order.created_at) : new Date();
@@ -577,8 +547,6 @@ export async function createBookingsFromOrder(
         bundleBookings.push(booking);
       }
 
-      // One email for the whole pack, not one per session — otherwise a
-      // 4-session bundle would send the customer 4 separate emails.
       const confirmedBundleBookings = bundleBookings.filter(
         (b) => b.status === "CONFIRMED",
       );
@@ -598,11 +566,6 @@ export async function createBookingsFromOrder(
     let bookingEndDateField: string | null = null;
 
     if (bookableProduct.bookingType === "MULTI_DAY") {
-      // A MULTI_DAY booking is a check-in/check-out range, not a single
-      // slot — the whole thing lives in one Booking row (date =
-      // check-in, endDate = check-out), so capacity is checked against
-      // every other booking that overlaps any night in this range
-      // rather than a single slotStartsAt match.
       const checkout = selection.checkoutDate ?? selection.date;
       bookingEndDateField = checkout;
       slotStartsAt = new Date(`${selection.date}T00:00:00.000Z`);
@@ -614,9 +577,6 @@ export async function createBookingsFromOrder(
         checkout,
       );
     } else if (bookableProduct.bookingType === "FULL_DAY") {
-      // A FULL_DAY booking has no time-slot math — the whole day is the
-      // unit, so we skip computeSlotsForDate entirely and just anchor
-      // the booking to midnight UTC of the chosen date.
       slotStartsAt = new Date(`${selection.date}T00:00:00.000Z`);
       slotEnd = "23:59";
       alreadyBooked = await countConfirmedBookingsForSlot(
@@ -723,17 +683,14 @@ export type ManualBookingInput = {
   bookableProductId: string;
   date: string;
   slotStart: string;
-  // MULTI_DAY only: the check-out date. Ignored for every other type.
   endDate?: string | null;
   quantity?: number;
   location?: string | null;
+  locationId?: string | null;
   customerName: string;
   customerEmail: string | null;
   customerPhone: string | null;
   customFieldResponses?: Record<string, string>;
-  // Shared across every slot created from the same "New Booking" submission
-  // when more than one date/time was queued, so they can be shown as one
-  // entry in the Bookings list. Leave undefined for a single-slot booking.
   groupId?: string;
 };
 
@@ -751,10 +708,15 @@ export async function createManualBooking(
     return { ok: false, error: "This product isn't enabled for booking." };
   }
 
+  const resolvedLocation = input.locationId
+    ? await getLocationById(shop, input.locationId)
+    : null;
+
   const shopSettings = await getBookingSettings(shop);
   const effectiveSettings = resolveEffectiveSettings(
     shopSettings,
     bookableProduct,
+    resolvedLocation,
   );
   const quantity =
     Number.isInteger(input.quantity) && (input.quantity as number) > 0
@@ -804,12 +766,6 @@ export async function createManualBooking(
       return { ok: false, error: "Those dates overlap an existing booking." };
     }
   } else {
-    // SLOT and BUNDLE both use the normal time-slot engine — a BUNDLE
-    // product's slot length already comes from its own session-duration
-    // setting via resolveEffectiveSettings, so no extra branching is
-    // needed here; queuing several sessions for the same bundle product
-    // (from the "New Booking" page's existing multi-slot queue) is what
-    // creates a bundle-style grouped set of bookings.
     const slotsForDate = computeSlotsForDate(
       effectiveSettings,
       input.date,
@@ -843,6 +799,7 @@ export async function createManualBooking(
       customerPhone: input.customerPhone,
       isGuest: true,
       location: input.location || null,
+      locationId: resolvedLocation?.id ?? null,
       date: input.date,
       endDate: bookingEndDateField,
       slotStart: bookableProduct.bookingType === "FULL_DAY" ? "00:00" : input.slotStart,
@@ -876,9 +833,6 @@ export async function listBookingsForProduct(
 export type BookingWithProductTitle = Booking & {
   productTitle: string;
   bookingType: BookingType;
-  // Derived, not stored: the stored `status`, except an active booking
-  // (CONFIRMED/RESCHEDULED/OVERBOOKED) whose date/time has fully passed
-  // shows as "COMPLETED" instead. See utils/bookingStatus.ts.
   displayStatus: string;
 };
 
@@ -889,8 +843,6 @@ export type ListBookingsFilters = {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
-  // true = only completed bookings; false = exclude completed bookings;
-  // undefined = don't filter on completion at all.
   completed?: boolean;
 };
 
@@ -1050,27 +1002,21 @@ export async function rescheduleBooking(
   }
 
   const shopSettings = await getBookingSettings(shop);
+  const rescheduleLocation = booking.locationId
+    ? await getLocationById(shop, booking.locationId)
+    : null;
   const effectiveSettings = resolveEffectiveSettings(
     shopSettings,
     booking.bookableProduct,
+    rescheduleLocation,
   );
-  // Reschedule has to recompute slots in the same timezone the original
-  // booking was made under — otherwise a slot that looks valid in the
-  // location's local time can silently shift or fail to match once run
-  // through naive UTC. booking.locationId is null for legacy bookings
-  // made before this column existed, or if the location was since
-  // deleted (SetNull); in either case fall back to UTC rather than
-  // blocking the reschedule.
-  const rescheduleTimeZone = booking.locationId
-    ? (await getLocationById(shop, booking.locationId))?.timezone ?? null
-    : null;
   const slotsForDate = computeSlotsForDate(
     effectiveSettings,
     newDate,
     new Set(),
     new Date(),
     new Map(),
-    rescheduleTimeZone,
+    rescheduleLocation?.timezone ?? null,
   );
   const matchedSlot = slotsForDate.find((s) => s.start === newSlotStart);
   if (!matchedSlot) {
@@ -1143,9 +1089,13 @@ export async function listSlotsForReschedule(
   }
 
   const shopSettings = await getBookingSettings(shop);
+  const rescheduleLocation = booking.locationId
+    ? await getLocationById(shop, booking.locationId)
+    : null;
   const effectiveSettings = resolveEffectiveSettings(
     shopSettings,
     booking.bookableProduct,
+    rescheduleLocation,
   );
 
   const dayStart = new Date(`${date}T00:00:00.000Z`);
@@ -1172,6 +1122,7 @@ export async function listSlotsForReschedule(
     new Set(),
     new Date(),
     bookedCounts,
+    rescheduleLocation?.timezone ?? null,
   );
 
   return { ok: true, slots };

@@ -22,7 +22,7 @@ import {
   getBookedCountsInRange,
   getBookedNightCountsInRange,
 } from "../models/booking.server";
-import { listEnabledLocations, getLocationById } from "../models/bookingLocation.server";
+import { listEnabledLocations } from "../models/bookingLocation.server";
 import { listCustomFields, toPublicField } from "../models/customBookingField.server";
 import { formatTimeRangeDisplay } from "../utils/format";
 
@@ -67,29 +67,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
-// Mirrors resolveBookingLocation() in booking.server.ts: never throws, just
-// falls back to null (naive UTC) if no location was picked yet or the id
-// doesn't resolve — a merchant mid-way through the form shouldn't be
-// blocked from seeing slots just because they haven't chosen a location.
-async function resolveLocationTimeZone(
-  shop: string,
-  locationId: string | null,
-): Promise<string | null> {
-  if (!locationId) return null;
-  const location = await getLocationById(shop, locationId);
-  return location?.timezone ?? null;
-}
-
 async function resolveBlackoutDatesAndSettings(
   shop: string,
   bookableProductId: string,
+  locationId?: string | null,
 ) {
-  const context = await resolveBookingContext(shop, bookableProductId);
+  const context = await resolveBookingContext(shop, bookableProductId, locationId);
   if (!context) return null;
   return {
     bookingType: context.bookingType,
     effectiveSettings: context.effectiveSettings,
     blackoutDates: context.blackoutDates,
+    location: context.location,
   };
 }
 
@@ -114,6 +103,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const resolved = await resolveBlackoutDatesAndSettings(
       session.shop,
       bookableProductId,
+      locationId,
     );
     if (!resolved) {
       return { intent, ok: false as const, availableDates: [] as string[] };
@@ -160,7 +150,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         monthStart,
         monthEnd,
       );
-      const timeZone = await resolveLocationTimeZone(session.shop, locationId);
       availableDates = getAvailableDatesInMonth(
         resolved.effectiveSettings,
         year,
@@ -168,7 +157,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         resolved.blackoutDates,
         new Date(),
         bookedCounts,
-        timeZone,
+        resolved.location?.timezone ?? null,
       );
     }
 
@@ -186,6 +175,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const resolved = await resolveBlackoutDatesAndSettings(
       session.shop,
       bookableProductId,
+      locationId,
     );
     if (!resolved) {
       return { intent, ok: false as const, slots: [] as TimeSlot[] };
@@ -199,7 +189,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       dayStart,
       dayEnd,
     );
-    const timeZone = await resolveLocationTimeZone(session.shop, locationId);
 
     const slots = computeSlotsForDate(
       resolved.effectiveSettings,
@@ -207,7 +196,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       resolved.blackoutDates,
       new Date(),
       bookedCounts,
-      timeZone,
+      resolved.location?.timezone ?? null,
     );
 
     return { intent, ok: true as const, slots };
@@ -215,6 +204,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (intent === "createBooking") {
     const location = String(formData.get("location") ?? "") || null;
+    const locationId = String(formData.get("locationId") ?? "") || null;
     const customerName = String(formData.get("customerName") ?? "");
     const customerEmail = String(formData.get("customerEmail") ?? "") || null;
     const customerPhone = String(formData.get("customerPhone") ?? "") || null;
@@ -243,10 +233,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       };
     }
 
-    // Multiple slots queued in one submission are the same customer booking
-    // several times/dates (and possibly different products) at once — tie
-    // them together so the Bookings list can show them as one entry instead
-    // of several unrelated rows.
     const groupId = slots.length > 1 ? crypto.randomUUID() : undefined;
 
     const results: SlotResult[] = [];
@@ -258,6 +244,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         endDate: slot.endDate ?? null,
         quantity: slot.quantity,
         location,
+        locationId,
         customerName,
         customerEmail,
         customerPhone,
@@ -371,9 +358,6 @@ export default function NewBookingPage() {
     setDate("");
     setSelectedSlot(null);
     loadAvailability(bookableProductId, viewYear, viewMonth);
-    // Availability (which dates have open slots) depends on the location's
-    // timezone, same as the slots themselves — re-fetch whenever the
-    // merchant switches location, not just product/month.
   }, [bookableProductId, viewYear, viewMonth, locationId]);
 
   useEffect(() => {
@@ -383,16 +367,12 @@ export default function NewBookingPage() {
   }, [selectedSlot]);
 
   useEffect(() => {
-    // A date may already be selected before the merchant switches
-    // location — refetch its slots so they reflect the new timezone
-    // instead of leaving stale ones from the previous location on screen.
     if (!date || selectedBookingType !== "SLOT") return;
     setSelectedSlot(null);
     slotsFetcher.submit(
       { intent: "loadSlots", bookableProductId, locationId, date },
       { method: "POST" },
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationId]);
 
   useEffect(() => {
@@ -462,9 +442,6 @@ export default function NewBookingPage() {
     setDate(dateStr);
     setCheckoutDate("");
     if (selectedBookingType === "FULL_DAY") {
-      // No time-of-day for a whole-day booking — treat the day itself
-      // as the "slot" so the rest of the add-to-queue flow needs no
-      // special-casing.
       setSelectedSlot({
         start: "00:00",
         end: "23:59",
@@ -475,8 +452,6 @@ export default function NewBookingPage() {
       return;
     }
     if (selectedBookingType === "MULTI_DAY") {
-      // Check-out is picked separately below; the "slot" is just a
-      // placeholder until a valid check-out date is entered.
       setSelectedSlot(null);
       return;
     }
@@ -572,6 +547,7 @@ export default function NewBookingPage() {
       {
         intent: "createBooking",
         location: selectedLocation?.name ?? "",
+        locationId: selectedLocation?.id ?? "",
         customFieldResponses: JSON.stringify(customFieldValues),
         slots: JSON.stringify(
           queuedSlots.map((entry) => ({

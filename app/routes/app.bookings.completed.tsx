@@ -11,10 +11,6 @@ import { listBookings, type ListBookingsFilters } from "../models/booking.server
 import { bookingListAction } from "../utils/bookingListAction.server";
 import { BookingsListPage } from "../components/BookingsList";
 
-// A booking (of any type) lands here automatically once its date/time has
-// fully passed — no manual step needed, see utils/bookingStatus.ts. Kept
-// separate from the pending Slot/Full-Day/Multi-Day/Bundle tabs so those
-// stay focused on what's still upcoming.
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const url = new URL(request.url);

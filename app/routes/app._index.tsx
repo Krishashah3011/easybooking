@@ -8,7 +8,7 @@ import {
   getUpcomingBookings,
 } from "../models/booking.server";
 import { getSmtpSettings } from "../models/smtpSettings.server";
-import { listEnabledLocations } from "../models/bookingLocation.server";
+import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from "../models/bookingLocation.server";
 import { formatBookingWhenDisplay } from "../utils/format";
 
 function todayISO(): string {
@@ -22,9 +22,11 @@ function endOfWeekISO(): string {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const today = todayISO();
   const weekEnd = endOfWeekISO();
+
+  await maybePrefillFirstLocationFromShopTimezone(session.shop, admin);
 
   const [products, todayCount, weekCount, overbookedCount, upcoming, smtpSettings, enabledLocations] =
     await Promise.all([

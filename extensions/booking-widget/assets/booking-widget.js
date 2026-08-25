@@ -71,8 +71,32 @@
     });
   }
 
-  function formatTimeRangeDisplay(start, end) {
-    return start + " - " + end;
+  function formatTimeInBrowserTZ(isoString) {
+    try {
+      var dtf = new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      return dtf.format(new Date(isoString));
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function formatTimeRangeDisplay(slot, convertToLocal) {
+    if (convertToLocal === false) {
+      return slot.start + " - " + slot.end;
+    }
+    var startLabel = formatTimeInBrowserTZ(slot.startsAt);
+    if (!startLabel) {
+      return slot.start + " - " + slot.end;
+    }
+    var durationMs = slotDurationMinutes(slot) * 60 * 1000;
+    var endLabel = formatTimeInBrowserTZ(
+      new Date(new Date(slot.startsAt).getTime() + durationMs).toISOString(),
+    );
+    return endLabel ? startLabel + " - " + endLabel : startLabel;
   }
 
   function slotDurationMinutes(slot) {
@@ -81,8 +105,6 @@
     return e[0] * 60 + e[1] - (s[0] * 60 + s[1]);
   }
 
-  // Dates are always shown as DD-MM-YYYY across the whole store — not
-  // locale-dependent, not configurable. Kept deliberately simple.
   function formatDateDisplay(dateStr) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
     if (!m) return dateStr;
@@ -203,88 +225,36 @@
     var availableDates = [];
     var currentSlots = [];
 
-    // The type of product this widget is attached to, fetched from the
-    // app on the first availability call. "SLOT" (time-slot picker) is
-    // the original/default behaviour. "FULL_DAY" skips the time-slot
-    // step entirely — picking a date books the whole day.
     var productBookingType = "SLOT";
     var slotsPaneEl = root.querySelector("[data-booking-slots]");
-    // Every available date we've ever fetched, across all months the
-    // shopper has navigated to — needed for MULTI_DAY so we can
-    // validate a check-in/check-out range even if it spans a month
-    // boundary the calendar isn't currently showing.
     var availableDatesByDay = {};
-    // Remaining capacity (e.g. rooms/units still free) per date, merged
-    // across every month fetched so far. Only populated for FULL_DAY and
-    // MULTI_DAY — SLOT/BUNDLE capacity lives on the per-slot object
-    // instead. Keyed by YYYY-MM-DD.
     var remainingCapacityByDate = {};
-    // FULL_DAY and MULTI_DAY have no time-of-day step, so instead of a
-    // single month with prev/next, they show this month and next month
-    // side by side. secondMonthAvailableDates is non-null only while
-    // that dual view is active for the currently loaded pair of months.
     var secondMonthAvailableDates = null;
     var multiDayMinNights = null;
     var multiDayMaxNights = null;
-    // MULTI_DAY only: the check-out date once a full range is picked.
-    // Cleared whenever a fresh check-in is started.
     var pendingEndDate = null;
-    // BUNDLE only: sessions confirmed so far in this pack, while the
-    // shopper is still picking the remaining ones. Cleared once the
-    // whole pack is added to cart (or the modal is reopened fresh).
     var bundleSessions = [];
     var bundleSessionCount = null;
     var bundleValidityDays = null;
-    // Computed once bundleValidityDays is known: the last date (YYYY-MM-DD)
-    // a session can be scheduled for, counting from today (the purchase
-    // date), not from whichever session is currently being picked.
     var bundleValidityDeadline = null;
 
-    // Locations fetched once from the app. A shop must have at least one
-    // configured before booking can happen at all — see loadLocations()
-    // below, which hides the trigger button and shows a "not available"
-    // message instead of silently letting a shopper book with no location
-    // (and therefore no timezone) on record.
     var locations = [];
     var locationsLoaded = false;
     var pendingLocation = null;
-    // Draft selection while the location step is open, confirmed into
-    // pendingLocation only once "Next" is pressed.
     var selectedLocationRecord = null;
 
     var pendingDate = null;
     var pendingSlot = null;
     var pendingQuantity = 1;
-    // True once the shopper has clicked Confirm on their slot+quantity
-    // and is looking at the review summary (with notes), rather than
-    // the calendar/slot picker.
     var atReviewStep = false;
-    // Slots the shopper has confirmed in this modal session but hasn't
-    // added to cart yet — can be more than one if they chose "add
-    // another slot" after confirming. Each entry is { date, slot,
-    // location, quantity }.
     var confirmedSlots = [];
-
-    // The numeric product id, pulled out of the GID we already use for
-    // the availability/slots API calls, so we can match this product's
-    // line items in the Shopify cart (cart.js only exposes numeric ids).
     var numericProductId = (productId || "").split("/").pop();
 
-    // Custom field definitions fetched once from the app, and the
-    // shopper's current answers, keyed by fieldKey. None are required —
-    // these are optional notes collected alongside the booking.
     var customFields = [];
     var customFieldValues = {};
 
     var widgetSection = root.closest(".shopify-section");
 
-    // ---- Place our own "Book your slot" button right above Add to cart ----
-    // We never touch or relabel the theme's native Add to cart / dynamic
-    // checkout ("Buy it now") buttons — those stay 100% default Shopify.
-    // Instead we physically move this whole widget (trigger button +
-    // selection display + modal) so it sits immediately before the real
-    // Add to cart button, regardless of where the app block itself was
-    // placed in the theme editor.
     var KNOWN_NON_ADD_TO_CART_SELECTORS = [
       ".shopify-payment-button",
       ".shopify-payment-button__button",
@@ -308,13 +278,6 @@
       return null;
     }
 
-    // A page can have more than one form[action*="/cart/add"] — e.g. an
-    // empty/hidden form injected by another app (selling plans, quick-add
-    // modals for other products, etc). Blindly taking "the first match" can
-    // grab a form with no real button in it at all. Instead, walk every
-    // matching form (scoped to this section first, then the whole page as a
-    // fallback) and use the first one that actually contains a real
-    // add-to-cart button.
     function pickAddToCartForm(scope) {
       if (!scope) return { form: null, btn: null };
       var forms = scope.querySelectorAll('form[action*="/cart/add"]');
@@ -334,9 +297,6 @@
     if (addToCartBtn && addToCartBtn.parentNode) {
       addToCartBtn.parentNode.insertBefore(root, addToCartBtn);
     }
-    // If we couldn't confidently find the Add to cart button, the widget
-    // simply stays wherever the app block was placed — same as before,
-    // nothing breaks either way.
 
     var triggerBtn = root.querySelector("[data-booking-trigger]");
     triggerBtn.addEventListener("click", function () {
@@ -344,14 +304,6 @@
       openModal();
     });
 
-    // ---- Require a booked slot before Add to cart goes through ----
-    // Some themes use a native form "submit" event for Add to cart; others
-    // intercept the button's "click" directly and fire their own fetch()
-    // without ever dispatching a real submit event. We guard both paths so
-    // this works regardless of how the theme implements add-to-cart. We
-    // never call requestSubmit() ourselves — we only ever block/allow the
-    // theme's own normal flow (AJAX, cart drawer, redirect, whatever it
-    // does) so it's otherwise completely unaffected.
     function injectBookingFields(form, entry) {
       var dateInput = form.querySelector(
         'input[name="properties[Booking Date]"]',
@@ -427,10 +379,6 @@
       }
 
       if (entry.locationId) {
-        // Underscore prefix hides this from the customer's cart/order
-        // confirmation and the Shopify admin order timeline — it's only
-        // there so the order webhook can look up the exact
-        // BookingLocation row (and its timezone) reliably.
         var locationIdInput = form.querySelector(
           'input[name="properties[_Location Id]"]',
         );
@@ -469,12 +417,6 @@
       });
     }
 
-    // Builds the request body for a single "add to cart" call for one
-    // booked slot, based on the real theme form (so variant id and any
-    // other apps' hidden fields all come along), with the booking
-    // properties and quantity swapped in for this slot — the shopper's
-    // chosen quantity always wins over whatever the native quantity
-    // field on the page currently holds.
     function buildFormDataForSlot(form, entry) {
       var fd = new FormData(form);
       fd.set("properties[Booking Date]", entry.date);
@@ -504,11 +446,6 @@
       return fd;
     }
 
-    // A native form submit can only carry one set of line item
-    // properties, so multiple booked slots for the same product have to
-    // become multiple separate cart lines. We add them one at a time via
-    // Shopify's AJAX Cart API so a failure partway through (e.g. a slot
-    // that got booked by someone else in the meantime) is easy to catch.
     function addSlotsToCartSequentially(form, entries, onDone) {
       var action = form.getAttribute("action") || "/cart/add";
       var index = 0;
@@ -543,15 +480,9 @@
         : value.replace(/["\\\]]/g, "\\$&");
     }
 
-    // Returns true if the add-to-cart attempt should be BLOCKED.
     function guardAddToCart(event) {
       if (confirmedSlots.length === 0) {
         event.preventDefault();
-        // preventDefault() alone only cancels the native default action —
-        // it does NOT stop other listeners (like the theme's own
-        // click/submit AJAX handler) from still running on this same
-        // event. Without these, themes that add to cart via their own
-        // listener would add the item anyway even though we "blocked" it.
         event.stopPropagation();
         event.stopImmediatePropagation();
         showError(strings.selectBeforeCart);
@@ -561,33 +492,15 @@
       clearError();
 
       if (confirmedSlots.length === 1) {
-        // Single slot: leave the theme's own add-to-cart flow completely
-        // untouched (AJAX, cart drawer, redirect, upsells — whatever it
-        // normally does). We just make sure our two hidden fields are on
-        // the form before it submits.
         if (nearbyForm) injectBookingFields(nearbyForm, confirmedSlots[0]);
-        // IMPORTANT: don't clear confirmedSlots here. Clicking a submit
-        // button fires a "click" event and then, synchronously as part
-        // of its default action, a "submit" event on the form — we guard
-        // both (see the two listeners below), so this function can run
-        // twice for the one interaction. Clearing on the first run would
-        // make the second run think nothing was selected and block the
-        // add. Defer the reset to a macrotask instead, so it only runs
-        // once both of those synchronous firings are done.
         setTimeout(function () {
           confirmedSlots = [];
           updateSelectionDisplay();
-          // Some themes add to cart via AJAX without a page navigation,
-          // so re-check the cart shortly after in case this add
-          // succeeded — that's what keeps the "already booked" reminder
-          // up to date.
           refreshCartReminder();
         }, 1200);
         return false;
       }
 
-      // Multiple slots: take over, since a single form submit can't carry
-      // more than one set of booking properties.
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
@@ -607,10 +520,6 @@
           showError(strings.multiAddError);
           return;
         }
-        // Reload so the theme's own cart UI (drawer, count bubble, mini
-        // cart, etc.) picks up the new lines exactly the way it would
-        // after any normal full-page add-to-cart — we don't try to guess
-        // which cart-refresh events this particular theme listens for.
         window.location.reload();
       });
 
@@ -662,8 +571,6 @@
           renderCustomFields();
         })
         .catch(function () {
-          // Non-critical — booking still works without the extra
-          // questions, so fail silently rather than blocking the widget.
           customFields = [];
         });
     }
@@ -681,23 +588,12 @@
           updateAvailability();
         })
         .catch(function () {
-          // We genuinely don't know whether this shop has locations
-          // configured — the request itself failed. Treat that the same
-          // as "not available yet" rather than falling back to the old
-          // no-location booking path: better to show nothing than to let
-          // a shopper book a slot with no timezone-correct location on
-          // record. A page refresh will retry.
           locations = [];
           locationsLoaded = true;
           updateAvailability();
         });
     }
 
-    // Booking requires a location to exist so every slot can be
-    // anchored to a real timezone. Until we know the shop has at least
-    // one, keep the trigger button hidden (not disabled — disabled
-    // invites "why can't I click this?" support questions) and show a
-    // plain explanatory message instead.
     function updateAvailability() {
       if (!locationsLoaded) return;
       var hasLocations = locations.length > 0;
@@ -816,8 +712,6 @@
       closeLocationList();
       showDatetimeStep();
       if (locationChanged) {
-        // A different location can mean a different timezone, so the
-        // previously loaded month/day no longer applies.
         pendingDate = null;
         pendingSlot = null;
         pendingEndDate = null;
@@ -880,9 +774,11 @@
       }
 
       if (timezoneEl) {
-        timezoneEl.textContent = pendingLocation
-          ? locationTimezoneLabel(pendingLocation.timezone)
-          : timezoneLabel();
+        var showsConvertedTimes =
+          productBookingType === "SLOT" || productBookingType === "BUNDLE";
+        timezoneEl.textContent = showsConvertedTimes || !pendingLocation
+          ? timezoneLabel()
+          : locationTimezoneLabel(pendingLocation.timezone);
       }
     }
 
@@ -946,9 +842,6 @@
         customFieldsEl.appendChild(wrapper);
       });
 
-      // Only shown at the review step, after the shopper has confirmed
-      // their slot + quantity — asked as the last thing before the final
-      // Confirm.
       customFieldsEl.hidden = !atReviewStep;
     }
 
@@ -978,11 +871,6 @@
       updateConfirmButton();
       renderCustomFields();
 
-      // By the time the trigger button is even visible, loadLocations()
-      // has already confirmed locations.length > 0 (see
-      // updateAvailability()) — this condition is defense-in-depth, not
-      // the primary gate, in case openModal() is ever reached another
-      // way (e.g. "add another slot" mid-flow).
       if (locationStepEl && locations.length > 0 && !pendingLocation) {
         showLocationStep();
       } else {
@@ -999,7 +887,7 @@
     function showAskMore(date, slot) {
       askMoreMessageEl.textContent = format(strings.askMoreMessage, {
         date: formatDateDisplay(date),
-        time: formatTimeRangeDisplay(slot.start, slot.end),
+        time: formatTimeRangeDisplay(slot, productBookingType === "SLOT"),
       });
       modalBodyEl.hidden = true;
       modalFooterEl.hidden = true;
@@ -1030,9 +918,6 @@
       renderCalendar();
     }
 
-    // FULL_DAY and MULTI_DAY have no time-slot step, so they get a
-    // two-month calendar instead of a single month with prev/next — see
-    // loadMonth/renderCalendar below.
     function isTwoMonthType(type) {
       return type === "FULL_DAY" || type === "MULTI_DAY";
     }
@@ -1059,10 +944,6 @@
       });
     }
 
-    // Applies one month's availability response to shared widget state
-    // (booking type, min/max nights, bundle info, and the accumulated
-    // availableDatesByDay / remainingCapacityByDate maps) and returns
-    // just that month's list of available dates.
     function applyAvailabilityData(data) {
       var dates = data.availableDates || [];
       if (data.bookingType) productBookingType = data.bookingType;
@@ -1088,9 +969,6 @@
       return dates;
     }
 
-    // Shows/hides the time-slot pane based on the current booking type —
-    // FULL_DAY and MULTI_DAY never have one, so hiding it frees up the
-    // width for the two-month calendar.
     function applyLayoutForType() {
       if (slotsPaneEl) slotsPaneEl.hidden = isTwoMonthType(productBookingType);
     }
@@ -1137,10 +1015,6 @@
       });
     }
 
-    // Shared by both the single-month and two-month calendar layouts.
-    // Uses the accumulated availableDatesByDay map (not just the
-    // currently-loaded month) so it works no matter which month(s) are
-    // on screen.
     function buildDayButton(dateStr, choosingMultiDayCheckout) {
       var day = Number(dateStr.slice(8, 10));
       var btn = document.createElement("button");
@@ -1218,9 +1092,6 @@
       return row;
     }
 
-    // One pane of the two-month (FULL_DAY / MULTI_DAY) calendar: its own
-    // month heading, weekday row, and day grid (or a "no availability"
-    // note in place of the grid).
     function buildMonthPane(year, month, choosingMultiDayCheckout, showNoAvailability) {
       var pane = document.createElement("div");
       pane.className = "booking-widget__month-pane";
@@ -1252,18 +1123,11 @@
       calendarEl.innerHTML = "";
 
       if (isTwoMonthType(productBookingType) && secondMonthAvailableDates !== null) {
-        // No time-slot step for these two types, so show this month and
-        // next month side by side instead of one month with prev/next —
-        // there's room for it, and it saves a round trip when the
-        // shopper's date is in the next month.
         monthLabelEl.hidden = true;
         weekdaysEl.hidden = true;
         calendarEl.classList.add("booking-widget__calendar--dual");
 
         var second = addMonths(viewYear, viewMonth, 1);
-        // Same-day turnover (MULTI_DAY): while choosing checkout, don't
-        // show "no availability" — a checkout-only date can still be
-        // clickable even in an otherwise fully-booked month.
         var pane1NoAvail = availableDates.length === 0 && !choosingMultiDayCheckout;
         var pane2NoAvail =
           secondMonthAvailableDates.length === 0 && !choosingMultiDayCheckout;
@@ -1292,12 +1156,6 @@
       calendarEl.appendChild(buildGrid(viewYear, viewMonth, choosingMultiDayCheckout));
     }
 
-    // MULTI_DAY only. First click picks check-in; a second click on a
-    // later date attempts to close out check-out, validating every
-    // night in between is actually available and that the range
-    // respects the product's min/max nights. Any click while a full
-    // range is already selected — or a click on/before the current
-    // check-in — starts a fresh check-in instead.
     function selectMultiDayDate(dateStr) {
       var choosingCheckout = pendingDate && !pendingEndDate && dateStr > pendingDate;
 
@@ -1352,12 +1210,6 @@
       durationEl.textContent = format(strings.nightsSelected, { count: nights });
     }
 
-    // The lowest remaining capacity across every night from checkin
-    // (inclusive) to checkout (exclusive) — e.g. if 5 rooms are free on
-    // the first night but only 2 on the second, only 2 rooms can be
-    // booked for the whole stay. Returns null if no capacity data is
-    // available for any night in the range (falls back to the generic
-    // default elsewhere).
     function minRemainingCapacityForRange(checkinStr, checkoutStr) {
       var min = null;
       var cursor = checkinStr;
@@ -1373,10 +1225,6 @@
       return min;
     }
 
-    // A MULTI_DAY booking has no time-of-day component — represented as
-    // a slot object shaped like a real time slot (so review/cart code
-    // needs no special-casing), plus an explicit endDate the cart
-    // property injection and order webhook read for check-out.
     function buildMultiDaySlot(checkinStr, checkoutStr) {
       return {
         start: "00:00",
@@ -1388,11 +1236,6 @@
       };
     }
 
-    // A FULL_DAY product has no time slots to pick — the whole day is
-    // the booking. We represent that as a slot object shaped just like
-    // a real time slot (start/end/startsAt) so every downstream step
-    // (review summary, cart line item properties, confirmedSlots) needs
-    // no special-casing at all.
     function buildFullDaySlot(dateStr) {
       var cap = remainingCapacityByDate[dateStr];
       return {
@@ -1476,7 +1319,7 @@
 
         var textWrap = document.createElement("span");
         textWrap.className = "booking-widget__slot-text";
-        textWrap.textContent = formatTimeRangeDisplay(slot.start, slot.end);
+        textWrap.textContent = formatTimeRangeDisplay(slot);
 
         if (slot.available === false) {
           row.classList.add("booking-widget__slot-row--unavailable");
@@ -1545,10 +1388,6 @@
       if (quantityDecreaseBtn) quantityDecreaseBtn.disabled = pendingQuantity <= 1;
       if (quantityIncreaseBtn) quantityIncreaseBtn.disabled = pendingQuantity >= max;
       if (quantityNoteEl) {
-        // FULL_DAY / MULTI_DAY: always show how many rooms/units are
-        // available for the chosen date(s) — like a room booking, the
-        // shopper needs this to decide how many to request, not just a
-        // low-stock warning.
         var showsCapacityAlways =
           isTwoMonthType(productBookingType) &&
           pendingSlot &&
@@ -1571,10 +1410,6 @@
       }
     }
 
-    // Quantity lives inside the modal, right after the time slots, and
-    // only appears once a slot is picked — same as the custom fields
-    // section. Re-clamps the current value against whichever slot (if
-    // any) is now selected.
     function refreshQuantityForSelection() {
       if (quantityWrapEl) quantityWrapEl.hidden = !pendingSlot;
       setPendingQuantity(pendingSlot ? pendingQuantity : 1);
@@ -1619,7 +1454,7 @@
             value:
               formatDateDisplay(session.date) +
               " · " +
-              formatTimeRangeDisplay(session.slot.start, session.slot.end),
+              formatTimeRangeDisplay(session.slot),
           });
         });
       } else if (productBookingType === "MULTI_DAY") {
@@ -1641,7 +1476,7 @@
             ? { label: "Booking", value: "Whole day" }
             : {
                 label: "Time",
-                value: formatTimeRangeDisplay(pendingSlot.start, pendingSlot.end),
+                value: formatTimeRangeDisplay(pendingSlot),
               },
           { label: "Quantity", value: String(pendingQuantity) },
         ];
@@ -1658,9 +1493,6 @@
       });
     }
 
-    // Moves from the calendar/slot/quantity picker to the review summary
-    // (with notes) — everything is already chosen at this point, this
-    // step is just a last look before it's added.
     function showReviewStep() {
       atReviewStep = true;
       buildReviewSummary();
@@ -1672,8 +1504,6 @@
       updateConfirmButton();
     }
 
-    // Back out of the review step to the picker, keeping the current
-    // date/slot/quantity selection intact.
     function exitReviewStep() {
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
@@ -1684,8 +1514,6 @@
     if (reviewBackBtn) {
       reviewBackBtn.addEventListener("click", function () {
         if (productBookingType === "BUNDLE" && bundleSessions.length > 0) {
-          // Pop the last session back out so the shopper can change it,
-          // rather than losing their place in the pack.
           var last = bundleSessions.pop();
           pendingDate = last.date;
           pendingSlot = last.slot;
@@ -1707,9 +1535,6 @@
 
       if (confirmedSlots.length === 0) {
         selectionEl.hidden = true;
-        // Don't blindly re-show the trigger — respect whatever
-        // updateAvailability() last decided based on whether the shop
-        // has any locations configured.
         if (triggerBtn) {
           triggerBtn.hidden = !(locationsLoaded && locations.length > 0);
         }
@@ -1732,7 +1557,10 @@
         } else {
           chipText = format(strings.selected, {
             date: formatDateDisplay(entry.date),
-            time: formatTimeRangeDisplay(entry.slot.start, entry.slot.end),
+            time: formatTimeRangeDisplay(
+              entry.slot,
+              productBookingType === "SLOT" || productBookingType === "BUNDLE",
+            ),
           });
         }
         if (entry.quantity && entry.quantity > 1) {
@@ -1765,10 +1593,6 @@
       selectionEl.appendChild(addMoreBtn);
     }
 
-    // ---- Reminder that a slot for this product is already sitting in
-    // the cart from an earlier visit/add. This reflects the real cart,
-    // not just in-page state, so it's still accurate after a reload or a
-    // fresh visit to the product page. ----
     function refreshCartReminder() {
       if (!cartReminderEl) return;
       fetch("/cart.js", { headers: { Accept: "application/json" } })
@@ -1786,8 +1610,6 @@
           renderCartReminder(items);
         })
         .catch(function () {
-          // Non-critical — if we can't read the cart, just skip the
-          // reminder rather than blocking anything else on the page.
         });
     }
 
@@ -1858,8 +1680,6 @@
           var remaining = totalSessions - bundleSessions.length;
 
           if (remaining > 0) {
-            // More sessions still to pick — reset the calendar for the
-            // next one, staying on the datetime step.
             pendingDate = null;
             pendingSlot = null;
             renderCalendar();
@@ -1872,15 +1692,10 @@
             durationEl.textContent = sessionProgressText();
             return;
           }
-
-          // That was the last session — show the combined review.
           showReviewStep();
           return;
         }
 
-        // Final confirm: bundle every session picked into ONE cart
-        // line (one purchase, quantity 1) rather than the usual
-        // "confirmedSlots" per-cart-line queue used for separate slots.
         var firstSession = bundleSessions[0];
         var combinedSlot = Object.assign({}, firstSession.slot, {
           bundleSessions: bundleSessions.slice(),
@@ -1942,8 +1757,6 @@
   ];
 
   function relocateNextToBuyButton(root) {
-    // If a theme/merchant already placed this element inline (e.g. an
-    // older manual block placement), leave it exactly where it is.
     if (root.closest("form[action*='/cart/add']")) return;
     if (root.dataset.bookingWidgetPlaced === "true") return;
 
@@ -1955,8 +1768,6 @@
         return;
       }
     }
-    // No known buy-button container found on this theme — leave the
-    // widget where the theme injected it rather than risk a bad layout.
   }
 
   function init() {

@@ -164,9 +164,6 @@ export function computeMultiDayNightAvailability(
   now: Date = new Date(),
   bookedCount: number = 0,
 ): { available: boolean; remainingCapacity: number } {
-  // Multi-day products (hotel rooms, rentals) are typically open every
-  // day of the week, so — unlike SLOT/FULL_DAY — this deliberately does
-  // NOT check settings.workingDays.
   if (blackoutDates.has(dateStr)) return { available: false, remainingCapacity: 0 };
   if (
     !isWithinDateWindow(dateStr, settings.bookingStartDate, settings.bookingEndDate)
@@ -189,10 +186,6 @@ export function computeMultiDayNightAvailability(
   return { available: remainingCapacity > 0, remainingCapacity };
 }
 
-// Same scan as getAvailableFullDayDatesInMonth, but returns remaining
-// capacity for every day in the month (not just the available ones) so
-// the storefront can show "X available" while the shopper is choosing a
-// quantity, instead of only a plain available/unavailable flag.
 export function getFullDayCapacityInMonth(
   settings: EffectiveBookingSettings,
   year: number,
@@ -236,8 +229,6 @@ export function getAvailableMultiDayNightsInMonth(
   return available;
 }
 
-// Same as getFullDayCapacityInMonth, but for MULTI_DAY nights (e.g. how
-// many identical rooms/units are still free for each night).
 export function getMultiDayCapacityInMonth(
   settings: EffectiveBookingSettings,
   year: number,

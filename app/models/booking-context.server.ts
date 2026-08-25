@@ -8,6 +8,7 @@ import {
   listProductBlackoutDates,
   listShopBlackoutDates,
 } from "./blackoutDate.server";
+import { getLocationById } from "./bookingLocation.server";
 
 export type BookingContext = {
   bookableProductId: string;
@@ -18,15 +19,18 @@ export type BookingContext = {
   bundleValidityDays: number | null;
   effectiveSettings: EffectiveBookingSettings;
   blackoutDates: Set<string>;
+  location: { id: string; name: string; timezone: string } | null;
 };
 
 export async function resolveBookingContext(
   shop: string,
   productId: string,
+  locationId?: string | null,
 ): Promise<BookingContext | null> {
-  const [shopSettings, bookableProduct] = await Promise.all([
+  const [shopSettings, bookableProduct, location] = await Promise.all([
     getBookingSettings(shop),
     getBookableProduct(shop, productId),
+    locationId ? getLocationById(shop, locationId) : Promise.resolve(null),
   ]);
 
   if (!bookableProduct || !bookableProduct.isEnabled) {
@@ -50,7 +54,14 @@ export async function resolveBookingContext(
     maxNights: bookableProduct.maxNights,
     bundleSessionCount: bookableProduct.bundleSessionCount,
     bundleValidityDays: bookableProduct.bundleValidityDays,
-    effectiveSettings: resolveEffectiveSettings(shopSettings, bookableProduct),
+    effectiveSettings: resolveEffectiveSettings(
+      shopSettings,
+      bookableProduct,
+      location,
+    ),
     blackoutDates,
+    location: location
+      ? { id: location.id, name: location.name, timezone: location.timezone }
+      : null,
   };
 }

@@ -3,7 +3,6 @@ import { authenticate } from "../shopify.server";
 import { resolveBookingContext } from "../models/booking-context.server";
 import { computeSlotsForDate } from "../models/slotAvailability.server";
 import { getBookedCountsInRange } from "../models/booking.server";
-import { getLocationById } from "../models/bookingLocation.server";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -31,14 +30,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     );
   }
 
-  const context = await resolveBookingContext(session.shop, productId);
+  const context = await resolveBookingContext(session.shop, productId, locationId);
   if (!context) {
     return Response.json({ slots: [] });
   }
-
-  const location = locationId
-    ? await getLocationById(session.shop, locationId)
-    : null;
 
   const dayStart = new Date(`${date}T00:00:00.000Z`);
   const dayEnd = new Date(`${date}T23:59:59.999Z`);
@@ -55,7 +50,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     context.blackoutDates,
     new Date(),
     bookedCounts,
-    location?.timezone ?? null,
+    context.location?.timezone ?? null,
   );
 
   return Response.json({ slots });

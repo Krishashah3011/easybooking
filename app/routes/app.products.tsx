@@ -72,11 +72,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return { ok: false as const };
   }
 
-  // Same guardrail as the per-product detail page — this is the toggle
-  // that actually bypassed it before, since it calls
-  // setBookableProductEnabled directly. Kept in sync deliberately rather
-  // than routed through the detail page's action, since this table needs
-  // to stay usable for turning products off with a single click.
   if (isEnabled) {
     const enabledLocations = await listEnabledLocations(session.shop);
     if (enabledLocations.length === 0) {

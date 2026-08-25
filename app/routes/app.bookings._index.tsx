@@ -11,11 +11,6 @@ import { listBookings, type ListBookingsFilters } from "../models/booking.server
 import { bookingListAction } from "../utils/bookingListAction.server";
 import { BookingsListPage } from "../components/BookingsList";
 
-// Combined, all-booking-types view. It's no longer one of the Bookings
-// subtabs (those are New Booking + one tab per booking type), but it stays
-// reachable directly at /app/bookings so existing deep links keep working —
-// e.g. the dashboard's "View all bookings" and "Review overbooked bookings"
-// links, which intentionally span every type.
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const url = new URL(request.url);
@@ -32,8 +27,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     search,
     dateFrom,
     dateTo,
-    // Keep this combined view focused on what's still pending — completed
-    // bookings live on their own page at /app/bookings/completed.
     completed: false,
   };
 

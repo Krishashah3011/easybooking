@@ -20,6 +20,8 @@ import {
 } from "../models/bookingLocation.server";
 import { timezoneOffsetLabel } from "../utils/timezones";
 import { COUNTRIES, findCountryByTimezone, type Country } from "../utils/countries";
+import { WEEKDAY_LABELS } from "../models/weekday-labels";
+import { parseWorkingDays } from "../models/bookingSettings.server";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -27,6 +29,9 @@ const EMPTY_FORM: LocationFormValues = {
   name: "",
   timezone: "UTC",
   isEnabled: true,
+  workingDays: null,
+  dailyStartTime: null,
+  dailyEndTime: null,
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -90,7 +95,7 @@ function CountrySelect({
   extraOption,
   onChange,
 }: {
-  value: string; // country code, or "" if none matched
+  value: string;
   extraOption: { code: string; name: string } | null;
   onChange: (code: string) => void;
 }) {
@@ -152,10 +157,6 @@ function LocationEditor({
   const shopify = useAppBridge();
   const [values, setValues] = useState<LocationFormValues>(initial);
 
-  // The stored timezone might not be one we have a country mapping for
-  // (e.g. it was picked from the old raw-timezone list before this UI
-  // existed). In that case, show it as a one-off "Custom" option rather
-  // than silently swapping it for a real country's default zone.
   const matchedCountry = findCountryByTimezone(initial.timezone);
   const [countryCode, setCountryCode] = useState<string>(
     matchedCountry?.code ?? (initial.timezone ? "__custom__" : ""),
@@ -186,11 +187,35 @@ function LocationEditor({
 
   const handleCountryChange = (code: string) => {
     setCountryCode(code);
-    if (code === "__custom__") return; // keep the existing custom timezone
+    if (code === "__custom__") return;
     const country = SORTED_COUNTRIES.find((c) => c.code === code);
     if (country) {
       setValues((prev) => ({ ...prev, timezone: country.timezones[0].tz }));
     }
+  };
+
+  const toggleWorkingDay = (day: number) => {
+    setValues((prev) => {
+      const current = prev.workingDays ?? [];
+      const has = current.includes(day);
+      const workingDays = has
+        ? current.filter((d) => d !== day)
+        : [...current, day].sort((a, b) => a - b);
+      return { ...prev, workingDays };
+    });
+  };
+
+  const allWeekdaysSelected = WEEKDAY_LABELS.every((day) =>
+    (values.workingDays ?? []).includes(day.value),
+  );
+
+  const toggleSelectAllWorkingDays = () => {
+    setValues((prev) => ({
+      ...prev,
+      workingDays: allWeekdaysSelected
+        ? []
+        : WEEKDAY_LABELS.map((day) => day.value),
+    }));
   };
 
   const handleSubmit = () => {
@@ -201,6 +226,9 @@ function LocationEditor({
         name: values.name,
         timezone: values.timezone,
         isEnabled: String(values.isEnabled),
+        workingDays: values.workingDays ? values.workingDays.join(",") : "",
+        dailyStartTime: values.dailyStartTime ?? "",
+        dailyEndTime: values.dailyEndTime ?? "",
       },
       { method: "POST" },
     );
@@ -238,6 +266,61 @@ function LocationEditor({
         Booking hours and the times shoppers see for this location are
         calculated in this timezone.
       </s-paragraph>
+
+      <s-paragraph>
+        Leave the fields below blank/unchecked to use the shop (or
+        product-level) default. Set them here only if this location's own
+        opening hours are different — e.g. one branch closes earlier than
+        the rest.
+      </s-paragraph>
+      <s-stack direction="inline" gap="base">
+        <s-checkbox
+          label="Select all"
+          checked={allWeekdaysSelected}
+          onChange={toggleSelectAllWorkingDays}
+        ></s-checkbox>
+      </s-stack>
+      <s-stack direction="inline" gap="base">
+        {WEEKDAY_LABELS.map((day) => (
+          <s-checkbox
+            key={day.value}
+            label={day.label}
+            checked={(values.workingDays ?? []).includes(day.value)}
+            onChange={() => toggleWorkingDay(day.value)}
+          ></s-checkbox>
+        ))}
+      </s-stack>
+      {errors.workingDays && (
+        <s-banner tone="critical">{errors.workingDays}</s-banner>
+      )}
+      <s-stack direction="inline" gap="base">
+        <s-text-field
+          label="Start time"
+          placeholder="Shop default"
+          details="Blank = use shop/product default"
+          value={values.dailyStartTime ?? ""}
+          error={errors.dailyStartTime}
+          onChange={(e: FieldChangeEvent) =>
+            setValues((prev) => ({
+              ...prev,
+              dailyStartTime: e.currentTarget.value || null,
+            }))
+          }
+        ></s-text-field>
+        <s-text-field
+          label="End time"
+          placeholder="Shop default"
+          details="Blank = use shop/product default"
+          value={values.dailyEndTime ?? ""}
+          error={errors.dailyEndTime}
+          onChange={(e: FieldChangeEvent) =>
+            setValues((prev) => ({
+              ...prev,
+              dailyEndTime: e.currentTarget.value || null,
+            }))
+          }
+        ></s-text-field>
+      </s-stack>
 
       <s-checkbox
         label="Visible to shoppers"
@@ -282,6 +365,9 @@ function LocationRow({
     name: string;
     timezone: string;
     isEnabled: boolean;
+    workingDays: string | null;
+    dailyStartTime: string | null;
+    dailyEndTime: string | null;
   };
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -311,7 +397,7 @@ function LocationRow({
   if (isEditing) {
     return (
       <s-table-row>
-        <s-table-cell colSpan={4}>
+        <s-table-cell colSpan={5}>
           <LocationEditor
             locationId={location.id}
             submitLabel="Save"
@@ -320,6 +406,11 @@ function LocationRow({
               name: location.name,
               timezone: location.timezone,
               isEnabled: location.isEnabled,
+              workingDays: location.workingDays
+                ? parseWorkingDays(location.workingDays)
+                : null,
+              dailyStartTime: location.dailyStartTime,
+              dailyEndTime: location.dailyEndTime,
             }}
           />
         </s-table-cell>
@@ -335,6 +426,11 @@ function LocationRow({
       <s-table-cell>
         {location.timezone}
         {offset ? ` (${offset})` : ""}
+      </s-table-cell>
+      <s-table-cell>
+        {location.workingDays || location.dailyStartTime || location.dailyEndTime
+          ? "Custom"
+          : "Shop default"}
       </s-table-cell>
       <s-table-cell>{location.isEnabled ? "Visible" : "Hidden"}</s-table-cell>
       <s-table-cell>
@@ -436,6 +532,7 @@ export default function LocationsPage() {
               <s-table-header-row>
                 <s-table-header>Name</s-table-header>
                 <s-table-header>Timezone</s-table-header>
+                <s-table-header>Hours</s-table-header>
                 <s-table-header>Visibility</s-table-header>
                 <s-table-header>Actions</s-table-header>
               </s-table-header-row>

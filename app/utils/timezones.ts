@@ -1,8 +1,3 @@
-// Small timezone helpers used by locations (each location can run on its
-// own IANA timezone, e.g. a "California" location on
-// "America/Los_Angeles"). No external dependency — built on Intl, which
-// is available in the Node runtime this app deploys to.
-
 export const COMMON_TIMEZONES: string[] = [
   "UTC",
   "America/Los_Angeles",
@@ -56,9 +51,7 @@ export function listTimezones(): string[] {
       Intl as unknown as { supportedValuesOf?: (key: string) => string[] }
     ).supportedValuesOf?.("timeZone");
     if (supported && supported.length > 0) return supported;
-  } catch {
-    // fall through to the curated list below
-  }
+  } catch {}
   return COMMON_TIMEZONES;
 }
 
