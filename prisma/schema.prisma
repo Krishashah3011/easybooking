@@ -176,7 +176,7 @@ model Booking {
   reminderSentAt     DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  @@index([shop])
+  @@index([shop, slotStartsAt])
   @@index([bookableProductId, slotStartsAt])
   @@index([orderId])
   @@index([groupId])

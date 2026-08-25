@@ -825,7 +825,7 @@ export async function listBookingsForProduct(
 ): Promise<Booking[]> {
   return prisma.booking.findMany({
     where: { shop, bookableProductId },
-    orderBy: { slotStartsAt: "desc" },
+    orderBy: { slotStartsAt: "asc" },
     take: 50,
   });
 }
@@ -884,7 +884,7 @@ export async function listBookings(
       bookableProduct: { select: { productTitle: true, bookingType: true } },
       bookingLocation: { select: { timezone: true } },
     },
-    orderBy: { slotStartsAt: "desc" },
+    orderBy: { slotStartsAt: "asc" },
     take: 100,
   });
 

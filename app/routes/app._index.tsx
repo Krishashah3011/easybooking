@@ -26,10 +26,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const today = todayISO();
   const weekEnd = endOfWeekISO();
 
-  await maybePrefillFirstLocationFromShopTimezone(session.shop, admin);
-
-  const [products, todayCount, weekCount, overbookedCount, upcoming, smtpSettings, enabledLocations] =
+  // Runs alongside the queries below instead of blocking in front of them.
+  // In the common case (prefill already done) this used to add a full extra
+  // sequential round trip to every dashboard load for no benefit; it only
+  // does real work once, the first time a shop ever opens the dashboard.
+  const [, products, todayCount, weekCount, overbookedCount, upcoming, smtpSettings, enabledLocations] =
     await Promise.all([
+      maybePrefillFirstLocationFromShopTimezone(session.shop, admin),
       listBookableProducts(session.shop),
       countBookings(session.shop, { dateFrom: today, dateTo: today }),
       countBookings(session.shop, { dateFrom: today, dateTo: weekEnd }),
