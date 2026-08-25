@@ -517,7 +517,13 @@ export default function NewBookingPage() {
     const min = selectedProduct?.minNights ?? null;
     const max = selectedProduct?.maxNights ?? null;
     if (min !== null && max !== null) {
-      return `Stay must be between ${min} and ${max} nights.`;
+      return(
+        <>
+          Minimum nights- {min}
+        <br />
+          Maximum nights- {max}
+        </>
+      );
     }
     if (min !== null) return `Minimum stay is ${min} nights.`;
     if (max !== null) return `Maximum stay is ${max} nights.`;
