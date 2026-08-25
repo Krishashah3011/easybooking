@@ -135,11 +135,6 @@
   justify-content: center;
   z-index: 9999;
   padding: 1rem;
-  /* Keep the modal clear of notches/home-indicators on newer phones; the
-     env() fallback (1rem) keeps this identical to the line above on
-     browsers that don't support safe-area insets. */
-  padding: 1rem env(safe-area-inset-right, 1rem) env(safe-area-inset-bottom, 1rem)
-    env(safe-area-inset-left, 1rem);
 }
 
 body.booking-widget-lock-scroll {
@@ -149,19 +144,9 @@ body.booking-widget-lock-scroll {
 .booking-widget__modal {
   background: #fff;
   width: 100%;
-  /* Wider cap so two months side by side get real room instead of being
-     squeezed, but always clamped to the viewport so it can never run off
-     the sides on a narrow window. */
-  max-width: min(760px, 100%);
+  max-width: 700px;
   height: 640px;
-  /* `dvh` (dynamic viewport height) accounts for mobile browser chrome
-     (address bar, etc). `vh` on mobile is measured against the *maximum*
-     viewport, so a modal sized off 90vh can end up taller than what's
-     actually visible on screen once the browser UI is showing — this is
-     what pushed the popup's bottom (footer/buttons) off-screen. Declaring
-     vh first keeps older browsers working, dvh overrides it where supported. */
   max-height: 90vh;
-  max-height: 90dvh;
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -374,7 +359,6 @@ body.booking-widget-lock-scroll {
   .booking-widget__modal {
     height: 100%;
     max-height: 100vh;
-    max-height: 100dvh;
     border-radius: 0;
   }
 
