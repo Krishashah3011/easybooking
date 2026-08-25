@@ -9,9 +9,6 @@
   box-sizing: border-box;
 }
 
-/* CRITICAL: without this, [hidden] elements that also have a CSS display
-   rule (like the overlay) stay visible — author styles beat the browser's
-   built-in [hidden]{display:none}. */
 .booking-widget [hidden] {
   display: none !important;
 }
@@ -99,13 +96,6 @@
   margin: 0 0 0.5rem;
 }
 
-/*
- * Visual styling (font, padding, border, colors) is intentionally left to
- * the theme's own .button / .button--secondary classes so this matches
- * Add to Cart exactly. Only structural/spacing rules live here — anything
- * visual here would win the cascade tie (this stylesheet loads after the
- * theme's) and silently override the theme's button styling again.
- */
 .booking-widget__trigger {
   display: block;
   box-sizing: border-box;
@@ -125,7 +115,6 @@
   margin: 0.5rem 0;
 }
 
-/* Overlay + modal */
 .booking-widget__overlay {
   position: fixed;
   inset: 0;
@@ -447,9 +436,6 @@ body.booking-widget-lock-scroll {
   border-radius: 0;
 }
 
-/* FULL_DAY / MULTI_DAY: this-month-and-next side by side instead of a
-   single month with prev/next — there's no time-slot pane taking up
-   the other half of the row for these types, so there's room. */
 .booking-widget__calendar--dual {
   display: grid;
   grid-template-columns: 1fr 1fr;

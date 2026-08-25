@@ -384,6 +384,8 @@ export default function NewBookingPage() {
 
   useEffect(() => {
     setDate("");
+    setCheckoutDate("");
+    setCheckoutError(null);
     setSelectedSlot(null);
     loadAvailability(bookableProductId, viewYear, viewMonth);
   }, [bookableProductId, viewYear, viewMonth, locationId]);
@@ -466,9 +468,60 @@ export default function NewBookingPage() {
     setViewYear(newYear);
   };
 
+  const nightsBetween = (checkin: string, checkout: string): number =>
+    Math.round(
+      (new Date(`${checkout}T00:00:00.000Z`).getTime() -
+        new Date(`${checkin}T00:00:00.000Z`).getTime()) /
+        86400000,
+    );
+
+  const multiDayMinNights = selectedProduct?.minNights ?? null;
+  const multiDayMaxNights = selectedProduct?.maxNights ?? null;
+
+  const stayLengthError = (checkin: string, checkout: string): string | null => {
+    const nights = nightsBetween(checkin, checkout);
+    if (multiDayMinNights !== null && nights < multiDayMinNights) {
+      return `Minimum stay is ${multiDayMinNights} night${multiDayMinNights === 1 ? "" : "s"}.`;
+    }
+    if (multiDayMaxNights !== null && nights > multiDayMaxNights) {
+      return `Maximum stay is ${multiDayMaxNights} night${multiDayMaxNights === 1 ? "" : "s"}.`;
+    }
+    return null;
+  };
+
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
   const selectDate = (dateStr: string) => {
+    if (selectedBookingType === "MULTI_DAY") {
+      if (!date || checkoutDate || dateStr <= date) {
+        setDate(dateStr);
+        setCheckoutDate("");
+        setCheckoutError(null);
+        setSelectedSlot(null);
+        return;
+      }
+      const error = stayLengthError(date, dateStr);
+      if (error) {
+        setCheckoutError(error);
+        setCheckoutDate("");
+        setSelectedSlot(null);
+        return;
+      }
+      setCheckoutError(null);
+      setCheckoutDate(dateStr);
+      setSelectedSlot({
+        start: "00:00",
+        end: "00:00",
+        startsAt: `${date}T00:00:00.000Z`,
+        available: true,
+        remainingCapacity: null,
+      } as TimeSlot);
+      return;
+    }
+
     setDate(dateStr);
     setCheckoutDate("");
+    setCheckoutError(null);
     if (selectedBookingType === "FULL_DAY") {
       setSelectedSlot({
         start: "00:00",
@@ -479,10 +532,6 @@ export default function NewBookingPage() {
       } as TimeSlot);
       return;
     }
-    if (selectedBookingType === "MULTI_DAY") {
-      setSelectedSlot(null);
-      return;
-    }
     setSelectedSlot(null);
     slotsFetcher.submit(
       { intent: "loadSlots", bookableProductId, locationId, date: dateStr },
@@ -490,19 +539,11 @@ export default function NewBookingPage() {
     );
   };
 
-  const handleSetCheckoutDate = (value: string) => {
-    setCheckoutDate(value);
-    if (date && value && value > date) {
-      setSelectedSlot({
-        start: "00:00",
-        end: "00:00",
-        startsAt: `${date}T00:00:00.000Z`,
-        available: true,
-        remainingCapacity: null,
-      } as TimeSlot);
-    } else {
-      setSelectedSlot(null);
-    }
+  const handleChangeMultiDayDates = () => {
+    setDate("");
+    setCheckoutDate("");
+    setCheckoutError(null);
+    setSelectedSlot(null);
   };
 
   const isValidEmail = (value: string) =>
@@ -510,16 +551,10 @@ export default function NewBookingPage() {
 
   const multiDayStayLengthMessage = (() => {
     if (selectedBookingType !== "MULTI_DAY") return null;
-    const min = selectedProduct?.minNights ?? null;
-    const max = selectedProduct?.maxNights ?? null;
+    const min = multiDayMinNights;
+    const max = multiDayMaxNights;
     if (min !== null && max !== null) {
-      return(
-        <>
-          Minimum nights- {min}
-        <br />
-          Maximum nights- {max}
-        </>
-      );
+      return `Stay must be between ${min} and ${max} nights.`;
     }
     if (min !== null) return `Minimum stay is ${min} nights.`;
     if (max !== null) return `Maximum stay is ${max} nights.`;
@@ -743,8 +778,20 @@ export default function NewBookingPage() {
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dateStr = `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const isAvailable = availableSet.has(dateStr) && !bundleComplete;
-              const isSelected = dateStr === date;
+              const isPickingCheckout =
+                selectedBookingType === "MULTI_DAY" && !!date && !checkoutDate;
+              const isAvailable = isPickingCheckout
+                ? dateStr > date
+                : availableSet.has(dateStr) && !bundleComplete;
+              const isSelected =
+                dateStr === date ||
+                (selectedBookingType === "MULTI_DAY" && dateStr === checkoutDate);
+              const isInRange =
+                selectedBookingType === "MULTI_DAY" &&
+                !!date &&
+                !!checkoutDate &&
+                dateStr > date &&
+                dateStr < checkoutDate;
               return (
                 <button
                   key={dateStr}
@@ -759,9 +806,11 @@ export default function NewBookingPage() {
                     cursor: isAvailable ? "pointer" : "not-allowed",
                     background: isSelected
                       ? "#111"
-                      : isAvailable
-                        ? "rgba(0,0,0,0.06)"
-                        : "transparent",
+                      : isInRange
+                        ? "rgba(0,0,0,0.12)"
+                        : isAvailable
+                          ? "rgba(0,0,0,0.06)"
+                          : "transparent",
                     color: isSelected
                       ? "#fff"
                       : isAvailable
@@ -778,28 +827,36 @@ export default function NewBookingPage() {
         {!isLoadingAvailability && availableDates.length === 0 && (
           <s-paragraph>No availability this month.</s-paragraph>
         )}
+        {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
+          <s-banner tone="info">
+            Check-in {date}. Now pick a check-out date.
+          </s-banner>
+        )}
+        {selectedBookingType === "MULTI_DAY" && checkoutError && (
+          <s-banner tone="critical">{checkoutError}</s-banner>
+        )}
+        {selectedBookingType === "MULTI_DAY" && date && checkoutDate && (
+          <s-banner tone="success">
+            <s-stack direction="inline" gap="base" alignItems="center">
+              <span>
+                {date} → {checkoutDate} ({nightsBetween(date, checkoutDate)}{" "}
+                night{nightsBetween(date, checkoutDate) === 1 ? "" : "s"})
+              </span>
+              <s-button
+                variant="tertiary"
+                onClick={() => {
+                  setDate("");
+                  setCheckoutDate("");
+                  setCheckoutError(null);
+                  setSelectedSlot(null);
+                }}
+              >
+                Change dates
+              </s-button>
+            </s-stack>
+          </s-banner>
+        )}
       </s-section>
-
-      {date && selectedBookingType === "MULTI_DAY" && (
-        <s-section heading="Check-out date">
-          {multiDayStayLengthMessage && (
-            <s-banner tone="info">{multiDayStayLengthMessage}</s-banner>
-          )}
-          <s-text-field
-            label="Check-out"
-            type="date"
-            value={checkoutDate}
-            onChange={(e: FieldChangeEvent) =>
-              handleSetCheckoutDate(e.currentTarget.value)
-            }
-          ></s-text-field>
-          {checkoutDate && checkoutDate <= date && (
-            <s-banner tone="critical">
-              Check-out must be after check-in.
-            </s-banner>
-          )}
-        </s-section>
-      )}
 
       {date && selectedBookingType === "FULL_DAY" && (
         <s-section heading="Booking">
