@@ -123,6 +123,34 @@ export function zonedTimeToUtc(
 }
 
 /**
+ * Formats a UTC instant as "DD-MM-YYYY, HH:mm" wall-clock time in `timeZone`.
+ * Falls back to formatting the instant as raw UTC when the zone is missing
+ * or invalid, matching the app's previous (timezone-less) behaviour.
+ */
+export function formatInstantInTimezone(
+  value: string | Date,
+  timeZone: string | null | undefined,
+): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  const zone = timeZone && isValidTimezone(timeZone) ? timeZone : "UTC";
+  const dtf = new Intl.DateTimeFormat("en-GB", {
+    timeZone: zone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const parts = dtf.formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+
+  return `${get("day")}-${get("month")}-${get("year")}, ${get("hour")}:${get("minute")}`;
+}
+
+/**
  * Human-friendly "GMT+5:30" style offset label for a timezone right now.
  */
 export function timezoneOffsetLabel(timeZone: string): string {

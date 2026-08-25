@@ -834,6 +834,7 @@ export type BookingWithProductTitle = Booking & {
   productTitle: string;
   bookingType: BookingType;
   displayStatus: string;
+  locationTimezone: string | null;
 };
 
 export type ListBookingsFilters = {
@@ -879,7 +880,10 @@ export async function listBookings(
           }
         : {}),
     },
-    include: { bookableProduct: { select: { productTitle: true, bookingType: true } } },
+    include: {
+      bookableProduct: { select: { productTitle: true, bookingType: true } },
+      bookingLocation: { select: { timezone: true } },
+    },
     orderBy: { slotStartsAt: "desc" },
     take: 100,
   });
@@ -887,12 +891,17 @@ export async function listBookings(
   const withDisplayStatus = bookings.map(
     ({
       bookableProduct,
+      bookingLocation,
       ...booking
-    }: Booking & { bookableProduct: { productTitle: string; bookingType: BookingType } }) => {
+    }: Booking & {
+      bookableProduct: { productTitle: string; bookingType: BookingType };
+      bookingLocation: { timezone: string } | null;
+    }) => {
       const withType = {
         ...booking,
         productTitle: bookableProduct.productTitle,
         bookingType: bookableProduct.bookingType,
+        locationTimezone: bookingLocation?.timezone ?? null,
       };
       return { ...withType, displayStatus: getDisplayStatus(withType) };
     },

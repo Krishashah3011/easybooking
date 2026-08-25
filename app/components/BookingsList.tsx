@@ -8,9 +8,9 @@ import {
   bookingSourceLabel,
   formatBookingWhenDisplay,
   formatDateDisplay,
-  formatDateTimeDisplay,
   formatTimeRangeDisplay,
 } from "../utils/format";
+import { formatInstantInTimezone } from "../utils/timezones";
 
 export type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -314,7 +314,7 @@ function BookingLine({
 
             <DetailRow label="Booked at">
               <s-text>
-                {formatDateTimeDisplay(booking.createdAt)} ·{" "}
+                {formatInstantInTimezone(booking.createdAt, booking.locationTimezone)} ·{" "}
                 {bookingSourceLabel(booking.source)}
               </s-text>
             </DetailRow>
