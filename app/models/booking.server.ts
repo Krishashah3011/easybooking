@@ -17,7 +17,7 @@ import {
 import { listCustomFields } from "./customBookingField.server";
 import { getLocationById } from "./bookingLocation.server";
 import { formatDateDisplay } from "../utils/format";
-import { getDisplayStatus } from "../utils/bookingStatus";
+import { getDisplayStatus, belongsInCompletedTab } from "../utils/bookingStatus";
 
 const ACTIVE_BOOKING_STATUSES = ["CONFIRMED", "RESCHEDULED"] as const;
 
@@ -908,10 +908,10 @@ export async function listBookings(
   );
 
   if (filters.completed === true) {
-    return withDisplayStatus.filter((b) => b.displayStatus === "COMPLETED");
+    return withDisplayStatus.filter((b) => belongsInCompletedTab(b));
   }
   if (filters.completed === false) {
-    return withDisplayStatus.filter((b) => b.displayStatus !== "COMPLETED");
+    return withDisplayStatus.filter((b) => !belongsInCompletedTab(b));
   }
   return withDisplayStatus;
 }

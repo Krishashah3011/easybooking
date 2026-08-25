@@ -53,6 +53,7 @@
     multiDayRangeUnavailable: "Some nights in that range aren't available. Please pick a different range.",
     multiDayMinNights: "Minimum stay is {count} nights.",
     multiDayMaxNights: "Maximum stay is {count} nights.",
+    multiDayMinMaxNights: "Stay must be between {min} and {max} nights.",
     sessionProgress: "Session {current} of {total} — pick a date and time",
     sessionProgressWithDeadline: "Session {current} of {total} — pick a date and time (by {deadline})",
     sessionConfirmed: "Session {number}",
@@ -237,6 +238,7 @@
     var bundleSessionCount = null;
     var bundleValidityDays = null;
     var bundleValidityDeadline = null;
+    var bundleQuantity = 1;
 
     var locations = [];
     var locationsLoaded = false;
@@ -716,6 +718,7 @@
         pendingSlot = null;
         pendingEndDate = null;
         bundleSessions = [];
+        bundleQuantity = 1;
         refreshQuantityForSelection();
         updateConfirmButton();
       }
@@ -860,6 +863,7 @@
       pendingSlot = null;
       pendingEndDate = null;
       bundleSessions = [];
+      bundleQuantity = 1;
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
@@ -907,6 +911,7 @@
       pendingSlot = null;
       pendingEndDate = null;
       bundleSessions = [];
+      bundleQuantity = 1;
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
@@ -987,6 +992,7 @@
               .then(function (data2) {
                 secondMonthAvailableDates = applyAvailabilityData(data2);
                 renderCalendar();
+                if (!pendingEndDate) showMultiDayRangeInfo();
               })
               .catch(function () {
                 setStatus(calendarEl, strings.availabilityError);
@@ -994,6 +1000,7 @@
           } else {
             secondMonthAvailableDates = null;
             renderCalendar();
+            if (!pendingEndDate) showMultiDayRangeInfo();
           }
         })
         .catch(function () {
@@ -1156,6 +1163,31 @@
       calendarEl.appendChild(buildGrid(viewYear, viewMonth, choosingMultiDayCheckout));
     }
 
+    function multiDayRangeInfoText() {
+      if (multiDayMinNights !== null && multiDayMaxNights !== null) {
+        return format(strings.multiDayMinMaxNights, {
+          min: multiDayMinNights,
+          max: multiDayMaxNights,
+        });
+      }
+      if (multiDayMinNights !== null) {
+        return format(strings.multiDayMinNights, { count: multiDayMinNights });
+      }
+      if (multiDayMaxNights !== null) {
+        return format(strings.multiDayMaxNights, { count: multiDayMaxNights });
+      }
+      return null;
+    }
+
+    function showMultiDayRangeInfo() {
+      if (productBookingType !== "MULTI_DAY") return false;
+      var text = multiDayRangeInfoText();
+      if (!text) return false;
+      durationEl.hidden = false;
+      durationEl.textContent = text;
+      return true;
+    }
+
     function selectMultiDayDate(dateStr) {
       var choosingCheckout = pendingDate && !pendingEndDate && dateStr > pendingDate;
 
@@ -1168,7 +1200,7 @@
         updateConfirmButton();
         renderCustomFields();
         refreshQuantityForSelection();
-        durationEl.hidden = true;
+        if (!showMultiDayRangeInfo()) durationEl.hidden = true;
         return;
       }
 
@@ -1411,8 +1443,14 @@
     }
 
     function refreshQuantityForSelection() {
-      if (quantityWrapEl) quantityWrapEl.hidden = !pendingSlot;
-      setPendingQuantity(pendingSlot ? pendingQuantity : 1);
+      var isBundleFollowupSession =
+        productBookingType === "BUNDLE" && bundleSessions.length > 0;
+      if (quantityWrapEl) {
+        quantityWrapEl.hidden = !pendingSlot || isBundleFollowupSession;
+      }
+      setPendingQuantity(
+        pendingSlot && !isBundleFollowupSession ? pendingQuantity : 1,
+      );
     }
 
     if (quantityDecreaseBtn) {
@@ -1650,6 +1688,7 @@
       pendingSlot = null;
       pendingEndDate = null;
       bundleSessions = [];
+      bundleQuantity = 1;
       refreshQuantityForSelection();
       currentSlots = [];
       durationEl.hidden = true;
@@ -1676,6 +1715,9 @@
         var totalSessions = bundleSessionCount || 1;
 
         if (!atReviewStep) {
+          if (bundleSessions.length === 0) {
+            bundleQuantity = pendingQuantity;
+          }
           bundleSessions.push({ date: pendingDate, slot: pendingSlot });
           var remaining = totalSessions - bundleSessions.length;
 
@@ -1705,10 +1747,11 @@
           slot: combinedSlot,
           location: pendingLocation ? pendingLocation.name : null,
           locationId: pendingLocation ? pendingLocation.id : null,
-          quantity: 1,
+          quantity: bundleQuantity,
         });
         updateSelectionDisplay();
         bundleSessions = [];
+        bundleQuantity = 1;
         closeModal();
         return;
       }

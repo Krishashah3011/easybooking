@@ -30,3 +30,13 @@ export function getDisplayStatus(
   }
   return booking.status;
 }
+
+export function belongsInCompletedTab(
+  booking: CompletionInput & { status: string },
+  now: Date = new Date(),
+): boolean {
+  if (booking.status === "CANCELLED") {
+    return isBookingCompleted(booking, now);
+  }
+  return getDisplayStatus(booking, now) === "COMPLETED";
+}

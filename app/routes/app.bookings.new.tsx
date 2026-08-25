@@ -61,6 +61,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       id: p.id,
       title: p.productTitle,
       bookingType: p.bookingType,
+      minNights: p.minNights,
+      maxNights: p.maxNights,
     })),
     locations: locations.map((l) => ({ id: l.id, name: l.name })),
     customFields: customFields.map(toPublicField),
@@ -480,6 +482,18 @@ export default function NewBookingPage() {
   const isValidEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
+  const multiDayStayLengthMessage = (() => {
+    if (selectedBookingType !== "MULTI_DAY") return null;
+    const min = selectedProduct?.minNights ?? null;
+    const max = selectedProduct?.maxNights ?? null;
+    if (min !== null && max !== null) {
+      return `Stay must be between ${min} and ${max} nights.`;
+    }
+    if (min !== null) return `Minimum stay is ${min} nights.`;
+    if (max !== null) return `Maximum stay is ${max} nights.`;
+    return null;
+  })();
+
   const nameError =
     (nameTouched || submitAttempted) && !customerName.trim()
       ? "Name is required"
@@ -623,6 +637,9 @@ export default function NewBookingPage() {
       )}
 
       <s-section heading="Date">
+        {multiDayStayLengthMessage && (
+          <s-banner tone="info">{multiDayStayLengthMessage}</s-banner>
+        )}
         <div
           style={{
             display: "flex",
@@ -699,6 +716,9 @@ export default function NewBookingPage() {
 
       {date && selectedBookingType === "MULTI_DAY" && (
         <s-section heading="Check-out date">
+          {multiDayStayLengthMessage && (
+            <s-banner tone="info">{multiDayStayLengthMessage}</s-banner>
+          )}
           <s-text-field
             label="Check-out"
             type="date"
