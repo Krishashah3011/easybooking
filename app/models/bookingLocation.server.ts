@@ -184,7 +184,15 @@ export async function deleteLocation(
   if (!existing) {
     return { ok: false, error: "Location not found." };
   }
-  await prisma.bookingLocation.delete({ where: { id } });
+  try {
+    await prisma.bookingLocation.delete({ where: { id } });
+  } catch (err) {
+    console.error(`deleteLocation failed for shop=${shop} id=${id}:`, err);
+    return {
+      ok: false,
+      error: "Couldn't delete this location. Please try again.",
+    };
+  }
   return { ok: true };
 }
 

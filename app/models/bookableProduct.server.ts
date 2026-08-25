@@ -4,7 +4,7 @@ import type {
   BookingType,
 } from "@prisma/client";
 import prisma from "../db.server";
-import { parseWorkingDays } from "./bookingSettings.server";
+import { parseWorkingDays } from "../utils/workingDays";
 import { BOOKING_TYPES } from "./bookingTypes";
 
 export { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "./bookingTypes";

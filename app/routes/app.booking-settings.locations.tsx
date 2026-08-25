@@ -21,7 +21,7 @@ import {
 import { timezoneOffsetLabel } from "../utils/timezones";
 import { COUNTRIES, findCountryByTimezone, type Country } from "../utils/countries";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
-import { parseWorkingDays } from "../models/bookingSettings.server";
+import { parseWorkingDays } from "../utils/workingDays";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -382,8 +382,13 @@ function LocationRow({
   const isBusy = isDeleting || isReordering;
 
   useEffect(() => {
-    if (deleteFetcher.data?.intent === "delete" && deleteFetcher.data.ok) {
+    if (deleteFetcher.data?.intent !== "delete") return;
+    if (deleteFetcher.data.ok) {
       shopify.toast.show("Location removed");
+    } else {
+      shopify.toast.show(deleteFetcher.data.error || "Couldn't delete location.", {
+        isError: true,
+      });
     }
   }, [deleteFetcher.data, shopify]);
 
