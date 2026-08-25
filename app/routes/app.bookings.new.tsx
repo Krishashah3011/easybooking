@@ -16,7 +16,7 @@ import {
   getAvailableMultiDayNightsInMonth,
   type TimeSlot,
 } from "../models/slotAvailability.server";
-import { resolveBookingContext } from "../models/booking-context.server";
+import { resolveBookingContextById } from "../models/booking-context.server";
 import {
   createManualBooking,
   getBookedCountsInRange,
@@ -74,7 +74,7 @@ async function resolveBlackoutDatesAndSettings(
   bookableProductId: string,
   locationId?: string | null,
 ) {
-  const context = await resolveBookingContext(shop, bookableProductId, locationId);
+  const context = await resolveBookingContextById(shop, bookableProductId, locationId);
   if (!context) return null;
   return {
     bookingType: context.bookingType,

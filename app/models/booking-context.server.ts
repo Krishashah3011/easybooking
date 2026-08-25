@@ -1,6 +1,7 @@
 import { getBookingSettings } from "./bookingSettings.server";
 import {
   getBookableProduct,
+  getBookableProductById,
   resolveEffectiveSettings,
   type EffectiveBookingSettings,
 } from "./bookableProduct.server";
@@ -9,6 +10,8 @@ import {
   listShopBlackoutDates,
 } from "./blackoutDate.server";
 import { getLocationById } from "./bookingLocation.server";
+import type { BookableProduct, BookingSettings } from "@prisma/client";
+import type { LocationHoursOverride } from "./bookableProduct.server";
 
 export type BookingContext = {
   bookableProductId: string;
@@ -22,17 +25,12 @@ export type BookingContext = {
   location: { id: string; name: string; timezone: string } | null;
 };
 
-export async function resolveBookingContext(
+async function buildBookingContext(
   shop: string,
-  productId: string,
-  locationId?: string | null,
+  shopSettings: BookingSettings,
+  bookableProduct: BookableProduct | null,
+  location: (LocationHoursOverride & { id: string; name: string; timezone: string }) | null,
 ): Promise<BookingContext | null> {
-  const [shopSettings, bookableProduct, location] = await Promise.all([
-    getBookingSettings(shop),
-    getBookableProduct(shop, productId),
-    locationId ? getLocationById(shop, locationId) : Promise.resolve(null),
-  ]);
-
   if (!bookableProduct || !bookableProduct.isEnabled) {
     return null;
   }
@@ -64,4 +62,32 @@ export async function resolveBookingContext(
       ? { id: location.id, name: location.name, timezone: location.timezone }
       : null,
   };
+}
+
+export async function resolveBookingContext(
+  shop: string,
+  productId: string,
+  locationId?: string | null,
+): Promise<BookingContext | null> {
+  const [shopSettings, bookableProduct, location] = await Promise.all([
+    getBookingSettings(shop),
+    getBookableProduct(shop, productId),
+    locationId ? getLocationById(shop, locationId) : Promise.resolve(null),
+  ]);
+
+  return buildBookingContext(shop, shopSettings, bookableProduct, location);
+}
+
+export async function resolveBookingContextById(
+  shop: string,
+  bookableProductId: string,
+  locationId?: string | null,
+): Promise<BookingContext | null> {
+  const [shopSettings, bookableProduct, location] = await Promise.all([
+    getBookingSettings(shop),
+    getBookableProductById(shop, bookableProductId),
+    locationId ? getLocationById(shop, locationId) : Promise.resolve(null),
+  ]);
+
+  return buildBookingContext(shop, shopSettings, bookableProduct, location);
 }

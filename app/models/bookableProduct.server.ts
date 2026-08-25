@@ -64,6 +64,13 @@ export async function getBookableProduct(
   });
 }
 
+export async function getBookableProductById(
+  shop: string,
+  id: string,
+): Promise<BookableProduct | null> {
+  return prisma.bookableProduct.findFirst({ where: { id, shop } });
+}
+
 export async function ensureBookableProduct(
   shop: string,
   productId: string,
