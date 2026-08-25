@@ -63,6 +63,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       bookingType: p.bookingType,
       minNights: p.minNights,
       maxNights: p.maxNights,
+      bundleSessionCount: p.bundleSessionCount,
+      bundleValidityDays: p.bundleValidityDays,
     })),
     locations: locations.map((l) => ({ id: l.id, name: l.name })),
     customFields: customFields.map(toPublicField),
@@ -318,6 +320,34 @@ export default function NewBookingPage() {
   const [emailTouched, setEmailTouched] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [bundleValidityDeadline, setBundleValidityDeadline] = useState<
+    string | null
+  >(null);
+
+  // Sessions already queued for the bundle currently being built on this product.
+  const bundleSessionsQueued = queuedSlots.filter(
+    (entry) => entry.bookableProductId === bookableProductId,
+  );
+  const bundleSessionCount = selectedProduct?.bundleSessionCount ?? null;
+  const bundleSessionsRemaining =
+    bundleSessionCount !== null
+      ? Math.max(0, bundleSessionCount - bundleSessionsQueued.length)
+      : null;
+  const bundleComplete =
+    bundleSessionCount !== null && bundleSessionsRemaining === 0;
+
+  // Anchor the bundle's validity deadline as soon as this bundle product is selected
+  // (mirrors the storefront widget, which fixes the deadline once per bundle purchase
+  // from "today" rather than recomputing it per session picked).
+  useEffect(() => {
+    if (selectedBookingType !== "BUNDLE" || !selectedProduct?.bundleValidityDays) {
+      setBundleValidityDeadline(null);
+      return;
+    }
+    const deadline = new Date();
+    deadline.setUTCDate(deadline.getUTCDate() + selectedProduct.bundleValidityDays);
+    setBundleValidityDeadline(deadline.toISOString().slice(0, 10));
+  }, [bookableProductId, selectedBookingType, selectedProduct?.bundleValidityDays]);
 
   const availableDates: string[] =
     availabilityFetcher.data?.intent === "loadAvailability" &&
@@ -520,6 +550,12 @@ export default function NewBookingPage() {
     if (!alreadyQueued) {
       const productTitle =
         products.find((p) => p.id === bookableProductId)?.title ?? "";
+      // For a bundle's 2nd+ session, reuse the quantity locked in on the first
+      // session rather than whatever the (hidden) stepper currently holds.
+      const effectiveQuantity =
+        selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0
+          ? bundleSessionsQueued[0].quantity
+          : quantity;
       setQueuedSlots((prev) => [
         ...prev,
         {
@@ -528,7 +564,7 @@ export default function NewBookingPage() {
           date,
           slot: selectedSlot,
           endDate: selectedBookingType === "MULTI_DAY" ? checkoutDate : null,
-          quantity,
+          quantity: effectiveQuantity,
         },
       ]);
     }
@@ -541,6 +577,22 @@ export default function NewBookingPage() {
     setQueuedSlots((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Bundle products in the queue that don't yet have their required session count.
+  const incompleteBundleTitles = Array.from(
+    new Set(queuedSlots.map((entry) => entry.bookableProductId)),
+  )
+    .map((id) => {
+      const product = products.find((p) => p.id === id);
+      if (!product || product.bookingType !== "BUNDLE" || product.bundleSessionCount === null) {
+        return null;
+      }
+      const queuedCount = queuedSlots.filter(
+        (entry) => entry.bookableProductId === id,
+      ).length;
+      return queuedCount !== product.bundleSessionCount ? product.title : null;
+    })
+    .filter((title): title is string => title !== null);
+
   const handleCreateBooking = () => {
     setSubmitAttempted(true);
     setNameTouched(true);
@@ -548,6 +600,7 @@ export default function NewBookingPage() {
 
     if (
       queuedSlots.length === 0 ||
+      incompleteBundleTitles.length > 0 ||
       !customerName.trim() ||
       !customerEmail.trim() ||
       !isValidEmail(customerEmail)
@@ -593,7 +646,11 @@ export default function NewBookingPage() {
     );
   }
 
-  const availableSet = new Set(availableDates);
+  const availableSet = new Set(
+    selectedBookingType === "BUNDLE" && bundleValidityDeadline
+      ? availableDates.filter((d) => d <= bundleValidityDeadline)
+      : availableDates,
+  );
   const daysInMonth = new Date(Date.UTC(viewYear, viewMonth, 0)).getUTCDate();
   const firstWeekday = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).getUTCDay();
   const isLoadingAvailability = availabilityFetcher.state !== "idle";
@@ -640,6 +697,16 @@ export default function NewBookingPage() {
         {multiDayStayLengthMessage && (
           <s-banner tone="info">{multiDayStayLengthMessage}</s-banner>
         )}
+        {selectedBookingType === "BUNDLE" && bundleSessionCount !== null && (
+          <s-banner tone={bundleComplete ? "success" : "info"}>
+            {bundleComplete
+              ? `All ${bundleSessionCount} session(s) added for this bundle.`
+              : `Session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}` +
+                (bundleValidityDeadline
+                  ? ` — must be booked by ${bundleValidityDeadline}`
+                  : "")}
+          </s-banner>
+        )}
         <div
           style={{
             display: "flex",
@@ -677,7 +744,7 @@ export default function NewBookingPage() {
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dateStr = `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const isAvailable = availableSet.has(dateStr);
+              const isAvailable = availableSet.has(dateStr) && !bundleComplete;
               const isSelected = dateStr === date;
               return (
                 <button
@@ -743,7 +810,13 @@ export default function NewBookingPage() {
 
       {date &&
         (selectedBookingType === "SLOT" || selectedBookingType === "BUNDLE") && (
-          <s-section heading="Available times">
+          <s-section
+            heading={
+              selectedBookingType === "BUNDLE" && bundleSessionCount !== null
+                ? `Available times \u2014 session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
+                : "Available times"
+            }
+          >
             {isLoadingSlots ? (
               <s-paragraph>Loading available times…</s-paragraph>
             ) : slots.length === 0 ? (
@@ -780,7 +853,19 @@ export default function NewBookingPage() {
           </s-section>
         )}
 
-      {selectedSlot && (
+      {selectedSlot &&
+        selectedBookingType === "BUNDLE" &&
+        bundleSessionsQueued.length > 0 && (
+          <s-section heading="Quantity">
+            <s-text tone="subdued">
+              {bundleSessionsQueued[0].quantity} — set on the first session of
+              this bundle.
+            </s-text>
+          </s-section>
+        )}
+
+      {selectedSlot &&
+        !(selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0) && (
         <s-section heading="Quantity">
           <s-stack direction="inline" gap="base" alignItems="center">
             <s-button
@@ -804,7 +889,11 @@ export default function NewBookingPage() {
               <s-text tone="subdued">Only {maxQuantity} left for this slot.</s-text>
             )}
           </s-stack>
+        </s-section>
+      )}
 
+      {selectedSlot && (
+        <s-section>
           <s-button variant="primary" onClick={handleAddToList}>
             Add to list
           </s-button>
@@ -912,6 +1001,14 @@ export default function NewBookingPage() {
           {submitAttempted && (nameError || emailError) && (
             <s-banner tone="critical">
               Please fix the highlighted fields before creating this booking.
+            </s-banner>
+          )}
+
+          {incompleteBundleTitles.length > 0 && (
+            <s-banner tone="critical">
+              {incompleteBundleTitles.length === 1
+                ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
+                : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
             </s-banner>
           )}
 
