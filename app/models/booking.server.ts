@@ -905,24 +905,35 @@ export async function listBookings(
     take: 100,
   });
 
-  const withDisplayStatus = bookings.map(
-    ({
-      bookableProduct,
-      bookingLocation,
-      ...booking
-    }: Booking & {
-      bookableProduct: { productTitle: string; bookingType: BookingType };
-      bookingLocation: { timezone: string } | null;
-    }) => {
-      const withType = {
-        ...booking,
-        productTitle: bookableProduct.productTitle,
-        bookingType: bookableProduct.bookingType,
-        locationTimezone: bookingLocation?.timezone ?? null,
-      };
-      return { ...withType, displayStatus: getDisplayStatus(withType) };
-    },
-  );
+  const withDisplayStatus = bookings
+    .map(
+      ({
+        bookableProduct,
+        bookingLocation,
+        ...booking
+      }: Booking & {
+        bookableProduct: { productTitle: string; bookingType: BookingType };
+        bookingLocation: { timezone: string } | null;
+      }) => {
+        const withType = {
+          ...booking,
+          productTitle: bookableProduct.productTitle,
+          bookingType: bookableProduct.bookingType,
+          locationTimezone: bookingLocation?.timezone ?? null,
+        };
+        return { ...withType, displayStatus: getDisplayStatus(withType) };
+      },
+    )
+    // Cancelled bookings always sink to the bottom, regardless of date.
+    // `.sort` is a stable sort, and the list above is already ordered by
+    // slotStartsAt ascending, so this preserves date order within both the
+    // active group and the cancelled group — it only moves cancelled ones
+    // down as a block.
+    .sort((a, b) => {
+      const aCancelled = a.status === "CANCELLED" ? 1 : 0;
+      const bCancelled = b.status === "CANCELLED" ? 1 : 0;
+      return aCancelled - bCancelled;
+    });
 
   if (filters.completed === true) {
     return withDisplayStatus.filter((b) => belongsInCompletedTab(b));

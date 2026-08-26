@@ -356,8 +356,8 @@ export default function NewBookingPage() {
       ? availabilityFetcher.data.availableDates
       : [];
 
-  const isTwoMonthType =
-    selectedBookingType === "BUNDLE" || selectedBookingType === "MULTI_DAY";
+  // Two-month calendar is now shown for every booking type in the admin UI.
+  const isTwoMonthType = true;
 
   let secondYear = viewYear;
   let secondMonth = viewMonth + 1;
@@ -993,9 +993,21 @@ export default function NewBookingPage() {
               </>
             )}
             {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
-              <s-banner tone="info">
-                Check-in {date}. Now pick a check-out date.
-              </s-banner>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  marginTop: "1rem",
+                  padding: "0.3rem 0.65rem",
+                  borderRadius: "999px",
+                  background: "#e6f0fb",
+                }}
+              >
+                <s-text tone="info" weight="bold">
+                  Check-in {date}. Now pick a check-out date.
+                </s-text>
+              </div>
             )}
             {selectedBookingType === "MULTI_DAY" && checkoutError && (
               <s-banner tone="critical">{checkoutError}</s-banner>
@@ -1106,46 +1118,74 @@ export default function NewBookingPage() {
               {bundleSessionsQueued[0].quantity} — set on the first session of
               this bundle.
             </s-text>
+            <div style={{ marginTop: "0.75rem" }}>
+              <s-button variant="primary" onClick={handleAddToList}>
+                {bundleSessionCount !== null &&
+                bundleSessionsQueued.length + 1 < bundleSessionCount
+                  ? "Next slot"
+                  : "Add to list"}
+              </s-button>
+            </div>
           </s-section>
         )}
 
       {selectedSlot &&
         !(selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0) && (
         <s-section heading="Quantity">
-          <s-stack direction="inline" gap="base" alignItems="center">
-            <s-button
-              variant="tertiary"
-              {...(quantity <= 1 ? { disabled: true } : {})}
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "stretch",
+                width: "fit-content",
+                border: "1px solid #d1d5db",
+                borderRadius: "8px",
+                overflow: "hidden",
+                background: "#fff",
+              }}
             >
-              −
-            </s-button>
-            <span style={{ minWidth: "2rem", textAlign: "center" }}>
-              {quantity}
-            </span>
-            <s-button
-              variant="tertiary"
-              {...(quantity >= maxQuantity ? { disabled: true } : {})}
-              onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-            >
-              +
-            </s-button>
+              <s-button
+                variant="tertiary"
+                {...(quantity <= 1 ? { disabled: true } : {})}
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              >
+                −
+              </s-button>
+              <span
+                style={{
+                  minWidth: "3rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 600,
+                  borderLeft: "1px solid #e1e3e5",
+                  borderRight: "1px solid #e1e3e5",
+                  background: "#fafbfb",
+                }}
+              >
+                {quantity}
+              </span>
+              <s-button
+                variant="tertiary"
+                {...(quantity >= maxQuantity ? { disabled: true } : {})}
+                onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+              >
+                +
+              </s-button>
+            </div>
             {maxQuantity <= 5 && (
               <s-text tone="subdued">Only {maxQuantity} left for this slot.</s-text>
             )}
-          </s-stack>
-        </s-section>
-      )}
-
-      {selectedSlot && (
-        <s-section>
-          <s-button variant="primary" onClick={handleAddToList}>
-            {selectedBookingType === "BUNDLE" &&
-            bundleSessionCount !== null &&
-            bundleSessionsQueued.length + 1 < bundleSessionCount
-              ? "Next slot"
-              : "Add to list"}
-          </s-button>
+          </div>
+          <div style={{ marginTop: "0.75rem" }}>
+            <s-button variant="primary" onClick={handleAddToList}>
+              {selectedBookingType === "BUNDLE" &&
+              bundleSessionCount !== null &&
+              bundleSessionsQueued.length + 1 < bundleSessionCount
+                ? "Next slot"
+                : "Add to list"}
+            </s-button>
+          </div>
         </s-section>
       )}
 
