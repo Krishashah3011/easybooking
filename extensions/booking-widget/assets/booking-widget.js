@@ -34,10 +34,6 @@
     nextMonth: "Next month",
     availableTimes: "Available times",
     alreadyBooked: "This slots are added to Cart for this product:",
-    askMoreMessage:
-      "{date} | {time} added. Want to book another slot for this product?",
-    addAnotherSlot: "Yes, add another slot",
-    doneAddToCart: "No, I'm done",
     removeSlot: "Remove this slot",
     addAnotherSlotLink: "+ Add another slot",
     multiAddError:
@@ -251,10 +247,6 @@
     var nextBtn = root.querySelector("[data-booking-next]");
     var confirmBtn = root.querySelector("[data-booking-confirm]");
     var customFieldsEl = root.querySelector("[data-booking-custom-fields]");
-    var askMoreEl = root.querySelector("[data-booking-ask-more]");
-    var askMoreMessageEl = root.querySelector("[data-booking-ask-more-message]");
-    var askMoreYesBtn = root.querySelector("[data-booking-ask-more-yes]");
-    var askMoreNoBtn = root.querySelector("[data-booking-ask-more-no]");
     var quantityWrapEl = root.querySelector("[data-booking-quantity]");
     var quantityInputEl = root.querySelector("[data-booking-quantity-input]");
     var quantityDecreaseBtn = root.querySelector(
@@ -919,7 +911,6 @@
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
-      askMoreEl.hidden = true;
       modalBodyEl.hidden = false;
       modalFooterEl.hidden = false;
       overlayEl.hidden = false;
@@ -943,43 +934,6 @@
     function closeModal() {
       overlayEl.hidden = true;
       document.body.classList.remove("booking-widget-lock-scroll");
-    }
-
-    function showAskMore(date, slot) {
-      askMoreMessageEl.textContent = format(strings.askMoreMessage, {
-        date: formatDateDisplay(date),
-        time: formatTimeRangeDisplay(slot, productBookingType === "SLOT"),
-      });
-      modalBodyEl.hidden = true;
-      modalFooterEl.hidden = true;
-      if (quantityWrapEl) quantityWrapEl.hidden = true;
-      if (reviewStepEl) reviewStepEl.hidden = true;
-      if (customFieldsEl) customFieldsEl.hidden = true;
-      if (subheaderEl) subheaderEl.hidden = true;
-      askMoreEl.hidden = false;
-    }
-
-    function resumeModalForAnotherSlot() {
-      askMoreEl.hidden = true;
-      modalBodyEl.hidden = false;
-      modalFooterEl.hidden = false;
-      if (subheaderEl) subheaderEl.hidden = false;
-      pendingDate = null;
-      pendingSlot = null;
-      pendingEndDate = null;
-      bundleSessions = [];
-      bundleQuantity = 1;
-      atReviewStep = false;
-      if (reviewStepEl) reviewStepEl.hidden = true;
-      refreshQuantityForSelection();
-      currentSlots = [];
-      durationEl.hidden = true;
-      setStatus(slotListEl, strings.noTimes);
-      updateConfirmButton();
-      renderCustomFields();
-      renderCalendar();
-      updateRangeSummary();
-      updateBundleProgress();
     }
 
     function isTwoMonthType(type) {
@@ -2034,11 +1988,6 @@
         updateSelectionDisplay();
       }
       refreshQuantityForSelection();
-      showAskMore(date, slot);
-    });
-    askMoreYesBtn.addEventListener("click", resumeModalForAnotherSlot);
-    askMoreNoBtn.addEventListener("click", function () {
-      askMoreEl.hidden = true;
       closeModal();
     });
 
