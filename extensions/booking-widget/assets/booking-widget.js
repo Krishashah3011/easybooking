@@ -1926,8 +1926,6 @@
       pendingDate = null;
       pendingSlot = null;
       pendingEndDate = null;
-      bundleSessions = [];
-      bundleQuantity = 1;
       refreshQuantityForSelection();
       currentSlots = [];
       durationEl.hidden = true;
