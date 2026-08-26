@@ -112,6 +112,35 @@
     return m[3] + "-" + m[2] + "-" + m[1];
   }
 
+  var chipDateFormatter;
+  try {
+    chipDateFormatter = new Intl.DateTimeFormat("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  } catch (e) {
+    chipDateFormatter = null;
+  }
+
+  function formatChipDate(dateStr) {
+    if (!chipDateFormatter) return formatDateDisplay(dateStr);
+    try {
+      return chipDateFormatter.format(new Date(dateStr + "T00:00:00.000Z"));
+    } catch (e) {
+      return formatDateDisplay(dateStr);
+    }
+  }
+
+  function inclusiveDayCount(startStr, endStr) {
+    var start = new Date(startStr + "T00:00:00.000Z");
+    var end = new Date(endStr + "T00:00:00.000Z");
+    var diff = Math.round((end.getTime() - start.getTime()) / 86400000);
+    return diff + 1;
+  }
+
   function timezoneLabel() {
     try {
       var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -197,7 +226,21 @@
     var calendarEl = root.querySelector("[data-booking-calendar]");
     var weekdaysEl = root.querySelector("[data-booking-weekdays]");
     var monthLabelEl = root.querySelector("[data-booking-month-label]");
+    var headerEl = root.querySelector("[data-booking-header]");
     var durationEl = root.querySelector("[data-booking-duration]");
+    var rangeSummaryEl = root.querySelector("[data-booking-range-summary]");
+    var rangeHintEl = root.querySelector("[data-booking-range-hint]");
+    var selectedDatesEl = root.querySelector("[data-booking-selected-dates]");
+    var selectedDatesLabelEl = root.querySelector(
+      "[data-booking-selected-dates-label]",
+    );
+    var selectedDatesTextEl = root.querySelector(
+      "[data-booking-selected-dates-text]",
+    );
+    var selectedDatesClearBtn = root.querySelector(
+      "[data-booking-selected-dates-clear]",
+    );
+    var slotsPaneOuterEl = root.querySelector("[data-booking-slots-pane]");
     var slotListEl = root.querySelector("[data-booking-slot-list]");
     var prevBtn = root.querySelector("[data-booking-prev]");
     var nextBtn = root.querySelector("[data-booking-next]");
@@ -721,6 +764,7 @@
         bundleQuantity = 1;
         refreshQuantityForSelection();
         updateConfirmButton();
+        updateRangeSummary();
       }
       loadMonth();
     }
@@ -874,6 +918,7 @@
       document.body.classList.add("booking-widget-lock-scroll");
       updateConfirmButton();
       renderCustomFields();
+      updateRangeSummary();
 
       if (locationStepEl && locations.length > 0 && !pendingLocation) {
         showLocationStep();
@@ -921,6 +966,7 @@
       updateConfirmButton();
       renderCustomFields();
       renderCalendar();
+      updateRangeSummary();
     }
 
     function isTwoMonthType(type) {
@@ -976,6 +1022,50 @@
 
     function applyLayoutForType() {
       if (slotsPaneEl) slotsPaneEl.hidden = isTwoMonthType(productBookingType);
+      if (slotsPaneOuterEl) {
+        slotsPaneOuterEl.hidden = isTwoMonthType(productBookingType);
+      }
+    }
+
+    function updateRangeSummary() {
+      if (!rangeSummaryEl) return;
+      var showSummary = productBookingType === "MULTI_DAY";
+      rangeSummaryEl.hidden = !showSummary;
+      if (!showSummary) return;
+
+      if (rangeHintEl) rangeHintEl.textContent = multiDayRangeInfoText() || "";
+
+      if (!selectedDatesEl) return;
+      if (pendingDate) {
+        var count = pendingEndDate
+          ? inclusiveDayCount(pendingDate, pendingEndDate)
+          : 1;
+        selectedDatesEl.hidden = false;
+        if (selectedDatesLabelEl) {
+          selectedDatesLabelEl.textContent = "Selected Dates (" + count + ")";
+        }
+        if (selectedDatesTextEl) {
+          selectedDatesTextEl.textContent = pendingEndDate
+            ? formatChipDate(pendingDate) + " - " + formatChipDate(pendingEndDate)
+            : formatChipDate(pendingDate);
+        }
+      } else {
+        selectedDatesEl.hidden = true;
+      }
+    }
+
+    if (selectedDatesClearBtn) {
+      selectedDatesClearBtn.addEventListener("click", function () {
+        pendingDate = null;
+        pendingEndDate = null;
+        pendingSlot = null;
+        clearError();
+        renderCalendar();
+        updateConfirmButton();
+        renderCustomFields();
+        refreshQuantityForSelection();
+        updateRangeSummary();
+      });
     }
 
     function loadMonth() {
@@ -992,7 +1082,7 @@
               .then(function (data2) {
                 secondMonthAvailableDates = applyAvailabilityData(data2);
                 renderCalendar();
-                if (!pendingEndDate) showMultiDayRangeInfo();
+                if (!pendingEndDate) updateRangeSummary();
               })
               .catch(function () {
                 setStatus(calendarEl, strings.availabilityError);
@@ -1000,7 +1090,7 @@
           } else {
             secondMonthAvailableDates = null;
             renderCalendar();
-            if (!pendingEndDate) showMultiDayRangeInfo();
+            if (!pendingEndDate) updateRangeSummary();
           }
         })
         .catch(function () {
@@ -1099,15 +1189,59 @@
       return row;
     }
 
-    function buildMonthPane(year, month, choosingMultiDayCheckout, showNoAvailability) {
+    function buildMonthPane(
+      year,
+      month,
+      choosingMultiDayCheckout,
+      showNoAvailability,
+      isFirstPane,
+      isLastPane,
+    ) {
       var pane = document.createElement("div");
       pane.className = "booking-widget__month-pane";
 
       var heading = document.createElement("div");
-      heading.className = "booking-widget__month-pane-label";
-      heading.textContent = monthFormatter.format(
+      heading.className = "booking-widget__month-pane-heading";
+
+      if (isFirstPane) {
+        var prevClone = document.createElement("button");
+        prevClone.type = "button";
+        prevClone.className = "booking-widget__nav";
+        prevClone.setAttribute("aria-label", strings.previousMonth);
+        prevClone.innerHTML = "&lsaquo;";
+        prevClone.addEventListener("click", function () {
+          goToMonth(-1);
+        });
+        heading.appendChild(prevClone);
+      } else {
+        var leftSpacer = document.createElement("span");
+        leftSpacer.className = "booking-widget__nav-spacer";
+        heading.appendChild(leftSpacer);
+      }
+
+      var title = document.createElement("span");
+      title.className = "booking-widget__month-pane-label";
+      title.textContent = monthFormatter.format(
         new Date(Date.UTC(year, month - 1, 1)),
       );
+      heading.appendChild(title);
+
+      if (isLastPane) {
+        var nextClone = document.createElement("button");
+        nextClone.type = "button";
+        nextClone.className = "booking-widget__nav";
+        nextClone.setAttribute("aria-label", strings.nextMonth);
+        nextClone.innerHTML = "&rsaquo;";
+        nextClone.addEventListener("click", function () {
+          goToMonth(1);
+        });
+        heading.appendChild(nextClone);
+      } else {
+        var rightSpacer = document.createElement("span");
+        rightSpacer.className = "booking-widget__nav-spacer";
+        heading.appendChild(rightSpacer);
+      }
+
       pane.appendChild(heading);
       pane.appendChild(buildWeekdaysRow());
 
@@ -1130,7 +1264,7 @@
       calendarEl.innerHTML = "";
 
       if (isTwoMonthType(productBookingType) && secondMonthAvailableDates !== null) {
-        monthLabelEl.hidden = true;
+        if (headerEl) headerEl.hidden = true;
         weekdaysEl.hidden = true;
         calendarEl.classList.add("booking-widget__calendar--dual");
 
@@ -1140,15 +1274,29 @@
           secondMonthAvailableDates.length === 0 && !choosingMultiDayCheckout;
 
         calendarEl.appendChild(
-          buildMonthPane(viewYear, viewMonth, choosingMultiDayCheckout, pane1NoAvail),
+          buildMonthPane(
+            viewYear,
+            viewMonth,
+            choosingMultiDayCheckout,
+            pane1NoAvail,
+            true,
+            false,
+          ),
         );
         calendarEl.appendChild(
-          buildMonthPane(second.year, second.month, choosingMultiDayCheckout, pane2NoAvail),
+          buildMonthPane(
+            second.year,
+            second.month,
+            choosingMultiDayCheckout,
+            pane2NoAvail,
+            false,
+            true,
+          ),
         );
         return;
       }
 
-      monthLabelEl.hidden = false;
+      if (headerEl) headerEl.hidden = false;
       weekdaysEl.hidden = false;
       calendarEl.classList.remove("booking-widget__calendar--dual");
       monthLabelEl.textContent = monthFormatter.format(
@@ -1179,15 +1327,6 @@
       return null;
     }
 
-    function showMultiDayRangeInfo() {
-      if (productBookingType !== "MULTI_DAY") return false;
-      var text = multiDayRangeInfoText();
-      if (!text) return false;
-      durationEl.hidden = false;
-      durationEl.textContent = text;
-      return true;
-    }
-
     function selectMultiDayDate(dateStr) {
       var choosingCheckout = pendingDate && !pendingEndDate && dateStr > pendingDate;
 
@@ -1200,7 +1339,7 @@
         updateConfirmButton();
         renderCustomFields();
         refreshQuantityForSelection();
-        if (!showMultiDayRangeInfo()) durationEl.hidden = true;
+        updateRangeSummary();
         return;
       }
 
@@ -1238,8 +1377,7 @@
       updateConfirmButton();
       renderCustomFields();
       refreshQuantityForSelection();
-      durationEl.hidden = false;
-      durationEl.textContent = format(strings.nightsSelected, { count: nights });
+      updateRangeSummary();
     }
 
     function minRemainingCapacityForRange(checkinStr, checkoutStr) {
@@ -1472,6 +1610,7 @@
 
     function updateConfirmButton() {
       confirmBtn.disabled = atReviewStep ? false : !(pendingDate && pendingSlot);
+      confirmBtn.textContent = atReviewStep ? strings.confirm : strings.next;
     }
 
     function buildReviewSummary() {

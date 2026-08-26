@@ -282,6 +282,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function NewBookingPage() {
   const { products, locations, customFields } = useLoaderData<typeof loader>();
   const availabilityFetcher = useFetcher<typeof action>();
+  const secondMonthFetcher = useFetcher<typeof action>();
   const slotsFetcher = useFetcher<typeof action>();
   const createFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
@@ -324,6 +325,7 @@ export default function NewBookingPage() {
     string | null
   >(null);
 
+  // Sessions already queued for the bundle currently being built on this product.
   const bundleSessionsQueued = queuedSlots.filter(
     (entry) => entry.bookableProductId === bookableProductId,
   );
@@ -335,6 +337,9 @@ export default function NewBookingPage() {
   const bundleComplete =
     bundleSessionCount !== null && bundleSessionsRemaining === 0;
 
+  // Anchor the bundle's validity deadline as soon as this bundle product is selected
+  // (mirrors the storefront widget, which fixes the deadline once per bundle purchase
+  // from "today" rather than recomputing it per session picked).
   useEffect(() => {
     if (selectedBookingType !== "BUNDLE" || !selectedProduct?.bundleValidityDays) {
       setBundleValidityDeadline(null);
@@ -349,6 +354,22 @@ export default function NewBookingPage() {
     availabilityFetcher.data?.intent === "loadAvailability" &&
     availabilityFetcher.data.ok
       ? availabilityFetcher.data.availableDates
+      : [];
+
+  const isTwoMonthType =
+    selectedBookingType === "BUNDLE" || selectedBookingType === "MULTI_DAY";
+
+  let secondYear = viewYear;
+  let secondMonth = viewMonth + 1;
+  if (secondMonth > 12) {
+    secondMonth = 1;
+    secondYear += 1;
+  }
+
+  const secondMonthDates: string[] =
+    secondMonthFetcher.data?.intent === "loadAvailability" &&
+    secondMonthFetcher.data.ok
+      ? secondMonthFetcher.data.availableDates
       : [];
 
   const slots: TimeSlot[] =
@@ -382,13 +403,34 @@ export default function NewBookingPage() {
     );
   };
 
+  const loadSecondMonthAvailability = (
+    productId: string,
+    year: number,
+    month: number,
+  ) => {
+    if (!productId) return;
+    secondMonthFetcher.submit(
+      {
+        intent: "loadAvailability",
+        bookableProductId: productId,
+        locationId,
+        year: String(year),
+        month: String(month),
+      },
+      { method: "POST" },
+    );
+  };
+
   useEffect(() => {
     setDate("");
     setCheckoutDate("");
     setCheckoutError(null);
     setSelectedSlot(null);
     loadAvailability(bookableProductId, viewYear, viewMonth);
-  }, [bookableProductId, viewYear, viewMonth, locationId]);
+    if (isTwoMonthType) {
+      loadSecondMonthAvailability(bookableProductId, secondYear, secondMonth);
+    }
+  }, [bookableProductId, viewYear, viewMonth, locationId, isTwoMonthType]);
 
   useEffect(() => {
     if (selectedSlot) {
@@ -446,6 +488,9 @@ export default function NewBookingPage() {
       );
     }
     loadAvailability(bookableProductId, viewYear, viewMonth);
+    if (isTwoMonthType) {
+      loadSecondMonthAvailability(bookableProductId, secondYear, secondMonth);
+    }
     if (date) {
       slotsFetcher.submit(
         { intent: "loadSlots", bookableProductId, locationId, date },
@@ -491,6 +536,9 @@ export default function NewBookingPage() {
 
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
+  // Multi-day picking happens directly on the calendar, same as the storefront:
+  // first click sets check-in, second click (on a later date) sets check-out.
+  // Clicking check-in again (or an earlier/same date) restarts the selection.
   const selectDate = (dateStr: string) => {
     if (selectedBookingType === "MULTI_DAY") {
       if (!date || checkoutDate || dateStr <= date) {
@@ -500,6 +548,7 @@ export default function NewBookingPage() {
         setSelectedSlot(null);
         return;
       }
+      // Second click: this is the check-out date.
       const error = stayLengthError(date, dateStr);
       if (error) {
         setCheckoutError(error);
@@ -587,6 +636,8 @@ export default function NewBookingPage() {
     if (!alreadyQueued) {
       const productTitle =
         products.find((p) => p.id === bookableProductId)?.title ?? "";
+      // For a bundle's 2nd+ session, reuse the quantity locked in on the first
+      // session rather than whatever the (hidden) stepper currently holds.
       const effectiveQuantity =
         selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0
           ? bundleSessionsQueued[0].quantity
@@ -612,6 +663,7 @@ export default function NewBookingPage() {
     setQueuedSlots((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Bundle products in the queue that don't yet have their required session count.
   const incompleteBundleTitles = Array.from(
     new Set(queuedSlots.map((entry) => entry.bookableProductId)),
   )
@@ -680,16 +732,93 @@ export default function NewBookingPage() {
     );
   }
 
-  const availableSet = new Set(
+  const applyBundleDeadline = (dates: string[]) =>
     selectedBookingType === "BUNDLE" && bundleValidityDeadline
-      ? availableDates.filter((d) => d <= bundleValidityDeadline)
-      : availableDates,
-  );
+      ? dates.filter((d) => d <= bundleValidityDeadline)
+      : dates;
+
+  const availableSet = new Set(applyBundleDeadline(availableDates));
+  const secondAvailableSet = new Set(applyBundleDeadline(secondMonthDates));
   const daysInMonth = new Date(Date.UTC(viewYear, viewMonth, 0)).getUTCDate();
   const firstWeekday = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).getUTCDay();
+  const secondDaysInMonth = new Date(
+    Date.UTC(secondYear, secondMonth, 0),
+  ).getUTCDate();
+  const secondFirstWeekday = new Date(
+    Date.UTC(secondYear, secondMonth - 1, 1),
+  ).getUTCDay();
   const isLoadingAvailability = availabilityFetcher.state !== "idle";
+  const isLoadingSecondMonth = secondMonthFetcher.state !== "idle";
   const isLoadingSlots = slotsFetcher.state !== "idle";
   const isCreatingBooking = createFetcher.state !== "idle";
+
+  const renderMonthGrid = (
+    year: number,
+    month: number,
+    monthDaysInMonth: number,
+    monthFirstWeekday: number,
+    monthAvailableSet: Set<string>,
+  ) => (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, 2.4rem)",
+        gap: "0.25rem",
+        maxWidth: "20rem",
+      }}
+    >
+      {Array.from({ length: monthFirstWeekday }).map((_, i) => (
+        <span key={`blank-${year}-${month}-${i}`} />
+      ))}
+      {Array.from({ length: monthDaysInMonth }).map((_, i) => {
+        const day = i + 1;
+        const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const isPickingCheckout =
+          selectedBookingType === "MULTI_DAY" && !!date && !checkoutDate;
+        const isAvailable = isPickingCheckout
+          ? dateStr > date
+          : monthAvailableSet.has(dateStr) && !bundleComplete;
+        const isSelected =
+          dateStr === date ||
+          (selectedBookingType === "MULTI_DAY" && dateStr === checkoutDate);
+        const isInRange =
+          selectedBookingType === "MULTI_DAY" &&
+          !!date &&
+          !!checkoutDate &&
+          dateStr > date &&
+          dateStr < checkoutDate;
+        return (
+          <button
+            key={dateStr}
+            type="button"
+            disabled={!isAvailable}
+            onClick={() => isAvailable && selectDate(dateStr)}
+            style={{
+              aspectRatio: "1",
+              border: "none",
+              borderRadius: "4px",
+              fontSize: "0.85rem",
+              cursor: isAvailable ? "pointer" : "not-allowed",
+              background: isSelected
+                ? "#111"
+                : isInRange
+                  ? "rgba(0,0,0,0.12)"
+                  : isAvailable
+                    ? "rgba(0,0,0,0.06)"
+                    : "transparent",
+              color: isSelected
+                ? "#fff"
+                : isAvailable
+                  ? "inherit"
+                  : "rgba(0,0,0,0.3)",
+            }}
+          >
+            {day}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <s-page heading="New Booking">
@@ -747,85 +876,78 @@ export default function NewBookingPage() {
             alignItems: "center",
             justifyContent: "space-between",
             marginBottom: "0.75rem",
-            maxWidth: "20rem",
+            maxWidth: isTwoMonthType ? "42rem" : "20rem",
           }}
         >
           <s-button variant="tertiary" onClick={() => goToMonth(-1)}>
             ‹
           </s-button>
           <span style={{ fontWeight: 600 }}>
-            {MONTH_NAMES[viewMonth - 1]} {viewYear}
+            {isTwoMonthType
+              ? `${MONTH_NAMES[viewMonth - 1]} ${viewYear} – ${MONTH_NAMES[secondMonth - 1]} ${secondYear}`
+              : `${MONTH_NAMES[viewMonth - 1]} ${viewYear}`}
           </span>
           <s-button variant="tertiary" onClick={() => goToMonth(1)}>
             ›
           </s-button>
         </div>
 
-        {isLoadingAvailability ? (
+        {isTwoMonthType ? (
+          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
+                {MONTH_NAMES[viewMonth - 1]} {viewYear}
+              </div>
+              {isLoadingAvailability ? (
+                <s-paragraph>Loading availability…</s-paragraph>
+              ) : (
+                renderMonthGrid(
+                  viewYear,
+                  viewMonth,
+                  daysInMonth,
+                  firstWeekday,
+                  availableSet,
+                )
+              )}
+              {!isLoadingAvailability && availableDates.length === 0 && (
+                <s-paragraph>No availability this month.</s-paragraph>
+              )}
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
+                {MONTH_NAMES[secondMonth - 1]} {secondYear}
+              </div>
+              {isLoadingSecondMonth ? (
+                <s-paragraph>Loading availability…</s-paragraph>
+              ) : (
+                renderMonthGrid(
+                  secondYear,
+                  secondMonth,
+                  secondDaysInMonth,
+                  secondFirstWeekday,
+                  secondAvailableSet,
+                )
+              )}
+              {!isLoadingSecondMonth && secondMonthDates.length === 0 && (
+                <s-paragraph>No availability this month.</s-paragraph>
+              )}
+            </div>
+          </div>
+        ) : isLoadingAvailability ? (
           <s-paragraph>Loading availability…</s-paragraph>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(7, 2.4rem)",
-              gap: "0.25rem",
-              maxWidth: "20rem",
-            }}
-          >
-            {Array.from({ length: firstWeekday }).map((_, i) => (
-              <span key={`blank-${i}`} />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const dateStr = `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const isPickingCheckout =
-                selectedBookingType === "MULTI_DAY" && !!date && !checkoutDate;
-              const isAvailable = isPickingCheckout
-                ? dateStr > date
-                : availableSet.has(dateStr) && !bundleComplete;
-              const isSelected =
-                dateStr === date ||
-                (selectedBookingType === "MULTI_DAY" && dateStr === checkoutDate);
-              const isInRange =
-                selectedBookingType === "MULTI_DAY" &&
-                !!date &&
-                !!checkoutDate &&
-                dateStr > date &&
-                dateStr < checkoutDate;
-              return (
-                <button
-                  key={dateStr}
-                  type="button"
-                  disabled={!isAvailable}
-                  onClick={() => isAvailable && selectDate(dateStr)}
-                  style={{
-                    aspectRatio: "1",
-                    border: "none",
-                    borderRadius: "4px",
-                    fontSize: "0.85rem",
-                    cursor: isAvailable ? "pointer" : "not-allowed",
-                    background: isSelected
-                      ? "#111"
-                      : isInRange
-                        ? "rgba(0,0,0,0.12)"
-                        : isAvailable
-                          ? "rgba(0,0,0,0.06)"
-                          : "transparent",
-                    color: isSelected
-                      ? "#fff"
-                      : isAvailable
-                        ? "inherit"
-                        : "rgba(0,0,0,0.3)",
-                  }}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {!isLoadingAvailability && availableDates.length === 0 && (
-          <s-paragraph>No availability this month.</s-paragraph>
+          <>
+            {renderMonthGrid(
+              viewYear,
+              viewMonth,
+              daysInMonth,
+              firstWeekday,
+              availableSet,
+            )}
+            {availableDates.length === 0 && (
+              <s-paragraph>No availability this month.</s-paragraph>
+            )}
+          </>
         )}
         {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
           <s-banner tone="info">

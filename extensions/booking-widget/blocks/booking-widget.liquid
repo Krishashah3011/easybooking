@@ -64,8 +64,19 @@
             <button type="button" class="booking-widget__location-change" data-booking-location-change>Change</button>
           </div>
 
+          <div class="booking-widget__range-summary" data-booking-range-summary hidden>
+            <p class="booking-widget__range-hint" data-booking-range-hint></p>
+            <div class="booking-widget__selected-dates" data-booking-selected-dates hidden>
+              <p class="booking-widget__selected-dates-label" data-booking-selected-dates-label></p>
+              <div class="booking-widget__selected-dates-badge">
+                <span class="booking-widget__selected-dates-text" data-booking-selected-dates-text></span>
+                <button type="button" class="booking-widget__selected-dates-clear" data-booking-selected-dates-clear aria-label="Clear selected dates">&times;</button>
+              </div>
+            </div>
+          </div>
+
           <div class="booking-widget__calendar-pane">
-            <div class="booking-widget__header">
+            <div class="booking-widget__header" data-booking-header>
               <button type="button" class="booking-widget__nav" data-booking-prev aria-label="Previous month">&lsaquo;</button>
               <span class="booking-widget__month-label" data-booking-month-label></span>
               <button type="button" class="booking-widget__nav" data-booking-next aria-label="Next month">&rsaquo;</button>
@@ -78,7 +89,7 @@
             </div>
           </div>
 
-          <div class="booking-widget__slots-pane">
+          <div class="booking-widget__slots-pane" data-booking-slots-pane>
             <div class="booking-widget__duration" data-booking-duration hidden></div>
             <div class="booking-widget__slots" data-booking-slots>
               <p class="booking-widget__slots-label">Available times</p>
