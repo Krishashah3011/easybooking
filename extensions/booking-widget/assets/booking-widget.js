@@ -218,11 +218,9 @@
     var locationListEl = root.querySelector("[data-booking-location-list]");
     var locationErrorEl = root.querySelector("[data-booking-location-error]");
     var datetimeStepEl = root.querySelector("[data-booking-datetime-step]");
-    var locationSummaryEl = root.querySelector("[data-booking-location-summary]");
-    var locationSummaryTextEl = root.querySelector(
-      "[data-booking-location-summary-text]",
+    var locationEmptyStateEl = root.querySelector(
+      "[data-booking-location-empty-state]",
     );
-    var locationChangeBtn = root.querySelector("[data-booking-location-change]");
     var calendarEl = root.querySelector("[data-booking-calendar]");
     var weekdaysEl = root.querySelector("[data-booking-weekdays]");
     var monthLabelEl = root.querySelector("[data-booking-month-label]");
@@ -766,7 +764,20 @@
         bundleQuantity = 1;
         refreshQuantityForSelection();
         updateRangeSummary();
+        if (datetimeStepEl && !datetimeStepEl.hidden) {
+          updateTimezoneDisplay();
+          loadMonth();
+        }
       }
+    }
+
+    function updateTimezoneDisplay() {
+      if (!timezoneEl) return;
+      var showsConvertedTimes =
+        productBookingType === "SLOT" || productBookingType === "BUNDLE";
+      timezoneEl.textContent = showsConvertedTimes || !pendingLocation
+        ? timezoneLabel()
+        : locationTimezoneLabel(pendingLocation.timezone);
     }
 
     function showLocationStep() {
@@ -790,7 +801,7 @@
       populateLocationList();
       locationStepEl.hidden = false;
       datetimeStepEl.hidden = true;
-      if (locationSummaryEl) locationSummaryEl.hidden = true;
+      if (locationEmptyStateEl) locationEmptyStateEl.hidden = false;
       if (locationErrorEl) {
         locationErrorEl.hidden = true;
         locationErrorEl.textContent = "";
@@ -801,8 +812,8 @@
         );
       }
       confirmBtn.hidden = false;
-      updateConfirmButton();
       if (subheaderEl) subheaderEl.hidden = true;
+      updateConfirmButton();
     }
 
     function showDatetimeStep() {
@@ -811,30 +822,18 @@
       datetimeStepEl.hidden = false;
       confirmBtn.hidden = false;
       if (subheaderEl) subheaderEl.hidden = false;
-
-      if (locationSummaryEl && locationSummaryTextEl) {
-        if (pendingLocation) {
-          locationSummaryTextEl.textContent = pendingLocation.name;
-          locationSummaryEl.hidden = false;
-        } else {
-          locationSummaryEl.hidden = true;
-        }
-      }
-
-      if (timezoneEl) {
-        var showsConvertedTimes =
-          productBookingType === "SLOT" || productBookingType === "BUNDLE";
-        timezoneEl.textContent = showsConvertedTimes || !pendingLocation
-          ? timezoneLabel()
-          : locationTimezoneLabel(pendingLocation.timezone);
-      }
+      updateTimezoneDisplay();
       updateConfirmButton();
     }
 
-    if (locationChangeBtn) {
-      locationChangeBtn.addEventListener("click", function () {
-        showLocationStep();
-      });
+    function revealDatetimeStep() {
+      datetimeStepEl.hidden = false;
+      if (locationEmptyStateEl) locationEmptyStateEl.hidden = true;
+      confirmBtn.hidden = false;
+      if (subheaderEl) subheaderEl.hidden = false;
+      updateTimezoneDisplay();
+      updateConfirmButton();
+      loadMonth();
     }
 
     function renderCustomFields() {
@@ -922,8 +921,11 @@
       renderCustomFields();
       updateRangeSummary();
 
-      if (locationStepEl && locations.length > 0 && !pendingLocation) {
+      if (locationStepEl && locations.length > 0) {
         showLocationStep();
+        if (pendingLocation) {
+          revealDatetimeStep();
+        }
       } else {
         showDatetimeStep();
         loadMonth();
@@ -1611,7 +1613,12 @@
     setPendingQuantity(1);
 
     function isAtLocationStep() {
-      return !!(locationStepEl && !locationStepEl.hidden);
+      return !!(
+        locationStepEl &&
+        !locationStepEl.hidden &&
+        datetimeStepEl &&
+        datetimeStepEl.hidden
+      );
     }
 
     function updateConfirmButton() {
@@ -1707,13 +1714,13 @@
           var last = bundleSessions.pop();
           pendingDate = last.date;
           pendingSlot = last.slot;
-          showDatetimeStep();
+          exitReviewStep();
           loadSlots(pendingDate);
           refreshQuantityForSelection();
           updateConfirmButton();
           return;
         }
-        showDatetimeStep();
+        exitReviewStep();
         renderSlots();
         refreshQuantityForSelection();
         updateConfirmButton();
@@ -1874,8 +1881,7 @@
           }
           return;
         }
-        showDatetimeStep();
-        loadMonth();
+        revealDatetimeStep();
         return;
       }
 

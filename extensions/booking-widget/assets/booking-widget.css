@@ -386,41 +386,6 @@ body.booking-widget-lock-scroll {
   opacity: 0.95;
 }
 
-.booking-widget__location-summary {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  max-width: 260px;
-  padding: 0.65rem 0.85rem;
-  margin-bottom: 1.1rem;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.02);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.booking-widget__location-summary .booking-widget__location-pin {
-  color: rgba(0, 0, 0, 0.65);
-}
-
-.booking-widget__location-summary-text {
-  font-weight: 600;
-  font-size: 0.9rem;
-  flex: 1;
-}
-
-.booking-widget__location-change {
-  border: none;
-  background: none;
-  color: #111;
-  font-weight: 700;
-  font-size: 0.9rem;
-  text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
-}
-
 .booking-widget__calendar-pane {
   flex: 1;
   min-width: 0;
