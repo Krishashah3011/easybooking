@@ -122,6 +122,13 @@
             <span class="booking-widget__timezone" data-booking-timezone></span>
           </div>
 
+          <div class="booking-widget__bundle-progress" data-booking-bundle-progress hidden>
+            <p class="booking-widget__bundle-progress-label" data-booking-bundle-progress-label></p>
+            <div class="booking-widget__bundle-progress-bar">
+              <div class="booking-widget__bundle-progress-fill" data-booking-bundle-progress-fill></div>
+            </div>
+          </div>
+
           <div class="booking-widget__range-summary" data-booking-range-summary hidden>
             <p class="booking-widget__range-hint" data-booking-range-hint></p>
             <div class="booking-widget__selected-dates" data-booking-selected-dates hidden>
@@ -159,37 +166,6 @@
         </div>
       </div>
 
-      <div class="booking-widget__quantity" data-booking-quantity hidden>
-        <label class="booking-widget__quantity-label" for="booking-widget-quantity-{{ product.id }}">
-          Quantity
-        </label>
-        <div class="booking-widget__quantity-control">
-          <button
-            type="button"
-            class="booking-widget__quantity-btn"
-            data-booking-quantity-decrease
-            aria-label="Decrease quantity"
-          >&minus;</button>
-          <input
-            type="number"
-            inputmode="numeric"
-            min="1"
-            step="1"
-            value="1"
-            class="booking-widget__quantity-input"
-            id="booking-widget-quantity-{{ product.id }}"
-            data-booking-quantity-input
-          >
-          <button
-            type="button"
-            class="booking-widget__quantity-btn"
-            data-booking-quantity-increase
-            aria-label="Increase quantity"
-          >+</button>
-        </div>
-        <p class="booking-widget__quantity-note" data-booking-quantity-note hidden></p>
-      </div>
-
       <div class="booking-widget__review-step" data-booking-review-step hidden>
         <div class="booking-widget__review-header">
           <p class="booking-widget__review-title">Review your booking</p>
@@ -220,6 +196,35 @@
       <div class="booking-widget__fields-pane" data-booking-custom-fields hidden></div>
 
       <div class="booking-widget__modal-footer" data-booking-modal-footer>
+        <div class="booking-widget__quantity" data-booking-quantity hidden>
+          <div class="booking-widget__quantity-control">
+            <button
+              type="button"
+              class="booking-widget__quantity-btn"
+              data-booking-quantity-decrease
+              aria-label="Decrease quantity"
+            >&minus;</button>
+            <input
+              type="number"
+              inputmode="numeric"
+              min="1"
+              step="1"
+              value="1"
+              class="booking-widget__quantity-input"
+              id="booking-widget-quantity-{{ product.id }}"
+              data-booking-quantity-input
+              aria-label="Quantity"
+            >
+            <button
+              type="button"
+              class="booking-widget__quantity-btn"
+              data-booking-quantity-increase
+              aria-label="Increase quantity"
+            >+</button>
+          </div>
+          <p class="booking-widget__quantity-note" data-booking-quantity-note hidden></p>
+        </div>
+
         <button type="button" class="booking-widget__btn booking-widget__btn--secondary" data-booking-review-back hidden>
           Back
         </button>

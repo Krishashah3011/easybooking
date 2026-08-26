@@ -239,6 +239,13 @@
       "[data-booking-selected-dates-clear]",
     );
     var slotsPaneOuterEl = root.querySelector("[data-booking-slots-pane]");
+    var bundleProgressEl = root.querySelector("[data-booking-bundle-progress]");
+    var bundleProgressLabelEl = root.querySelector(
+      "[data-booking-bundle-progress-label]",
+    );
+    var bundleProgressFillEl = root.querySelector(
+      "[data-booking-bundle-progress-fill]",
+    );
     var slotListEl = root.querySelector("[data-booking-slot-list]");
     var prevBtn = root.querySelector("[data-booking-prev]");
     var nextBtn = root.querySelector("[data-booking-next]");
@@ -920,6 +927,7 @@
       updateConfirmButton();
       renderCustomFields();
       updateRangeSummary();
+      updateBundleProgress();
 
       if (locationStepEl && locations.length > 0) {
         showLocationStep();
@@ -971,6 +979,7 @@
       renderCustomFields();
       renderCalendar();
       updateRangeSummary();
+      updateBundleProgress();
     }
 
     function isTwoMonthType(type) {
@@ -1079,6 +1088,7 @@
         .then(function (data) {
           availableDates = applyAvailabilityData(data);
           applyLayoutForType();
+          updateBundleProgress();
 
           if (isTwoMonthType(productBookingType)) {
             var second = addMonths(viewYear, viewMonth, 1);
@@ -1114,6 +1124,23 @@
         current: bundleSessions.length + 1,
         total: bundleSessionCount,
       });
+    }
+
+    function updateBundleProgress() {
+      if (!bundleProgressEl) return;
+      if (productBookingType !== "BUNDLE" || !bundleSessionCount) {
+        bundleProgressEl.hidden = true;
+        return;
+      }
+      bundleProgressEl.hidden = false;
+      var completed = bundleSessions.length;
+      var total = bundleSessionCount;
+      var pct = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+      if (bundleProgressFillEl) bundleProgressFillEl.style.width = pct + "%";
+      if (bundleProgressLabelEl) {
+        bundleProgressLabelEl.textContent =
+          completed + " of " + total + " sessions selected";
+      }
     }
 
     function buildDayButton(dateStr, choosingMultiDayCheckout) {
@@ -1633,6 +1660,30 @@
       if (reviewBackBtn) reviewBackBtn.hidden = !atReviewStep;
     }
 
+    var REVIEW_ICONS = {
+      location:
+        '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<path d="M12 21s-7-7.58-7-12a7 7 0 1 1 14 0c0 4.42-7 12-7 12z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />' +
+        '<circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.6" />' +
+        "</svg>",
+      calendar:
+        '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.6" />' +
+        '<path d="M3.5 9.5h17" stroke="currentColor" stroke-width="1.6" />' +
+        '<path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />' +
+        "</svg>",
+      clock:
+        '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6" />' +
+        '<path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />' +
+        "</svg>",
+      quantity:
+        '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a1.5 1.5 0 0 0 0 3v1A2.5 2.5 0 0 1 17.5 16h-11A2.5 2.5 0 0 1 4 13.5v-1a1.5 1.5 0 0 0 0-3v-1Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />' +
+        '<path d="M14 6.5v8.5" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 2" />' +
+        "</svg>",
+    };
+
     function buildReviewSummary() {
       if (!reviewListEl) return;
       reviewListEl.innerHTML = "";
@@ -1642,7 +1693,7 @@
       if (productBookingType === "BUNDLE") {
         rows = [
           pendingLocation
-            ? { label: "Location", value: pendingLocation.name }
+            ? { label: "Location", value: pendingLocation.name, icon: "location" }
             : null,
         ];
         bundleSessions.forEach(function (session, index) {
@@ -1652,30 +1703,48 @@
               formatDateDisplay(session.date) +
               " · " +
               formatTimeRangeDisplay(session.slot),
+            icon: "calendar",
           });
         });
       } else if (productBookingType === "MULTI_DAY") {
         rows = [
           pendingLocation
-            ? { label: "Location", value: pendingLocation.name }
+            ? { label: "Location", value: pendingLocation.name, icon: "location" }
             : null,
-          { label: "Check-in", value: formatDateDisplay(pendingDate) },
-          { label: "Check-out", value: formatDateDisplay(pendingSlot.endDate) },
-          { label: "Quantity", value: String(pendingQuantity) },
+          {
+            label: "Check-in",
+            value: formatDateDisplay(pendingDate),
+            icon: "calendar",
+          },
+          {
+            label: "Check-out",
+            value: formatDateDisplay(pendingSlot.endDate),
+            icon: "calendar",
+          },
+          {
+            label: "Quantity",
+            value: String(pendingQuantity),
+            icon: "quantity",
+          },
         ];
       } else {
         rows = [
           pendingLocation
-            ? { label: "Location", value: pendingLocation.name }
+            ? { label: "Location", value: pendingLocation.name, icon: "location" }
             : null,
-          { label: "Date", value: formatDateDisplay(pendingDate) },
+          { label: "Date", value: formatDateDisplay(pendingDate), icon: "calendar" },
           productBookingType === "FULL_DAY"
-            ? { label: "Booking", value: "Whole day" }
+            ? { label: "Booking", value: "Whole day", icon: "clock" }
             : {
                 label: "Time",
                 value: formatTimeRangeDisplay(pendingSlot),
+                icon: "clock",
               },
-          { label: "Quantity", value: String(pendingQuantity) },
+          {
+            label: "Quantity",
+            value: String(pendingQuantity),
+            icon: "quantity",
+          },
         ];
       }
 
@@ -1683,8 +1752,18 @@
         if (!row) return;
         var dt = document.createElement("dt");
         dt.textContent = row.label;
+
         var dd = document.createElement("dd");
-        dd.textContent = row.value;
+        var iconWrap = document.createElement("span");
+        iconWrap.className = "booking-widget__review-icon";
+        iconWrap.innerHTML = REVIEW_ICONS[row.icon] || "";
+        iconWrap.setAttribute("aria-hidden", "true");
+        var valueSpan = document.createElement("span");
+        valueSpan.className = "booking-widget__review-value";
+        valueSpan.textContent = row.value;
+        dd.appendChild(iconWrap);
+        dd.appendChild(valueSpan);
+
         reviewListEl.appendChild(dt);
         reviewListEl.appendChild(dd);
       });
@@ -1714,6 +1793,7 @@
           var last = bundleSessions.pop();
           pendingDate = last.date;
           pendingSlot = last.slot;
+          updateBundleProgress();
           exitReviewStep();
           loadSlots(pendingDate);
           refreshQuantityForSelection();
@@ -1895,6 +1975,7 @@
             bundleQuantity = pendingQuantity;
           }
           bundleSessions.push({ date: pendingDate, slot: pendingSlot });
+          updateBundleProgress();
           var remaining = totalSessions - bundleSessions.length;
 
           if (remaining > 0) {
@@ -1928,6 +2009,7 @@
         updateSelectionDisplay();
         bundleSessions = [];
         bundleQuantity = 1;
+        updateBundleProgress();
         closeModal();
         return;
       }
