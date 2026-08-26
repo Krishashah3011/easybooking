@@ -203,7 +203,6 @@
 
     var overlayEl = root.querySelector("[data-booking-overlay]");
     var closeBtn = root.querySelector("[data-booking-close]");
-    var timezoneEl = root.querySelector("[data-booking-timezone]");
     var locationTimezoneEl = root.querySelector("[data-booking-location-timezone]");
     var subheaderEl = root.querySelector("[data-booking-subheader]");
     var modalBodyEl = root.querySelector("[data-booking-modal-body]");
@@ -295,6 +294,44 @@
     var atReviewStep = false;
     var confirmedSlots = [];
     var numericProductId = (productId || "").split("/").pop();
+
+    function pendingSlotsStorageKey() {
+      return "booking-widget:pending-slots:" + numericProductId;
+    }
+
+    function saveConfirmedSlots() {
+      try {
+        if (confirmedSlots.length === 0) {
+          sessionStorage.removeItem(pendingSlotsStorageKey());
+        } else {
+          sessionStorage.setItem(
+            pendingSlotsStorageKey(),
+            JSON.stringify(confirmedSlots),
+          );
+        }
+      } catch (e) {
+        // sessionStorage unavailable (privacy mode, quota, etc.) - ignore
+      }
+    }
+
+    function loadConfirmedSlots() {
+      try {
+        var raw = sessionStorage.getItem(pendingSlotsStorageKey());
+        if (!raw) return;
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) confirmedSlots = parsed;
+      } catch (e) {
+        // corrupt or unavailable storage - ignore, start fresh
+      }
+    }
+
+    function clearPersistedSlots() {
+      try {
+        sessionStorage.removeItem(pendingSlotsStorageKey());
+      } catch (e) {
+        // ignore
+      }
+    }
 
     var customFields = [];
     var customFieldValues = {};
@@ -566,6 +603,8 @@
           showError(strings.multiAddError);
           return;
         }
+        confirmedSlots = [];
+        clearPersistedSlots();
         window.location.reload();
       });
 
@@ -595,7 +634,6 @@
       weekdaysEl.appendChild(span);
     });
 
-    timezoneEl.textContent = timezoneLabel();
     if (locationTimezoneEl) locationTimezoneEl.textContent = timezoneLabel();
     loadCustomFields();
     loadLocations();
@@ -775,14 +813,13 @@
     }
 
     function updateTimezoneDisplay() {
-      if (!timezoneEl) return;
+      if (!locationTimezoneEl) return;
       var showsConvertedTimes =
         productBookingType === "SLOT" || productBookingType === "BUNDLE";
       var label = showsConvertedTimes || !pendingLocation
         ? timezoneLabel()
         : locationTimezoneLabel(pendingLocation.timezone);
-      timezoneEl.textContent = label;
-      if (locationTimezoneEl) locationTimezoneEl.textContent = label;
+      locationTimezoneEl.textContent = label;
     }
 
     function showLocationStep() {
@@ -913,10 +950,14 @@
       pendingDate = null;
       pendingSlot = null;
       pendingEndDate = null;
+      pendingQuantity = 1;
       bundleSessions = [];
       bundleQuantity = 1;
       customFieldValues = {};
       atReviewStep = false;
+      var freshToday = new Date();
+      viewYear = freshToday.getUTCFullYear();
+      viewMonth = freshToday.getUTCMonth() + 1;
       if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
       modalBodyEl.hidden = false;
@@ -1738,10 +1779,14 @@
         iconWrap.className = "booking-widget__review-icon";
         iconWrap.innerHTML = REVIEW_ICONS[row.icon] || "";
         iconWrap.setAttribute("aria-hidden", "true");
+        var labelSpan = document.createElement("span");
+        labelSpan.className = "booking-widget__review-label";
+        labelSpan.textContent = row.label;
         var valueSpan = document.createElement("span");
         valueSpan.className = "booking-widget__review-value";
         valueSpan.textContent = row.value;
         dd.appendChild(iconWrap);
+        dd.appendChild(labelSpan);
         dd.appendChild(valueSpan);
 
         reviewListEl.appendChild(dt);
@@ -1788,6 +1833,7 @@
     }
 
     function updateSelectionDisplay() {
+      saveConfirmedSlots();
       selectionEl.innerHTML = "";
 
       if (confirmedSlots.length === 0) {
@@ -2036,6 +2082,7 @@
       closeModal();
     });
 
+    loadConfirmedSlots();
     updateSelectionDisplay();
     refreshCartReminder();
   }
