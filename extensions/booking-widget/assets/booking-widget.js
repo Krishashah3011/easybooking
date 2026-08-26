@@ -24,7 +24,7 @@
     selectLocationPlaceholder: "Select location",
     locationRequired: "Please select a location to continue.",
     noLocationsConfigured:
-      "Booking isn't available for this product yet. Please check back soon.",
+      "Booking isn't available for this product.",
     next: "Next",
     changeLocation: "Change",
     confirm: "Confirm",
@@ -1613,6 +1613,7 @@
     function updateConfirmButton() {
       confirmBtn.disabled = atReviewStep ? false : !(pendingDate && pendingSlot);
       confirmBtn.textContent = atReviewStep ? strings.confirm : strings.next;
+      if (reviewBackBtn) reviewBackBtn.hidden = !atReviewStep;
     }
 
     function buildReviewSummary() {
