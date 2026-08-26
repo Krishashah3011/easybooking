@@ -132,8 +132,8 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__modal {
   background: #fff;
-  width: min(92vw, 820px);
-  height: min(88vh, 660px);
+  width: min(88vw, 660px);
+  height: min(76vh, 580px);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
