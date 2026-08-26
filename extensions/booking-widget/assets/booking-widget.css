@@ -275,23 +275,29 @@ body.booking-widget-lock-scroll {
 .booking-widget__location-label {
   display: block;
   font-weight: 700;
-  font-size: 1rem;
-  margin-bottom: 0.7rem;
+  font-size: 1.2rem;
+  margin-bottom: 0.85rem;
+}
+
+.booking-widget__location-field {
+  position: relative;
+  max-width: 260px;
 }
 
 .booking-widget__location-trigger {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  max-width: 320px;
-  padding: 0.7rem 0.9rem;
-  font-size: 0.95rem;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   background: #fff;
   color: #111;
   cursor: pointer;
   user-select: none;
+  box-sizing: border-box;
 }
 
 .booking-widget__location-trigger--error {
@@ -301,9 +307,10 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__location-pin {
-  font-size: 0.95rem;
-  line-height: 1;
+  width: 1.05rem;
+  height: 1.05rem;
   flex: none;
+  color: rgba(0, 0, 0, 0.65);
 }
 
 .booking-widget__location-trigger-text {
@@ -331,15 +338,20 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__location-list {
-  margin: 0.5rem 0 0;
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  width: 100%;
+  margin: 0;
   padding: 0.3rem 0;
   list-style: none;
   background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  max-width: 320px;
   max-height: 15rem;
   overflow-y: auto;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+  z-index: 20;
 }
 
 .booking-widget__location-option {
@@ -364,12 +376,12 @@ body.booking-widget-lock-scroll {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2.5rem 0 0.5rem;
+  padding: 4.5rem 0 0.5rem;
 }
 
 .booking-widget__location-empty-state svg {
-  width: 230px;
-  max-width: 60%;
+  width: 160px;
+  max-width: 42%;
   height: auto;
   opacity: 0.95;
 }
@@ -378,17 +390,23 @@ body.booking-widget-lock-scroll {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.1rem;
+  max-width: 260px;
+  padding: 0.65rem 0.85rem;
   margin-bottom: 1.1rem;
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.02);
   width: 100%;
+  box-sizing: border-box;
+}
+
+.booking-widget__location-summary .booking-widget__location-pin {
+  color: rgba(0, 0, 0, 0.65);
 }
 
 .booking-widget__location-summary-text {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   flex: 1;
 }
 

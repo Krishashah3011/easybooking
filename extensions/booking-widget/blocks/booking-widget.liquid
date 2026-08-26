@@ -33,27 +33,32 @@
       <div class="booking-widget__modal-body" data-booking-modal-body>
         <div class="booking-widget__location-step" data-booking-location-step hidden>
           <label class="booking-widget__location-label" id="booking-widget-location-label">Select location</label>
-          <div
-            class="booking-widget__location-trigger"
-            data-booking-location-trigger
-            role="button"
-            tabindex="0"
-            aria-haspopup="listbox"
-            aria-expanded="false"
-            aria-controls="booking-widget-location-list-{{ product.id }}"
-          >
-            <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
-            <span class="booking-widget__location-trigger-text" data-booking-location-trigger-text>Select location</span>
-            <span class="booking-widget__location-chevron" aria-hidden="true">&#9662;</span>
+          <div class="booking-widget__location-field">
+            <div
+              class="booking-widget__location-trigger"
+              data-booking-location-trigger
+              role="button"
+              tabindex="0"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="booking-widget-location-list-{{ product.id }}"
+            >
+              <svg class="booking-widget__location-pin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 21s-7-7.58-7-12a7 7 0 1 1 14 0c0 4.42-7 12-7 12z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.6" />
+              </svg>
+              <span class="booking-widget__location-trigger-text" data-booking-location-trigger-text>Select location</span>
+              <span class="booking-widget__location-chevron" aria-hidden="true">&#9662;</span>
+            </div>
+            <ul
+              class="booking-widget__location-list"
+              id="booking-widget-location-list-{{ product.id }}"
+              data-booking-location-list
+              role="listbox"
+              aria-labelledby="booking-widget-location-label"
+              hidden
+            ></ul>
           </div>
-          <ul
-            class="booking-widget__location-list"
-            id="booking-widget-location-list-{{ product.id }}"
-            data-booking-location-list
-            role="listbox"
-            aria-labelledby="booking-widget-location-label"
-            hidden
-          ></ul>
           <p class="booking-widget__location-error" data-booking-location-error hidden></p>
 
           <div class="booking-widget__location-empty-state" aria-hidden="true">
@@ -118,7 +123,10 @@
 
         <div class="booking-widget__datetime-step" data-booking-datetime-step>
           <div class="booking-widget__location-summary" data-booking-location-summary hidden>
-            <span class="booking-widget__location-pin" aria-hidden="true">&#128205;</span>
+            <svg class="booking-widget__location-pin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 21s-7-7.58-7-12a7 7 0 1 1 14 0c0 4.42-7 12-7 12z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+              <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.6" />
+            </svg>
             <span class="booking-widget__location-summary-text" data-booking-location-summary-text></span>
             <button type="button" class="booking-widget__location-change" data-booking-location-change>Change</button>
           </div>

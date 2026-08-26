@@ -757,7 +757,7 @@
       }
       populateLocationList();
       closeLocationList();
-      showDatetimeStep();
+      updateConfirmButton();
       if (locationChanged) {
         pendingDate = null;
         pendingSlot = null;
@@ -765,10 +765,8 @@
         bundleSessions = [];
         bundleQuantity = 1;
         refreshQuantityForSelection();
-        updateConfirmButton();
         updateRangeSummary();
       }
-      loadMonth();
     }
 
     function showLocationStep() {
@@ -802,7 +800,8 @@
           "booking-widget__location-trigger--error",
         );
       }
-      confirmBtn.hidden = true;
+      confirmBtn.hidden = false;
+      updateConfirmButton();
       if (subheaderEl) subheaderEl.hidden = true;
     }
 
@@ -829,6 +828,7 @@
           ? timezoneLabel()
           : locationTimezoneLabel(pendingLocation.timezone);
       }
+      updateConfirmButton();
     }
 
     if (locationChangeBtn) {
@@ -1610,7 +1610,17 @@
     }
     setPendingQuantity(1);
 
+    function isAtLocationStep() {
+      return !!(locationStepEl && !locationStepEl.hidden);
+    }
+
     function updateConfirmButton() {
+      if (isAtLocationStep()) {
+        confirmBtn.disabled = !pendingLocation;
+        confirmBtn.textContent = strings.next;
+        if (reviewBackBtn) reviewBackBtn.hidden = true;
+        return;
+      }
       confirmBtn.disabled = atReviewStep ? false : !(pendingDate && pendingSlot);
       confirmBtn.textContent = atReviewStep ? strings.confirm : strings.next;
       if (reviewBackBtn) reviewBackBtn.hidden = !atReviewStep;
@@ -1851,6 +1861,24 @@
       goToMonth(1);
     });
     confirmBtn.addEventListener("click", function () {
+      if (isAtLocationStep()) {
+        if (!pendingLocation) {
+          if (locationErrorEl) {
+            locationErrorEl.hidden = false;
+            locationErrorEl.textContent = strings.locationRequired;
+          }
+          if (locationTriggerEl) {
+            locationTriggerEl.classList.add(
+              "booking-widget__location-trigger--error",
+            );
+          }
+          return;
+        }
+        showDatetimeStep();
+        loadMonth();
+        return;
+      }
+
       if (!pendingDate || !pendingSlot) return;
 
       if (productBookingType === "BUNDLE") {
