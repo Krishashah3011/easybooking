@@ -892,133 +892,204 @@ export default function NewBookingPage() {
             </s-text>
           </div>
         )}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "0.75rem",
-            maxWidth: isTwoMonthType ? "42rem" : "20rem",
-          }}
-        >
-          <s-button variant="tertiary" onClick={() => goToMonth(-1)}>
-            ‹
-          </s-button>
-          {!isTwoMonthType && (
-            <span style={{ fontWeight: 600 }}>
-              {`${MONTH_NAMES[viewMonth - 1]} ${viewYear}`}
-            </span>
-          )}
-          <s-button variant="tertiary" onClick={() => goToMonth(1)}>
-            ›
-          </s-button>
-        </div>
+        <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 auto", minWidth: "16rem" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "0.75rem",
+                maxWidth: isTwoMonthType ? "42rem" : "20rem",
+              }}
+            >
+              <s-button variant="tertiary" onClick={() => goToMonth(-1)}>
+                ‹
+              </s-button>
+              {!isTwoMonthType && (
+                <span style={{ fontWeight: 600 }}>
+                  {`${MONTH_NAMES[viewMonth - 1]} ${viewYear}`}
+                </span>
+              )}
+              <s-button variant="tertiary" onClick={() => goToMonth(1)}>
+                ›
+              </s-button>
+            </div>
 
-        {isTwoMonthType ? (
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-            <div>
-              <div
-                style={{
-                  fontWeight: 600,
-                  marginBottom: "0.5rem",
-                  textAlign: "center",
-                }}
-              >
-                {MONTH_NAMES[viewMonth - 1]} {viewYear}
+            {isTwoMonthType ? (
+              <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginBottom: "0.5rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    {MONTH_NAMES[viewMonth - 1]} {viewYear}
+                  </div>
+                  {isLoadingAvailability ? (
+                    <s-paragraph>Loading availability…</s-paragraph>
+                  ) : (
+                    renderMonthGrid(
+                      viewYear,
+                      viewMonth,
+                      daysInMonth,
+                      firstWeekday,
+                      availableSet,
+                    )
+                  )}
+                  {!isLoadingAvailability && availableDates.length === 0 && (
+                    <s-paragraph>No availability this month.</s-paragraph>
+                  )}
+                </div>
+                <div
+                  style={{
+                    width: "1px",
+                    alignSelf: "stretch",
+                    background: "#e1e3e5",
+                  }}
+                />
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginBottom: "0.5rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    {MONTH_NAMES[secondMonth - 1]} {secondYear}
+                  </div>
+                  {isLoadingSecondMonth ? (
+                    <s-paragraph>Loading availability…</s-paragraph>
+                  ) : (
+                    renderMonthGrid(
+                      secondYear,
+                      secondMonth,
+                      secondDaysInMonth,
+                      secondFirstWeekday,
+                      secondAvailableSet,
+                    )
+                  )}
+                  {!isLoadingSecondMonth && secondMonthDates.length === 0 && (
+                    <s-paragraph>No availability this month.</s-paragraph>
+                  )}
+                </div>
               </div>
-              {isLoadingAvailability ? (
-                <s-paragraph>Loading availability…</s-paragraph>
-              ) : (
-                renderMonthGrid(
+            ) : isLoadingAvailability ? (
+              <s-paragraph>Loading availability…</s-paragraph>
+            ) : (
+              <>
+                {renderMonthGrid(
                   viewYear,
                   viewMonth,
                   daysInMonth,
                   firstWeekday,
                   availableSet,
-                )
-              )}
-              {!isLoadingAvailability && availableDates.length === 0 && (
-                <s-paragraph>No availability this month.</s-paragraph>
-              )}
-            </div>
-            <div
-              style={{
-                width: "1px",
-                alignSelf: "stretch",
-                background: "#e1e3e5",
-              }}
-            />
-            <div>
+                )}
+                {availableDates.length === 0 && (
+                  <s-paragraph>No availability this month.</s-paragraph>
+                )}
+              </>
+            )}
+            {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
+              <s-banner tone="info">
+                Check-in {date}. Now pick a check-out date.
+              </s-banner>
+            )}
+            {selectedBookingType === "MULTI_DAY" && checkoutError && (
+              <s-banner tone="critical">{checkoutError}</s-banner>
+            )}
+            {selectedBookingType === "MULTI_DAY" && date && checkoutDate && (
               <div
                 style={{
-                  fontWeight: 600,
-                  marginBottom: "0.5rem",
-                  textAlign: "center",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  marginTop: "1rem",
+                  padding: "0.3rem 0.65rem",
+                  borderRadius: "999px",
+                  background: "#e3f6e8",
                 }}
               >
-                {MONTH_NAMES[secondMonth - 1]} {secondYear}
+                <s-text tone="success" weight="bold">
+                  {date} → {checkoutDate} ({nightsBetween(date, checkoutDate)}{" "}
+                  night{nightsBetween(date, checkoutDate) === 1 ? "" : "s"})
+                </s-text>
+                <s-button
+                  variant="tertiary"
+                  onClick={() => {
+                    setDate("");
+                    setCheckoutDate("");
+                    setCheckoutError(null);
+                    setSelectedSlot(null);
+                  }}
+                >
+                  Change dates
+                </s-button>
               </div>
-              {isLoadingSecondMonth ? (
-                <s-paragraph>Loading availability…</s-paragraph>
-              ) : (
-                renderMonthGrid(
-                  secondYear,
-                  secondMonth,
-                  secondDaysInMonth,
-                  secondFirstWeekday,
-                  secondAvailableSet,
-                )
-              )}
-              {!isLoadingSecondMonth && secondMonthDates.length === 0 && (
-                <s-paragraph>No availability this month.</s-paragraph>
-              )}
-            </div>
+            )}
           </div>
-        ) : isLoadingAvailability ? (
-          <s-paragraph>Loading availability…</s-paragraph>
-        ) : (
-          <>
-            {renderMonthGrid(
-              viewYear,
-              viewMonth,
-              daysInMonth,
-              firstWeekday,
-              availableSet,
-            )}
-            {availableDates.length === 0 && (
-              <s-paragraph>No availability this month.</s-paragraph>
-            )}
-          </>
-        )}
-        {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
-          <s-banner tone="info">
-            Check-in {date}. Now pick a check-out date.
-          </s-banner>
-        )}
-        {selectedBookingType === "MULTI_DAY" && checkoutError && (
-          <s-banner tone="critical">{checkoutError}</s-banner>
-        )}
-        {selectedBookingType === "MULTI_DAY" && date && checkoutDate && (
-          <s-banner tone="success">
-            <s-stack direction="inline" gap="base" alignItems="center">
-              <span>
-                {date} → {checkoutDate} ({nightsBetween(date, checkoutDate)}{" "}
-                night{nightsBetween(date, checkoutDate) === 1 ? "" : "s"})
-              </span>
-              <s-button
-                variant="tertiary"
-                onClick={() => {
-                  setDate("");
-                  setCheckoutDate("");
-                  setCheckoutError(null);
-                  setSelectedSlot(null);
+
+          {date &&
+            (selectedBookingType === "SLOT" ||
+              selectedBookingType === "BUNDLE") && (
+              <div
+                style={{
+                  flex: "0 0 14rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
                 }}
               >
-                Change dates
-              </s-button>
-            </s-stack>
-          </s-banner>
-        )}
+                <s-text weight="bold">
+                  {selectedBookingType === "BUNDLE" &&
+                  bundleSessionCount !== null
+                    ? `Available times \u2014 session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
+                    : "Available times"}
+                </s-text>
+                {isLoadingSlots ? (
+                  <s-paragraph>Loading available times…</s-paragraph>
+                ) : slots.length === 0 ? (
+                  <s-paragraph>No slots at all on this date.</s-paragraph>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.4rem",
+                    }}
+                  >
+                    {slots.map((slot) => (
+                      <s-button
+                        key={slot.startsAt}
+                        variant={
+                          selectedSlot?.startsAt === slot.startsAt
+                            ? "primary"
+                            : "secondary"
+                        }
+                        {...(!slot.available ? { disabled: true } : {})}
+                        onClick={() => {
+                          if (slot.available) setSelectedSlot(slot);
+                        }}
+                      >
+                        {formatTimeRangeDisplay(slot.start, slot.end)}
+                        {!slot.available
+                          ? " (Booked)"
+                          : typeof slot.remainingCapacity === "number"
+                            ? ` (${
+                                slot.remainingCapacity === 1
+                                  ? "1 spot left"
+                                  : `${slot.remainingCapacity} spots left`
+                              })`
+                            : ""}
+                      </s-button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+        </div>
       </s-section>
 
       {date && selectedBookingType === "FULL_DAY" && (
@@ -1026,51 +1097,6 @@ export default function NewBookingPage() {
           <s-paragraph>Whole day {"\u2014"} {date}</s-paragraph>
         </s-section>
       )}
-
-      {date &&
-        (selectedBookingType === "SLOT" || selectedBookingType === "BUNDLE") && (
-          <s-section
-            heading={
-              selectedBookingType === "BUNDLE" && bundleSessionCount !== null
-                ? `Available times \u2014 session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
-                : "Available times"
-            }
-          >
-            {isLoadingSlots ? (
-              <s-paragraph>Loading available times…</s-paragraph>
-            ) : slots.length === 0 ? (
-              <s-paragraph>No slots at all on this date.</s-paragraph>
-            ) : (
-              <s-stack direction="inline" gap="base">
-                {slots.map((slot) => (
-                  <s-button
-                    key={slot.startsAt}
-                    variant={
-                      selectedSlot?.startsAt === slot.startsAt
-                        ? "primary"
-                        : "secondary"
-                    }
-                    {...(!slot.available ? { disabled: true } : {})}
-                    onClick={() => {
-                      if (slot.available) setSelectedSlot(slot);
-                    }}
-                  >
-                    {formatTimeRangeDisplay(slot.start, slot.end)}
-                    {!slot.available
-                      ? " (Booked)"
-                      : typeof slot.remainingCapacity === "number"
-                        ? ` (${
-                            slot.remainingCapacity === 1
-                              ? "1 spot left"
-                              : `${slot.remainingCapacity} spots left`
-                          })`
-                        : ""}
-                  </s-button>
-                ))}
-              </s-stack>
-            )}
-          </s-section>
-        )}
 
       {selectedSlot &&
         selectedBookingType === "BUNDLE" &&
@@ -1114,7 +1140,11 @@ export default function NewBookingPage() {
       {selectedSlot && (
         <s-section>
           <s-button variant="primary" onClick={handleAddToList}>
-            Add to list
+            {selectedBookingType === "BUNDLE" &&
+            bundleSessionCount !== null &&
+            bundleSessionsQueued.length + 1 < bundleSessionCount
+              ? "Next slot"
+              : "Add to list"}
           </s-button>
         </s-section>
       )}
