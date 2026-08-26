@@ -2,9 +2,15 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  background: #eef0f1;
-  border-bottom: 1px solid #dfe1e3;
+  /* Match the horizontal inset Polaris uses inside s-page/s-section,
+     instead of a hardcoded value that can drift out of sync at
+     different breakpoints. Falls back to the old values if the
+     tokens aren't available for some reason. */
+  padding-block: var(--p-space-300, 0.6rem);
+  padding-inline: 1.5rem;
+  background: var(--p-color-bg-surface-secondary, #eef0f1);
+  border-bottom: var(--p-border-width-025, 1px) solid
+    var(--p-color-border-secondary, #dfe1e3);
   overflow-x: auto;
   scrollbar-width: thin;
 }
