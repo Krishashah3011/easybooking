@@ -228,6 +228,10 @@ body.booking-widget-lock-scroll {
   border-radius: 999px;
   background: #111;
   transition: width 0.25s ease;
+  /* Some themes hide empty elements (e.g. "div:empty { display: none }").
+     This div is intentionally always empty (its width alone is the visual),
+     so force it to stay visible regardless of that theme rule. */
+  display: block !important;
 }
 
 .booking-widget__range-summary {
