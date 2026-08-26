@@ -21,7 +21,7 @@
     modalTitle: "Appointment - Booking",
     modalSubtitle: "Select your preferred date & time",
     selectLocation: "Select location",
-    selectLocationPlaceholder: "Select location",
+    selectLocationPlaceholder: "Location",
     locationRequired: "Please select a location to continue.",
     noLocationsConfigured:
       "Booking isn't available for this product.",
