@@ -858,7 +858,7 @@ export default function NewBookingPage() {
 
       <s-section heading="Date">
         {multiDayStayLengthMessage && (
-          <s-banner tone="info">{multiDayStayLengthMessage}</s-banner>
+          <s-text tone="subdued">{multiDayStayLengthMessage}</s-text>
         )}
         {selectedBookingType === "BUNDLE" && bundleSessionCount !== null && (
           <s-banner tone={bundleComplete ? "success" : "info"}>
@@ -895,7 +895,13 @@ export default function NewBookingPage() {
         {isTwoMonthType ? (
           <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
+              <div
+                style={{
+                  fontWeight: 600,
+                  marginBottom: "0.5rem",
+                  textAlign: "center",
+                }}
+              >
                 {MONTH_NAMES[viewMonth - 1]} {viewYear}
               </div>
               {isLoadingAvailability ? (
@@ -913,8 +919,21 @@ export default function NewBookingPage() {
                 <s-paragraph>No availability this month.</s-paragraph>
               )}
             </div>
+            <div
+              style={{
+                width: "1px",
+                alignSelf: "stretch",
+                background: "#e1e3e5",
+              }}
+            />
             <div>
-              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
+              <div
+                style={{
+                  fontWeight: 600,
+                  marginBottom: "0.5rem",
+                  textAlign: "center",
+                }}
+              >
                 {MONTH_NAMES[secondMonth - 1]} {secondYear}
               </div>
               {isLoadingSecondMonth ? (
