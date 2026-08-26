@@ -603,10 +603,10 @@ export default function NewBookingPage() {
     const min = multiDayMinNights;
     const max = multiDayMaxNights;
     if (min !== null && max !== null) {
-      return `Stay must be between ${min} and ${max} nights.`;
+      return `Min Days: ${min}, Max Days: ${max}`;
     }
-    if (min !== null) return `Minimum stay is ${min} nights.`;
-    if (max !== null) return `Maximum stay is ${max} nights.`;
+    if (min !== null) return `Min Days: ${min}`;
+    if (max !== null) return `Max Days: ${max}`;
     return null;
   })();
 
@@ -857,18 +857,40 @@ export default function NewBookingPage() {
       )}
 
       <s-section heading="Date">
-        {multiDayStayLengthMessage && (
-          <s-text tone="subdued">{multiDayStayLengthMessage}</s-text>
+        {selectedBookingType === "MULTI_DAY" && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.15rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            <s-text weight="bold">Select your preferred date & time</s-text>
+            {multiDayStayLengthMessage && (
+              <s-text tone="subdued">{multiDayStayLengthMessage}</s-text>
+            )}
+          </div>
         )}
         {selectedBookingType === "BUNDLE" && bundleSessionCount !== null && (
-          <s-banner tone={bundleComplete ? "success" : "info"}>
-            {bundleComplete
-              ? `All ${bundleSessionCount} session(s) added for this bundle.`
-              : `Session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}` +
-                (bundleValidityDeadline
-                  ? ` — must be booked by ${bundleValidityDeadline}`
-                  : "")}
-          </s-banner>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.15rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            <s-text weight="bold">Select your preferred date & time</s-text>
+            <s-text tone={bundleComplete ? "success" : "subdued"}>
+              {bundleComplete
+                ? `All ${bundleSessionCount} session(s) added for this bundle.`
+                : `Session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}` +
+                  (bundleValidityDeadline
+                    ? ` — must be booked by ${bundleValidityDeadline}`
+                    : "")}
+            </s-text>
+          </div>
         )}
         <div
           style={{
@@ -882,11 +904,11 @@ export default function NewBookingPage() {
           <s-button variant="tertiary" onClick={() => goToMonth(-1)}>
             ‹
           </s-button>
-          <span style={{ fontWeight: 600 }}>
-            {isTwoMonthType
-              ? `${MONTH_NAMES[viewMonth - 1]} ${viewYear} – ${MONTH_NAMES[secondMonth - 1]} ${secondYear}`
-              : `${MONTH_NAMES[viewMonth - 1]} ${viewYear}`}
-          </span>
+          {!isTwoMonthType && (
+            <span style={{ fontWeight: 600 }}>
+              {`${MONTH_NAMES[viewMonth - 1]} ${viewYear}`}
+            </span>
+          )}
           <s-button variant="tertiary" onClick={() => goToMonth(1)}>
             ›
           </s-button>
