@@ -212,13 +212,14 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__modal-subtitle {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.15rem;
   margin: 0;
 }
 
 .booking-widget__timezone {
-  font-size: 0.85rem;
-  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .booking-widget__modal-body {
@@ -339,8 +340,21 @@ body.booking-widget-lock-scroll {
 .booking-widget__location-label {
   display: block;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   margin-bottom: 0.85rem;
+}
+
+.booking-widget__location-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.booking-widget__location-header .booking-widget__location-label {
+  margin-bottom: 0;
 }
 
 .booking-widget__location-field {

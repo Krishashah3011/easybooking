@@ -203,6 +203,7 @@
     var overlayEl = root.querySelector("[data-booking-overlay]");
     var closeBtn = root.querySelector("[data-booking-close]");
     var timezoneEl = root.querySelector("[data-booking-timezone]");
+    var locationTimezoneEl = root.querySelector("[data-booking-location-timezone]");
     var subheaderEl = root.querySelector("[data-booking-subheader]");
     var modalBodyEl = root.querySelector("[data-booking-modal-body]");
     var modalFooterEl = root.querySelector("[data-booking-modal-footer]");
@@ -593,6 +594,7 @@
     });
 
     timezoneEl.textContent = timezoneLabel();
+    if (locationTimezoneEl) locationTimezoneEl.textContent = timezoneLabel();
     loadCustomFields();
     loadLocations();
 
@@ -774,9 +776,11 @@
       if (!timezoneEl) return;
       var showsConvertedTimes =
         productBookingType === "SLOT" || productBookingType === "BUNDLE";
-      timezoneEl.textContent = showsConvertedTimes || !pendingLocation
+      var label = showsConvertedTimes || !pendingLocation
         ? timezoneLabel()
         : locationTimezoneLabel(pendingLocation.timezone);
+      timezoneEl.textContent = label;
+      if (locationTimezoneEl) locationTimezoneEl.textContent = label;
     }
 
     function showLocationStep() {
@@ -813,6 +817,7 @@
       confirmBtn.hidden = false;
       if (subheaderEl) subheaderEl.hidden = true;
       updateConfirmButton();
+      updateTimezoneDisplay();
     }
 
     function showDatetimeStep() {
@@ -1042,7 +1047,6 @@
       fetchAvailability(viewYear, viewMonth)
         .then(function (data) {
           availableDates = applyAvailabilityData(data);
-          applyLayoutForType();
           updateBundleProgress();
 
           if (isTwoMonthType(productBookingType)) {
@@ -1050,6 +1054,7 @@
             fetchAvailability(second.year, second.month)
               .then(function (data2) {
                 secondMonthAvailableDates = applyAvailabilityData(data2);
+                applyLayoutForType();
                 renderCalendar();
                 if (!pendingEndDate) updateRangeSummary();
               })
@@ -1058,6 +1063,7 @@
               });
           } else {
             secondMonthAvailableDates = null;
+            applyLayoutForType();
             renderCalendar();
             if (!pendingEndDate) updateRangeSummary();
           }
