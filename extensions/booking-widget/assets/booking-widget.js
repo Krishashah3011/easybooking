@@ -908,6 +908,7 @@
       pendingEndDate = null;
       bundleSessions = [];
       bundleQuantity = 1;
+      customFieldValues = {};
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
       refreshQuantityForSelection();
@@ -1781,24 +1782,37 @@
 
         var label = document.createElement("span");
         label.className = "booking-widget__selection-chip-text";
-        var chipText;
+
         if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
-          chipText = format(strings.bundleSelected, {
-            count: entry.slot.bundleSessions.length,
+          label.classList.add("booking-widget__selection-chip-text--bundle");
+          entry.slot.bundleSessions.forEach(function (session, sessionIndex) {
+            var line = document.createElement("span");
+            line.className = "booking-widget__selection-chip-line";
+            var lineText =
+              format(strings.sessionConfirmed, { number: sessionIndex + 1 }) +
+              ": " +
+              formatDateDisplay(session.date) +
+              " · " +
+              formatTimeRangeDisplay(session.slot);
+            if (entry.quantity && entry.quantity > 1 && sessionIndex === 0) {
+              lineText += " \u00d7 " + entry.quantity;
+            }
+            line.textContent = lineText;
+            label.appendChild(line);
           });
         } else {
-          chipText = format(strings.selected, {
+          var chipText = format(strings.selected, {
             date: formatDateDisplay(entry.date),
             time: formatTimeRangeDisplay(
               entry.slot,
               productBookingType === "SLOT" || productBookingType === "BUNDLE",
             ),
           });
+          if (entry.quantity && entry.quantity > 1) {
+            chipText += " \u00d7 " + entry.quantity;
+          }
+          label.textContent = chipText;
         }
-        if (entry.quantity && entry.quantity > 1) {
-          chipText += " \u00d7 " + entry.quantity;
-        }
-        label.textContent = chipText;
         chip.appendChild(label);
 
         var removeBtn = document.createElement("button");
