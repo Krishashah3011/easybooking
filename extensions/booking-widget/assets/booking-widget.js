@@ -1780,6 +1780,7 @@
         chip.className = "booking-widget__selection-chip";
 
         var label = document.createElement("span");
+        label.className = "booking-widget__selection-chip-text";
         var chipText;
         if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
           chipText = format(strings.bundleSelected, {
