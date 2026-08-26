@@ -270,6 +270,7 @@
     var currentSlots = [];
 
     var productBookingType = "SLOT";
+    var productBookingEnabled = true;
     var slotsPaneEl = root.querySelector("[data-booking-slots]");
     var availableDatesByDay = {};
     var remainingCapacityByDate = {};
@@ -622,12 +623,13 @@
 
     function loadLocations() {
       if (!locationStepEl || !locationListEl) return;
-      fetch(proxyBase + "/locations")
+      fetch(proxyBase + "/locations?productId=" + encodeURIComponent(productId))
         .then(function (res) {
           return res.json();
         })
         .then(function (data) {
           locations = data.locations || [];
+          productBookingEnabled = data.productBookingEnabled !== false;
           locationsLoaded = true;
           populateLocationList();
           updateAvailability();
@@ -641,7 +643,7 @@
 
     function updateAvailability() {
       if (!locationsLoaded) return;
-      var hasLocations = locations.length > 0;
+      var hasLocations = locations.length > 0 && productBookingEnabled;
       if (triggerBtn) triggerBtn.hidden = !hasLocations;
       if (unavailableEl) {
         unavailableEl.hidden = hasLocations;

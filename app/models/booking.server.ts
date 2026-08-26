@@ -753,6 +753,23 @@ export async function createManualBooking(
     if (input.endDate <= input.date) {
       return { ok: false, error: "Check-out must be after check-in." };
     }
+    const nights = Math.round(
+      (new Date(`${input.endDate}T00:00:00.000Z`).getTime() -
+        new Date(`${input.date}T00:00:00.000Z`).getTime()) /
+        86400000,
+    );
+    if (bookableProduct.minNights !== null && nights < bookableProduct.minNights) {
+      return {
+        ok: false,
+        error: `Minimum stay is ${bookableProduct.minNights} night${bookableProduct.minNights === 1 ? "" : "s"}.`,
+      };
+    }
+    if (bookableProduct.maxNights !== null && nights > bookableProduct.maxNights) {
+      return {
+        ok: false,
+        error: `Maximum stay is ${bookableProduct.maxNights} night${bookableProduct.maxNights === 1 ? "" : "s"}.`,
+      };
+    }
     bookingEndDateField = input.endDate;
     slotStartsAt = new Date(`${input.date}T00:00:00.000Z`);
     slotEnd = "00:00";
