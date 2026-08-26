@@ -270,6 +270,8 @@
 
     var productBookingType = "SLOT";
     var productBookingEnabled = true;
+    var fullDayStartTime = "00:00";
+    var fullDayEndTime = "23:59";
     var slotsPaneEl = root.querySelector("[data-booking-slots]");
     var availableDatesByDay = {};
     var remainingCapacityByDate = {};
@@ -819,7 +821,7 @@
       var label = showsConvertedTimes || !pendingLocation
         ? timezoneLabel()
         : locationTimezoneLabel(pendingLocation.timezone);
-      locationTimezoneEl.textContent = label;
+      if (locationTimezoneEl) locationTimezoneEl.textContent = label;
     }
 
     function showLocationStep() {
@@ -1014,6 +1016,8 @@
     function applyAvailabilityData(data) {
       var dates = data.availableDates || [];
       if (data.bookingType) productBookingType = data.bookingType;
+      if (typeof data.dailyStartTime === "string") fullDayStartTime = data.dailyStartTime;
+      if (typeof data.dailyEndTime === "string") fullDayEndTime = data.dailyEndTime;
       if (typeof data.minNights === "number") multiDayMinNights = data.minNights;
       if (typeof data.maxNights === "number") multiDayMaxNights = data.maxNights;
       if (typeof data.bundleSessionCount === "number") bundleSessionCount = data.bundleSessionCount;
@@ -1444,8 +1448,8 @@
     function buildFullDaySlot(dateStr) {
       var cap = remainingCapacityByDate[dateStr];
       return {
-        start: "00:00",
-        end: "23:59",
+        start: fullDayStartTime,
+        end: fullDayEndTime,
         startsAt: dateStr + "T00:00:00.000Z",
         remainingCapacity: typeof cap === "number" ? cap : null,
         available: true,
@@ -1755,7 +1759,11 @@
             : null,
           { label: "Date", value: formatDateDisplay(pendingDate), icon: "calendar" },
           productBookingType === "FULL_DAY"
-            ? { label: "Booking", value: "Whole day", icon: "clock" }
+            ? {
+                label: "Booking",
+                value: formatTimeRangeDisplay(pendingSlot, false),
+                icon: "clock",
+              }
             : {
                 label: "Time",
                 value: formatTimeRangeDisplay(pendingSlot),

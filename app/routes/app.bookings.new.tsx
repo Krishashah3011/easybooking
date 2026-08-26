@@ -165,7 +165,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       );
     }
 
-    return { intent, ok: true as const, availableDates };
+    return {
+      intent,
+      ok: true as const,
+      availableDates,
+      dailyStartTime: resolved.effectiveSettings.dailyStartTime,
+      dailyEndTime: resolved.effectiveSettings.dailyEndTime,
+    };
   }
 
   if (intent === "loadSlots") {
@@ -355,6 +361,18 @@ export default function NewBookingPage() {
     availabilityFetcher.data.ok
       ? availabilityFetcher.data.availableDates
       : [];
+
+  const fullDayStartTime: string =
+    availabilityFetcher.data?.intent === "loadAvailability" &&
+    availabilityFetcher.data.ok
+      ? availabilityFetcher.data.dailyStartTime
+      : "00:00";
+
+  const fullDayEndTime: string =
+    availabilityFetcher.data?.intent === "loadAvailability" &&
+    availabilityFetcher.data.ok
+      ? availabilityFetcher.data.dailyEndTime
+      : "23:59";
 
   // Two-month calendar is now shown for every booking type in the admin UI.
   const isTwoMonthType = true;
@@ -573,8 +591,8 @@ export default function NewBookingPage() {
     setCheckoutError(null);
     if (selectedBookingType === "FULL_DAY") {
       setSelectedSlot({
-        start: "00:00",
-        end: "23:59",
+        start: fullDayStartTime,
+        end: fullDayEndTime,
         startsAt: `${dateStr}T00:00:00.000Z`,
         available: true,
         remainingCapacity: null,
@@ -1106,7 +1124,7 @@ export default function NewBookingPage() {
 
       {date && selectedBookingType === "FULL_DAY" && (
         <s-section heading="Booking">
-          <s-paragraph>Whole day {"\u2014"} {date}</s-paragraph>
+          <s-paragraph>{formatTimeRangeDisplay(fullDayStartTime, fullDayEndTime)} {"\u2014"} {date}</s-paragraph>
         </s-section>
       )}
 
@@ -1206,7 +1224,7 @@ export default function NewBookingPage() {
                       products.find((p) => p.id === entry.bookableProductId)
                         ?.bookingType ?? "SLOT";
                     if (entryType === "FULL_DAY") {
-                      return `${entry.date} \u00b7 Whole day`;
+                      return `${entry.date} \u00b7 ${formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}`;
                     }
                     if (entryType === "MULTI_DAY") {
                       return `${entry.date} \u2192 ${entry.endDate ?? "—"}`;

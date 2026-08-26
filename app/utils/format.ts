@@ -17,7 +17,7 @@ export function formatBookingWhenDisplay(booking: {
   slotEnd: string;
 }): string {
   if (booking.bookingType === "FULL_DAY") {
-    return `${formatDateDisplay(booking.date)} · Whole day`;
+    return `${formatDateDisplay(booking.date)} · ${formatTimeRangeDisplay(booking.slotStart, booking.slotEnd)}`;
   }
   if (booking.bookingType === "MULTI_DAY") {
     const checkout = booking.endDate

@@ -387,7 +387,9 @@ export default function BookableProductPage() {
       </s-section>
       )}
 
-      {(values.bookingType === "SLOT" || values.bookingType === "BUNDLE") && (
+      {(values.bookingType === "SLOT" ||
+        values.bookingType === "BUNDLE" ||
+        values.bookingType === "FULL_DAY") && (
       <s-section heading="Daily booking window">
         <s-stack direction="inline" gap="base">
           <s-text-field

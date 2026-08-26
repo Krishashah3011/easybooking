@@ -578,7 +578,7 @@ export async function createBookingsFromOrder(
       );
     } else if (bookableProduct.bookingType === "FULL_DAY") {
       slotStartsAt = new Date(`${selection.date}T00:00:00.000Z`);
-      slotEnd = "23:59";
+      slotEnd = effectiveSettings.dailyEndTime;
       alreadyBooked = await countConfirmedBookingsForSlot(
         shop,
         bookableProduct.id,
@@ -737,7 +737,7 @@ export async function createManualBooking(
 
   if (bookableProduct.bookingType === "FULL_DAY") {
     slotStartsAt = new Date(`${input.date}T00:00:00.000Z`);
-    slotEnd = "23:59";
+    slotEnd = effectiveSettings.dailyEndTime;
     const alreadyBooked = await countConfirmedBookingsForSlot(
       shop,
       bookableProduct.id,
@@ -819,7 +819,7 @@ export async function createManualBooking(
       locationId: resolvedLocation?.id ?? null,
       date: input.date,
       endDate: bookingEndDateField,
-      slotStart: bookableProduct.bookingType === "FULL_DAY" ? "00:00" : input.slotStart,
+      slotStart: bookableProduct.bookingType === "FULL_DAY" ? effectiveSettings.dailyStartTime : input.slotStart,
       slotEnd,
       slotStartsAt,
       quantity,

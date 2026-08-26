@@ -118,6 +118,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     maxNights: context.maxNights,
     bundleSessionCount: context.bundleSessionCount,
     bundleValidityDays: context.bundleValidityDays,
+    dailyStartTime: context.effectiveSettings.dailyStartTime,
+    dailyEndTime: context.effectiveSettings.dailyEndTime,
     ...(remainingCapacityByDate ? { remainingCapacityByDate } : {}),
   });
 };
