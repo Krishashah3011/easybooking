@@ -170,12 +170,13 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__modal-subheader {
+  flex: 1 0 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 1.1rem 1.5rem 0;
+  padding: 0 0 1rem;
 }
 
 .booking-widget__modal-subtitle {
