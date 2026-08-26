@@ -26,6 +26,7 @@
     noLocationsConfigured:
       "Booking isn't available for this product.",
     next: "Next",
+    nextSlot: "Next Slot",
     changeLocation: "Change",
     confirm: "Confirm",
     close: "Close",
@@ -247,6 +248,7 @@
     var prevBtn = root.querySelector("[data-booking-prev]");
     var nextBtn = root.querySelector("[data-booking-next]");
     var confirmBtn = root.querySelector("[data-booking-confirm]");
+    var nextSlotBtn = root.querySelector("[data-booking-next-slot]");
     var customFieldsEl = root.querySelector("[data-booking-custom-fields]");
     var quantityWrapEl = root.querySelector("[data-booking-quantity]");
     var quantityInputEl = root.querySelector("[data-booking-quantity-input]");
@@ -1614,8 +1616,25 @@
         confirmBtn.disabled = !pendingLocation;
         confirmBtn.textContent = strings.next;
         if (reviewBackBtn) reviewBackBtn.hidden = true;
+        if (nextSlotBtn) nextSlotBtn.hidden = true;
         return;
       }
+
+      if (productBookingType === "BUNDLE" && !atReviewStep) {
+        var totalSessions = bundleSessionCount || 1;
+        var isLastSession = bundleSessions.length >= totalSessions - 1;
+
+        if (nextSlotBtn) {
+          nextSlotBtn.hidden = totalSessions <= 1;
+          nextSlotBtn.disabled = isLastSession || !(pendingDate && pendingSlot);
+        }
+        confirmBtn.disabled = !(isLastSession && pendingDate && pendingSlot);
+        confirmBtn.textContent = strings.next;
+        if (reviewBackBtn) reviewBackBtn.hidden = true;
+        return;
+      }
+
+      if (nextSlotBtn) nextSlotBtn.hidden = true;
       confirmBtn.disabled = atReviewStep ? false : !(pendingDate && pendingSlot);
       confirmBtn.textContent = atReviewStep ? strings.confirm : strings.next;
       if (reviewBackBtn) reviewBackBtn.hidden = !atReviewStep;
@@ -1920,6 +1939,26 @@
     nextBtn.addEventListener("click", function () {
       goToMonth(1);
     });
+    if (nextSlotBtn) {
+      nextSlotBtn.addEventListener("click", function () {
+        if (!pendingDate || !pendingSlot) return;
+        if (bundleSessions.length === 0) {
+          bundleQuantity = pendingQuantity;
+        }
+        bundleSessions.push({ date: pendingDate, slot: pendingSlot });
+        updateBundleProgress();
+        pendingDate = null;
+        pendingSlot = null;
+        renderCalendar();
+        updateConfirmButton();
+        renderCustomFields();
+        refreshQuantityForSelection();
+        if (slotsPaneEl) slotsPaneEl.hidden = false;
+        setStatus(slotListEl, strings.noTimes);
+        durationEl.hidden = false;
+        durationEl.textContent = sessionProgressText();
+      });
+    }
     confirmBtn.addEventListener("click", function () {
       if (isAtLocationStep()) {
         if (!pendingLocation) {
@@ -1949,21 +1988,6 @@
           }
           bundleSessions.push({ date: pendingDate, slot: pendingSlot });
           updateBundleProgress();
-          var remaining = totalSessions - bundleSessions.length;
-
-          if (remaining > 0) {
-            pendingDate = null;
-            pendingSlot = null;
-            renderCalendar();
-            updateConfirmButton();
-            renderCustomFields();
-            refreshQuantityForSelection();
-            if (slotsPaneEl) slotsPaneEl.hidden = false;
-            setStatus(slotListEl, strings.noTimes);
-            durationEl.hidden = false;
-            durationEl.textContent = sessionProgressText();
-            return;
-          }
           showReviewStep();
           return;
         }
