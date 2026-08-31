@@ -32,6 +32,51 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent: string;
+}) {
+  return (
+    <div
+      style={{
+        flex: "1 1 180px",
+        minWidth: "160px",
+        background: "#fff",
+        border: "1px solid rgba(0,0,0,0.08)",
+        borderRadius: "12px",
+        padding: "1.1rem 1.25rem",
+        boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "4px",
+          background: accent,
+        }}
+      />
+      <div style={{ fontSize: "1.9rem", fontWeight: 800, color: "#111", lineHeight: 1.15 }}>
+        {value}
+      </div>
+      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(0,0,0,0.55)", marginTop: "0.25rem" }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+const BAR_PALETTE = ["#2F6FED", "#0EA5A5", "#8B5CF6", "#F59E0B", "#EC4899", "#16A34A"];
+
 function BarList({
   rows,
   labelKey,
@@ -42,44 +87,57 @@ function BarList({
   countKey: string;
 }) {
   const max = Math.max(1, ...rows.map((r) => Number(r[countKey])));
+  const total = rows.reduce((sum, r) => sum + Number(r[countKey]), 0);
 
   if (rows.every((r) => Number(r[countKey]) === 0)) {
-    return <s-paragraph>No data for this range yet.</s-paragraph>;
+    return (
+      <div style={{ padding: "1.5rem 0", textAlign: "center", color: "rgba(0,0,0,0.45)", fontSize: "0.9rem" }}>
+        No data for this range yet.
+      </div>
+    );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-      {rows.map((row) => {
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      {rows.map((row, index) => {
         const count = Number(row[countKey]);
-        const widthPercent = Math.round((count / max) * 100);
+        const widthPercent = Math.max(3, Math.round((count / max) * 100));
+        const percentOfTotal = total ? Math.round((count / total) * 100) : 0;
+        const color = BAR_PALETTE[index % BAR_PALETTE.length];
         return (
-          <div
-            key={String(row[labelKey])}
-            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-          >
-            <div style={{ width: "9rem", fontSize: "0.85rem" }}>
-              {row[labelKey]}
+          <div key={String(row[labelKey])}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                marginBottom: "0.3rem",
+              }}
+            >
+              <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#111" }}>
+                {row[labelKey]}
+              </span>
+              <span style={{ fontSize: "0.8rem", color: "rgba(0,0,0,0.5)" }}>
+                {count} {count === 1 ? "booking" : "bookings"}
+                {total > 0 ? ` \u00b7 ${percentOfTotal}%` : ""}
+              </span>
             </div>
             <div
               style={{
-                flex: 1,
-                background: "rgba(0,0,0,0.06)",
-                borderRadius: "4px",
-                height: "1.1rem",
-                position: "relative",
+                background: "rgba(0,0,0,0.05)",
+                borderRadius: "999px",
+                height: "0.6rem",
+                overflow: "hidden",
               }}
             >
               <div
                 style={{
                   width: `${widthPercent}%`,
-                  background: "#111",
                   height: "100%",
-                  borderRadius: "4px",
+                  borderRadius: "999px",
+                  background: `linear-gradient(90deg, ${color}, ${color}cc)`,
                 }}
               />
-            </div>
-            <div style={{ width: "2rem", fontSize: "0.85rem", textAlign: "right" }}>
-              {count}
             </div>
           </div>
         );
@@ -90,8 +148,6 @@ function BarList({
 
 export default function BookingReportsPage() {
   const { report, products, filters } = useLoaderData<typeof loader>();
-
-  const bookingsByHourDisplay = report.bookingsByHour;
 
   const [productId, setProductId] = useState(filters.bookableProductId);
   const [dateFrom, setDateFrom] = useState(filters.dateFrom);
@@ -136,40 +192,12 @@ export default function BookingReportsPage() {
       </s-section>
 
       <s-section heading="Summary">
-        <s-stack direction="inline" gap="large">
-          <div>
-            <div style={{ fontSize: "1.5rem", fontWeight: 600 }}>
-              {report.totalBookings}
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "rgba(0,0,0,0.6)" }}>
-              Total bookings
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: "1.5rem", fontWeight: 600 }}>
-              {report.confirmedCount}
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "rgba(0,0,0,0.6)" }}>
-              Confirmed
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: "1.5rem", fontWeight: 600 }}>
-              {report.overbookedCount}
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "rgba(0,0,0,0.6)" }}>
-              Overbooked (needs review)
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: "1.5rem", fontWeight: 600 }}>
-              {report.cancellationRatePercent}%
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "rgba(0,0,0,0.6)" }}>
-              Cancellation rate
-            </div>
-          </div>
-        </s-stack>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.9rem" }}>
+          <StatCard label="Total bookings" value={report.totalBookings} accent="#2F6FED" />
+          <StatCard label="Confirmed" value={report.confirmedCount} accent="#16A34A" />
+          <StatCard label="Overbooked (needs review)" value={report.overbookedCount} accent="#F59E0B" />
+          <StatCard label="Cancellation rate" value={`${report.cancellationRatePercent}%`} accent="#EF4444" />
+        </div>
       </s-section>
 
       <s-section heading="Bookings by product">
@@ -177,7 +205,7 @@ export default function BookingReportsPage() {
       </s-section>
 
       <s-section heading="Peak hours">
-        <BarList rows={bookingsByHourDisplay} labelKey="hour" countKey="count" />
+        <BarList rows={report.bookingsByHour} labelKey="hour" countKey="count" />
       </s-section>
 
       <s-section heading="Popular days">
