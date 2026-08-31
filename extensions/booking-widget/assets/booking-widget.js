@@ -55,6 +55,7 @@
     sessionProgressWithDeadline: "Session {current} of {total} — pick a date and time (by {deadline})",
     sessionConfirmed: "Session {number}",
     bundleSelected: "Bundle: {count} sessions",
+    sessionsBooked: "{count} sessions booked",
   };
 
   function pad(n) {
@@ -973,6 +974,10 @@
       bundleQuantity = 1;
       customFieldValues = {};
       atReviewStep = false;
+      currentSlots = [];
+      if (slotListEl) slotListEl.innerHTML = "";
+      if (durationEl) durationEl.hidden = true;
+      if (slotsPaneEl) slotsPaneEl.hidden = true;
       var freshToday = new Date();
       viewYear = freshToday.getUTCFullYear();
       viewMonth = freshToday.getUTCMonth() + 1;
@@ -1993,10 +1998,24 @@
         var li = document.createElement("li");
         var date = item.properties["Booking Date"];
         var time = item.properties["Booking Time"] || "";
-        li.textContent = format(strings.selected, {
-          date: formatDateDisplay(date),
-          time: time,
-        });
+
+        var sessionCount = 1;
+        while (
+          item.properties["Session " + (sessionCount + 1) + " Date"]
+        ) {
+          sessionCount += 1;
+        }
+
+        if (sessionCount > 1) {
+          li.textContent = format(strings.sessionsBooked, {
+            count: sessionCount,
+          });
+        } else {
+          li.textContent = format(strings.selected, {
+            date: formatDateDisplay(date),
+            time: time,
+          });
+        }
         cartReminderListEl.appendChild(li);
       });
 
