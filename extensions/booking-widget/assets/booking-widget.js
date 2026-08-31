@@ -12,6 +12,9 @@
     timesError: "Unable to load times right now.",
     noTimes: "No times available on this date.",
     booked: "Booked",
+    alreadySelected: "Already selected",
+    slotAlreadySelectedError:
+      "You've already selected this time slot. Please choose a different one.",
     spotLeft: "1 spot left",
     spotsLeft: "{count} spots left",
     selectBeforeCart:
@@ -1520,6 +1523,19 @@
         });
     }
 
+    function isSlotTaken(dateStr, slot) {
+      if (!dateStr || !slot) return false;
+      var inBundle = bundleSessions.some(function (session) {
+        return (
+          session.date === dateStr && session.slot.startsAt === slot.startsAt
+        );
+      });
+      if (inBundle) return true;
+      return confirmedSlots.some(function (entry) {
+        return entry.date === dateStr && entry.slot.startsAt === slot.startsAt;
+      });
+    }
+
     function renderSlots() {
       slotListEl.innerHTML = "";
 
@@ -1560,6 +1576,19 @@
           row.appendChild(input);
           row.appendChild(textWrap);
           row.appendChild(bookedTag);
+          slotListEl.appendChild(row);
+          return;
+        }
+
+        if (isSlotTaken(pendingDate, slot)) {
+          row.classList.add("booking-widget__slot-row--unavailable");
+          input.disabled = true;
+          var takenTag = document.createElement("span");
+          takenTag.className = "booking-widget__slot-tag";
+          takenTag.textContent = strings.alreadySelected;
+          row.appendChild(input);
+          row.appendChild(textWrap);
+          row.appendChild(takenTag);
           slotListEl.appendChild(row);
           return;
         }
@@ -1752,6 +1781,11 @@
             icon: "calendar",
           });
         });
+        rows.push({
+          label: "Quantity",
+          value: String(bundleQuantity),
+          icon: "quantity",
+        });
       } else if (productBookingType === "MULTI_DAY") {
         rows = [
           pendingLocation
@@ -1824,7 +1858,9 @@
       });
 
       if (unitPrice !== null) {
-        var total = unitPrice * pendingQuantity;
+        var reviewQuantity =
+          productBookingType === "BUNDLE" ? bundleQuantity : pendingQuantity;
+        var total = unitPrice * reviewQuantity;
         var totalDt = document.createElement("dt");
         totalDt.textContent = "Total";
 
@@ -1834,8 +1870,8 @@
         var totalLabel = document.createElement("span");
         totalLabel.className = "booking-widget__review-total-label";
         totalLabel.textContent =
-          pendingQuantity > 1
-            ? formatMoney(unitPrice) + " \u00d7 " + pendingQuantity
+          reviewQuantity > 1
+            ? formatMoney(unitPrice) + " \u00d7 " + reviewQuantity
             : "Total";
         var totalValue = document.createElement("span");
         totalValue.className = "booking-widget__review-total-value";
@@ -1919,7 +1955,7 @@
               formatDateDisplay(session.date) +
               " · " +
               formatTimeRangeDisplay(session.slot);
-            if (entry.quantity && entry.quantity > 1 && sessionIndex === 0) {
+            if (entry.quantity && entry.quantity > 1) {
               lineText += " \u00d7 " + entry.quantity;
             }
             line.textContent = lineText;
@@ -2056,6 +2092,11 @@
     if (nextSlotBtn) {
       nextSlotBtn.addEventListener("click", function () {
         if (!pendingDate || !pendingSlot) return;
+        if (isSlotTaken(pendingDate, pendingSlot)) {
+          showError(strings.slotAlreadySelectedError);
+          return;
+        }
+        clearError();
         if (bundleSessions.length === 0) {
           bundleQuantity = pendingQuantity;
         }
@@ -2097,6 +2138,11 @@
         var totalSessions = bundleSessionCount || 1;
 
         if (!atReviewStep) {
+          if (isSlotTaken(pendingDate, pendingSlot)) {
+            showError(strings.slotAlreadySelectedError);
+            return;
+          }
+          clearError();
           if (bundleSessions.length === 0) {
             bundleQuantity = pendingQuantity;
           }
@@ -2133,19 +2179,19 @@
       var date = pendingDate;
       var slot = pendingSlot;
       var quantity = pendingQuantity;
-      var alreadyQueued = confirmedSlots.some(function (entry) {
-        return entry.date === date && entry.slot.startsAt === slot.startsAt;
-      });
-      if (!alreadyQueued) {
-        confirmedSlots.push({
-          date: date,
-          slot: slot,
-          location: pendingLocation ? pendingLocation.name : null,
-          locationId: pendingLocation ? pendingLocation.id : null,
-          quantity: quantity,
-        });
-        updateSelectionDisplay();
+      if (isSlotTaken(date, slot)) {
+        showError(strings.slotAlreadySelectedError);
+        return;
       }
+      clearError();
+      confirmedSlots.push({
+        date: date,
+        slot: slot,
+        location: pendingLocation ? pendingLocation.name : null,
+        locationId: pendingLocation ? pendingLocation.id : null,
+        quantity: quantity,
+      });
+      updateSelectionDisplay();
       refreshQuantityForSelection();
       closeModal();
     });
