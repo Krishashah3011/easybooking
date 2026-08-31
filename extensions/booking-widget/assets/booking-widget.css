@@ -814,12 +814,12 @@ body.booking-widget-lock-scroll {
   flex: 1;
   font-size: 0.92rem;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.55);
+  color: rgba(0, 0, 0, 0.8);
 }
 
 .booking-widget__review-value {
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 1.08rem;
+  font-weight: 700;
   color: #111;
   text-align: right;
 }
@@ -852,12 +852,12 @@ body.booking-widget-lock-scroll {
 .booking-widget__review-total-label {
   font-size: 0.95rem;
   font-weight: 700;
-  color: rgba(0, 0, 0, 0.6);
+  color: rgba(0, 0, 0, 0.8);
 }
 
 .booking-widget__review-total-value {
-  font-size: 1.35rem;
-  font-weight: 800;
+  font-size: 1.45rem;
+  font-weight: 700;
   color: #111;
 }
 
@@ -1015,6 +1015,7 @@ body.booking-widget-lock-scroll {
 .booking-widget__field-label {
   font-size: 0.92rem;
   font-weight: 600;
+  color: rgba(0, 0, 0, 0.8);
 }
 
 .booking-widget__field-input {
