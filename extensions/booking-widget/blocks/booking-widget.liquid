@@ -4,6 +4,8 @@
   data-booking-widget
   data-product-id="gid://shopify/Product/{{ product.id }}"
   data-proxy-base="/apps/booking"
+  data-unit-price="{{ product.selected_or_first_available_variant.price | divided_by: 100.0 }}"
+  data-currency-code="{{ cart.currency.iso_code | default: shop.currency }}"
 >
   <div class="booking-widget__cart-reminder" data-booking-cart-reminder hidden>
     <p class="booking-widget__cart-reminder-title" data-booking-cart-reminder-title></p>

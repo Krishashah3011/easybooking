@@ -173,6 +173,22 @@
   function initWidget(root) {
     var productId = root.dataset.productId;
     var proxyBase = root.dataset.proxyBase;
+    var unitPrice = parseFloat(root.dataset.unitPrice || "");
+    if (!isFinite(unitPrice)) unitPrice = null;
+    var currencyCode = root.dataset.currencyCode || "USD";
+    var moneyFormatter;
+    try {
+      moneyFormatter = new Intl.NumberFormat(navigator.language || "en-US", {
+        style: "currency",
+        currency: currencyCode,
+      });
+    } catch (e) {
+      moneyFormatter = null;
+    }
+    function formatMoney(amount) {
+      if (moneyFormatter) return moneyFormatter.format(amount);
+      return currencyCode + " " + amount.toFixed(2);
+    }
     var strings = ENGLISH_STRINGS;
     var monthFormatter;
     try {
@@ -1783,6 +1799,7 @@
         dt.textContent = row.label;
 
         var dd = document.createElement("dd");
+        dd.className = "booking-widget__review-row";
         var iconWrap = document.createElement("span");
         iconWrap.className = "booking-widget__review-icon";
         iconWrap.innerHTML = REVIEW_ICONS[row.icon] || "";
@@ -1800,6 +1817,30 @@
         reviewListEl.appendChild(dt);
         reviewListEl.appendChild(dd);
       });
+
+      if (unitPrice !== null) {
+        var total = unitPrice * pendingQuantity;
+        var totalDt = document.createElement("dt");
+        totalDt.textContent = "Total";
+
+        var totalDd = document.createElement("dd");
+        totalDd.className =
+          "booking-widget__review-row booking-widget__review-row--total";
+        var totalLabel = document.createElement("span");
+        totalLabel.className = "booking-widget__review-total-label";
+        totalLabel.textContent =
+          pendingQuantity > 1
+            ? formatMoney(unitPrice) + " \u00d7 " + pendingQuantity
+            : "Total";
+        var totalValue = document.createElement("span");
+        totalValue.className = "booking-widget__review-total-value";
+        totalValue.textContent = formatMoney(total);
+        totalDd.appendChild(totalLabel);
+        totalDd.appendChild(totalValue);
+
+        reviewListEl.appendChild(totalDt);
+        reviewListEl.appendChild(totalDd);
+      }
     }
 
     function showReviewStep() {
