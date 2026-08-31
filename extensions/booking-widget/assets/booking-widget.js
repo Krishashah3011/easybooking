@@ -1725,6 +1725,9 @@
         }
         confirmBtn.disabled = !(isLastSession && pendingDate && pendingSlot);
         confirmBtn.textContent = strings.next;
+        if (!confirmBtn.disabled && nextSlotBtn) {
+          nextSlotBtn.disabled = true;
+        }
         if (reviewBackBtn) reviewBackBtn.hidden = true;
         return;
       }

@@ -400,14 +400,15 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__location-trigger-text--placeholder {
-  color: rgba(0, 0, 0, 0.55);
-  font-weight: 400;
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 600;
 }
 
 .booking-widget__location-chevron {
   flex: none;
-  font-size: 0.7rem;
-  color: rgba(0, 0, 0, 0.6);
+  font-size: 1.15rem;
+  line-height: 1;
+  color: #111;
   transition: transform 0.15s ease;
 }
 
@@ -436,7 +437,7 @@ body.booking-widget-lock-scroll {
   padding: 0.75rem 1.1rem;
   font-size: 1rem;
   cursor: pointer;
-  color: #1a5fb4;
+  color: #111;
 }
 
 .booking-widget__location-option:hover,
@@ -506,8 +507,9 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__month-label {
-  font-weight: 700;
-  font-size: 1.05rem;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #111;
 }
 
 .booking-widget__nav {
@@ -553,7 +555,7 @@ body.booking-widget-lock-scroll {
   border: none;
   background: none;
   border-radius: 50%;
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   font-weight: 600;
   cursor: not-allowed;
   color: rgba(0, 0, 0, 0.3);
@@ -689,8 +691,11 @@ body.booking-widget-lock-scroll {
   justify-content: center;
   border: none;
   background: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial,
+    sans-serif;
   font-size: 1.3rem;
   font-weight: 700;
+  font-style: normal;
   line-height: 1;
   color: #111;
   cursor: pointer;
@@ -740,8 +745,9 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__quantity-note {
   margin: 0;
-  font-size: 0.75rem;
-  color: #a15c00;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #4a4a4a;
   white-space: nowrap;
 }
 
@@ -857,8 +863,9 @@ body.booking-widget-lock-scroll {
   border-radius: 8px;
   padding: 0.8rem 0.95rem;
   cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #111;
 }
 
 .booking-widget__slot-row:hover {
@@ -891,14 +898,14 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__slot-tag {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.55);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.7);
   white-space: nowrap;
 }
 
 .booking-widget__slot-tag--low {
-  color: #b25900;
+  color: #4a4a4a;
 }
 
 .booking-widget__modal-footer {
@@ -953,6 +960,17 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__btn--secondary:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.booking-widget__btn--secondary:disabled {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.35);
+  cursor: not-allowed;
+}
+
+.booking-widget__btn--secondary:disabled:hover {
   background: rgba(0, 0, 0, 0.04);
 }
 
