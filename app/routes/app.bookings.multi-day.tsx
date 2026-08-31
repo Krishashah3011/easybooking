@@ -20,7 +20,7 @@ export default function MultiDayBookingsPage() {
       products={products}
       customFieldLabels={customFieldLabels}
       filters={filters}
-      emptyMessage="No multi-day bookings match these filters."
+      emptyMessage="No Pending Multi-day Bookings- they'll show up here once a customer books one."
     />
   );
 }

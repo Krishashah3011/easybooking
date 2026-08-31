@@ -20,7 +20,7 @@ export default function SlotBookingsPage() {
       products={products}
       customFieldLabels={customFieldLabels}
       filters={filters}
-      emptyMessage="No slot bookings match these filters."
+      emptyMessage="No Pending Slot Bookings- they'll show up here once a customer books one."
     />
   );
 }

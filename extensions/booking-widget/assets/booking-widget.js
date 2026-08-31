@@ -10,6 +10,7 @@
     noAvailability: "No availability this month.",
     loadingTimes: "Loading times…",
     timesError: "Unable to load times right now.",
+    retry: "Try again",
     noTimes: "No times available on this date.",
     booked: "Booked",
     alreadySelected: "Already selected",
@@ -660,12 +661,20 @@
     loadCustomFields();
     loadLocations();
 
-    function setStatus(container, message) {
+    function setStatus(container, message, onRetry) {
       container.innerHTML = "";
       var p = document.createElement("p");
       p.className = "booking-widget__status";
       p.textContent = message;
       container.appendChild(p);
+      if (onRetry) {
+        var retryBtn = document.createElement("button");
+        retryBtn.type = "button";
+        retryBtn.className = "booking-widget__status-retry";
+        retryBtn.textContent = strings.retry || "Try again";
+        retryBtn.addEventListener("click", onRetry);
+        container.appendChild(retryBtn);
+      }
     }
 
     function loadCustomFields() {
@@ -1130,7 +1139,7 @@
                 if (!pendingEndDate) updateRangeSummary();
               })
               .catch(function () {
-                setStatus(calendarEl, strings.availabilityError);
+                setStatus(calendarEl, strings.availabilityError, loadMonth);
               });
           } else {
             secondMonthAvailableDates = null;
@@ -1140,7 +1149,7 @@
           }
         })
         .catch(function () {
-          setStatus(calendarEl, strings.availabilityError);
+          setStatus(calendarEl, strings.availabilityError, loadMonth);
         });
     }
 
@@ -1519,7 +1528,9 @@
           renderSlots();
         })
         .catch(function () {
-          setStatus(slotListEl, strings.timesError);
+          setStatus(slotListEl, strings.timesError, function () {
+            loadSlots(dateStr);
+          });
         });
     }
 

@@ -20,7 +20,7 @@ export default function FullDayBookingsPage() {
       products={products}
       customFieldLabels={customFieldLabels}
       filters={filters}
-      emptyMessage="No full-day bookings match these filters."
+      emptyMessage="No Pending Full-Day bookings- they'll show up here once a customer books one."
     />
   );
 }

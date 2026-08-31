@@ -9,6 +9,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
+import rowStyles from "../styles/app.account.module.css";
 
 const BLUE = "#073E74";
 
@@ -143,10 +144,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "20px",
-  },
-  row: {
-    display: "flex",
-    gap: "16px",
   },
   fieldGroup: {
     flex: 1,
@@ -464,19 +461,22 @@ export default function Account() {
 
   if (!registered) {
     return (
-      <s-page heading="Account" inlineSize="950px">
-        <CreateAccountForm fetcher={fetcher} saving={saving} />
+      <s-page heading="Account">
+        <div style={{ maxWidth: "950px", margin: "0 auto" }}>
+          <CreateAccountForm fetcher={fetcher} saving={saving} />
+        </div>
       </s-page>
     );
   }
 
   return (
-    <s-page heading="Account" inlineSize="950px">
+    <s-page heading="Account">
+      <div style={{ maxWidth: "950px", margin: "0 auto" }}>
       <div style={styles.outerCard}>
         <div style={styles.heading}>Account Information</div>
 
         <div style={styles.fieldsBox}>
-          <div style={styles.row}>
+          <div className={rowStyles.row}>
             <EditableField
               icon={<PersonIcon />}
               label="Username"
@@ -495,7 +495,7 @@ export default function Account() {
             />
           </div>
 
-          <div style={styles.row}>
+          <div className={rowStyles.row}>
             <div style={styles.fieldGroup}>
               <span style={styles.label}>Shop</span>
               <div style={styles.inputBox}>
@@ -528,7 +528,7 @@ export default function Account() {
             </div>
           </div>
 
-          <div style={styles.row}>
+          <div className={rowStyles.row}>
             <div style={styles.fieldGroup}>
               <span style={styles.label}>Subscription ID</span>
               <div style={styles.inputBox}>
@@ -563,6 +563,7 @@ export default function Account() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </s-page>
   );

@@ -65,7 +65,7 @@ export default function CompletedBookingsPage() {
       products={products}
       customFieldLabels={customFieldLabels}
       filters={filters}
-      emptyMessage="No completed bookings yet."
+      emptyMessage="All bookings are completed — nothing pending right now."
     />
   );
 }

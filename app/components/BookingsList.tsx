@@ -475,13 +475,69 @@ function GroupCard({
   );
 }
 
+function BookingsEmptyState({
+  hasActiveFilters,
+  noDataMessage,
+}: {
+  hasActiveFilters: boolean;
+  noDataMessage: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        gap: "0.5rem",
+        padding: "3rem 1rem",
+      }}
+    >
+      <div
+        style={{
+          width: "48px",
+          height: "48px",
+          borderRadius: "50%",
+          background: "rgba(0,0,0,0.06)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "0.25rem",
+        }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          {hasActiveFilters ? (
+            <path
+              d="M11 4a7 7 0 104.2 12.6l4.1 4.1 1.4-1.4-4.1-4.1A7 7 0 0011 4zm0 2a5 5 0 110 10 5 5 0 010-10z"
+              fill="rgba(0,0,0,0.45)"
+            />
+          ) : (
+            <path
+              d="M9 16.2l-3.5-3.5-1.4 1.4L9 19 20 8l-1.4-1.4z"
+              fill="rgba(0,0,0,0.45)"
+            />
+          )}
+        </svg>
+      </div>
+      <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
+        {hasActiveFilters ? "No matching bookings" : "You're all caught up"}
+      </span>
+      <s-paragraph>
+        {hasActiveFilters
+          ? "No bookings match these filters. Try adjusting or clearing them to see more."
+          : noDataMessage}
+      </s-paragraph>
+    </div>
+  );
+}
+
 export function BookingsListPage({
   heading,
   bookings: initialBookings,
   products,
   customFieldLabels,
   filters,
-  emptyMessage = "No bookings match these filters.",
+  emptyMessage = "No bookings yet — they'll show up here once customers start booking.",
   showProductFilter = true,
 }: {
   heading: string;
@@ -631,7 +687,10 @@ export function BookingsListPage({
           </s-button>
         </s-stack>
         {bookings.length === 0 ? (
-          <s-paragraph>{emptyMessage}</s-paragraph>
+          <BookingsEmptyState
+            hasActiveFilters={hasActiveFilters}
+            noDataMessage={emptyMessage}
+          />
         ) : (
           <s-stack direction="block" gap="small">
             {bookingGroups.map((group) =>

@@ -225,6 +225,7 @@ body.booking-widget-lock-scroll {
 .booking-widget__modal-body {
   padding: 1.25rem 1.5rem;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   flex: 1;
 }
 
@@ -492,6 +493,8 @@ body.booking-widget-lock-scroll {
   .booking-widget__modal {
     width: 96vw;
     height: 92vh;
+    height: 92svh;
+    max-height: 92vh;
   }
 
   .booking-widget__overlay {
@@ -532,6 +535,23 @@ body.booking-widget-lock-scroll {
 .booking-widget__status {
   color: rgba(0, 0, 0, 0.6);
   font-size: 0.95rem;
+}
+
+.booking-widget__status-retry {
+  display: block;
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid #111;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.booking-widget__status-retry:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .booking-widget__weekdays {
