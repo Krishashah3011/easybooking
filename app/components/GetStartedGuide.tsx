@@ -183,6 +183,7 @@ export type GuideStep = {
   cta: string;
   href: string;
   done?: boolean;
+  external?: boolean;
 };
 
 export default function GetStartedGuide({
@@ -237,6 +238,16 @@ export default function GetStartedGuide({
                     <CheckIcon />
                     Completed
                   </span>
+                ) : step.external ? (
+                  <a
+                    href={step.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.stepButton}
+                  >
+                    {step.cta}
+                    <ArrowRightIcon />
+                  </a>
                 ) : (
                   <Link to={step.href} style={styles.stepButton}>
                     {step.cta}

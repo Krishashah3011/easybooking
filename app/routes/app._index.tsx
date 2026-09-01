@@ -78,7 +78,17 @@ const guideStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-const GUIDE_STEPS: GuideStep[] = [
+const BOOKING_WIDGET_BLOCK_HANDLE = "booking-widget";
+
+function buildGuideSteps(shop: string, apiKey: string): GuideStep[] {
+  return [
+  {
+    title: "Turn on the booking widget",
+    body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page — no manual placement needed.",
+    cta: "Activate App Embed",
+    href: `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${apiKey}/${BOOKING_WIDGET_BLOCK_HANDLE}`,
+    external: true,
+  },
   {
     title: "Enable booking on your products",
     body: "Go to Products and turn on booking for each product customers should be able to book. You can override the shop's default schedule per product if needed.",
@@ -104,12 +114,6 @@ const GUIDE_STEPS: GuideStep[] = [
     href: "/app/booking-settings/custom-fields",
   },
   {
-    title: "Turn on the booking widget",
-    body: "In Booking Settings, use the \"Open theme editor → App embeds\" link and switch the EasyBooking app embed on. It shows up automatically on every bookable product page — no manual placement needed.",
-    cta: "Go to Booking Settings",
-    href: "/app/booking-settings",
-  },
-  {
     title: "Turn on booking emails",
     body: "Configure SMTP in Settings → SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
     cta: "Go to Settings",
@@ -121,7 +125,8 @@ const GUIDE_STEPS: GuideStep[] = [
     cta: "Go to Bookings",
     href: "/app/bookings",
   },
-];
+  ];
+}
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -162,11 +167,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     stats: { todayCount, weekCount, overbookedCount, enabledProductCount },
     smtpConfigured,
     hasLocations: enabledLocations.length > 0,
+    shop: session.shop,
+    apiKey: process.env.SHOPIFY_API_KEY ?? "",
   };
 };
 
 export default function Dashboard() {
-  const { stats, smtpConfigured, hasLocations } = useLoaderData<typeof loader>();
+  const { stats, smtpConfigured, hasLocations, shop, apiKey } = useLoaderData<typeof loader>();
+  const guideSteps = buildGuideSteps(shop, apiKey);
 
   const setupSteps = [
     {
@@ -226,7 +234,7 @@ export default function Dashboard() {
       <GetStartedGuide
         appName="EasyBooking"
         intro="A quick walkthrough of how to get bookings running end to end."
-        steps={GUIDE_STEPS}
+        steps={guideSteps}
       />
 
       <div style={guideStyles.card}>
