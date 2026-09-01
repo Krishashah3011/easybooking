@@ -924,11 +924,6 @@ export async function listBookings(
         return { ...withType, displayStatus: getDisplayStatus(withType) };
       },
     )
-    // Cancelled bookings always sink to the bottom, regardless of date.
-    // `.sort` is a stable sort, and the list above is already ordered by
-    // slotStartsAt ascending, so this preserves date order within both the
-    // active group and the cancelled group — it only moves cancelled ones
-    // down as a block.
     .sort((a, b) => {
       const aCancelled = a.status === "CANCELLED" ? 1 : 0;
       const bCancelled = b.status === "CANCELLED" ? 1 : 0;

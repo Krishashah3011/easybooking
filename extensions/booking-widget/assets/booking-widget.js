@@ -332,9 +332,7 @@
             JSON.stringify(confirmedSlots),
           );
         }
-      } catch (e) {
-        // sessionStorage unavailable (privacy mode, quota, etc.) - ignore
-      }
+      } catch (e) {}
     }
 
     function loadConfirmedSlots() {
@@ -344,16 +342,13 @@
         var parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) confirmedSlots = parsed;
       } catch (e) {
-        // corrupt or unavailable storage - ignore, start fresh
       }
     }
 
     function clearPersistedSlots() {
       try {
         sessionStorage.removeItem(pendingSlotsStorageKey());
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
 
     var customFields = [];

@@ -102,21 +102,15 @@ function buildGuideSteps(
     },
     {
       title: "Set your booking schedule",
-      body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, and how many bookings are allowed per slot.",
+      body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, how many bookings are allowed per slot, and set up your business locations.",
       cta: "Go to Booking Settings",
       href: "/app/booking-settings",
     },
     {
-      title: "Block off days you're unavailable",
-      body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product.",
+      title: "Block off unavailable days & collect extra info (optional)",
+      body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product. You can also collect extra info like notes or special requests at booking time using Custom Fields — you'll see customers' answers on each booking.",
       cta: "Go to Blackout Dates",
       href: "/app/booking-settings/blackout-dates",
-    },
-    {
-      title: "Collect extra info at booking time (optional)",
-      body: "Add fields like notes, preferences, or special requests on the Custom Fields tab. Customers fill these in when booking, and you'll see their answers on each booking.",
-      cta: "Go to Custom Fields",
-      href: "/app/booking-settings/custom-fields",
     },
     {
       title: "Turn on booking emails",
@@ -163,8 +157,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     registered: shopSettings.registered,
   };
 
-  // Unregistered shops only see the user guide, so skip the rest of the
-  // dashboard queries until they've registered.
   if (!shopSettings.registered) {
     return {
       stats: { todayCount: 0, weekCount: 0, overbookedCount: 0, enabledProductCount: 0 },

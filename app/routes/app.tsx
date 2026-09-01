@@ -13,10 +13,6 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: navStyles },
 ];
 
-// Paths a shop can reach before registering: the dashboard (which only
-// shows the user guide until registered) and the account/register page
-// itself. Every other /app/* route redirects here until registration
-// is complete.
 const UNGATED_PATHS = new Set(["/app", "/app/"]);
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {

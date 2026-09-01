@@ -67,8 +67,6 @@ function PlaceholderGlyph({ children }: { children: ReactNode }) {
   );
 }
 
-// -- Exact icons from the supplied reference SVGs -------------------
-
 export function HomeIcon({ className, active }: IconProps) {
   return (
     <NavBadge active={active} className={className}>
@@ -119,9 +117,6 @@ export function AccountIcon({ className }: IconProps) {
     </svg>
   );
 }
-
-// -- Placeholder icons on the new frame, pending final designs ------
-// (Booking Settings / Products / Bookings / Reports)
 
 export function ScheduleIcon({ className, active }: IconProps) {
   return (

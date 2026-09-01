@@ -15,9 +15,6 @@ export default function App() {
         <Links />
         <style>{`
           html {
-            /* Always reserve space for the vertical scrollbar so pages
-               don't shift width when content height changes (e.g. the
-               Get Started guide expanding/collapsing on the dashboard). */
             scrollbar-gutter: stable;
             overflow-y: scroll;
           }

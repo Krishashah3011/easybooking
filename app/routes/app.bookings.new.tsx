@@ -331,7 +331,6 @@ export default function NewBookingPage() {
     string | null
   >(null);
 
-  // Sessions already queued for the bundle currently being built on this product.
   const bundleSessionsQueued = queuedSlots.filter(
     (entry) => entry.bookableProductId === bookableProductId,
   );
@@ -343,9 +342,6 @@ export default function NewBookingPage() {
   const bundleComplete =
     bundleSessionCount !== null && bundleSessionsRemaining === 0;
 
-  // Anchor the bundle's validity deadline as soon as this bundle product is selected
-  // (mirrors the storefront widget, which fixes the deadline once per bundle purchase
-  // from "today" rather than recomputing it per session picked).
   useEffect(() => {
     if (selectedBookingType !== "BUNDLE" || !selectedProduct?.bundleValidityDays) {
       setBundleValidityDeadline(null);
@@ -374,7 +370,6 @@ export default function NewBookingPage() {
       ? availabilityFetcher.data.dailyEndTime
       : "23:59";
 
-  // Two-month calendar is now shown for every booking type in the admin UI.
   const isTwoMonthType = true;
 
   let secondYear = viewYear;
@@ -554,9 +549,6 @@ export default function NewBookingPage() {
 
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  // Multi-day picking happens directly on the calendar, same as the storefront:
-  // first click sets check-in, second click (on a later date) sets check-out.
-  // Clicking check-in again (or an earlier/same date) restarts the selection.
   const selectDate = (dateStr: string) => {
     if (selectedBookingType === "MULTI_DAY") {
       if (!date || checkoutDate || dateStr <= date) {
@@ -566,7 +558,6 @@ export default function NewBookingPage() {
         setSelectedSlot(null);
         return;
       }
-      // Second click: this is the check-out date.
       const error = stayLengthError(date, dateStr);
       if (error) {
         setCheckoutError(error);
@@ -654,8 +645,6 @@ export default function NewBookingPage() {
     if (!alreadyQueued) {
       const productTitle =
         products.find((p) => p.id === bookableProductId)?.title ?? "";
-      // For a bundle's 2nd+ session, reuse the quantity locked in on the first
-      // session rather than whatever the (hidden) stepper currently holds.
       const effectiveQuantity =
         selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0
           ? bundleSessionsQueued[0].quantity
@@ -681,7 +670,6 @@ export default function NewBookingPage() {
     setQueuedSlots((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Bundle products in the queue that don't yet have their required session count.
   const incompleteBundleTitles = Array.from(
     new Set(queuedSlots.map((entry) => entry.bookableProductId)),
   )
