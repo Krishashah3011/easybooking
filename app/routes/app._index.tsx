@@ -1,4 +1,3 @@
-import { useState, Fragment } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -7,11 +6,11 @@ import { listBookableProducts } from "../models/bookableProduct.server";
 import { countBookings } from "../models/booking.server";
 import { getSmtpSettings } from "../models/smtpSettings.server";
 import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from "../models/bookingLocation.server";
+import GetStartedGuide, { type GuideStep } from "../components/GetStartedGuide";
 
 const DIVIDER = "#DBDBDB";
 const TEXT_BLACK = "#000000";
 const TEXT_MUTED = "#373737";
-const BLUE = "#073E74";
 
 const guideStyles: Record<string, React.CSSProperties> = {
   card: {
@@ -23,44 +22,6 @@ const guideStyles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: "16px",
     marginBottom: "16px",
-  },
-  headerRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    width: "100%",
-    background: "none",
-    border: "none",
-    padding: 0,
-    margin: 0,
-    cursor: "pointer",
-    textAlign: "left",
-    font: "inherit",
-  },
-  headerLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  infoIcon: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "20px",
-    height: "20px",
-    minWidth: "20px",
-    borderRadius: "50%",
-    background: BLUE,
-    color: "#FFFFFF",
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 700,
-    fontSize: "12px",
-    lineHeight: "20px",
-  },
-  chevron: {
-    flexShrink: 0,
-    transition: "transform 150ms ease",
   },
   sectionHeading: {
     fontFamily: "Inter, sans-serif",
@@ -84,51 +45,6 @@ const guideStyles: Record<string, React.CSSProperties> = {
     borderTop: `1px solid ${DIVIDER}`,
     margin: 0,
     width: "100%",
-  },
-  stepsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-  stepBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-  stepTitle: {
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 600,
-    fontSize: "14px",
-    lineHeight: "17px",
-    color: TEXT_BLACK,
-    margin: 0,
-  },
-  stepDescription: {
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 400,
-    fontSize: "12px",
-    lineHeight: "15px",
-    color: TEXT_MUTED,
-    margin: 0,
-    maxWidth: "606px",
-  },
-  stepButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "10px 16px",
-    background: "#000000",
-    borderRadius: "10px",
-    color: "#FFFFFF",
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 600,
-    fontSize: "14px",
-    lineHeight: "17px",
-    border: "none",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    textDecoration: "none",
-    width: "fit-content",
   },
   statsGrid: {
     display: "grid",
@@ -162,7 +78,7 @@ const guideStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-const GUIDE_STEPS = [
+const GUIDE_STEPS: GuideStep[] = [
   {
     title: "Enable booking on your products",
     body: "Go to Products and turn on booking for each product customers should be able to book. You can override the shop's default schedule per product if needed.",
@@ -251,7 +167,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function Dashboard() {
   const { stats, smtpConfigured, hasLocations } = useLoaderData<typeof loader>();
-  const [guideOpen, setGuideOpen] = useState(true);
 
   const setupSteps = [
     {
@@ -308,68 +223,11 @@ export default function Dashboard() {
         </s-section>
       )}
 
-      <div style={guideStyles.card}>
-        <h2 style={{ margin: 0 }}>
-          <button
-            type="button"
-            onClick={() => setGuideOpen((open) => !open)}
-            aria-expanded={guideOpen}
-            style={guideStyles.headerRow}
-          >
-            <span style={guideStyles.headerLeft}>
-              <span style={guideStyles.infoIcon} aria-hidden="true">i</span>
-              <span style={guideStyles.sectionHeading}>App guide</span>
-            </span>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{
-                ...guideStyles.chevron,
-                transform: guideOpen ? "rotate(180deg)" : "rotate(0deg)",
-              }}
-            >
-              <path
-                d="M4 6l4 4 4-4"
-                stroke={TEXT_BLACK}
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </h2>
-
-        {guideOpen && (
-          <>
-            <p style={guideStyles.intro}>
-              A quick walkthrough of how to get bookings running end to end.
-            </p>
-            <hr style={guideStyles.divider} />
-            <div style={guideStyles.stepsList}>
-              {GUIDE_STEPS.map((step, index) => (
-                <Fragment key={step.title}>
-                  <div style={guideStyles.stepBlock}>
-                    <h3 style={guideStyles.stepTitle}>
-                      {index + 1}. {step.title}
-                    </h3>
-                    <p style={guideStyles.stepDescription}>{step.body}</p>
-                    <a href={step.href} style={guideStyles.stepButton}>
-                      {step.cta}
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 3.5L10.5 8L6 12.5" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </a>
-                  </div>
-                  {index < GUIDE_STEPS.length - 1 && <hr style={guideStyles.divider} />}
-                </Fragment>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      <GetStartedGuide
+        appName="EasyBooking"
+        intro="A quick walkthrough of how to get bookings running end to end."
+        steps={GUIDE_STEPS}
+      />
 
       <div style={guideStyles.card}>
         <h2 style={guideStyles.sectionHeading}>At a glance</h2>

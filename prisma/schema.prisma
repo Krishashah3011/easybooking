@@ -204,6 +204,7 @@ model ShopSettings {
   accountEmail  String?
   plan          String?
   subscriptionId String?
+  serialKey     String?  @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
