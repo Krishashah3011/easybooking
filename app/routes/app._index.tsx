@@ -3,13 +3,9 @@ import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { listBookableProducts } from "../models/bookableProduct.server";
-import {
-  countBookings,
-  getUpcomingBookings,
-} from "../models/booking.server";
+import { countBookings } from "../models/booking.server";
 import { getSmtpSettings } from "../models/smtpSettings.server";
 import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from "../models/bookingLocation.server";
-import { formatBookingWhenDisplay } from "../utils/format";
 
 const DIVIDER = "#E1E1E1";
 const TEXT_BLACK = "#1A1A1A";
@@ -94,14 +90,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const today = todayISO();
   const weekEnd = endOfWeekISO();
 
-  const [, products, todayCount, weekCount, overbookedCount, upcoming, smtpSettings, enabledLocations] =
+  const [, products, todayCount, weekCount, overbookedCount, smtpSettings, enabledLocations] =
     await Promise.all([
       maybePrefillFirstLocationFromShopTimezone(session.shop, admin),
       listBookableProducts(session.shop),
       countBookings(session.shop, { dateFrom: today, dateTo: today }),
       countBookings(session.shop, { dateFrom: today, dateTo: weekEnd }),
       countBookings(session.shop, { status: "OVERBOOKED" }),
-      getUpcomingBookings(session.shop, 5),
       getSmtpSettings(session.shop),
       listEnabledLocations(session.shop),
     ]);
@@ -119,12 +114,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     stats: { todayCount, weekCount, overbookedCount, enabledProductCount },
     smtpConfigured,
     hasLocations: enabledLocations.length > 0,
-    upcoming,
   };
 };
 
 export default function Dashboard() {
-  const { stats, smtpConfigured, hasLocations, upcoming } = useLoaderData<typeof loader>();
+  const { stats, smtpConfigured, hasLocations } = useLoaderData<typeof loader>();
 
   const setupSteps = [
     {
@@ -268,32 +262,6 @@ export default function Dashboard() {
             </s-stack>
           </s-box>
         </s-stack>
-      </s-section>
-
-      <s-section heading="Upcoming bookings">
-        {upcoming.length === 0 ? (
-          <s-paragraph>Nothing coming up yet.</s-paragraph>
-        ) : (
-          <s-table>
-            <s-table-header-row>
-              <s-table-header>Product</s-table-header>
-              <s-table-header>Customer</s-table-header>
-              <s-table-header>When</s-table-header>
-            </s-table-header-row>
-            <s-table-body>
-              {upcoming.map((booking) => (
-                <s-table-row key={booking.id}>
-                  <s-table-cell>{booking.productTitle}</s-table-cell>
-                  <s-table-cell>{booking.customerName ?? "—"}</s-table-cell>
-                  <s-table-cell>
-                    {formatBookingWhenDisplay(booking)}
-                  </s-table-cell>
-                </s-table-row>
-              ))}
-            </s-table-body>
-          </s-table>
-        )}
-        <s-link href="/app/bookings">View all bookings</s-link>
       </s-section>
     </s-page>
   );

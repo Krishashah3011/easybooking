@@ -9,12 +9,13 @@ import {
   ReportsIcon,
   ScheduleIcon,
   SettingsIcon,
+  type IconProps,
 } from "./NavIcons";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: (props: { className?: string }) => JSX.Element;
+  icon: (props: IconProps) => JSX.Element;
   matchPrefix?: boolean;
 };
 
@@ -53,9 +54,9 @@ export function AppTopNav() {
               title={item.label}
               aria-label={item.label}
               aria-current={active ? "page" : undefined}
-              className={active ? "link linkActive" : "link"}
+              className="link"
             >
-              <Icon />
+              <Icon active={active} />
             </Link>
           );
         })}
@@ -66,9 +67,9 @@ export function AppTopNav() {
         title="Account"
         aria-label="Account"
         aria-current={accountActive ? "page" : undefined}
-        className={accountActive ? "link linkActive" : "link"}
+        className="link"
       >
-        <AccountIcon />
+        <AccountIcon active={accountActive} />
       </Link>
     </nav>
   );
