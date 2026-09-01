@@ -11,6 +11,74 @@ import { getSmtpSettings } from "../models/smtpSettings.server";
 import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from "../models/bookingLocation.server";
 import { formatBookingWhenDisplay } from "../utils/format";
 
+const DIVIDER = "#E1E1E1";
+const TEXT_BLACK = "#1A1A1A";
+const TEXT_MUTED = "#6B6B6B";
+
+const guideStyles: Record<string, React.CSSProperties> = {
+  card: {
+    background: "#FFFFFF",
+    border: "1px solid #E5E5E5",
+    borderRadius: "8px",
+    padding: "16px",
+  },
+  sectionHeading: {
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 700,
+    fontSize: "18px",
+    lineHeight: "22px",
+    color: TEXT_BLACK,
+    margin: "0 0 4px",
+  },
+  intro: {
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "20px",
+    color: TEXT_MUTED,
+    margin: "0 0 16px",
+  },
+  divider: {
+    border: "none",
+    borderTop: `1px solid ${DIVIDER}`,
+    margin: "20px 0",
+    width: "100%",
+  },
+  stepTitle: {
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 700,
+    fontSize: "16px",
+    lineHeight: "20px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  stepDescription: {
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "20px",
+    color: TEXT_MUTED,
+    margin: "6px 0 16px",
+  },
+  stepButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "10px 18px",
+    background: "#000000",
+    borderRadius: "8px",
+    color: "#FFFFFF",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 700,
+    fontSize: "15px",
+    lineHeight: "19px",
+    border: "none",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    textDecoration: "none",
+  },
+};
+
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -113,78 +181,71 @@ export default function Dashboard() {
         </s-section>
       )}
 
-      <s-section heading="App guide">
-        <s-paragraph>
+      <div style={guideStyles.card}>
+        <h2 style={guideStyles.sectionHeading}>App guide</h2>
+        <p style={guideStyles.intro}>
           A quick walkthrough of how to get bookings running end to end.
-        </s-paragraph>
-        <s-ordered-list>
-          <s-list-item>
-            <s-text>
-              <b>Enable booking on your products</b> — go to{" "}
-              <s-link href="/app/products">Products</s-link> and turn on
-              booking for each product customers should be able to book. You
-              can override the shop's default schedule per product if needed.
-            </s-text>
-          </s-list-item>
-          <s-list-item>
-            <s-text>
-              <b>Set your booking schedule</b> — in{" "}
-              <s-link href="/app/booking-settings">Booking Settings</s-link>, choose
-              working days, daily hours, slot duration, buffer time between
-              slots, how far in advance customers can book, and how many
-              bookings are allowed per slot.
-            </s-text>
-          </s-list-item>
-          <s-list-item>
-            <s-text>
-              <b>Block off days you're unavailable</b> — add holidays or
-              one-off closures on the{" "}
-              <s-link href="/app/booking-settings/blackout-dates">Blackout Dates</s-link>{" "}
-              tab, shop-wide or for a specific product.
-            </s-text>
-          </s-list-item>
-          <s-list-item>
-            <s-text>
-              <b>Collect extra info at booking time (optional)</b> — add
-              fields like notes, preferences, or special requests on the{" "}
-              <s-link href="/app/booking-settings/custom-fields">Custom Fields</s-link> tab.
-              Customers fill these in when booking, and you'll see their
-              answers on each booking.
-            </s-text>
-          </s-list-item>
-          <s-list-item>
-            <s-text>
-              <b>Turn on the booking widget</b> — in{" "}
-              <s-link href="/app/booking-settings">Booking Settings</s-link>, use
-              the "Open theme editor → App embeds" link and switch the
-              EasyBooking app embed on. It shows up automatically on every
-              bookable product page — no manual placement needed.
-            </s-text>
-          </s-list-item>
-          <s-list-item>
-            <s-text>
-              <b>Turn on booking emails</b> — configure SMTP in{" "}
-              <s-link href="/app/settings">Settings → SMTP Settings</s-link> so
-              customers automatically get confirmation, reminder, and
-              cancellation emails.
-            </s-text>
-          </s-list-item>
-          <s-list-item>
-            <s-text>
-              <b>Manage bookings as they come in</b> — view, search,
-              reschedule, or cancel bookings from{" "}
-              <s-link href="/app/bookings">
-                Bookings
-              </s-link>
-              . You can also add bookings manually from the{" "}
-              <s-link href="/app/bookings/new">New Booking</s-link> tab there. If two
-              customers ever land in the same slot, it's flagged as{" "}
-              <b>Overbooked</b> so you can review and resolve it — you'll
-              see a banner for that at the top of this page when it happens.
-            </s-text>
-          </s-list-item>
-        </s-ordered-list>
-      </s-section>
+        </p>
+        <hr style={guideStyles.divider} />
+        {[
+            {
+              title: "Enable booking on your products",
+              body: "Go to Products and turn on booking for each product customers should be able to book. You can override the shop's default schedule per product if needed.",
+              cta: "Go to Products",
+              href: "/app/products",
+            },
+            {
+              title: "Set your booking schedule",
+              body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, and how many bookings are allowed per slot.",
+              cta: "Go to Booking Settings",
+              href: "/app/booking-settings",
+            },
+            {
+              title: "Block off days you're unavailable",
+              body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product.",
+              cta: "Go to Blackout Dates",
+              href: "/app/booking-settings/blackout-dates",
+            },
+            {
+              title: "Collect extra info at booking time (optional)",
+              body: "Add fields like notes, preferences, or special requests on the Custom Fields tab. Customers fill these in when booking, and you'll see their answers on each booking.",
+              cta: "Go to Custom Fields",
+              href: "/app/booking-settings/custom-fields",
+            },
+            {
+              title: "Turn on the booking widget",
+              body: "In Booking Settings, use the \"Open theme editor → App embeds\" link and switch the EasyBooking app embed on. It shows up automatically on every bookable product page — no manual placement needed.",
+              cta: "Go to Booking Settings",
+              href: "/app/booking-settings",
+            },
+            {
+              title: "Turn on booking emails",
+              body: "Configure SMTP in Settings → SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
+              cta: "Go to Settings",
+              href: "/app/settings",
+            },
+            {
+              title: "Manage bookings as they come in",
+              body: "View, search, reschedule, or cancel bookings from Bookings. You can also add bookings manually from the New Booking tab there. If two customers ever land in the same slot, it's flagged as Overbooked so you can review and resolve it — you'll see a banner for that at the top of this page when it happens.",
+              cta: "Go to Bookings",
+              href: "/app/bookings",
+            },
+          ].map((step, index, all) => (
+            <div key={step.title}>
+              <h3 style={guideStyles.stepTitle}>
+                {index + 1}. {step.title}
+              </h3>
+              <p style={guideStyles.stepDescription}>{step.body}</p>
+              <a href={step.href} style={guideStyles.stepButton}>
+                {step.cta}
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 3.5L10.5 8L6 12.5" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+              {index < all.length - 1 && <hr style={guideStyles.divider} />}
+            </div>
+          ))}
+        </div>
 
       <s-section heading="At a glance">
         <s-stack direction="inline" gap="loose">
