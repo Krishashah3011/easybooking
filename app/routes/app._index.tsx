@@ -1,3 +1,4 @@
+import { useState, Fragment } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -7,9 +8,10 @@ import { countBookings } from "../models/booking.server";
 import { getSmtpSettings } from "../models/smtpSettings.server";
 import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from "../models/bookingLocation.server";
 
-const DIVIDER = "#E1E1E1";
-const TEXT_BLACK = "#1A1A1A";
-const TEXT_MUTED = "#6B6B6B";
+const DIVIDER = "#DBDBDB";
+const TEXT_BLACK = "#000000";
+const TEXT_MUTED = "#373737";
+const BLUE = "#073E74";
 
 const guideStyles: Record<string, React.CSSProperties> = {
   card: {
@@ -17,14 +19,57 @@ const guideStyles: Record<string, React.CSSProperties> = {
     border: "1px solid #E5E5E5",
     borderRadius: "8px",
     padding: "16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    marginBottom: "16px",
+  },
+  headerRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    width: "100%",
+    background: "none",
+    border: "none",
+    padding: 0,
+    margin: 0,
+    cursor: "pointer",
+    textAlign: "left",
+    font: "inherit",
+  },
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  infoIcon: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "20px",
+    height: "20px",
+    minWidth: "20px",
+    borderRadius: "50%",
+    background: BLUE,
+    color: "#FFFFFF",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 700,
+    fontSize: "12px",
+    lineHeight: "20px",
+  },
+  chevron: {
+    flexShrink: 0,
+    transition: "transform 150ms ease",
   },
   sectionHeading: {
     fontFamily: "Inter, sans-serif",
-    fontWeight: 700,
+    fontWeight: 600,
     fontSize: "18px",
     lineHeight: "22px",
+    letterSpacing: "0.02em",
     color: TEXT_BLACK,
-    margin: "0 0 4px",
+    margin: 0,
   },
   intro: {
     fontFamily: "Inter, sans-serif",
@@ -32,48 +77,135 @@ const guideStyles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
     lineHeight: "20px",
     color: TEXT_MUTED,
-    margin: "0 0 16px",
+    margin: 0,
   },
   divider: {
     border: "none",
     borderTop: `1px solid ${DIVIDER}`,
-    margin: "20px 0",
+    margin: 0,
     width: "100%",
+  },
+  stepsList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+  stepBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
   },
   stepTitle: {
     fontFamily: "Inter, sans-serif",
-    fontWeight: 700,
-    fontSize: "16px",
-    lineHeight: "20px",
+    fontWeight: 600,
+    fontSize: "14px",
+    lineHeight: "17px",
     color: TEXT_BLACK,
     margin: 0,
   },
   stepDescription: {
     fontFamily: "Inter, sans-serif",
     fontWeight: 400,
-    fontSize: "14px",
-    lineHeight: "20px",
+    fontSize: "12px",
+    lineHeight: "15px",
     color: TEXT_MUTED,
-    margin: "6px 0 16px",
+    margin: 0,
+    maxWidth: "606px",
   },
   stepButton: {
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
-    padding: "10px 18px",
+    padding: "10px 16px",
     background: "#000000",
-    borderRadius: "8px",
+    borderRadius: "10px",
     color: "#FFFFFF",
     fontFamily: "Inter, sans-serif",
-    fontWeight: 700,
-    fontSize: "15px",
-    lineHeight: "19px",
+    fontWeight: 600,
+    fontSize: "14px",
+    lineHeight: "17px",
     border: "none",
     cursor: "pointer",
     whiteSpace: "nowrap",
     textDecoration: "none",
+    width: "fit-content",
+  },
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: "12px",
+  },
+  statCard: {
+    background: "#FAFAFA",
+    border: "1px solid #E5E5E5",
+    borderRadius: "8px",
+    padding: "16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  },
+  statValue: {
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 700,
+    fontSize: "28px",
+    lineHeight: "32px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  statLabel: {
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 500,
+    fontSize: "13px",
+    lineHeight: "18px",
+    color: TEXT_MUTED,
+    margin: 0,
   },
 };
+
+const GUIDE_STEPS = [
+  {
+    title: "Enable booking on your products",
+    body: "Go to Products and turn on booking for each product customers should be able to book. You can override the shop's default schedule per product if needed.",
+    cta: "Go to Products",
+    href: "/app/products",
+  },
+  {
+    title: "Set your booking schedule",
+    body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, and how many bookings are allowed per slot.",
+    cta: "Go to Booking Settings",
+    href: "/app/booking-settings",
+  },
+  {
+    title: "Block off days you're unavailable",
+    body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product.",
+    cta: "Go to Blackout Dates",
+    href: "/app/booking-settings/blackout-dates",
+  },
+  {
+    title: "Collect extra info at booking time (optional)",
+    body: "Add fields like notes, preferences, or special requests on the Custom Fields tab. Customers fill these in when booking, and you'll see their answers on each booking.",
+    cta: "Go to Custom Fields",
+    href: "/app/booking-settings/custom-fields",
+  },
+  {
+    title: "Turn on the booking widget",
+    body: "In Booking Settings, use the \"Open theme editor → App embeds\" link and switch the EasyBooking app embed on. It shows up automatically on every bookable product page — no manual placement needed.",
+    cta: "Go to Booking Settings",
+    href: "/app/booking-settings",
+  },
+  {
+    title: "Turn on booking emails",
+    body: "Configure SMTP in Settings → SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
+    cta: "Go to Settings",
+    href: "/app/settings",
+  },
+  {
+    title: "Manage bookings as they come in",
+    body: "View, search, reschedule, or cancel bookings from Bookings. You can also add bookings manually from the New Booking tab there. If two customers ever land in the same slot, it's flagged as Overbooked so you can review and resolve it — you'll see a banner for that at the top of this page when it happens.",
+    cta: "Go to Bookings",
+    href: "/app/bookings",
+  },
+];
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -119,6 +251,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function Dashboard() {
   const { stats, smtpConfigured, hasLocations } = useLoaderData<typeof loader>();
+  const [guideOpen, setGuideOpen] = useState(true);
 
   const setupSteps = [
     {
@@ -176,93 +309,87 @@ export default function Dashboard() {
       )}
 
       <div style={guideStyles.card}>
-        <h2 style={guideStyles.sectionHeading}>App guide</h2>
-        <p style={guideStyles.intro}>
-          A quick walkthrough of how to get bookings running end to end.
-        </p>
-        <hr style={guideStyles.divider} />
-        {[
-            {
-              title: "Enable booking on your products",
-              body: "Go to Products and turn on booking for each product customers should be able to book. You can override the shop's default schedule per product if needed.",
-              cta: "Go to Products",
-              href: "/app/products",
-            },
-            {
-              title: "Set your booking schedule",
-              body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, and how many bookings are allowed per slot.",
-              cta: "Go to Booking Settings",
-              href: "/app/booking-settings",
-            },
-            {
-              title: "Block off days you're unavailable",
-              body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product.",
-              cta: "Go to Blackout Dates",
-              href: "/app/booking-settings/blackout-dates",
-            },
-            {
-              title: "Collect extra info at booking time (optional)",
-              body: "Add fields like notes, preferences, or special requests on the Custom Fields tab. Customers fill these in when booking, and you'll see their answers on each booking.",
-              cta: "Go to Custom Fields",
-              href: "/app/booking-settings/custom-fields",
-            },
-            {
-              title: "Turn on the booking widget",
-              body: "In Booking Settings, use the \"Open theme editor → App embeds\" link and switch the EasyBooking app embed on. It shows up automatically on every bookable product page — no manual placement needed.",
-              cta: "Go to Booking Settings",
-              href: "/app/booking-settings",
-            },
-            {
-              title: "Turn on booking emails",
-              body: "Configure SMTP in Settings → SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
-              cta: "Go to Settings",
-              href: "/app/settings",
-            },
-            {
-              title: "Manage bookings as they come in",
-              body: "View, search, reschedule, or cancel bookings from Bookings. You can also add bookings manually from the New Booking tab there. If two customers ever land in the same slot, it's flagged as Overbooked so you can review and resolve it — you'll see a banner for that at the top of this page when it happens.",
-              cta: "Go to Bookings",
-              href: "/app/bookings",
-            },
-          ].map((step, index, all) => (
-            <div key={step.title}>
-              <h3 style={guideStyles.stepTitle}>
-                {index + 1}. {step.title}
-              </h3>
-              <p style={guideStyles.stepDescription}>{step.body}</p>
-              <a href={step.href} style={guideStyles.stepButton}>
-                {step.cta}
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M6 3.5L10.5 8L6 12.5" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-              {index < all.length - 1 && <hr style={guideStyles.divider} />}
-            </div>
-          ))}
-        </div>
+        <h2 style={{ margin: 0 }}>
+          <button
+            type="button"
+            onClick={() => setGuideOpen((open) => !open)}
+            aria-expanded={guideOpen}
+            style={guideStyles.headerRow}
+          >
+            <span style={guideStyles.headerLeft}>
+              <span style={guideStyles.infoIcon} aria-hidden="true">i</span>
+              <span style={guideStyles.sectionHeading}>App guide</span>
+            </span>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{
+                ...guideStyles.chevron,
+                transform: guideOpen ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            >
+              <path
+                d="M4 6l4 4 4-4"
+                stroke={TEXT_BLACK}
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </h2>
 
-      <s-section heading="At a glance">
-        <s-stack direction="inline" gap="loose">
-          <s-box padding="base" borderWidth="base" borderRadius="base">
-            <s-stack direction="block" gap="none">
-              <s-heading>{stats.todayCount}</s-heading>
-              <s-text tone="subdued">Bookings today</s-text>
-            </s-stack>
-          </s-box>
-          <s-box padding="base" borderWidth="base" borderRadius="base">
-            <s-stack direction="block" gap="none">
-              <s-heading>{stats.weekCount}</s-heading>
-              <s-text tone="subdued">Bookings this week</s-text>
-            </s-stack>
-          </s-box>
-          <s-box padding="base" borderWidth="base" borderRadius="base">
-            <s-stack direction="block" gap="none">
-              <s-heading>{stats.enabledProductCount}</s-heading>
-              <s-text tone="subdued">Products enabled for booking</s-text>
-            </s-stack>
-          </s-box>
-        </s-stack>
-      </s-section>
+        {guideOpen && (
+          <>
+            <p style={guideStyles.intro}>
+              A quick walkthrough of how to get bookings running end to end.
+            </p>
+            <hr style={guideStyles.divider} />
+            <div style={guideStyles.stepsList}>
+              {GUIDE_STEPS.map((step, index) => (
+                <Fragment key={step.title}>
+                  <div style={guideStyles.stepBlock}>
+                    <h3 style={guideStyles.stepTitle}>
+                      {index + 1}. {step.title}
+                    </h3>
+                    <p style={guideStyles.stepDescription}>{step.body}</p>
+                    <a href={step.href} style={guideStyles.stepButton}>
+                      {step.cta}
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 3.5L10.5 8L6 12.5" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </a>
+                  </div>
+                  {index < GUIDE_STEPS.length - 1 && <hr style={guideStyles.divider} />}
+                </Fragment>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div style={guideStyles.card}>
+        <h2 style={guideStyles.sectionHeading}>At a glance</h2>
+        <p style={guideStyles.intro}>A quick snapshot of your booking activity.</p>
+        <hr style={guideStyles.divider} />
+        <div style={guideStyles.statsGrid}>
+          <div style={guideStyles.statCard}>
+            <p style={guideStyles.statValue}>{stats.todayCount}</p>
+            <p style={guideStyles.statLabel}>Bookings today</p>
+          </div>
+          <div style={guideStyles.statCard}>
+            <p style={guideStyles.statValue}>{stats.weekCount}</p>
+            <p style={guideStyles.statLabel}>Bookings in the next 7 days</p>
+          </div>
+          <div style={guideStyles.statCard}>
+            <p style={guideStyles.statValue}>{stats.enabledProductCount}</p>
+            <p style={guideStyles.statLabel}>Products enabled for booking</p>
+          </div>
+        </div>
+      </div>
     </s-page>
   );
 }
