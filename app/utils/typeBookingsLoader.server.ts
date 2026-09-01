@@ -38,7 +38,7 @@ export async function loadTypeBookings(
     bookings,
 
     products: products
-      .filter((p) => p.bookingType === bookingType)
+      .filter((p) => p.isEnabled && p.bookingType === bookingType)
       .map((p) => ({ id: p.id, title: p.productTitle })),
     customFieldLabels: Object.fromEntries(
       customFields.map((f) => [f.fieldKey, f.label]),

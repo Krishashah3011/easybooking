@@ -38,7 +38,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return {
     bookings,
-    products: products.map((p) => ({ id: p.id, title: p.productTitle })),
+    products: products
+      .filter((p) => p.isEnabled)
+      .map((p) => ({ id: p.id, title: p.productTitle })),
     customFieldLabels: Object.fromEntries(
       customFields.map((f) => [f.fieldKey, f.label]),
     ) as Record<string, string>,

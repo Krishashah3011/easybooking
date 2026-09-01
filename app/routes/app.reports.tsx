@@ -23,7 +23,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return {
     report,
-    products: products.map((p) => ({ id: p.id, title: p.productTitle })),
+    products: products
+      .filter((p) => p.isEnabled)
+      .map((p) => ({ id: p.id, title: p.productTitle })),
     filters: {
       bookableProductId: bookableProductId ?? "",
       dateFrom: dateFrom ?? "",
