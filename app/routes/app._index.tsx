@@ -6,6 +6,7 @@ import { listBookableProducts } from "../models/bookableProduct.server";
 import { countBookings } from "../models/booking.server";
 import { getSmtpSettings } from "../models/smtpSettings.server";
 import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from "../models/bookingLocation.server";
+import { getOrCreateShopSettings } from "../models/shopSettings.server";
 import GetStartedGuide, { type GuideStep } from "../components/GetStartedGuide";
 
 const DIVIDER = "#DBDBDB";
@@ -80,51 +81,66 @@ const guideStyles: Record<string, React.CSSProperties> = {
 
 const BOOKING_WIDGET_BLOCK_HANDLE = "booking-widget";
 
-function buildGuideSteps(shop: string, apiKey: string): GuideStep[] {
+function buildGuideSteps(
+  shop: string,
+  apiKey: string,
+  registered: boolean,
+): GuideStep[] {
+  const lockedSteps: GuideStep[] = [
+    {
+      title: "Turn on the booking widget",
+      body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page — no manual placement needed.",
+      cta: "Activate App Embed",
+      href: `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${apiKey}/${BOOKING_WIDGET_BLOCK_HANDLE}`,
+      external: true,
+    },
+    {
+      title: "Enable booking on your products",
+      body: "Go to Products and turn on booking for each product customers should be able to book. You can override the shop's default schedule per product if needed.",
+      cta: "Go to Products",
+      href: "/app/products",
+    },
+    {
+      title: "Set your booking schedule",
+      body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, and how many bookings are allowed per slot.",
+      cta: "Go to Booking Settings",
+      href: "/app/booking-settings",
+    },
+    {
+      title: "Block off days you're unavailable",
+      body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product.",
+      cta: "Go to Blackout Dates",
+      href: "/app/booking-settings/blackout-dates",
+    },
+    {
+      title: "Collect extra info at booking time (optional)",
+      body: "Add fields like notes, preferences, or special requests on the Custom Fields tab. Customers fill these in when booking, and you'll see their answers on each booking.",
+      cta: "Go to Custom Fields",
+      href: "/app/booking-settings/custom-fields",
+    },
+    {
+      title: "Turn on booking emails",
+      body: "Configure SMTP in Settings → SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
+      cta: "Go to Settings",
+      href: "/app/settings",
+    },
+    {
+      title: "Manage bookings as they come in",
+      body: "View, search, reschedule, or cancel bookings from Bookings. You can also add bookings manually from the New Booking tab there. If two customers ever land in the same slot, it's flagged as Overbooked so you can review and resolve it — you'll see a banner for that at the top of this page when it happens.",
+      cta: "Go to Bookings",
+      href: "/app/bookings",
+    },
+  ].map((step) => ({ ...step, locked: !registered }));
+
   return [
-  {
-    title: "Turn on the booking widget",
-    body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page — no manual placement needed.",
-    cta: "Activate App Embed",
-    href: `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${apiKey}/${BOOKING_WIDGET_BLOCK_HANDLE}`,
-    external: true,
-  },
-  {
-    title: "Enable booking on your products",
-    body: "Go to Products and turn on booking for each product customers should be able to book. You can override the shop's default schedule per product if needed.",
-    cta: "Go to Products",
-    href: "/app/products",
-  },
-  {
-    title: "Set your booking schedule",
-    body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, and how many bookings are allowed per slot.",
-    cta: "Go to Booking Settings",
-    href: "/app/booking-settings",
-  },
-  {
-    title: "Block off days you're unavailable",
-    body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product.",
-    cta: "Go to Blackout Dates",
-    href: "/app/booking-settings/blackout-dates",
-  },
-  {
-    title: "Collect extra info at booking time (optional)",
-    body: "Add fields like notes, preferences, or special requests on the Custom Fields tab. Customers fill these in when booking, and you'll see their answers on each booking.",
-    cta: "Go to Custom Fields",
-    href: "/app/booking-settings/custom-fields",
-  },
-  {
-    title: "Turn on booking emails",
-    body: "Configure SMTP in Settings → SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
-    cta: "Go to Settings",
-    href: "/app/settings",
-  },
-  {
-    title: "Manage bookings as they come in",
-    body: "View, search, reschedule, or cancel bookings from Bookings. You can also add bookings manually from the New Booking tab there. If two customers ever land in the same slot, it's flagged as Overbooked so you can review and resolve it — you'll see a banner for that at the top of this page when it happens.",
-    cta: "Go to Bookings",
-    href: "/app/bookings",
-  },
+    {
+      title: "Create your account",
+      body: "Register with your name and email to unlock the rest of EasyBooking. Every other page stays locked until this is done.",
+      cta: "Register",
+      href: "/app/account",
+      done: registered,
+    },
+    ...lockedSteps,
   ];
 }
 
@@ -140,6 +156,24 @@ function endOfWeekISO(): string {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
+  const shopSettings = await getOrCreateShopSettings(session.shop);
+  const shared = {
+    shop: session.shop,
+    apiKey: process.env.SHOPIFY_API_KEY ?? "",
+    registered: shopSettings.registered,
+  };
+
+  // Unregistered shops only see the user guide, so skip the rest of the
+  // dashboard queries until they've registered.
+  if (!shopSettings.registered) {
+    return {
+      stats: { todayCount: 0, weekCount: 0, overbookedCount: 0, enabledProductCount: 0 },
+      smtpConfigured: false,
+      hasLocations: false,
+      ...shared,
+    };
+  }
+
   const today = todayISO();
   const weekEnd = endOfWeekISO();
 
@@ -167,14 +201,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     stats: { todayCount, weekCount, overbookedCount, enabledProductCount },
     smtpConfigured,
     hasLocations: enabledLocations.length > 0,
-    shop: session.shop,
-    apiKey: process.env.SHOPIFY_API_KEY ?? "",
+    ...shared,
   };
 };
 
 export default function Dashboard() {
-  const { stats, smtpConfigured, hasLocations, shop, apiKey } = useLoaderData<typeof loader>();
-  const guideSteps = buildGuideSteps(shop, apiKey);
+  const { stats, smtpConfigured, hasLocations, shop, apiKey, registered } =
+    useLoaderData<typeof loader>();
+  const guideSteps = buildGuideSteps(shop, apiKey, registered);
 
   const setupSteps = [
     {
@@ -200,35 +234,50 @@ export default function Dashboard() {
 
   return (
     <s-page heading="Dashboard">
-      {stats.overbookedCount > 0 && (
-        <s-banner tone="critical" heading="Bookings need review">
+      {!registered && (
+        <s-banner tone="info" heading="Register to unlock EasyBooking">
           <s-paragraph>
-            {stats.overbookedCount === 1
-              ? "1 booking landed in an already-full slot and needs a look."
-              : `${stats.overbookedCount} bookings landed in already-full slots and need a look.`}
+            Create your account with a name and email to unlock every page
+            of the app. Until then, this dashboard only shows the user
+            guide below.
           </s-paragraph>
-          <s-link href="/app/bookings?status=OVERBOOKED">
-            Review overbooked bookings
-          </s-link>
+          <s-link href="/app/account">Go to Account</s-link>
         </s-banner>
       )}
 
-      {remainingSteps.length > 0 && (
-        <s-section heading="Get set up">
-          <s-stack direction="block" gap="base">
-            {remainingSteps.map((step) => (
-              <s-stack
-                key={step.label}
-                direction="inline"
-                gap="base"
-                alignItems="center"
-              >
-                <s-paragraph>{step.label}</s-paragraph>
-                <s-link href={step.href}>{step.cta}</s-link>
+      {registered && (
+        <>
+          {stats.overbookedCount > 0 && (
+            <s-banner tone="critical" heading="Bookings need review">
+              <s-paragraph>
+                {stats.overbookedCount === 1
+                  ? "1 booking landed in an already-full slot and needs a look."
+                  : `${stats.overbookedCount} bookings landed in already-full slots and need a look.`}
+              </s-paragraph>
+              <s-link href="/app/bookings?status=OVERBOOKED">
+                Review overbooked bookings
+              </s-link>
+            </s-banner>
+          )}
+
+          {remainingSteps.length > 0 && (
+            <s-section heading="Get set up">
+              <s-stack direction="block" gap="base">
+                {remainingSteps.map((step) => (
+                  <s-stack
+                    key={step.label}
+                    direction="inline"
+                    gap="base"
+                    alignItems="center"
+                  >
+                    <s-paragraph>{step.label}</s-paragraph>
+                    <s-link href={step.href}>{step.cta}</s-link>
+                  </s-stack>
+                ))}
               </s-stack>
-            ))}
-          </s-stack>
-        </s-section>
+            </s-section>
+          )}
+        </>
       )}
 
       <GetStartedGuide
@@ -237,25 +286,27 @@ export default function Dashboard() {
         steps={guideSteps}
       />
 
-      <div style={guideStyles.card}>
-        <h2 style={guideStyles.sectionHeading}>At a glance</h2>
-        <p style={guideStyles.intro}>A quick snapshot of your booking activity.</p>
-        <hr style={guideStyles.divider} />
-        <div style={guideStyles.statsGrid}>
-          <div style={guideStyles.statCard}>
-            <p style={guideStyles.statValue}>{stats.todayCount}</p>
-            <p style={guideStyles.statLabel}>Bookings today</p>
-          </div>
-          <div style={guideStyles.statCard}>
-            <p style={guideStyles.statValue}>{stats.weekCount}</p>
-            <p style={guideStyles.statLabel}>Bookings in the next 7 days</p>
-          </div>
-          <div style={guideStyles.statCard}>
-            <p style={guideStyles.statValue}>{stats.enabledProductCount}</p>
-            <p style={guideStyles.statLabel}>Products enabled for booking</p>
+      {registered && (
+        <div style={guideStyles.card}>
+          <h2 style={guideStyles.sectionHeading}>At a glance</h2>
+          <p style={guideStyles.intro}>A quick snapshot of your booking activity.</p>
+          <hr style={guideStyles.divider} />
+          <div style={guideStyles.statsGrid}>
+            <div style={guideStyles.statCard}>
+              <p style={guideStyles.statValue}>{stats.todayCount}</p>
+              <p style={guideStyles.statLabel}>Bookings today</p>
+            </div>
+            <div style={guideStyles.statCard}>
+              <p style={guideStyles.statValue}>{stats.weekCount}</p>
+              <p style={guideStyles.statLabel}>Bookings in the next 7 days</p>
+            </div>
+            <div style={guideStyles.statCard}>
+              <p style={guideStyles.statValue}>{stats.enabledProductCount}</p>
+              <p style={guideStyles.statLabel}>Products enabled for booking</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </s-page>
   );
 }
