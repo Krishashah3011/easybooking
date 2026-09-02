@@ -36,7 +36,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     overflow: "auto",
   },
   heading: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "18px",
     lineHeight: "normal",
@@ -64,7 +64,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     gap: "8px",
   },
   filterLabel: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     color: TEXT_BLACK,
@@ -77,7 +77,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     border: "1px solid #DBDBDB",
     borderRadius: "4px",
     padding: "7px 8px",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     color: TEXT_BLACK,
   },
@@ -89,7 +89,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     border: "1px solid #E9E9EA",
     borderRadius: "4px",
     padding: "5px 10px",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     color: TEXT_BLACK,
   },
@@ -101,7 +101,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     border: "none",
     borderRadius: "10px",
     padding: "0 16px",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
     cursor: "pointer",
@@ -137,7 +137,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
   },
   statTileLabel: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     color: TEXT_BLACK,
@@ -149,7 +149,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
   },
   statTileValue: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 700,
     fontSize: "28px",
     letterSpacing: "0.02em",
@@ -175,14 +175,14 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     width: "100%",
   },
   barRowLabel: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     color: TEXT_BLACK,
     margin: 0,
   },
   barRowMeta: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     color: MUTED_GREY,
@@ -205,7 +205,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     background: ANALYTICS_ACCENT,
   },
   emptyState: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     color: MUTED_GREY,
     textAlign: "center",
@@ -505,7 +505,7 @@ export default function Dashboard() {
   const remainingSteps = setupSteps.filter((s) => !s.done);
 
   return (
-    <s-page heading="Dashboard" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
+    <s-page heading="Dashboard" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto", fontFamily: "Inter" }}>
       {!registered && (
         <s-banner tone="info" heading="Register to unlock EasyBooking">
           <s-paragraph>

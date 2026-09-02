@@ -177,7 +177,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     outline: "none",
     background: "transparent",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
   },
   editBtn: {
     background: "none",
@@ -258,7 +258,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     outline: "none",
     background: "transparent",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
   },
   registerButtonWrap: {
     display: "flex",
@@ -465,7 +465,7 @@ export default function Account() {
 
   if (!registered) {
     return (
-      <s-page heading="Account" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
+      <s-page heading="Account" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto", fontFamily: "Inter" }}>
         <div style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", margin: "0 auto" }}>
           <CreateAccountForm fetcher={fetcher} saving={saving} />
         </div>
@@ -474,7 +474,7 @@ export default function Account() {
   }
 
   return (
-    <s-page heading="Account" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
+    <s-page heading="Account" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto", fontFamily: "Inter" }}>
       <div style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", margin: "0 auto" }}>
       <div style={styles.outerCard}>
         <div style={styles.heading}>Account Information</div>
