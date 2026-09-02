@@ -35,13 +35,14 @@ export const styles: Record<string, React.CSSProperties> = {
   },
   tabBar: {
     display: "flex",
-    gap: "10px",
+    gap: "8px",
     padding: "8px",
     border: `1px solid ${BORDER}`,
     borderRadius: "10px",
     background: "#fff",
     marginBottom: "16px",
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
+    overflowX: "auto",
   },
   innerCard: {
     border: `1px solid ${BORDER}`,
@@ -193,12 +194,12 @@ export const styles: Record<string, React.CSSProperties> = {
 
 export function tabButtonStyle(active: boolean): React.CSSProperties {
   return {
-    padding: "10px 20px",
+    padding: "8px 14px",
     borderRadius: "6px",
     border: "none",
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "14px",
+    fontSize: "13px",
     cursor: "pointer",
     background: active ? BLUE : "#ECECEC",
     color: active ? "#fff" : TEXT_DARK,
@@ -206,6 +207,7 @@ export function tabButtonStyle(active: boolean): React.CSSProperties {
     display: "inline-flex",
     alignItems: "center",
     whiteSpace: "nowrap",
+    flexShrink: 0,
   };
 }
 

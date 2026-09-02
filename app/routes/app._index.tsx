@@ -531,7 +531,7 @@ export default function Dashboard() {
   const remainingSteps = setupSteps.filter((s) => !s.done);
 
   return (
-    <s-page heading="Dashboard" inlineSize="950px" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Dashboard" inlineSize="large" style={{ fontFamily: "Inter" }}>
       {!registered && (
         <s-banner tone="info" heading="Register to unlock EasyBooking">
           <s-paragraph>
@@ -678,7 +678,7 @@ export default function Dashboard() {
               <StatTile
                 label="Cancellation Rate"
                 value={`${report.cancellationRatePercent}%`}
-                href="/app/reports"
+                href="/app/bookings?status=CANCELLED"
               />
             </div>
           </div>

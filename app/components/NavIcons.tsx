@@ -155,13 +155,3 @@ export function BookingsIcon({ className, active }: IconProps) {
     </NavBadge>
   );
 }
-
-export function ReportsIcon({ className, active }: IconProps) {
-  return (
-    <NavBadge active={active} className={className}>
-      <PlaceholderGlyph>
-        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
-      </PlaceholderGlyph>
-    </NavBadge>
-  );
-}
