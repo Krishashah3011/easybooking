@@ -727,7 +727,7 @@ export default function NewBookingPage() {
 
   if (products.length === 0) {
     return (
-      <s-page heading="New Booking" inlineSize="large">
+      <s-page heading="New Booking" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
         <s-section>
           <s-paragraph>
             No products have booking enabled yet. Enable booking on a
@@ -827,7 +827,7 @@ export default function NewBookingPage() {
   );
 
   return (
-    <s-page heading="New Booking" inlineSize="large">
+    <s-page heading="New Booking" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
       <s-section heading="Product">
         <s-select
           label="Product"

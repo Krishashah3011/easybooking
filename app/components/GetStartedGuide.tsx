@@ -80,6 +80,10 @@ const LockIcon = () => (
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
+    width: "950px",
+    maxWidth: "950px",
+    boxSizing: "border-box",
+    marginInline: "auto",
     background: "#FFFFFF",
     border: `1px solid ${BORDER}`,
     borderRadius: "12px",
@@ -227,7 +231,17 @@ export default function GetStartedGuide({
   const [open, setOpen] = useState(true);
 
   return (
-    <div style={styles.card}>
+    <div
+      style={{
+        ...styles.card,
+        height: open ? "auto" : "56px",
+        padding: open ? styles.card.padding : "8px 20px",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: open ? "flex-start" : "center",
+      }}
+    >
       <div
         style={{ ...styles.headerRow, cursor: "pointer" }}
         onClick={() => setOpen(!open)}

@@ -296,7 +296,7 @@ export default function BookableProductPage() {
   };
 
   return (
-    <s-page heading={productTitle} inlineSize="large">
+    <s-page heading={productTitle} inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
       <s-link slot="breadcrumb-actions" href="/app/products">
         Products
       </s-link>

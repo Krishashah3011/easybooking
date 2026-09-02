@@ -37,10 +37,10 @@ export default function App() {
 
   return (
     <AppProvider apiKey={apiKey} embedded>
-      <div>
+      <>
         <AppTopNav />
         <Outlet />
-      </div>
+      </>
     </AppProvider>
   );
 }
