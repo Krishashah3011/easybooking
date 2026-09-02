@@ -57,8 +57,15 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap",
   },
   filterField: {
-    flex: "1 1 200px",
+    flex: "1 1 0",
     minWidth: "160px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  productFilterField: {
+    flex: "2 1 0",
+    minWidth: "260px",
     display: "flex",
     flexDirection: "column",
     gap: "8px",
@@ -116,12 +123,12 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     display: "flex",
     gap: "18px",
     width: "100%",
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
   },
   statTile: {
     flex: "1 1 0",
-    minWidth: "180px",
-    height: "87px",
+    minWidth: 0,
+    height: "88px",
     boxSizing: "border-box",
     background: "#FFFFFF",
     border: `1px solid ${TRACK_GREY}`,
@@ -235,14 +242,16 @@ function StatTile({
   value,
   href,
   icon = "/abandoned-cart-icon.svg",
+  width,
 }: {
   label: string;
   value: string | number;
   href: string;
   icon?: string;
+  width?: string;
 }) {
   return (
-    <a href={href} style={analyticsStyles.statTile}>
+    <a href={href} style={width ? { ...analyticsStyles.statTile, width } : analyticsStyles.statTile}>
       <div style={analyticsStyles.statTileHeader}>
         <p style={analyticsStyles.statTileLabel}>{label}</p>
         <img src={icon} alt="" width={20} height={20} />
@@ -551,7 +560,7 @@ export default function Dashboard() {
           <div style={analyticsStyles.card}>
             <h2 style={analyticsStyles.heading}>Store Analytics</h2>
             <div style={analyticsStyles.filterRow}>
-              <div style={analyticsStyles.filterField}>
+              <div style={analyticsStyles.productFilterField}>
                 <label style={analyticsStyles.filterLabel}>Products</label>
                 <select
                   value={productId}
