@@ -316,7 +316,7 @@ export default function BookableProductPage() {
               Booking needs at least one location so every slot has a
               timezone to anchor to.
             </s-paragraph>
-            <s-link href="/app/booking-settings/locations">
+            <s-link href="/app/settings/locations">
               Go to Locations
             </s-link>
           </s-banner>

@@ -110,7 +110,7 @@ export default function BookingSettingsPage() {
   };
 
   return (
-    <s-page heading="Booking Settings" inlineSize="large">
+    <>
       <s-button
         slot="primary-action"
         variant="primary"
@@ -276,7 +276,7 @@ export default function BookingSettingsPage() {
           }
         ></s-text-field>
       </s-section>
-    </s-page>
+    </>
   );
 }
 

@@ -326,13 +326,13 @@ function buildGuideSteps(
       title: "Set your booking schedule",
       body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, how many bookings are allowed per slot, and set up your business locations.",
       cta: "Go to Booking Settings",
-      href: "/app/booking-settings",
+      href: "/app/settings/booking",
     },
     {
       title: "Block off unavailable days & collect extra info (optional)",
       body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product. You can also collect extra info like notes or special requests at booking time using Custom Fields — you'll see customers' answers on each booking.",
       cta: "Go to Blackout Dates",
-      href: "/app/booking-settings/blackout-dates",
+      href: "/app/settings/blackout-dates",
     },
     {
       title: "Turn on booking emails",
@@ -479,7 +479,7 @@ export default function Dashboard() {
     {
       done: hasLocations,
       label: "Add at least one location so booking times use the right timezone",
-      href: "/app/booking-settings/locations",
+      href: "/app/settings/locations",
       cta: "Go to Locations",
     },
     {

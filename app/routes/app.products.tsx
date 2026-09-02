@@ -135,7 +135,7 @@ export default function BookingProductsPage() {
               Add at least one location before enabling booking on a
               product — every slot needs one to know its timezone.
             </s-paragraph>
-            <s-link href="/app/booking-settings/locations">
+            <s-link href="/app/settings/locations">
               Go to Locations
             </s-link>
           </s-banner>
