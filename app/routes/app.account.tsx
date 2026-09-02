@@ -461,7 +461,7 @@ export default function Account() {
 
   if (!registered) {
     return (
-      <s-page heading="Account" style={{ fontFamily: "Inter" }}>
+      <s-page heading="Account" inlineSize="950px" style={{ fontFamily: "Inter" }}>
         <div style={{ maxWidth: "950px", margin: "0 auto" }}>
           <CreateAccountForm fetcher={fetcher} saving={saving} />
         </div>
@@ -470,7 +470,7 @@ export default function Account() {
   }
 
   return (
-    <s-page heading="Account" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Account" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <div style={{ maxWidth: "950px", margin: "0 auto" }}>
       <div style={styles.outerCard}>
         <div style={styles.heading}>Account Information</div>

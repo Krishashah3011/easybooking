@@ -14,7 +14,7 @@ const TABS = [
 
 export default function SettingsLayout() {
   return (
-    <s-page heading="Settings" inlineSize="large" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Settings" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <div style={styles.outerCard}>
         <div style={styles.headerRow}>
           <h1 style={styles.heading}>Configurations</h1>

@@ -498,7 +498,7 @@ export default function Dashboard() {
   const remainingSteps = setupSteps.filter((s) => !s.done);
 
   return (
-    <s-page heading="Dashboard" inlineSize="large" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Dashboard" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       {!registered && (
         <s-banner tone="info" heading="Register to unlock EasyBooking">
           <s-paragraph>

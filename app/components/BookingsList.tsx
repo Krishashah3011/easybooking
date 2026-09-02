@@ -598,7 +598,7 @@ export function BookingsListPage({
   };
 
   return (
-    <s-page heading={heading} inlineSize="large">
+    <s-page heading={heading} inlineSize="950px">
       <s-section accessibilityLabel="Filters">
         <s-stack
           direction="inline"
