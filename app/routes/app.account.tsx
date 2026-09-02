@@ -213,7 +213,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   registerHeading: {
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: 600,
     color: "#000",
     marginBottom: "20px",
@@ -226,6 +226,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "20px",
+  },
+  registerRow: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
   },
   registerFieldGroup: {
     display: "flex",
@@ -272,9 +277,96 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   registerError: {
+    fontFamily: "Inter",
     fontSize: "13px",
     color: "#C0392B",
     margin: 0,
+  },
+  registerFieldError: {
+    fontFamily: "Inter",
+    fontSize: "12px",
+    color: "#C0392B",
+    margin: 0,
+  },
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0, 0, 0, 0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  modalCard: {
+    background: "#fff",
+    borderRadius: "8px",
+    width: "700px",
+    maxWidth: "90vw",
+    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
+    overflow: "hidden",
+  },
+  modalHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "20px 24px",
+    borderBottom: "1px solid #e5e5e5",
+  },
+  modalTitle: {
+    fontFamily: "Inter",
+    fontSize: "18px",
+    fontWeight: 700,
+    color: "#000",
+    margin: 0,
+  },
+  modalCloseBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: BLUE,
+  },
+  modalBody: {
+    padding: "24px",
+    borderBottom: "1px solid #e5e5e5",
+  },
+  modalBodyText: {
+    fontFamily: "Inter",
+    fontSize: "14px",
+    lineHeight: "20px",
+    color: "#333",
+    margin: 0,
+  },
+  modalFooter: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: "12px",
+    padding: "16px 24px",
+  },
+  modalCancelBtn: {
+    fontFamily: "Inter",
+    background: "#fff",
+    border: "1px solid #dbdbdb",
+    borderRadius: "6px",
+    padding: "10px 18px",
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#000",
+    cursor: "pointer",
+  },
+  modalDeleteBtn: {
+    fontFamily: "Inter",
+    background: "#D9401F",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 18px",
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#fff",
+    cursor: "pointer",
   },
 };
 
@@ -353,13 +445,22 @@ function CreateAccountForm({
 }) {
   const [usernameDraft, setUsernameDraft] = useState("");
   const [emailDraft, setEmailDraft] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const error =
     fetcher.data && "error" in fetcher.data ? fetcher.data.error : undefined;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!usernameDraft.trim() || !emailDraft.trim()) return;
+
+    const usernameEmpty = !usernameDraft.trim();
+    const emailEmpty = !emailDraft.trim();
+
+    setUsernameError(usernameEmpty ? "Username is required" : "");
+    setEmailError(emailEmpty ? "Email is required" : "");
+
+    if (usernameEmpty || emailEmpty) return;
 
     fetcher.submit(
       { intent: "register", username: usernameDraft, accountEmail: emailDraft },
@@ -371,34 +472,54 @@ function CreateAccountForm({
     <div style={styles.outerCard}>
       <div style={styles.registerHeading}>Create Account</div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div style={styles.registerBox}>
-          <div style={styles.registerFieldGroup}>
-            <span style={styles.registerLabel}>Username</span>
-            <div style={styles.registerInputBox}>
-              <PersonIcon />
-              <input
-                style={styles.registerInput}
-                placeholder="Enter username"
-                value={usernameDraft}
-                disabled={saving}
-                onChange={(e) => setUsernameDraft(e.target.value)}
-              />
+          <div style={styles.registerRow}>
+            <div style={styles.registerFieldGroup}>
+              <span style={styles.registerLabel}>Username</span>
+              <div
+                style={{
+                  ...styles.registerInputBox,
+                  ...(usernameError ? { border: "1px solid #C0392B" } : {}),
+                }}
+              >
+                <PersonIcon />
+                <input
+                  style={styles.registerInput}
+                  placeholder="Enter username"
+                  value={usernameDraft}
+                  disabled={saving}
+                  onChange={(e) => {
+                    setUsernameDraft(e.target.value);
+                    if (usernameError) setUsernameError("");
+                  }}
+                />
+              </div>
+              {usernameError && <p style={styles.registerFieldError}>{usernameError}</p>}
             </div>
-          </div>
 
-          <div style={styles.registerFieldGroup}>
-            <span style={styles.registerLabel}>Email</span>
-            <div style={styles.registerInputBox}>
-              <MailIcon />
-              <input
-                style={styles.registerInput}
-                type="email"
-                placeholder="Enter email"
-                value={emailDraft}
-                disabled={saving}
-                onChange={(e) => setEmailDraft(e.target.value)}
-              />
+            <div style={styles.registerFieldGroup}>
+              <span style={styles.registerLabel}>Email</span>
+              <div
+                style={{
+                  ...styles.registerInputBox,
+                  ...(emailError ? { border: "1px solid #C0392B" } : {}),
+                }}
+              >
+                <MailIcon />
+                <input
+                  style={styles.registerInput}
+                  type="email"
+                  placeholder="Enter email"
+                  value={emailDraft}
+                  disabled={saving}
+                  onChange={(e) => {
+                    setEmailDraft(e.target.value);
+                    if (emailError) setEmailError("");
+                  }}
+                />
+              </div>
+              {emailError && <p style={styles.registerFieldError}>{emailError}</p>}
             </div>
           </div>
 
@@ -411,6 +532,54 @@ function CreateAccountForm({
           </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function DeleteAccountModal({
+  onCancel,
+  onConfirm,
+  deleting,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+  deleting: boolean;
+}) {
+  return (
+    <div style={styles.modalOverlay} onClick={onCancel}>
+      <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.modalHeader}>
+          <h2 style={styles.modalTitle}>Delete Account</h2>
+          <button
+            type="button"
+            style={styles.modalCloseBtn}
+            onClick={onCancel}
+            aria-label="Close"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 1L17 17M17 1L1 17" stroke={BLUE} strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div style={styles.modalBody}>
+          <p style={styles.modalBodyText}>
+            Are you sure you want to delete your account? This will remove
+            all associated data and cannot be
+            <br />
+            undone.
+          </p>
+        </div>
+
+        <div style={styles.modalFooter}>
+          <button type="button" style={styles.modalCancelBtn} onClick={onCancel} disabled={deleting}>
+            Cancel
+          </button>
+          <button type="button" style={styles.modalDeleteBtn} onClick={onConfirm} disabled={deleting}>
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -428,6 +597,7 @@ export default function Account() {
   const shopify = useAppBridge();
 
   const saving = fetcher.state !== "idle";
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (fetcher.data && "registered" in fetcher.data && fetcher.data.registered) {
@@ -442,6 +612,7 @@ export default function Account() {
     }
     if (fetcher.data && "deleted" in fetcher.data && fetcher.data.deleted) {
       shopify.toast.show("Account info cleared");
+      setShowDeleteModal(false);
     }
   }, [fetcher.data, shopify]);
 
@@ -449,14 +620,8 @@ export default function Account() {
     fetcher.submit({ field, value }, { method: "POST" });
   };
 
-  const handleDelete = () => {
-    if (
-      window.confirm(
-        "This will clear your saved username and email. This cannot be undone. Continue?",
-      )
-    ) {
-      fetcher.submit({ intent: "delete" }, { method: "POST" });
-    }
+  const handleConfirmDelete = () => {
+    fetcher.submit({ intent: "delete" }, { method: "POST" });
   };
 
   if (!registered) {
@@ -557,7 +722,7 @@ export default function Account() {
 
           <div style={styles.deleteWrap}>
             <div style={styles.deleteOuter}>
-              <div style={styles.deleteInner} onClick={handleDelete}>
+              <div style={styles.deleteInner} onClick={() => setShowDeleteModal(true)}>
                 <span style={styles.deleteText}>Delete Account</span>
               </div>
             </div>
@@ -565,6 +730,14 @@ export default function Account() {
         </div>
       </div>
       </div>
+
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={handleConfirmDelete}
+          deleting={saving}
+        />
+      )}
     </s-page>
   );
 }

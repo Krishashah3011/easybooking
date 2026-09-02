@@ -26,6 +26,13 @@ export const styles: Record<string, React.CSSProperties> = {
     color: TEXT_DARK,
     margin: 0,
   },
+  pageSubtitle: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "13px",
+    color: TEXT_MUTED,
+    margin: "4px 0 0",
+  },
   tabBar: {
     display: "flex",
     gap: "10px",

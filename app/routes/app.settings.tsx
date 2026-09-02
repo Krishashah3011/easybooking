@@ -17,11 +17,13 @@ export default function SettingsLayout() {
     <s-page heading="Settings" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <div style={styles.outerCard}>
         <div style={styles.headerRow}>
-          <h1 style={styles.heading}>Configurations</h1>
+          <div>
+            <h1 style={styles.heading}>Configurations</h1>
+            <p style={styles.pageSubtitle}>
+              Configure your booking rules and customize how customers book appointments on your store.
+            </p>
+          </div>
         </div>
-        <p style={{ ...styles.subLabel, marginTop: "-8px", marginBottom: "12px" }}>
-          Drag and drop rules to change their priority. Higher rules are evaluated first.
-        </p>
 
         <div style={styles.tabBar}>
           {TABS.map((tab) => (
