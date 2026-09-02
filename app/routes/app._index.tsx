@@ -121,13 +121,15 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
   statTile: {
     flex: "1 1 0",
     minWidth: "180px",
+    height: "87px",
+    boxSizing: "border-box",
     background: "#FFFFFF",
     border: `1px solid ${TRACK_GREY}`,
     borderRadius: "8px",
     padding: "9px",
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
+    justifyContent: "space-between",
     textDecoration: "none",
     color: "inherit",
   },
@@ -214,22 +216,6 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-function CartIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M2.5 2.5H4.16667L5.85 10.9333C5.91056 11.2372 6.07596 11.51 6.31735 11.7043C6.55875 11.8986 6.86094 12.0022 7.17083 11.9958H14.9375C15.2474 12.0022 15.5496 11.8986 15.791 11.7043C16.0324 11.51 16.1978 11.2372 16.2583 10.9333L17.5 4.58333H5"
-        stroke={ANALYTICS_ACCENT}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="7.5" cy="16.25" r="1.25" fill={ANALYTICS_ACCENT} />
-      <circle cx="15" cy="16.25" r="1.25" fill={ANALYTICS_ACCENT} />
-    </svg>
-  );
-}
-
 function ChevronIcon() {
   return (
     <svg width="6" height="11" viewBox="0 0 6 11" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -248,16 +234,18 @@ function StatTile({
   label,
   value,
   href,
+  icon = "/abandoned-cart-icon.svg",
 }: {
   label: string;
   value: string | number;
   href: string;
+  icon?: string;
 }) {
   return (
     <a href={href} style={analyticsStyles.statTile}>
       <div style={analyticsStyles.statTileHeader}>
         <p style={analyticsStyles.statTileLabel}>{label}</p>
-        <CartIcon />
+        <img src={icon} alt="" width={20} height={20} />
       </div>
       <div style={analyticsStyles.statTileFooter}>
         <p style={analyticsStyles.statTileValue}>{value}</p>
@@ -609,11 +597,17 @@ export default function Dashboard() {
                 value={stats.todayCount}
                 href={`/app/bookings?dateFrom=${todayISO()}&dateTo=${todayISO()}`}
               />
-              <StatTile label="Total Bookings" value={report.totalBookings} href="/app/bookings" />
+              <StatTile
+                label="Total Bookings"
+                value={report.totalBookings}
+                href="/app/bookings"
+                icon="/cart-total.svg"
+              />
               <StatTile
                 label="Overbooked (needs review)"
                 value={report.overbookedCount}
                 href="/app/bookings?status=OVERBOOKED"
+                icon="/msg-icon.svg"
               />
             </div>
             <div style={analyticsStyles.statsRow}>
