@@ -48,28 +48,38 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
   },
   filterRow: {
     display: "flex",
-    gap: "16px",
+    flexDirection: "row",
+    justifyContent: "flex-end",
     alignItems: "flex-end",
-    flexWrap: "wrap",
+    gap: "16px",
+    width: "100%",
+    maxWidth: "918px",
+    height: "59px",
+    flexWrap: "nowrap",
   },
   filterField: {
-    flex: "1 1 0",
-    minWidth: "160px",
     display: "flex",
     flexDirection: "column",
+    alignItems: "flex-start",
     gap: "8px",
+    flex: "1 1 198.5px",
+    minWidth: 0,
+    height: "59px",
   },
   productFilterField: {
-    flex: "2 1 0",
-    minWidth: "260px",
     display: "flex",
     flexDirection: "column",
+    alignItems: "flex-start",
     gap: "8px",
+    flex: "1 1 413px",
+    minWidth: 0,
+    height: "59px",
   },
   filterLabel: {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
+    lineHeight: "17px",
     color: TEXT_BLACK,
   },
   selectInput: {
@@ -81,32 +91,55 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     borderRadius: "4px",
     padding: "7px 8px",
     fontFamily: "Inter",
-    fontSize: "14px",
+    fontWeight: 400,
+    fontSize: "16px",
+    lineHeight: "19px",
     color: TEXT_BLACK,
   },
-  dateInput: {
+  dateFieldBox: {
     height: "34px",
     width: "100%",
     boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "10px",
     background: "#FFFFFF",
     border: "1px solid #E9E9EA",
     borderRadius: "4px",
     padding: "5px 10px",
+  },
+  dateInput: {
+    flex: "1 1 0",
+    minWidth: 0,
+    height: "100%",
+    boxSizing: "border-box",
+    background: "transparent",
+    border: "none",
+    outline: "none",
+    padding: 0,
     fontFamily: "Inter",
-    fontSize: "14px",
+    fontWeight: 400,
+    fontSize: "16px",
+    lineHeight: "19px",
     color: TEXT_BLACK,
   },
   applyButton: {
+    width: "60px",
     height: "34px",
     boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     background: ANALYTICS_ACCENT,
     color: "#FFFFFF",
     border: "none",
     borderRadius: "10px",
-    padding: "0 16px",
+    padding: "10px",
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
+    lineHeight: "17px",
     cursor: "pointer",
   },
   applyButtonWrap: {
@@ -553,6 +586,19 @@ export default function Dashboard() {
 
       {registered && report && (
         <>
+          <style>{`
+            .eb-date-input::-webkit-calendar-picker-indicator {
+              opacity: 0;
+              position: absolute;
+              right: 0;
+              width: 100%;
+              height: 100%;
+              cursor: pointer;
+            }
+            .eb-date-input {
+              position: relative;
+            }
+          `}</style>
           <div style={analyticsStyles.card}>
             <h2 style={analyticsStyles.heading}>Store Analytics</h2>
             <div style={analyticsStyles.filterRow}>
@@ -573,21 +619,29 @@ export default function Dashboard() {
               </div>
               <div style={analyticsStyles.filterField}>
                 <label style={analyticsStyles.filterLabel}>From</label>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  style={analyticsStyles.dateInput}
-                />
+                <div style={analyticsStyles.dateFieldBox}>
+                  <img src="/date-icon.svg" alt="" width={20} height={20} />
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    style={analyticsStyles.dateInput}
+                    className="eb-date-input"
+                  />
+                </div>
               </div>
               <div style={analyticsStyles.filterField}>
                 <label style={analyticsStyles.filterLabel}>To</label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  style={analyticsStyles.dateInput}
-                />
+                <div style={analyticsStyles.dateFieldBox}>
+                  <img src="/date-icon.svg" alt="" width={20} height={20} />
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    style={analyticsStyles.dateInput}
+                    className="eb-date-input"
+                  />
+                </div>
               </div>
               <div style={analyticsStyles.applyButtonWrap}>
                 <button type="button" onClick={applyReportFilters} style={analyticsStyles.applyButton}>
