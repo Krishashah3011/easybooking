@@ -10,8 +10,6 @@
   padding-block: var(--p-space-300, 0.6rem);
   padding-inline: 1.5rem;
   background: var(--p-color-bg-surface-secondary, #eef0f1);
-  border-bottom: var(--p-border-width-025, 1px) solid
-    var(--p-color-border-secondary, #dfe1e3);
   overflow-x: auto;
   scrollbar-width: thin;
 }

@@ -85,6 +85,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "12px",
     padding: "20px",
     marginBottom: "16px",
+    width: "auto",
+    boxSizing: "border-box",
   },
   headerRow: {
     display: "flex",

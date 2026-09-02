@@ -4,7 +4,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, useOutletContext } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -17,6 +17,7 @@ import {
   type BookingSettingsFieldErrors,
   type BookingSettingsFormValues,
 } from "../models/bookingSettings.server";
+import type { RegisterSave } from "./app.settings";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -45,6 +46,7 @@ export default function BookingSettingsPage() {
   const { values: initialValues } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
+  const { registerSave } = useOutletContext<{ registerSave: RegisterSave }>();
 
   const [values, setValues] =
     useState<BookingSettingsFormValues>(initialValues);
@@ -109,17 +111,18 @@ export default function BookingSettingsPage() {
     );
   };
 
+  // Hand this page's save action + saving state up to the shared
+  // "Save Settings" button in the settings header, and hand it back
+  // (null) on unmount so leaving this tab doesn't leave it wired to
+  // a stale handler.
+  useEffect(() => {
+    registerSave(handleSave, isSaving);
+    return () => registerSave(null, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registerSave, values, isSaving]);
+
   return (
     <>
-      <s-button
-        slot="primary-action"
-        variant="primary"
-        onClick={handleSave}
-        {...(isSaving ? { loading: true } : {})}
-      >
-        Save
-      </s-button>
-
       <s-section heading="Working days">
         <s-paragraph>
           Choose which days of the week customers can book appointments on.

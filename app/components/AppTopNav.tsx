@@ -19,9 +19,9 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Home", icon: HomeIcon },
+  { href: "/app/settings", label: "Settings", icon: SettingsIcon, matchPrefix: true },
   { href: "/app/products", label: "Products", icon: ProductsIcon, matchPrefix: true },
   { href: "/app/bookings", label: "Bookings", icon: BookingsIcon, matchPrefix: true },
-  { href: "/app/settings", label: "Settings", icon: SettingsIcon, matchPrefix: true },
 ];
 
 function isActive(pathname: string, item: NavItem) {
