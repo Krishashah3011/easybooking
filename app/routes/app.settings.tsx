@@ -110,6 +110,10 @@ function ChevronRightIcon() {
 
 const styles: Record<string, React.CSSProperties> = {
   outerCard: {
+    width: "950px",
+    maxWidth: "950px",
+    boxSizing: "border-box",
+    marginInline: "auto",
     border: `1px solid ${BORDER}`,
     borderRadius: "8px",
     background: "#fff",

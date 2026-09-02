@@ -37,7 +37,7 @@ export default function App() {
 
   return (
     <AppProvider apiKey={apiKey} embedded>
-      <div style={{ maxWidth: 950, marginInline: "auto" }}>
+      <div>
         <AppTopNav />
         <Outlet />
       </div>

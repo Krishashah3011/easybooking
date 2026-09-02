@@ -124,6 +124,10 @@ function PencilIcon() {
 
 const styles: Record<string, React.CSSProperties> = {
   outerCard: {
+    width: "950px",
+    maxWidth: "950px",
+    boxSizing: "border-box",
+    marginInline: "auto",
     background: "#fff",
     border: "1px solid #dbdbdb",
     borderRadius: "8px",

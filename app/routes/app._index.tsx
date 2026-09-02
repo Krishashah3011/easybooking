@@ -20,6 +20,10 @@ const MUTED_GREY = "#898989";
 
 const analyticsStyles: Record<string, React.CSSProperties> = {
   card: {
+    width: "950px",
+    maxWidth: "950px",
+    boxSizing: "border-box",
+    marginInline: "auto",
     background: "#FFFFFF",
     border: "1px solid #E5E5E5",
     borderRadius: "8px",
