@@ -4,7 +4,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, useOutletContext } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -16,13 +16,8 @@ import {
   type SmtpSettingsFieldErrors,
   type SmtpSettingsFormValues,
 } from "../models/smtpSettings.server";
-import {
-  styles,
-  saveWrapperStyle,
-  saveButtonStyle,
-  EyeIcon,
-  EyeOffIcon,
-} from "../components/SettingsUI";
+import { styles, EyeIcon, EyeOffIcon } from "../components/SettingsUI";
+import type { RegisterSave } from "./app.settings";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -51,6 +46,7 @@ export default function SmtpSettingsTab() {
   const { smtp: initialSmtp } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
+  const { registerSave } = useOutletContext<{ registerSave: RegisterSave }>();
 
   const [smtpValues, setSmtpValues] = useState<SmtpSettingsFormValues>(initialSmtp);
   const [showPass, setShowPass] = useState(false);
@@ -86,16 +82,18 @@ export default function SmtpSettingsTab() {
     );
   };
 
+  // Hand this page's save action + saving state up to the shared
+  // "Save Settings" button in the settings header, and hand it back
+  // (null) on unmount so leaving this tab doesn't leave it wired to
+  // a stale handler.
+  useEffect(() => {
+    registerSave(handleSave, isSaving);
+    return () => registerSave(null, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registerSave, smtpValues, isSaving]);
+
   return (
     <div style={styles.innerCard}>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <div style={saveWrapperStyle()}>
-          <button style={saveButtonStyle(isSaving)} disabled={isSaving} onClick={handleSave}>
-            {isSaving ? "Saving..." : "Save Settings"}
-          </button>
-        </div>
-      </div>
-
       <div style={styles.subLabel}>
         Configure the SMTP server used to send booking confirmation, reminder, and cancellation emails to
         your customers.

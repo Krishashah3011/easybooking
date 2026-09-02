@@ -1,7 +1,13 @@
+import { useCallback, useState } from "react";
 import type { HeadersFunction } from "react-router";
 import { NavLink, Outlet } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { styles, tabButtonStyle } from "../components/SettingsUI";
+import {
+  styles,
+  tabButtonStyle,
+  saveWrapperStyle,
+  saveButtonStyle,
+} from "../components/SettingsUI";
 
 const TABS = [
   { to: "/app/settings", label: "General Settings", end: true },
@@ -12,9 +18,25 @@ const TABS = [
   { to: "/app/settings/smtp", label: "SMTP Settings" },
 ];
 
+// Lets any settings sub-page opt in to the shared "Save Settings" button in
+// the header — call this in a useEffect with your own save handler and
+// saving state. Pages that don't call it just leave the button inert.
+export type RegisterSave = (
+  handler: (() => void) | null,
+  isSaving?: boolean,
+) => void;
+
 export default function SettingsLayout() {
+  const [saveHandler, setSaveHandler] = useState<(() => void) | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const registerSave: RegisterSave = useCallback((handler, saving = false) => {
+    setSaveHandler(() => handler);
+    setIsSaving(saving);
+  }, []);
+
   return (
-    <s-page heading="Settings" inlineSize="950px" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Settings" inlineSize="large" style={{ fontFamily: "Inter" }}>
       <div style={styles.outerCard}>
         <div style={styles.headerRow}>
           <div>
@@ -22,6 +44,15 @@ export default function SettingsLayout() {
             <p style={styles.pageSubtitle}>
               Configure your booking rules and customize how customers book appointments on your store.
             </p>
+          </div>
+          <div style={saveWrapperStyle()}>
+            <button
+              style={saveButtonStyle(isSaving)}
+              disabled={!saveHandler || isSaving}
+              onClick={() => saveHandler?.()}
+            >
+              {isSaving ? "Saving..." : "Save Settings"}
+            </button>
           </div>
         </div>
 
@@ -38,7 +69,7 @@ export default function SettingsLayout() {
           ))}
         </div>
 
-        <Outlet />
+        <Outlet context={{ registerSave }} />
       </div>
     </s-page>
   );

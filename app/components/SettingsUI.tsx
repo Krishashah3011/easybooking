@@ -194,12 +194,12 @@ export const styles: Record<string, React.CSSProperties> = {
 
 export function tabButtonStyle(active: boolean): React.CSSProperties {
   return {
-    padding: "8px 14px",
+    padding: "9px 17px",
     borderRadius: "6px",
     border: "none",
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "13px",
+    fontSize: "13.5px",
     cursor: "pointer",
     background: active ? BLUE : "#ECECEC",
     color: active ? "#fff" : TEXT_DARK,
