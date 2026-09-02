@@ -121,7 +121,7 @@ export default function BookingProductsPage() {
   };
 
   return (
-    <s-page heading="Booking Products" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
+    <s-page heading="Booking Products" inlineSize="large">
       <s-section>
         <s-paragraph>
           Turn booking on for any product, then configure its slot rules if it

@@ -327,7 +327,7 @@ export default function CustomFieldsPage() {
   };
 
   return (
-    <s-page heading="Custom Booking Fields" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
+    <s-page heading="Custom Booking Fields" inlineSize="large">
       <s-section heading="Add a field">
         <s-paragraph>
           Extra questions customers answer on the booking widget, in

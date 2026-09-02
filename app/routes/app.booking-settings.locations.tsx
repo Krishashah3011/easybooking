@@ -511,7 +511,7 @@ export default function LocationsPage() {
   };
 
   return (
-    <s-page heading="Locations" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
+    <s-page heading="Locations">
       <s-section heading="Add a location">
         <s-paragraph>
           Locations customers choose from before picking a date and time on

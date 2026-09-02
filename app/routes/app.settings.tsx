@@ -110,10 +110,6 @@ function ChevronRightIcon() {
 
 const styles: Record<string, React.CSSProperties> = {
   outerCard: {
-    width: "950px",
-    maxWidth: "950px",
-    boxSizing: "border-box",
-    marginInline: "auto",
     border: `1px solid ${BORDER}`,
     borderRadius: "8px",
     background: "#fff",
@@ -460,7 +456,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <s-page heading="Settings" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto", fontFamily: "Inter" }}>
+    <s-page heading="Settings" inlineSize="large" style={{ fontFamily: "Inter" }}>
       <div style={styles.outerCard}>
         <div style={styles.headerRow}>
           <h1 style={styles.heading}>Configurations</h1>

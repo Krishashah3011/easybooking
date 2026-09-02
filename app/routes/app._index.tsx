@@ -20,11 +20,7 @@ const MUTED_GREY = "#898989";
 
 const analyticsStyles: Record<string, React.CSSProperties> = {
   card: {
-    width: "950px",
     height: "353px",
-    maxWidth: "950px",
-    boxSizing: "border-box",
-    marginInline: "auto",
     background: "#FFFFFF",
     border: "1px solid #E5E5E5",
     borderRadius: "8px",
@@ -502,7 +498,7 @@ export default function Dashboard() {
   const remainingSteps = setupSteps.filter((s) => !s.done);
 
   return (
-    <s-page heading="Dashboard" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto", fontFamily: "Inter" }}>
+    <s-page heading="Dashboard" inlineSize="large" style={{ fontFamily: "Inter" }}>
       {!registered && (
         <s-banner tone="info" heading="Register to unlock EasyBooking">
           <s-paragraph>

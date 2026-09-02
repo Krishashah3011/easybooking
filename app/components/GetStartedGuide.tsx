@@ -80,10 +80,6 @@ const LockIcon = () => (
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    width: "950px",
-    maxWidth: "950px",
-    boxSizing: "border-box",
-    marginInline: "auto",
     background: "#FFFFFF",
     border: `1px solid ${BORDER}`,
     borderRadius: "12px",

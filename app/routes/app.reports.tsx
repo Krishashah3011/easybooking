@@ -164,7 +164,7 @@ export default function BookingReportsPage() {
   };
 
   return (
-    <s-page heading="Booking Reports" inlineSize="large" style={{ width: "950px", maxWidth: "950px", boxSizing: "border-box", marginInline: "auto" }}>
+    <s-page heading="Booking Reports" inlineSize="large">
       <s-section heading="Filters">
         <s-stack direction="inline" gap="base">
           <s-select
