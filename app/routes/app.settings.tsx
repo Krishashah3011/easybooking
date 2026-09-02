@@ -456,7 +456,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <s-page heading="Settings">
+    <s-page heading="Settings" inlineSize="large">
       <div style={styles.outerCard}>
         <div style={styles.headerRow}>
           <h1 style={styles.heading}>Configurations</h1>

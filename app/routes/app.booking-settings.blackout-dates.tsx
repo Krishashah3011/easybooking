@@ -90,7 +90,7 @@ export default function BlackoutDatesPage() {
   };
 
   return (
-    <s-page heading="Blackout Dates">
+    <s-page heading="Blackout Dates" inlineSize="large">
       <s-section heading="Shop-wide blackout dates">
         <s-paragraph>
           These dates block booking across every bookable product in the store —

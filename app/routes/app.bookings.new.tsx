@@ -727,7 +727,7 @@ export default function NewBookingPage() {
 
   if (products.length === 0) {
     return (
-      <s-page heading="New Booking">
+      <s-page heading="New Booking" inlineSize="large">
         <s-section>
           <s-paragraph>
             No products have booking enabled yet. Enable booking on a
@@ -827,7 +827,7 @@ export default function NewBookingPage() {
   );
 
   return (
-    <s-page heading="New Booking">
+    <s-page heading="New Booking" inlineSize="large">
       <s-section heading="Product">
         <s-select
           label="Product"

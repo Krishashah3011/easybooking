@@ -164,7 +164,7 @@ export default function BookingReportsPage() {
   };
 
   return (
-    <s-page heading="Booking Reports">
+    <s-page heading="Booking Reports" inlineSize="large">
       <s-section heading="Filters">
         <s-stack direction="inline" gap="base">
           <s-select
