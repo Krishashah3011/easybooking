@@ -34,6 +34,448 @@ const EMPTY_FORM: LocationFormValues = {
   dailyEndTime: null,
 };
 
+const ACCENT = "#073E74";
+const LINE_BORDER = "#DBDBDB";
+const INPUT_BORDER = "#E9E9EA";
+const LABEL_GREY = "#373737";
+const TEXT_BLACK = "#000000";
+
+const SORTED_COUNTRIES = [...COUNTRIES].sort((a, b) =>
+  a.name.localeCompare(b.name),
+);
+
+const ChevronIcon = ({ open }: { open: boolean }) => (
+  <svg
+    width="11"
+    height="6"
+    viewBox="0 0 11 6"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{
+      transform: open ? "rotate(180deg)" : "rotate(0deg)",
+      transition: "transform 0.2s ease",
+    }}
+  >
+    <path
+      d="M1 1L5.5 5L10 1"
+      stroke={ACCENT}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 1V11M1 6H11" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const styles: Record<string, React.CSSProperties> = {
+  card: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    padding: "10px 10px 13px",
+    gap: "16px",
+    width: "100%",
+    background: "#FFFFFF",
+    border: `1px solid ${LINE_BORDER}`,
+    borderRadius: "4px",
+  },
+  body: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "16px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  headerRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  headerLeft: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "6px",
+  },
+  title: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "16px",
+    lineHeight: "19px",
+    letterSpacing: "0.02em",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  descText: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "12px",
+    lineHeight: "15px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  chevronButton: {
+    width: "20px",
+    height: "20px",
+    minWidth: "20px",
+    border: "none",
+    background: "transparent",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  },
+  divider: {
+    border: "none",
+    borderTop: `1px solid ${LINE_BORDER}`,
+    margin: 0,
+    width: "100%",
+  },
+  fieldsRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: "12px",
+    width: "100%",
+    alignSelf: "stretch",
+    flexWrap: "wrap",
+  },
+  fieldGroupFull: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "4px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  fieldGroupHalf: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "4px",
+    flex: "1 1 260px",
+    minWidth: 0,
+  },
+  fieldLabel: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: LABEL_GREY,
+    margin: 0,
+  },
+  inputBox: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: "5px 10px",
+    gap: "10px",
+    width: "100%",
+    height: "34px",
+    background: "#FFFFFF",
+    border: `1px solid ${INPUT_BORDER}`,
+    borderRadius: "4px",
+  },
+  textInput: {
+    flex: "1 1 auto",
+    minWidth: 0,
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "16px",
+    lineHeight: "19px",
+    color: TEXT_BLACK,
+    padding: 0,
+  },
+  selectInput: {
+    flex: "1 1 auto",
+    minWidth: 0,
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "16px",
+    lineHeight: "19px",
+    color: TEXT_BLACK,
+    padding: 0,
+    cursor: "pointer",
+    appearance: "none",
+    WebkitAppearance: "none",
+    MozAppearance: "none",
+  },
+  hintText: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "12px",
+    lineHeight: "15px",
+    color: LABEL_GREY,
+    margin: 0,
+  },
+  daysGroup: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "12px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  daysRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "8px 20px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  dayItem: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "10px",
+    height: "24px",
+  },
+  checkbox: {
+    boxSizing: "border-box",
+    width: "24px",
+    height: "24px",
+    borderRadius: "4px",
+    border: `1.5px solid ${ACCENT}`,
+    background: "#FFFFFF",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    flexShrink: 0,
+  },
+  checkboxDot: {
+    width: "14px",
+    height: "14px",
+    borderRadius: "50%",
+    background: ACCENT,
+  },
+  dayLabel: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    margin: 0,
+    cursor: "pointer",
+  },
+  requiredLabel: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "12px",
+    lineHeight: "15px",
+    color: TEXT_BLACK,
+    margin: 0,
+    cursor: "pointer",
+  },
+  requiredRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "10px",
+    height: "24px",
+    flex: "none",
+  },
+  addButton: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "10px 16px",
+    gap: "4px",
+    width: "auto",
+    minWidth: "188px",
+    height: "42px",
+    background: ACCENT,
+    borderRadius: "10px",
+    border: "none",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+  addButtonDisabled: {
+    opacity: 0.6,
+    cursor: "not-allowed",
+  },
+  addButtonLabel: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "16px",
+    lineHeight: "19px",
+    color: "#FFFFFF",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  },
+  plusWrap: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "3px",
+    width: "20px",
+    height: "20px",
+    flexShrink: 0,
+  },
+  cancelButton: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "10px 16px",
+    height: "42px",
+    background: "transparent",
+    borderRadius: "10px",
+    border: `1px solid ${INPUT_BORDER}`,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+  cancelButtonLabel: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "16px",
+    lineHeight: "19px",
+    color: TEXT_BLACK,
+    whiteSpace: "nowrap",
+  },
+  buttonRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "10px",
+  },
+  listCard: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    width: "100%",
+    background: "#FFFFFF",
+    border: `1px solid ${LINE_BORDER}`,
+    borderRadius: "4px",
+    padding: "10px 10px 13px",
+    marginTop: "16px",
+  },
+  listHeaderRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  listHeaderLeft: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "3px",
+  },
+  listTitle: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "16px",
+    lineHeight: "19px",
+    letterSpacing: "0.02em",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  columnHeaderRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: "20px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  columnHeaderCell: {
+    flex: "1 1 0",
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  rowWrap: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "20px",
+    width: "100%",
+    alignSelf: "stretch",
+    minHeight: "40px",
+  },
+  rowCell: {
+    flex: "1 1 0",
+    alignSelf: "center",
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  actionsCell: {
+    flex: "1 1 0",
+    alignSelf: "center",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconButton: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "10px",
+    width: "40px",
+    height: "40px",
+    borderRadius: "4px",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+  },
+  deleteButton: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 0,
+    width: "44px",
+    height: "40px",
+    borderRadius: "4px",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+  },
+  emptyText: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: LABEL_GREY,
+    margin: 0,
+  },
+};
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const locations = await listLocations(session.shop);
@@ -86,9 +528,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return { intent: "create" as const, ok: true as const, values: EMPTY_FORM };
 };
 
-const SORTED_COUNTRIES = [...COUNTRIES].sort((a, b) =>
-  a.name.localeCompare(b.name),
-);
+function Checkbox({
+  checked,
+  onChange,
+  label,
+  labelStyle,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  labelStyle?: React.CSSProperties;
+}) {
+  return (
+    <div style={styles.dayItem}>
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        aria-label={label}
+        style={styles.checkbox}
+        onClick={onChange}
+      >
+        {checked && <span style={styles.checkboxDot} />}
+      </button>
+      <p style={labelStyle ?? styles.dayLabel} onClick={onChange}>
+        {label}
+      </p>
+    </div>
+  );
+}
 
 function CountrySelect({
   value,
@@ -100,21 +568,23 @@ function CountrySelect({
   onChange: (code: string) => void;
 }) {
   return (
-    <s-select
-      label="Country"
-      value={value}
-      onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
-    >
-      <s-option value="">Select a country</s-option>
-      {extraOption && (
-        <s-option value={extraOption.code}>{extraOption.name}</s-option>
-      )}
-      {SORTED_COUNTRIES.map((country) => (
-        <s-option key={country.code} value={country.code}>
-          {country.name}
-        </s-option>
-      ))}
-    </s-select>
+    <div style={styles.inputBox}>
+      <select
+        style={styles.selectInput}
+        value={value}
+        onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
+      >
+        <option value="">Select a country</option>
+        {extraOption && (
+          <option value={extraOption.code}>{extraOption.name}</option>
+        )}
+        {SORTED_COUNTRIES.map((country) => (
+          <option key={country.code} value={country.code}>
+            {country.name}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -128,17 +598,19 @@ function RegionSelect({
   onChange: (tz: string) => void;
 }) {
   return (
-    <s-select
-      label="Region"
-      value={value}
-      onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
-    >
-      {country.timezones.map((zone) => (
-        <s-option key={zone.tz} value={zone.tz}>
-          {zone.label} ({timezoneOffsetLabel(zone.tz)})
-        </s-option>
-      ))}
-    </s-select>
+    <div style={styles.inputBox}>
+      <select
+        style={styles.selectInput}
+        value={value}
+        onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
+      >
+        {country.timezones.map((zone) => (
+          <option key={zone.tz} value={zone.tz}>
+            {zone.label} ({timezoneOffsetLabel(zone.tz)})
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -147,11 +619,19 @@ function LocationEditor({
   onCancel,
   submitLabel,
   locationId,
+  open,
+  onToggleOpen,
+  title,
+  description,
 }: {
   initial: LocationFormValues;
   onCancel?: () => void;
   submitLabel: string;
   locationId?: string;
+  open?: boolean;
+  onToggleOpen?: () => void;
+  title?: string;
+  description?: string;
 }) {
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
@@ -234,121 +714,209 @@ function LocationEditor({
     );
   };
 
+  const showChrome = title !== undefined;
+
   return (
-    <s-stack direction="block" gap="base">
-      <s-text-field
-        label="Location name"
-        placeholder="California"
-        value={values.name}
-        error={errors.name}
-        onChange={(e: FieldChangeEvent) => {
-          const value = e.currentTarget.value;
-          setValues((prev) => ({ ...prev, name: value }));
-        }}
-      ></s-text-field>
-
-      <CountrySelect
-        value={countryCode}
-        extraOption={customOption}
-        onChange={handleCountryChange}
-      />
-
-      {selectedCountry && selectedCountry.timezones.length > 1 && (
-        <RegionSelect
-          country={selectedCountry}
-          value={values.timezone}
-          onChange={(tz) => setValues((prev) => ({ ...prev, timezone: tz }))}
-        />
-      )}
-
-      {errors.timezone && <s-text tone="critical">{errors.timezone}</s-text>}
-      <s-paragraph>
-        Booking hours and the times shoppers see for this location are
-        calculated in this timezone.
-      </s-paragraph>
-
-      <s-paragraph>
-        Leave the fields below blank/unchecked to use the shop (or
-        product-level) default. Set them here only if this location's own
-        opening hours are different — e.g. one branch closes earlier than
-        the rest.
-      </s-paragraph>
-      <s-stack direction="inline" gap="base">
-        <s-checkbox
-          label="Select all"
-          checked={allWeekdaysSelected}
-          onChange={toggleSelectAllWorkingDays}
-        ></s-checkbox>
-      </s-stack>
-      <s-stack direction="inline" gap="base">
-        {WEEKDAY_LABELS.map((day) => (
-          <s-checkbox
-            key={day.value}
-            label={day.label}
-            checked={(values.workingDays ?? []).includes(day.value)}
-            onChange={() => toggleWorkingDay(day.value)}
-          ></s-checkbox>
-        ))}
-      </s-stack>
-      {errors.workingDays && (
-        <s-banner tone="critical">{errors.workingDays}</s-banner>
-      )}
-      <s-stack direction="inline" gap="base">
-        <s-text-field
-          label="Start time"
-          placeholder="Shop default"
-          details="Blank = use shop/product default"
-          value={values.dailyStartTime ?? ""}
-          error={errors.dailyStartTime}
-          onChange={(e: FieldChangeEvent) =>
-            setValues((prev) => ({
-              ...prev,
-              dailyStartTime: e.currentTarget.value || null,
-            }))
-          }
-        ></s-text-field>
-        <s-text-field
-          label="End time"
-          placeholder="Shop default"
-          details="Blank = use shop/product default"
-          value={values.dailyEndTime ?? ""}
-          error={errors.dailyEndTime}
-          onChange={(e: FieldChangeEvent) =>
-            setValues((prev) => ({
-              ...prev,
-              dailyEndTime: e.currentTarget.value || null,
-            }))
-          }
-        ></s-text-field>
-      </s-stack>
-
-      <s-checkbox
-        label="Visible to shoppers"
-        checked={values.isEnabled}
-        onChange={() =>
-          setValues((prev) => ({ ...prev, isEnabled: !prev.isEnabled }))
-        }
-      ></s-checkbox>
-
-      <s-stack direction="inline" gap="small">
-        <s-button
-          variant="primary"
-          onClick={handleSubmit}
-          {...(isSaving ? { loading: true } : {})}
-        >
-          {submitLabel}
-        </s-button>
-        {onCancel && (
-          <s-button
-            variant="tertiary"
-            onClick={onCancel}
-            {...(isSaving ? { disabled: true } : {})}
-          >
-            Cancel
-          </s-button>
+    <div style={{ ...styles.card, height: "auto" }}>
+      <div style={styles.body}>
+        {showChrome && (
+          <div style={styles.headerRow}>
+            <div style={styles.headerLeft}>
+              <p style={styles.title}>{title}</p>
+              {description && <p style={styles.descText}>{description}</p>}
+            </div>
+            {onToggleOpen && (
+              <button
+                type="button"
+                style={styles.chevronButton}
+                onClick={onToggleOpen}
+                aria-label={open ? "Collapse" : "Expand"}
+              >
+                <ChevronIcon open={Boolean(open)} />
+              </button>
+            )}
+          </div>
         )}
-      </s-stack>
-    </s-stack>
+
+        {(open ?? true) && (
+          <>
+            {showChrome && <hr style={styles.divider} />}
+
+            <div style={styles.fieldGroupFull}>
+              <p style={styles.fieldLabel}>Location name</p>
+              <div style={styles.inputBox}>
+                <input
+                  type="text"
+                  style={styles.textInput}
+                  placeholder="California"
+                  value={values.name}
+                  onChange={(e: FieldChangeEvent) => {
+                    const value = e.currentTarget.value;
+                    setValues((prev) => ({ ...prev, name: value }));
+                  }}
+                />
+              </div>
+              {errors.name && (
+                <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                  {errors.name}
+                </p>
+              )}
+            </div>
+
+            <div style={styles.fieldsRow}>
+              <div style={styles.fieldGroupHalf}>
+                <p style={styles.fieldLabel}>Country</p>
+                <CountrySelect
+                  value={countryCode}
+                  extraOption={customOption}
+                  onChange={handleCountryChange}
+                />
+              </div>
+
+              {selectedCountry && selectedCountry.timezones.length > 1 && (
+                <div style={styles.fieldGroupHalf}>
+                  <p style={styles.fieldLabel}>Region</p>
+                  <RegionSelect
+                    country={selectedCountry}
+                    value={values.timezone}
+                    onChange={(tz) =>
+                      setValues((prev) => ({ ...prev, timezone: tz }))
+                    }
+                  />
+                  <p style={styles.hintText}>
+                    Booking hours and the times shoppers see for this
+                    location are calculated in this time zone.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {errors.timezone && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.timezone}
+              </p>
+            )}
+
+            <hr style={styles.divider} />
+
+            <div style={styles.daysGroup}>
+              <div style={styles.daysRow}>
+                <Checkbox
+                  checked={allWeekdaysSelected}
+                  onChange={toggleSelectAllWorkingDays}
+                  label="Select All"
+                />
+              </div>
+              <div style={styles.daysRow}>
+                {WEEKDAY_LABELS.map((day) => (
+                  <Checkbox
+                    key={day.value}
+                    checked={(values.workingDays ?? []).includes(day.value)}
+                    onChange={() => toggleWorkingDay(day.value)}
+                    label={day.label}
+                  />
+                ))}
+              </div>
+              <p style={styles.descText}>
+                Leave the fields below blank/unchecked to use the shop (or
+                product-level) default. Set them here only if this
+                location's own opening hours are different — e.g. one
+                branch closes earlier than the rest.
+              </p>
+            </div>
+
+            <div style={styles.fieldsRow}>
+              <div style={styles.fieldGroupHalf}>
+                <p style={styles.fieldLabel}>Start time</p>
+                <div style={styles.inputBox}>
+                  <input
+                    type="text"
+                    style={styles.textInput}
+                    placeholder="Shop default"
+                    value={values.dailyStartTime ?? ""}
+                    onChange={(e: FieldChangeEvent) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        dailyStartTime: e.currentTarget.value || null,
+                      }))
+                    }
+                  />
+                </div>
+                <p style={styles.hintText}>24-hour format, hh:mm</p>
+                {errors.dailyStartTime && (
+                  <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                    {errors.dailyStartTime}
+                  </p>
+                )}
+              </div>
+              <div style={styles.fieldGroupHalf}>
+                <p style={styles.fieldLabel}>End time</p>
+                <div style={styles.inputBox}>
+                  <input
+                    type="text"
+                    style={styles.textInput}
+                    placeholder="Shop default"
+                    value={values.dailyEndTime ?? ""}
+                    onChange={(e: FieldChangeEvent) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        dailyEndTime: e.currentTarget.value || null,
+                      }))
+                    }
+                  />
+                </div>
+                <p style={styles.hintText}>24-hour format, hh:mm</p>
+                {errors.dailyEndTime && (
+                  <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                    {errors.dailyEndTime}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <Checkbox
+              checked={values.isEnabled}
+              onChange={() =>
+                setValues((prev) => ({ ...prev, isEnabled: !prev.isEnabled }))
+              }
+              label="Visible to shoppers"
+              labelStyle={styles.requiredLabel}
+            />
+
+            {showChrome && <hr style={styles.divider} />}
+          </>
+        )}
+      </div>
+
+      <div style={styles.buttonRow}>
+        {onCancel && (
+          <button
+            type="button"
+            style={styles.cancelButton}
+            onClick={onCancel}
+            disabled={isSaving}
+          >
+            <span style={styles.cancelButtonLabel}>Cancel</span>
+          </button>
+        )}
+        <button
+          type="button"
+          style={{
+            ...styles.addButton,
+            ...(isSaving ? styles.addButtonDisabled : {}),
+          }}
+          onClick={handleSubmit}
+          disabled={isSaving}
+        >
+          <span style={styles.addButtonLabel}>{submitLabel}</span>
+          {!isEdit && (
+            <span style={styles.plusWrap}>
+              <PlusIcon />
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -401,80 +969,99 @@ function LocationRow({
 
   if (isEditing) {
     return (
-      <s-table-row>
-        <s-table-cell colSpan={5}>
-          <LocationEditor
-            locationId={location.id}
-            submitLabel="Save"
-            onCancel={() => setIsEditing(false)}
-            initial={{
-              name: location.name,
-              timezone: location.timezone,
-              isEnabled: location.isEnabled,
-              workingDays: location.workingDays
-                ? parseWorkingDays(location.workingDays)
-                : null,
-              dailyStartTime: location.dailyStartTime,
-              dailyEndTime: location.dailyEndTime,
-            }}
-          />
-        </s-table-cell>
-      </s-table-row>
+      <div>
+        <LocationEditor
+          locationId={location.id}
+          submitLabel="Save"
+          onCancel={() => setIsEditing(false)}
+          initial={{
+            name: location.name,
+            timezone: location.timezone,
+            isEnabled: location.isEnabled,
+            workingDays: location.workingDays
+              ? parseWorkingDays(location.workingDays)
+              : null,
+            dailyStartTime: location.dailyStartTime,
+            dailyEndTime: location.dailyEndTime,
+          }}
+        />
+        <hr style={styles.divider} />
+      </div>
     );
   }
 
   const offset = timezoneOffsetLabel(location.timezone);
 
   return (
-    <s-table-row>
-      <s-table-cell>{location.name}</s-table-cell>
-      <s-table-cell>
-        {location.timezone}
-        {offset ? ` (${offset})` : ""}
-      </s-table-cell>
-      <s-table-cell>
-        {location.workingDays || location.dailyStartTime || location.dailyEndTime
-          ? "Custom"
-          : "Shop default"}
-      </s-table-cell>
-      <s-table-cell>{location.isEnabled ? "Visible" : "Hidden"}</s-table-cell>
-      <s-table-cell>
-        <s-stack direction="inline" gap="small">
-          <s-button
-            variant="tertiary"
-            {...(isFirst || isBusy ? { disabled: true } : {})}
+    <div>
+      <div style={styles.rowWrap}>
+        <p style={styles.rowCell}>{location.name}</p>
+        <p style={styles.rowCell}>
+          {location.timezone}
+          {offset ? ` (${offset})` : ""}
+        </p>
+        <p style={styles.rowCell}>
+          {location.workingDays || location.dailyStartTime || location.dailyEndTime
+            ? "Custom"
+            : "Shop default"}
+        </p>
+        <p style={styles.rowCell}>{location.isEnabled ? "Visible" : "Hidden"}</p>
+        <div style={styles.actionsCell}>
+          <button
+            type="button"
+            style={{
+              ...styles.iconButton,
+              ...(isFirst || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+            }}
             onClick={onMoveUp}
-            accessibilityLabel={`Move ${location.name} up`}
+            disabled={isFirst || isBusy}
+            aria-label={`Move ${location.name} up`}
           >
-            ↑
-          </s-button>
-          <s-button
-            variant="tertiary"
-            {...(isLast || isBusy ? { disabled: true } : {})}
+            <img src="/arrow-up.svg" width={44} height={40} alt="" />
+          </button>
+          <button
+            type="button"
+            style={{
+              ...styles.iconButton,
+              ...(isLast || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+            }}
             onClick={onMoveDown}
-            accessibilityLabel={`Move ${location.name} down`}
+            disabled={isLast || isBusy}
+            aria-label={`Move ${location.name} down`}
           >
-            ↓
-          </s-button>
-          <s-button
-            variant="tertiary"
+            <img src="/arrow-down.svg" width={44} height={40} alt="" />
+          </button>
+          <button
+            type="button"
+            style={styles.iconButton}
             onClick={() => setIsEditing(true)}
-            {...(isBusy ? { disabled: true } : {})}
+            disabled={isBusy}
+            aria-label={`Edit ${location.name}`}
           >
-            Edit
-          </s-button>
-          <s-button
-            variant="tertiary"
-            tone="critical"
+            <img src="/edit-icon.svg" width={44} height={40} alt="" />
+          </button>
+          <button
+            type="button"
+            style={styles.deleteButton}
             onClick={handleDelete}
-            {...(isReordering ? { disabled: true } : {})}
-            {...(isDeleting ? { loading: true } : {})}
+            disabled={isReordering}
+            aria-label={`Delete ${location.name}`}
           >
-            Delete
-          </s-button>
-        </s-stack>
-      </s-table-cell>
-    </s-table-row>
+            <img
+              src="/delete-icon.svg"
+              width={44}
+              height={40}
+              alt="Delete"
+              style={{
+                display: "block",
+                ...(isDeleting ? { opacity: 0.5 } : {}),
+              }}
+            />
+          </button>
+        </div>
+      </div>
+      <hr style={styles.divider} />
+    </div>
   );
 }
 
@@ -482,6 +1069,7 @@ export default function LocationsPage() {
   const { locations: loaderLocations } = useLoaderData<typeof loader>();
   const reorderFetcher = useFetcher<typeof action>();
   const [locations, setLocations] = useState(loaderLocations);
+  const [open, setOpen] = useState(true);
   const isReordering = reorderFetcher.state !== "idle";
 
   useEffect(() => {
@@ -511,54 +1099,58 @@ export default function LocationsPage() {
   };
 
   return (
-    <>
-      <s-section heading="Add a location">
-        <s-paragraph>
-          Locations customers choose from before picking a date and time on
-          the storefront booking widget — e.g. "California" or "New York".
-          Each location has its own timezone, so the calendar and time
-          slots shoppers see are always local to the location they pick.
-          If no locations are added, the location step is skipped and
-          booking works exactly as before.
-        </s-paragraph>
-        <LocationEditor initial={EMPTY_FORM} submitLabel="Add location" />
-      </s-section>
+    <div style={{ fontFamily: "Inter" }}>
+      <LocationEditor
+        initial={EMPTY_FORM}
+        submitLabel="Add Location"
+        open={open}
+        onToggleOpen={() => setOpen(!open)}
+        title="Add a Locations"
+        description="Locations customers choose from before picking a date and time on the storefront booking widget — e.g. &quot;California&quot; or &quot;New York&quot;. Each location has its own timezone, so the calendar and time slots shoppers see are always local to the location they pick. If no locations are added, the location step is skipped and booking works exactly as before."
+      />
 
-      <s-section heading="Current locations">
-        {locations.length === 0 ? (
-          <s-paragraph>No locations yet.</s-paragraph>
-        ) : (
-          <>
-            <s-paragraph>
+      <div style={styles.listCard}>
+        <div style={styles.listHeaderRow}>
+          <div style={styles.listHeaderLeft}>
+            <p style={styles.listTitle}>Current locations</p>
+            <p style={styles.descText}>
               Use the arrows to change the order shoppers see these in on
               the storefront.
-            </s-paragraph>
-            <s-table>
-              <s-table-header-row>
-                <s-table-header>Name</s-table-header>
-                <s-table-header>Timezone</s-table-header>
-                <s-table-header>Hours</s-table-header>
-                <s-table-header>Visibility</s-table-header>
-                <s-table-header>Actions</s-table-header>
-              </s-table-header-row>
-              <s-table-body>
-                {locations.map((location, index) => (
-                  <LocationRow
-                    key={location.id}
-                    location={location}
-                    isFirst={index === 0}
-                    isLast={index === locations.length - 1}
-                    onMoveUp={() => moveLocation(index, -1)}
-                    onMoveDown={() => moveLocation(index, 1)}
-                    isReordering={isReordering}
-                  />
-                ))}
-              </s-table-body>
-            </s-table>
-          </>
+            </p>
+          </div>
+        </div>
+
+        <hr style={styles.divider} />
+
+        <div style={styles.columnHeaderRow}>
+          <p style={styles.columnHeaderCell}>Location Name</p>
+          <p style={styles.columnHeaderCell}>Timezone</p>
+          <p style={styles.columnHeaderCell}>Hours</p>
+          <p style={styles.columnHeaderCell}>Visibility</p>
+          <p style={{ ...styles.columnHeaderCell, textAlign: "left" }}>
+            Actions
+          </p>
+        </div>
+
+        <hr style={styles.divider} />
+
+        {locations.length === 0 ? (
+          <p style={styles.emptyText}>No locations yet.</p>
+        ) : (
+          locations.map((location, index) => (
+            <LocationRow
+              key={location.id}
+              location={location}
+              isFirst={index === 0}
+              isLast={index === locations.length - 1}
+              onMoveUp={() => moveLocation(index, -1)}
+              onMoveDown={() => moveLocation(index, 1)}
+              isReordering={isReordering}
+            />
+          ))
         )}
-      </s-section>
-    </>
+      </div>
+    </div>
   );
 }
 
