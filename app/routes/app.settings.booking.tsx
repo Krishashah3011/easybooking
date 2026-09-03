@@ -21,6 +21,213 @@ import type { RegisterSave } from "./app.settings";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
+const ACCENT = "#073E74";
+const LINE_BORDER = "#DBDBDB";
+const INPUT_BORDER = "#E9E9EA";
+const LABEL_GREY = "#373737";
+const TEXT_BLACK = "#000000";
+
+const styles: Record<string, React.CSSProperties> = {
+  card: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    padding: "10px 10px 13px",
+    gap: "12px",
+    width: "100%",
+    background: "#FFFFFF",
+    border: `1px solid ${LINE_BORDER}`,
+    borderRadius: "4px",
+  },
+  headerLeft: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "6px",
+    width: "100%",
+  },
+  title: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "16px",
+    lineHeight: "19px",
+    letterSpacing: "0.02em",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  descText: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "12px",
+    lineHeight: "15px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  divider: {
+    border: "none",
+    borderTop: `1px solid ${LINE_BORDER}`,
+    margin: 0,
+    width: "100%",
+  },
+  daysGroup: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "12px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  daysRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "8px 20px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  dayItem: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "10px",
+    height: "24px",
+  },
+  checkbox: {
+    boxSizing: "border-box",
+    width: "24px",
+    height: "24px",
+    borderRadius: "4px",
+    border: `1.5px solid ${ACCENT}`,
+    background: "#FFFFFF",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    flexShrink: 0,
+  },
+  checkboxDot: {
+    width: "14px",
+    height: "14px",
+    borderRadius: "50%",
+    background: ACCENT,
+  },
+  dayLabel: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    margin: 0,
+    cursor: "pointer",
+  },
+  fieldsRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: "12px",
+    width: "100%",
+    alignSelf: "stretch",
+    flexWrap: "wrap",
+  },
+  fieldGroupHalf: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "4px",
+    flex: "1 1 260px",
+    minWidth: 0,
+  },
+  fieldGroupThird: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "8px",
+    flex: "1 1 220px",
+    minWidth: 0,
+  },
+  fieldLabelGrey: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: LABEL_GREY,
+    margin: 0,
+  },
+  fieldLabelBlack: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  inputBox: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: "5px 10px",
+    gap: "10px",
+    width: "100%",
+    height: "34px",
+    background: "#FFFFFF",
+    border: `1px solid ${INPUT_BORDER}`,
+    borderRadius: "4px",
+  },
+  textInput: {
+    flex: "1 1 auto",
+    minWidth: 0,
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "16px",
+    lineHeight: "19px",
+    color: TEXT_BLACK,
+    padding: 0,
+  },
+  hintText: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "12px",
+    lineHeight: "15px",
+    color: LABEL_GREY,
+    margin: 0,
+  },
+};
+
+function Checkbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <div style={styles.dayItem}>
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        aria-label={label}
+        style={styles.checkbox}
+        onClick={onChange}
+      >
+        {checked && <span style={styles.checkboxDot} />}
+      </button>
+      <p style={styles.dayLabel} onClick={onChange}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const settings = await getBookingSettings(session.shop);
@@ -123,94 +330,182 @@ export default function BookingSettingsPage() {
 
   return (
     <>
-      <s-section heading="Working days">
-        <s-paragraph>
-          Choose which days of the week customers can book appointments on.
-        </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-checkbox
-            label="Select all"
-            checked={allWeekdaysSelected}
-            onChange={toggleSelectAllWorkingDays}
-          ></s-checkbox>
-        </s-stack>
-        <s-stack direction="inline" gap="base">
-          {WEEKDAY_LABELS.map((day) => (
-            <s-checkbox
-              key={day.value}
-              label={day.label}
-              checked={values.workingDays.includes(day.value)}
-              onChange={() => toggleWorkingDay(day.value)}
-            ></s-checkbox>
-          ))}
-        </s-stack>
+      <style>{`
+        .no-spinner-input::-webkit-outer-spin-button,
+        .no-spinner-input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        .no-spinner-input {
+          -moz-appearance: textfield;
+        }
+      `}</style>
+
+      <div style={styles.card}>
+        <div style={styles.headerLeft}>
+          <p style={styles.title}>Working Days</p>
+          <p style={styles.descText}>
+            Choose which days of the week customers can book appointments on.
+          </p>
+        </div>
+        <hr style={styles.divider} />
+        <div style={styles.daysGroup}>
+          <div style={styles.daysRow}>
+            <Checkbox
+              checked={allWeekdaysSelected}
+              onChange={toggleSelectAllWorkingDays}
+              label="Select All"
+            />
+          </div>
+          <div style={styles.daysRow}>
+            {WEEKDAY_LABELS.map((day) => (
+              <Checkbox
+                key={day.value}
+                checked={values.workingDays.includes(day.value)}
+                onChange={() => toggleWorkingDay(day.value)}
+                label={day.label}
+              />
+            ))}
+          </div>
+        </div>
         {errors.workingDays && (
-          <s-banner tone="critical">{errors.workingDays}</s-banner>
+          <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+            {errors.workingDays}
+          </p>
         )}
-      </s-section>
+      </div>
 
-      <s-section heading="Daily booking window">
-        <s-paragraph>
-          The earliest and latest time a slot can start each working day.
-        </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-text-field
-            label="Start time"
-            placeholder="09:00"
-            details="24-hour format, HH:mm"
-            value={values.dailyStartTime}
-            error={errors.dailyStartTime}
-            onChange={(e: FieldChangeEvent) =>
-              setField("dailyStartTime", e.currentTarget.value)
-            }
-          ></s-text-field>
-          <s-text-field
-            label="End time"
-            placeholder="17:00"
-            details="24-hour format, HH:mm"
-            value={values.dailyEndTime}
-            error={errors.dailyEndTime}
-            onChange={(e: FieldChangeEvent) =>
-              setField("dailyEndTime", e.currentTarget.value)
-            }
-          ></s-text-field>
-        </s-stack>
-      </s-section>
+      <div style={styles.card}>
+        <div style={styles.headerLeft}>
+          <p style={styles.title}>Daily Booking Window</p>
+          <p style={styles.descText}>
+            The earliest and latest time a slot can start each working day.
+          </p>
+        </div>
+        <hr style={styles.divider} />
+        <div style={styles.fieldsRow}>
+          <div style={styles.fieldGroupHalf}>
+            <p style={styles.fieldLabelGrey}>Start Time</p>
+            <div style={styles.inputBox}>
+              <input
+                type="text"
+                style={styles.textInput}
+                placeholder="09:00"
+                value={values.dailyStartTime}
+                onChange={(e: FieldChangeEvent) =>
+                  setField("dailyStartTime", e.currentTarget.value)
+                }
+              />
+            </div>
+            <p style={styles.hintText}>24-hour format, hh:mm</p>
+            {errors.dailyStartTime && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.dailyStartTime}
+              </p>
+            )}
+          </div>
+          <div style={styles.fieldGroupHalf}>
+            <p style={styles.fieldLabelGrey}>End Time</p>
+            <div style={styles.inputBox}>
+              <input
+                type="text"
+                style={styles.textInput}
+                placeholder="17:00"
+                value={values.dailyEndTime}
+                onChange={(e: FieldChangeEvent) =>
+                  setField("dailyEndTime", e.currentTarget.value)
+                }
+              />
+            </div>
+            <p style={styles.hintText}>24-hour format, hh:mm</p>
+            {errors.dailyEndTime && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.dailyEndTime}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
-      <s-section heading="Slot configuration">
-        <s-stack direction="inline" gap="base">
-          <s-number-field
-            label="Slot duration (minutes)"
-            value={String(values.slotDurationMinutes)}
-            min={5}
-            step={5}
-            error={errors.slotDurationMinutes}
-            onChange={(e: FieldChangeEvent) =>
-              setField("slotDurationMinutes", Number(e.currentTarget.value))
-            }
-          ></s-number-field>
-          <s-number-field
-            label="Buffer time between slots (minutes)"
-            value={String(values.bufferMinutes)}
-            min={0}
-            step={5}
-            error={errors.bufferMinutes}
-            onChange={(e: FieldChangeEvent) =>
-              setField("bufferMinutes", Number(e.currentTarget.value))
-            }
-          ></s-number-field>
-          <s-number-field
-            label="Max bookings per slot (capacity)"
-            value={String(values.maxBookingsPerSlot)}
-            min={1}
-            step={1}
-            error={errors.maxBookingsPerSlot}
-            onChange={(e: FieldChangeEvent) =>
-              setField("maxBookingsPerSlot", Number(e.currentTarget.value))
-            }
-          ></s-number-field>
-        </s-stack>
-      </s-section>
+      <div style={styles.card}>
+        <div style={styles.headerLeft}>
+          <p style={styles.title}>Slot Configuration</p>
+        </div>
+        <hr style={styles.divider} />
+        <div style={styles.fieldsRow}>
+          <div style={styles.fieldGroupThird}>
+            <p style={styles.fieldLabelBlack}>Slot Duration (minutes)</p>
+            <div style={styles.inputBox}>
+              <input
+                type="number"
+                className="no-spinner-input"
+                style={styles.textInput}
+                value={values.slotDurationMinutes}
+                min={5}
+                step={5}
+                onChange={(e: FieldChangeEvent) =>
+                  setField(
+                    "slotDurationMinutes",
+                    Number(e.currentTarget.value),
+                  )
+                }
+              />
+            </div>
+            {errors.slotDurationMinutes && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.slotDurationMinutes}
+              </p>
+            )}
+          </div>
+          <div style={styles.fieldGroupThird}>
+            <p style={styles.fieldLabelBlack}>
+              Buffer Time Between Slots (minutes)
+            </p>
+            <div style={styles.inputBox}>
+              <input
+                type="number"
+                className="no-spinner-input"
+                style={styles.textInput}
+                value={values.bufferMinutes}
+                min={0}
+                step={5}
+                onChange={(e: FieldChangeEvent) =>
+                  setField("bufferMinutes", Number(e.currentTarget.value))
+                }
+              />
+            </div>
+            {errors.bufferMinutes && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.bufferMinutes}
+              </p>
+            )}
+          </div>
+          <div style={styles.fieldGroupThird}>
+            <p style={styles.fieldLabelBlack}>Max Bookings Per Slot</p>
+            <div style={styles.inputBox}>
+              <input
+                type="number"
+                className="no-spinner-input"
+                style={styles.textInput}
+                value={values.maxBookingsPerSlot}
+                min={1}
+                step={1}
+                onChange={(e: FieldChangeEvent) =>
+                  setField(
+                    "maxBookingsPerSlot",
+                    Number(e.currentTarget.value),
+                  )
+                }
+              />
+            </div>
+            {errors.maxBookingsPerSlot && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.maxBookingsPerSlot}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
       <s-section heading="Advance booking rules">
         <s-stack direction="inline" gap="base">
