@@ -805,8 +805,7 @@ function LocationEditor({
                   }
                 />
                 <p style={styles.hintText}>
-                  Booking hours and the times shoppers see for this
-                  location are calculated in this time zone.
+                  Booking hours and slot times use this time zone.
                 </p>
               </div>
             )}
@@ -838,10 +837,8 @@ function LocationEditor({
                 ))}
               </div>
               <p style={styles.descText}>
-                Leave the fields below blank/unchecked to use the shop (or
-                product-level) default. Set them here only if this
-                location's own opening hours are different — e.g. one
-                branch closes earlier than the rest.
+                Leave blank to use the shop default. Only set these if
+                this location's hours differ — e.g. it closes earlier.
               </p>
             </div>
 
@@ -1125,7 +1122,7 @@ export default function LocationsPage() {
         open={open}
         onToggleOpen={() => setOpen(!open)}
         title="Add a Locations"
-        description="Locations customers choose from before picking a date and time on the storefront booking widget — e.g. &quot;California&quot; or &quot;New York&quot;. Each location has its own timezone, so the calendar and time slots shoppers see are always local to the location they pick. If no locations are added, the location step is skipped and booking works exactly as before."
+        description="Locations shoppers pick before choosing a date and time- Each has its own timezone, so slot times are always local."
       />
 
       <div style={styles.listCard}>
@@ -1133,8 +1130,7 @@ export default function LocationsPage() {
           <div style={styles.listHeaderLeft}>
             <p style={styles.listTitle}>Current locations</p>
             <p style={styles.descText}>
-              Use the arrows to change the order shoppers see these in on
-              the storefront.
+              Use the arrows to reorder how these appear on the storefront.
             </p>
           </div>
         </div>

@@ -447,8 +447,8 @@ export default function BookingProductsPage() {
                           >
                             <img
                               src="/edit-icon.svg"
-                              width={22}
-                              height={22}
+                              width={44}
+                              height={40}
                               alt=""
                             />
                           </a>

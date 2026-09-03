@@ -266,13 +266,12 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "nowrap",
     justifyContent: "center",
     alignItems: "center",
-    padding: "10px 16px",
-    gap: "4px",
+    padding: "8px 14px",
+    gap: "6px",
     width: "auto",
-    minWidth: "188px",
-    height: "42px",
+    height: "36px",
     background: ACCENT,
-    borderRadius: "10px",
+    borderRadius: "8px",
     border: "none",
     cursor: "pointer",
     whiteSpace: "nowrap",
@@ -284,8 +283,8 @@ const styles: Record<string, React.CSSProperties> = {
   addButtonLabel: {
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "16px",
-    lineHeight: "19px",
+    fontSize: "14px",
+    lineHeight: "17px",
     color: "#FFFFFF",
     whiteSpace: "nowrap",
     flexShrink: 0,
@@ -295,9 +294,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: "3px",
-    width: "20px",
-    height: "20px",
+    width: "16px",
+    height: "16px",
     flexShrink: 0,
   },
   cancelButton: {
@@ -305,10 +303,10 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: "10px 16px",
-    height: "42px",
+    padding: "8px 14px",
+    height: "36px",
     background: "transparent",
-    borderRadius: "10px",
+    borderRadius: "8px",
     border: `1px solid ${INPUT_BORDER}`,
     cursor: "pointer",
     whiteSpace: "nowrap",
@@ -316,8 +314,8 @@ const styles: Record<string, React.CSSProperties> = {
   cancelButtonLabel: {
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "16px",
-    lineHeight: "19px",
+    fontSize: "14px",
+    lineHeight: "17px",
     color: TEXT_BLACK,
     whiteSpace: "nowrap",
   },
@@ -900,7 +898,7 @@ export default function CustomFieldsPage() {
         onToggleOpen={() => setOpen(!open)}
         title="Add a field"
         description={
-          'Extra questions customers answer on the booking widget, in addition to name, email, and phone — e.g. "Number of guests" or "Special requests". Applies to every bookable product.'
+          'Extra questions customers answer on the booking widget- e.g. "Number of guests" or "Special requests". Applies to every bookable product.'
         }
       />
 

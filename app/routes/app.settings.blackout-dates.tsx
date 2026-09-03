@@ -455,7 +455,7 @@ export default function BlackoutDatesPage() {
             <div style={styles.headerLeft}>
               <p style={styles.title}>Add a Blackout Date</p>
               <p style={styles.descText}>
-                Block bookings across your store on specific dates —
+                Block bookings across your store on specific dates-
                 holidays, closures, and one-off events.
               </p>
             </div>

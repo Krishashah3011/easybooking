@@ -82,23 +82,13 @@ export default function SmtpSettingsTab() {
     );
   };
 
-  // Hand this page's save action + saving state up to the shared
-  // "Save Settings" button in the settings header, and hand it back
-  // (null) on unmount so leaving this tab doesn't leave it wired to
-  // a stale handler.
   useEffect(() => {
     registerSave(handleSave, isSaving);
     return () => registerSave(null, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerSave, smtpValues, isSaving]);
 
   return (
-    <div style={styles.innerCard}>
-      <div style={styles.subLabel}>
-        Configure the SMTP server used to send booking confirmation, reminder, and cancellation emails to
-        your customers.
-      </div>
-
+    
       <div style={styles.clientCard}>
         <div style={styles.clientCardBody}>
           <div style={styles.clientCardHeader}>
@@ -198,7 +188,6 @@ export default function SmtpSettingsTab() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
