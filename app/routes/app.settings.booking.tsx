@@ -463,14 +463,9 @@ export default function BookingSettingsPage() {
     );
   };
 
-  // Hand this page's save action + saving state up to the shared
-  // "Save Settings" button in the settings header, and hand it back
-  // (null) on unmount so leaving this tab doesn't leave it wired to
-  // a stale handler.
   useEffect(() => {
     registerSave(handleSave, isSaving);
     return () => registerSave(null, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerSave, values, isSaving]);
 
   return (
@@ -786,8 +781,8 @@ export default function BookingSettingsPage() {
         <div style={styles.headerLeft}>
           <p style={styles.title}>Booking Start and End Date</p>
           <p style={styles.descText}>
-            Optional. Restricts the overall window bookings are accepted
-            in — leave blank for no restriction (e.g. a seasonal service).
+            Restricts the overall window bookings are accepted
+            in. (leave blank for no restriction)
           </p>
         </div>
         <hr style={styles.divider} />

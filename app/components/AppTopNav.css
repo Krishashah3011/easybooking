@@ -3,10 +3,6 @@
   flex-wrap: nowrap;
   align-items: center;
   gap: 0.5rem;
-  /* Match the horizontal inset Polaris uses inside s-page/s-section,
-     instead of a hardcoded value that can drift out of sync at
-     different breakpoints. Falls back to the old values if the
-     tokens aren't available for some reason. */
   padding-block: var(--p-space-300, 0.6rem);
   padding-inline: 1.5rem;
   background: var(--p-color-bg-surface-secondary, #eef0f1);
@@ -25,13 +21,6 @@
   flex: 1 1 auto;
 }
 
-/*
-  Each icon (HomeIcon, SettingsIcon, etc.) is now a self-contained
-  48x48 SVG that paints its own badge background/border and switches
-  between the filled-green (active) and outlined (inactive) look
-  internally. The link itself only needs to size and space it, plus
-  provide keyboard-focus and hover affordances.
-*/
 .link {
   display: flex;
   align-items: center;

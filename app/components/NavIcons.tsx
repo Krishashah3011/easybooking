@@ -8,12 +8,6 @@ export type IconProps = {
 const GREEN = "#96BF47";
 const NAVY = "#073E74";
 
-/**
- * Shared 48x48 badge frame used by every top-level nav icon.
- * Active items get a filled green badge; inactive items get a
- * transparent badge with a green outline. The icon glyph itself is
- * always drawn in navy, matching the reference icons.
- */
 function NavBadge({
   active,
   className,
@@ -47,11 +41,6 @@ function NavBadge({
   );
 }
 
-/**
- * Wraps a placeholder glyph (still on the old 24x24 grid) so it sits
- * inside the new badge's 20x20 icon area (14,14)-(34,34), recolored
- * to navy. Swap these paths out for the real icons once they're sent.
- */
 function PlaceholderGlyph({ children }: { children: ReactNode }) {
   return (
     <g

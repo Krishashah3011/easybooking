@@ -212,8 +212,6 @@ export type GuideStep = {
   href: string;
   done?: boolean;
   external?: boolean;
-  /** When true, the step's real destination is replaced with a
-   *  "Register to unlock" prompt pointing at /app/account. */
   locked?: boolean;
 };
 

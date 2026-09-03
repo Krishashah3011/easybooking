@@ -65,11 +65,6 @@ export function isValidTimezone(timeZone: string): boolean {
   }
 }
 
-/**
- * Returns the UTC offset (in minutes, e.g. -420 for UTC-7) that `timeZone`
- * observes at `instant`. Handles DST because it asks Intl to render the
- * instant in that zone and compares it back to the UTC wall clock.
- */
 function offsetMinutesAt(instant: Date, timeZone: string): number {
   const dtf = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -96,12 +91,6 @@ function offsetMinutesAt(instant: Date, timeZone: string): number {
   return (asUtc - instant.getTime()) / 60000;
 }
 
-/**
- * Converts a "YYYY-MM-DD" date + "HH:MM" wall-clock time that is meant to
- * represent local time in `timeZone` into the correct UTC instant.
- * Falls back to treating the wall clock as UTC when the zone is invalid,
- * matching the app's previous (timezone-less) behaviour.
- */
 export function zonedTimeToUtc(
   dateStr: string,
   timeStr: string,
@@ -118,11 +107,6 @@ export function zonedTimeToUtc(
   return guess;
 }
 
-/**
- * Formats a UTC instant as "DD-MM-YYYY, HH:mm" wall-clock time in `timeZone`.
- * Falls back to formatting the instant as raw UTC when the zone is missing
- * or invalid, matching the app's previous (timezone-less) behaviour.
- */
 export function formatInstantInTimezone(
   value: string | Date,
   timeZone: string | null | undefined,
@@ -146,9 +130,6 @@ export function formatInstantInTimezone(
   return `${get("day")}-${get("month")}-${get("year")}, ${get("hour")}:${get("minute")}`;
 }
 
-/**
- * Human-friendly "GMT+5:30" style offset label for a timezone right now.
- */
 export function timezoneOffsetLabel(timeZone: string): string {
   try {
     const parts = new Intl.DateTimeFormat("en-US", {

@@ -19,9 +19,6 @@ const TABS = [
   { to: "/app/settings/smtp", label: "SMTP Settings" },
 ];
 
-// Lets any settings sub-page opt in to the shared "Save Settings" button in
-// the header — call this in a useEffect with your own save handler and
-// saving state. Pages that don't call it just leave the button inert.
 export type RegisterSave = (
   handler: (() => void) | null,
   isSaving?: boolean,
