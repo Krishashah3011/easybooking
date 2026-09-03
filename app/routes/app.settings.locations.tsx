@@ -167,6 +167,22 @@ const styles: Record<string, React.CSSProperties> = {
     flex: "1 1 260px",
     minWidth: 0,
   },
+  fieldGroupThirty: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "4px",
+    flex: "3 1 0",
+    minWidth: 0,
+  },
+  fieldGroupSeventy: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "4px",
+    flex: "7 1 0",
+    minWidth: 0,
+  },
   fieldLabel: {
     fontFamily: "Inter",
     fontWeight: 500,
@@ -304,8 +320,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     padding: "10px 16px",
     gap: "4px",
-    width: "auto",
-    minWidth: "188px",
+    width: "fit-content",
     height: "42px",
     background: ACCENT,
     borderRadius: "10px",
@@ -742,29 +757,29 @@ function LocationEditor({
           <>
             {showChrome && <hr style={styles.divider} />}
 
-            <div style={styles.fieldGroupFull}>
-              <p style={styles.fieldLabel}>Location name</p>
-              <div style={styles.inputBox}>
-                <input
-                  type="text"
-                  style={styles.textInput}
-                  placeholder="California"
-                  value={values.name}
-                  onChange={(e: FieldChangeEvent) => {
-                    const value = e.currentTarget.value;
-                    setValues((prev) => ({ ...prev, name: value }));
-                  }}
-                />
-              </div>
-              {errors.name && (
-                <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                  {errors.name}
-                </p>
-              )}
-            </div>
-
             <div style={styles.fieldsRow}>
-              <div style={styles.fieldGroupHalf}>
+              <div style={styles.fieldGroupThirty}>
+                <p style={styles.fieldLabel}>Location name</p>
+                <div style={styles.inputBox}>
+                  <input
+                    type="text"
+                    style={styles.textInput}
+                    placeholder="California"
+                    value={values.name}
+                    onChange={(e: FieldChangeEvent) => {
+                      const value = e.currentTarget.value;
+                      setValues((prev) => ({ ...prev, name: value }));
+                    }}
+                  />
+                </div>
+                {errors.name && (
+                  <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                    {errors.name}
+                  </p>
+                )}
+              </div>
+
+              <div style={styles.fieldGroupSeventy}>
                 <p style={styles.fieldLabel}>Country</p>
                 <CountrySelect
                   value={countryCode}
@@ -772,24 +787,24 @@ function LocationEditor({
                   onChange={handleCountryChange}
                 />
               </div>
-
-              {selectedCountry && selectedCountry.timezones.length > 1 && (
-                <div style={styles.fieldGroupHalf}>
-                  <p style={styles.fieldLabel}>Region</p>
-                  <RegionSelect
-                    country={selectedCountry}
-                    value={values.timezone}
-                    onChange={(tz) =>
-                      setValues((prev) => ({ ...prev, timezone: tz }))
-                    }
-                  />
-                  <p style={styles.hintText}>
-                    Booking hours and the times shoppers see for this
-                    location are calculated in this time zone.
-                  </p>
-                </div>
-              )}
             </div>
+
+            {selectedCountry && selectedCountry.timezones.length > 1 && (
+              <div style={styles.fieldGroupFull}>
+                <p style={styles.fieldLabel}>Region</p>
+                <RegionSelect
+                  country={selectedCountry}
+                  value={values.timezone}
+                  onChange={(tz) =>
+                    setValues((prev) => ({ ...prev, timezone: tz }))
+                  }
+                />
+                <p style={styles.hintText}>
+                  Booking hours and the times shoppers see for this
+                  location are calculated in this time zone.
+                </p>
+              </div>
+            )}
 
             {errors.timezone && (
               <p style={{ ...styles.hintText, color: "#D82C0D" }}>
