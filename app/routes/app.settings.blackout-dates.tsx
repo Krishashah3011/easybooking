@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -85,7 +85,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "6px",
   },
   title: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "16px",
     lineHeight: "19px",
@@ -94,7 +94,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   descText: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
@@ -144,7 +144,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: "1 1 auto",
   },
   fieldLabel: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
@@ -170,12 +170,15 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     outline: "none",
     background: "transparent",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
     color: TEXT_BLACK,
     padding: 0,
+    cursor: "pointer",
+  },
+  inputBoxDateClickable: {
     cursor: "pointer",
   },
   inputBoxReason: {
@@ -196,7 +199,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     outline: "none",
     background: "transparent",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
@@ -207,27 +210,32 @@ const styles: Record<string, React.CSSProperties> = {
   addButton: {
     display: "flex",
     flexDirection: "row",
+    flexWrap: "nowrap",
     justifyContent: "center",
     alignItems: "center",
-    padding: "10px",
+    padding: "10px 16px",
     gap: "4px",
-    width: "188px",
+    width: "auto",
+    minWidth: "188px",
     height: "42px",
     background: ACCENT,
     borderRadius: "10px",
     border: "none",
     cursor: "pointer",
+    whiteSpace: "nowrap",
   },
   addButtonDisabled: {
     opacity: 0.6,
     cursor: "not-allowed",
   },
   addButtonLabel: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "16px",
     lineHeight: "19px",
     color: "#FFFFFF",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   },
   plusWrap: {
     display: "flex",
@@ -237,6 +245,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "3px",
     width: "20px",
     height: "20px",
+    flexShrink: 0,
   },
   listCard: {
     boxSizing: "border-box",
@@ -265,7 +274,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "3px",
   },
   listTitle: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "16px",
     lineHeight: "19px",
@@ -283,7 +292,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   columnHeaderCell: {
     flex: "1 1 0",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
@@ -302,7 +311,7 @@ const styles: Record<string, React.CSSProperties> = {
   rowCell: {
     flex: "1 1 0",
     alignSelf: "center",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
@@ -331,7 +340,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   emptyText: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
@@ -384,6 +393,17 @@ export default function BlackoutDatesPage() {
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
   const [open, setOpen] = useState(true);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const openDatePicker = () => {
+    const el = dateInputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === "function") {
+      el.showPicker();
+    } else {
+      el.focus();
+    }
+  };
 
   const errors: BlackoutDateFieldErrors =
     fetcher.data?.intent === "add" ? (fetcher.data.errors ?? {}) : {};
@@ -411,7 +431,21 @@ export default function BlackoutDatesPage() {
   };
 
   return (
-    <div style={{ fontFamily: "Inter, sans-serif" }}>
+    <div style={{ fontFamily: "Inter" }}>
+      <style>{`
+        .blackout-date-input::-webkit-calendar-picker-indicator {
+          opacity: 0;
+          position: absolute;
+          right: 0;
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          cursor: pointer;
+        }
+        .blackout-date-input {
+          position: relative;
+        }
+      `}</style>
       <div style={{ ...styles.card, height: open ? "225px" : "auto" }}>
         <div style={styles.body}>
           <div style={styles.headerRow}>
@@ -439,13 +473,22 @@ export default function BlackoutDatesPage() {
               <div style={styles.fieldsRow}>
                 <div style={styles.fieldGroupDate}>
                   <p style={styles.fieldLabel}>Date</p>
-                  <div style={styles.inputBoxDate}>
+                  <div
+                    style={{
+                      ...styles.inputBoxDate,
+                      ...styles.inputBoxDateClickable,
+                    }}
+                    onClick={openDatePicker}
+                  >
                     <img src="/date-icon.svg" width={18} height={20} alt="" />
                     <input
+                      ref={dateInputRef}
                       type="date"
+                      className="blackout-date-input"
                       style={styles.visibleDateInput}
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
                       aria-label="Date"
                     />
                   </div>
