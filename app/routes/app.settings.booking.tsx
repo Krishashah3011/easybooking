@@ -140,6 +140,15 @@ const styles: Record<string, React.CSSProperties> = {
     flex: "1 1 260px",
     minWidth: 0,
   },
+  fieldGroupFull: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "4px",
+    flex: "1 1 100%",
+    width: "100%",
+    minWidth: 0,
+  },
   fieldGroupThird: {
     display: "flex",
     flexDirection: "column",
@@ -198,7 +207,119 @@ const styles: Record<string, React.CSSProperties> = {
     color: LABEL_GREY,
     margin: 0,
   },
+  descRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "8px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  infoIcon: {
+    flexShrink: 0,
+  },
+  selectBox: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "5px 10px",
+    gap: "10px",
+    width: "100%",
+    height: "34px",
+    background: "#FFFFFF",
+    border: `1px solid ${INPUT_BORDER}`,
+    borderRadius: "4px",
+  },
+  dateBox: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: "5px 10px",
+    gap: "10px",
+    width: "100%",
+    height: "34px",
+    background: "#FFFFFF",
+    border: `1px solid ${INPUT_BORDER}`,
+    borderRadius: "4px",
+    position: "relative",
+  },
+  dateInput: {
+    flex: "1 1 auto",
+    minWidth: 0,
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "16px",
+    lineHeight: "19px",
+    color: TEXT_BLACK,
+    padding: 0,
+  },
 };
+
+function InfoIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      style={styles.infoIcon}
+      aria-hidden="true"
+    >
+      <path
+        d="M9 12.5H8.5V8.031a.5.5 0 0 0-.5-.531H7a.5.5 0 0 0 0 1h.5v4H7a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1ZM8 6.5A1 1 0 1 0 8 4.5a1 1 0 0 0 0 2ZM8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 12.984A5.984 5.984 0 1 1 8 1.032a5.984 5.984 0 0 1 0 11.952Z"
+        fill={ACCENT}
+      />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="11"
+      height="6"
+      viewBox="0 0 11 6"
+      fill="none"
+      aria-hidden="true"
+      style={{ flexShrink: 0 }}
+    >
+      <path
+        d="M1 1l4.195 4.577c.527.575.79.862 1.116.925.124.024.252.024.377 0 .325-.063.588-.35 1.116-.925L11.999 1"
+        stroke={ACCENT}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg
+      width="18"
+      height="20"
+      viewBox="0 0 18 20"
+      fill="none"
+      aria-hidden="true"
+      style={{ flexShrink: 0 }}
+    >
+      <path
+        d="M1 8h16M4.5 1v3M13.5 1v3M3 3h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
+        stroke={ACCENT}
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function Checkbox({
   checked,
@@ -507,73 +628,164 @@ export default function BookingSettingsPage() {
         </div>
       </div>
 
-      <s-section heading="Advance booking rules">
-        <s-stack direction="inline" gap="base">
-          <s-number-field
-            label="Minimum advance booking time (hours)"
-            value={String(values.minAdvanceHours)}
-            min={0}
-            step={1}
-            error={errors.minAdvanceHours}
-            onChange={(e: FieldChangeEvent) =>
-              setField("minAdvanceHours", Number(e.currentTarget.value))
-            }
-          ></s-number-field>
-          <s-number-field
-            label="Maximum advance booking (days)"
-            value={String(values.maxAdvanceDays)}
-            min={1}
-            step={1}
-            error={errors.maxAdvanceDays}
-            onChange={(e: FieldChangeEvent) =>
-              setField("maxAdvanceDays", Number(e.currentTarget.value))
-            }
-          ></s-number-field>
-        </s-stack>
-      </s-section>
+      <div style={styles.card}>
+        <div style={styles.headerLeft}>
+          <p style={styles.title}>Advance Booking Rules</p>
+          <div style={styles.descRow}>
+            <p style={styles.descText}>
+              Control how soon and how far ahead customers are allowed to
+              book an appointment.
+            </p>
+            <InfoIcon />
+          </div>
+        </div>
+        <hr style={styles.divider} />
+        <div style={styles.fieldsRow}>
+          <div style={styles.fieldGroupHalf}>
+            <p style={styles.fieldLabelBlack}>
+              Minimum Advance Booking Time (hours)
+            </p>
+            <div style={styles.selectBox}>
+              <input
+                type="number"
+                className="no-spinner-input"
+                style={styles.textInput}
+                value={values.minAdvanceHours}
+                min={0}
+                step={1}
+                onChange={(e: FieldChangeEvent) =>
+                  setField("minAdvanceHours", Number(e.currentTarget.value))
+                }
+              />
+              <ChevronDownIcon />
+            </div>
+            {errors.minAdvanceHours && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.minAdvanceHours}
+              </p>
+            )}
+          </div>
+          <div style={styles.fieldGroupHalf}>
+            <p style={styles.fieldLabelBlack}>
+              Minimum Advance Booking (days)
+            </p>
+            <div style={styles.selectBox}>
+              <input
+                type="number"
+                className="no-spinner-input"
+                style={styles.textInput}
+                value={values.maxAdvanceDays}
+                min={1}
+                step={1}
+                onChange={(e: FieldChangeEvent) =>
+                  setField("maxAdvanceDays", Number(e.currentTarget.value))
+                }
+              />
+              <ChevronDownIcon />
+            </div>
+            {errors.maxAdvanceDays && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.maxAdvanceDays}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
-      <s-section heading="Booking start & end date">
-        <s-paragraph>
-          Optional. Restricts the overall window bookings are accepted in —
-          leave blank for no restriction (e.g. a seasonal service).
-        </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-date-field
-            label="Booking start date"
-            value={values.bookingStartDate ?? ""}
-            error={errors.bookingStartDate}
-            onChange={(e: FieldChangeEvent) =>
-              setField("bookingStartDate", e.currentTarget.value || null)
-            }
-          ></s-date-field>
-          <s-date-field
-            label="Booking end date"
-            value={values.bookingEndDate ?? ""}
-            error={errors.bookingEndDate}
-            onChange={(e: FieldChangeEvent) =>
-              setField("bookingEndDate", e.currentTarget.value || null)
-            }
-          ></s-date-field>
-        </s-stack>
-      </s-section>
+      <div style={styles.card}>
+        <div style={styles.headerLeft}>
+          <p style={styles.title}>Booking Start and End Date</p>
+          <div style={styles.descRow}>
+            <p style={styles.descText}>
+              Optional. Restricts the overall window bookings are accepted
+              in — leave blank for no restriction (e.g. a seasonal service).
+            </p>
+            <InfoIcon />
+          </div>
+        </div>
+        <hr style={styles.divider} />
+        <div style={styles.fieldsRow}>
+          <div style={styles.fieldGroupHalf}>
+            <p style={styles.fieldLabelBlack}>Booking Start Date</p>
+            <div style={styles.dateBox}>
+              <CalendarIcon />
+              <input
+                type="date"
+                style={styles.dateInput}
+                value={values.bookingStartDate ?? ""}
+                onChange={(e: FieldChangeEvent) =>
+                  setField("bookingStartDate", e.currentTarget.value || null)
+                }
+              />
+            </div>
+            {errors.bookingStartDate && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.bookingStartDate}
+              </p>
+            )}
+          </div>
+          <div style={styles.fieldGroupHalf}>
+            <p style={styles.fieldLabelBlack}>Booking End Date</p>
+            <div style={styles.dateBox}>
+              <CalendarIcon />
+              <input
+                type="date"
+                style={styles.dateInput}
+                value={values.bookingEndDate ?? ""}
+                onChange={(e: FieldChangeEvent) =>
+                  setField("bookingEndDate", e.currentTarget.value || null)
+                }
+              />
+            </div>
+            {errors.bookingEndDate && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.bookingEndDate}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
-      <s-section heading="Email notifications">
-        <s-paragraph>
-          The display name customers see as the sender on booking
-          confirmation, reminder, and cancellation emails. Leave blank to
-          use the default.
-        </s-paragraph>
-        <s-text-field
-          label="Sender name"
-          placeholder="Bookings"
-          details={`Shown as e.g. "Acme Bookings <bookings@yourdomain.com>" — the email address itself can't be changed here.`}
-          value={values.emailFromName ?? ""}
-          error={errors.emailFromName}
-          onChange={(e: FieldChangeEvent) =>
-            setField("emailFromName", e.currentTarget.value || null)
-          }
-        ></s-text-field>
-      </s-section>
+      <div style={styles.card}>
+        <div style={styles.headerLeft}>
+          <p style={styles.title}>Email Notifications</p>
+          <div style={styles.descRow}>
+            <p style={styles.descText}>
+              The display name customers see as the sender on booking
+              confirmation, reminder, and cancellation emails. Leave blank
+              to use the default.
+            </p>
+            <InfoIcon />
+          </div>
+        </div>
+        <hr style={styles.divider} />
+        <div style={styles.fieldsRow}>
+          <div style={styles.fieldGroupFull}>
+            <p style={styles.fieldLabelGrey}>Sender Name</p>
+            <div style={styles.inputBox}>
+              <input
+                type="text"
+                style={styles.textInput}
+                placeholder="Bookings"
+                value={values.emailFromName ?? ""}
+                onChange={(e: FieldChangeEvent) =>
+                  setField("emailFromName", e.currentTarget.value || null)
+                }
+              />
+            </div>
+            <p style={styles.hintText}>
+              Shown as e.g. &quot;Acme Bookings
+              &lt;bookings@yourdomain.com&gt;&quot; — the email address
+              itself can&apos;t be changed here.
+            </p>
+            {errors.emailFromName && (
+              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                {errors.emailFromName}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </>
   );
 }
