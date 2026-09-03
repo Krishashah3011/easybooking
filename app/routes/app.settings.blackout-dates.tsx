@@ -49,12 +49,6 @@ const PlusIcon = () => (
   </svg>
 );
 
-const formatDisplayDate = (iso: string) => {
-  if (!iso) return "";
-  const [y, m, d] = iso.split("-");
-  return `${d} - ${m} - ${y}`;
-};
-
 const styles: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
@@ -63,7 +57,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "flex-end",
     padding: "10px 10px 13px",
     gap: "16px",
-    width: "100%",
+    width: "886px",
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER}`,
     borderRadius: "4px",
@@ -159,7 +153,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   inputBoxDate: {
     boxSizing: "border-box",
-    position: "relative",
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
@@ -171,24 +164,18 @@ const styles: Record<string, React.CSSProperties> = {
     border: `1px solid ${INPUT_BORDER}`,
     borderRadius: "4px",
   },
-  dateDisplayText: {
+  visibleDateInput: {
     flex: "1 1 auto",
+    minWidth: 0,
+    border: "none",
+    outline: "none",
+    background: "transparent",
     fontFamily: "Inter, sans-serif",
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
     color: TEXT_BLACK,
-    pointerEvents: "none",
-  },
-  hiddenDateInput: {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    opacity: 0,
-    border: "none",
     padding: 0,
-    margin: 0,
     cursor: "pointer",
   },
   inputBoxReason: {
@@ -314,6 +301,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   rowCell: {
     flex: "1 1 0",
+    alignSelf: "center",
     fontFamily: "Inter, sans-serif",
     fontWeight: 400,
     fontSize: "14px",
@@ -323,6 +311,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   actionsCell: {
     flex: "1 1 0",
+    alignSelf: "center",
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
@@ -333,7 +322,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: "10px",
+    padding: 0,
     width: "44px",
     height: "40px",
     borderRadius: "4px",
@@ -422,8 +411,8 @@ export default function BlackoutDatesPage() {
   };
 
   return (
-    <>
-      <div style={styles.card}>
+    <div style={{ fontFamily: "Inter, sans-serif" }}>
+      <div style={{ ...styles.card, height: open ? "225px" : "auto" }}>
         <div style={styles.body}>
           <div style={styles.headerRow}>
             <div style={styles.headerLeft}>
@@ -452,12 +441,9 @@ export default function BlackoutDatesPage() {
                   <p style={styles.fieldLabel}>Date</p>
                   <div style={styles.inputBoxDate}>
                     <img src="/date-icon.svg" width={18} height={20} alt="" />
-                    <span style={styles.dateDisplayText}>
-                      {date ? formatDisplayDate(date) : "DD - MM - YYYY"}
-                    </span>
                     <input
                       type="date"
-                      style={styles.hiddenDateInput}
+                      style={styles.visibleDateInput}
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
                       aria-label="Date"
@@ -551,7 +537,13 @@ export default function BlackoutDatesPage() {
                     disabled={isSubmitting}
                     aria-label="Delete blackout date"
                   >
-                    <img src="/delete-icon.svg" width={19} height={20} alt="Delete" />
+                    <img
+                      src="/delete-icon.svg"
+                      width={44}
+                      height={40}
+                      alt="Delete"
+                      style={{ display: "block" }}
+                    />
                   </button>
                 </div>
               </div>
@@ -560,7 +552,7 @@ export default function BlackoutDatesPage() {
           ))
         )}
       </div>
-    </>
+    </div>
   );
 }
 
