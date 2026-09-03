@@ -282,3 +282,86 @@ export function EyeOffIcon() {
     </svg>
   );
 }
+export const tabNavRowStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginTop: "20px",
+};
+
+export function backNavButtonStyle(disabled: boolean): React.CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "10px 20px",
+    borderRadius: "8px",
+    border: `1px solid ${BORDER}`,
+    background: LICENSE_BG,
+    color: disabled ? "#A6A6A6" : TEXT_DARK,
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "14px",
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.6 : 1,
+  };
+}
+
+export function nextNavButtonStyle(disabled: boolean): React.CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "10px 24px",
+    borderRadius: "8px",
+    border: "none",
+    background: BLUE,
+    color: "#fff",
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "14px",
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.6 : 1,
+  };
+}
+
+export function ChevronLeftIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function TabNavRow({
+  onBack,
+  onNext,
+  isFirst,
+  isLast,
+}: {
+  onBack: () => void;
+  onNext: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
+  return (
+    <div style={tabNavRowStyle}>
+      <button type="button" style={backNavButtonStyle(isFirst)} disabled={isFirst} onClick={onBack}>
+        <ChevronLeftIcon />
+        Back
+      </button>
+      <button type="button" style={nextNavButtonStyle(isLast)} disabled={isLast} onClick={onNext}>
+        Next
+        <ChevronRightIcon />
+      </button>
+    </div>
+  );
+}

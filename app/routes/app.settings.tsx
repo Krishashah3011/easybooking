@@ -1,12 +1,13 @@
 import { useCallback, useState } from "react";
 import type { HeadersFunction } from "react-router";
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import {
   styles,
   tabButtonStyle,
   saveWrapperStyle,
   saveButtonStyle,
+  TabNavRow,
 } from "../components/SettingsUI";
 
 const TABS = [
@@ -29,11 +30,27 @@ export type RegisterSave = (
 export default function SettingsLayout() {
   const [saveHandler, setSaveHandler] = useState<(() => void) | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const registerSave: RegisterSave = useCallback((handler, saving = false) => {
     setSaveHandler(() => handler);
     setIsSaving(saving);
   }, []);
+
+  const currentPath = location.pathname.replace(/\/$/, "") || "/app/settings";
+  const activeIndex = TABS.findIndex((tab) => tab.to === currentPath);
+  const isFirst = activeIndex <= 0;
+  const isLast = activeIndex === -1 || activeIndex === TABS.length - 1;
+
+  const goBack = () => {
+    if (activeIndex > 0) navigate(TABS[activeIndex - 1].to);
+  };
+  const goNext = () => {
+    if (activeIndex !== -1 && activeIndex < TABS.length - 1) {
+      navigate(TABS[activeIndex + 1].to);
+    }
+  };
 
   return (
     <s-page heading="Settings" inlineSize="large" style={{ fontFamily: "Inter" }}>
@@ -70,6 +87,8 @@ export default function SettingsLayout() {
         </div>
 
         <Outlet context={{ registerSave }} />
+
+        <TabNavRow onBack={goBack} onNext={goNext} isFirst={isFirst} isLast={isLast} />
       </div>
     </s-page>
   );
