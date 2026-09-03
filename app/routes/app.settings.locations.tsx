@@ -735,7 +735,13 @@ function LocationEditor({
     <div style={{ ...styles.card, height: "auto" }}>
       <div style={styles.body}>
         {showChrome && (
-          <div style={styles.headerRow}>
+          <div
+            style={{
+              ...styles.headerRow,
+              cursor: onToggleOpen ? "pointer" : undefined,
+            }}
+            onClick={onToggleOpen}
+          >
             <div style={styles.headerLeft}>
               <p style={styles.title}>{title}</p>
               {description && <p style={styles.descText}>{description}</p>}
@@ -744,7 +750,6 @@ function LocationEditor({
               <button
                 type="button"
                 style={styles.chevronButton}
-                onClick={onToggleOpen}
                 aria-label={open ? "Collapse" : "Expand"}
               >
                 <ChevronIcon open={Boolean(open)} />
@@ -1029,7 +1034,7 @@ function LocationRow({
               ...(isFirst || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
             onClick={onMoveUp}
-            disabled={isFirst || isBusy}
+            disabled={isBusy}
             aria-label={`Move ${location.name} up`}
           >
             <img src="/arrow-up.svg" width={44} height={40} alt="" />
@@ -1041,7 +1046,7 @@ function LocationRow({
               ...(isLast || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
             onClick={onMoveDown}
-            disabled={isLast || isBusy}
+            disabled={isBusy}
             aria-label={`Move ${location.name} down`}
           >
             <img src="/arrow-down.svg" width={44} height={40} alt="" />
@@ -1102,8 +1107,7 @@ export default function LocationsPage() {
   };
 
   const moveLocation = (index: number, direction: -1 | 1) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= locations.length) return;
+    const targetIndex = (index + direction + locations.length) % locations.length;
 
     const reordered = [...locations];
     const [moved] = reordered.splice(index, 1);

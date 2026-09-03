@@ -448,7 +448,10 @@ export default function BlackoutDatesPage() {
       `}</style>
       <div style={{ ...styles.card, height: open ? "225px" : "auto" }}>
         <div style={styles.body}>
-          <div style={styles.headerRow}>
+          <div
+            style={{ ...styles.headerRow, cursor: "pointer" }}
+            onClick={() => setOpen(!open)}
+          >
             <div style={styles.headerLeft}>
               <p style={styles.title}>Add a Blackout Date</p>
               <p style={styles.descText}>
@@ -459,7 +462,6 @@ export default function BlackoutDatesPage() {
             <button
               type="button"
               style={styles.chevronButton}
-              onClick={() => setOpen(!open)}
               aria-label={open ? "Collapse" : "Expand"}
             >
               <ChevronIcon open={open} />

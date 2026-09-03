@@ -571,7 +571,13 @@ function FieldEditor({
     <div style={{ ...styles.card, height: "auto" }}>
       <div style={styles.body}>
         {showChrome && (
-          <div style={styles.headerRow}>
+          <div
+            style={{
+              ...styles.headerRow,
+              cursor: onToggleOpen ? "pointer" : undefined,
+            }}
+            onClick={onToggleOpen}
+          >
             <div style={styles.headerLeft}>
               <p style={styles.title}>{title}</p>
               {description && <p style={styles.descText}>{description}</p>}
@@ -580,7 +586,6 @@ function FieldEditor({
               <button
                 type="button"
                 style={styles.chevronButton}
-                onClick={onToggleOpen}
                 aria-label={open ? "Collapse" : "Expand"}
               >
                 <ChevronIcon open={Boolean(open)} />
@@ -793,7 +798,7 @@ function FieldRow({
               ...(isFirst || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
             onClick={onMoveUp}
-            disabled={isFirst || isBusy}
+            disabled={isBusy}
             aria-label={`Move ${field.label} up`}
           >
             <img src="/arrow-up.svg" 
@@ -808,7 +813,7 @@ function FieldRow({
               ...(isLast || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
             onClick={onMoveDown}
-            disabled={isLast || isBusy}
+            disabled={isBusy}
             aria-label={`Move ${field.label} down`}
           >
             <img src="/arrow-down.svg" 
@@ -876,8 +881,7 @@ export default function CustomFieldsPage() {
   };
 
   const moveField = (index: number, direction: -1 | 1) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= fields.length) return;
+    const targetIndex = (index + direction + fields.length) % fields.length;
 
     const reordered = [...fields];
     const [moved] = reordered.splice(index, 1);
