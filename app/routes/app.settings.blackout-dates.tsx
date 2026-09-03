@@ -21,14 +21,6 @@ const INPUT_BORDER = "#E9E9EA";
 const LABEL_GREY = "#373737";
 const TEXT_BLACK = "#000000";
 
-const InfoIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="8" cy="8" r="7.25" stroke={ACCENT} strokeWidth="1.5" />
-    <circle cx="8" cy="4.9" r="1" fill={ACCENT} />
-    <path d="M8 7.2V11.6" stroke={ACCENT} strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
 const ChevronIcon = ({ open }: { open: boolean }) => (
   <svg
     width="11"
@@ -51,20 +43,17 @@ const ChevronIcon = ({ open }: { open: boolean }) => (
   </svg>
 );
 
-const CalendarIcon = () => (
-  <svg width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="3" width="16" height="16" rx="2" stroke={ACCENT} strokeWidth="1.4" />
-    <path d="M1 7.5H17" stroke={ACCENT} strokeWidth="1.4" />
-    <path d="M5 1V4.5" stroke={ACCENT} strokeWidth="1.4" strokeLinecap="round" />
-    <path d="M13 1V4.5" stroke={ACCENT} strokeWidth="1.4" strokeLinecap="round" />
-  </svg>
-);
-
 const PlusIcon = () => (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M6 1V11M1 6H11" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
+
+const formatDisplayDate = (iso: string) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d} - ${m} - ${y}`;
+};
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
@@ -109,12 +98,6 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: "0.02em",
     color: TEXT_BLACK,
     margin: 0,
-  },
-  descRow: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: "8px",
   },
   descText: {
     fontFamily: "Inter, sans-serif",
@@ -176,6 +159,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   inputBoxDate: {
     boxSizing: "border-box",
+    position: "relative",
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
@@ -186,6 +170,26 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#FFFFFF",
     border: `1px solid ${INPUT_BORDER}`,
     borderRadius: "4px",
+  },
+  dateDisplayText: {
+    flex: "1 1 auto",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 400,
+    fontSize: "16px",
+    lineHeight: "19px",
+    color: TEXT_BLACK,
+    pointerEvents: "none",
+  },
+  hiddenDateInput: {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    opacity: 0,
+    border: "none",
+    padding: 0,
+    margin: 0,
+    cursor: "pointer",
   },
   inputBoxReason: {
     boxSizing: "border-box",
@@ -199,19 +203,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#FFFFFF",
     border: `1px solid ${INPUT_BORDER}`,
     borderRadius: "4px",
-  },
-  dateInput: {
-    flex: "1 1 auto",
-    border: "none",
-    outline: "none",
-    background: "transparent",
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 400,
-    fontSize: "16px",
-    lineHeight: "19px",
-    color: TEXT_BLACK,
-    padding: 0,
-    minWidth: 0,
   },
   reasonInput: {
     flex: "1 1 auto",
@@ -262,19 +253,101 @@ const styles: Record<string, React.CSSProperties> = {
   },
   listCard: {
     boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    width: "100%",
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER}`,
     borderRadius: "4px",
-    padding: "16px",
+    padding: "10px 10px 13px",
     marginTop: "16px",
   },
-  listHeading: {
+  listHeaderRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  listHeaderLeft: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "3px",
+  },
+  listTitle: {
     fontFamily: "Inter, sans-serif",
-    fontWeight: 600,
+    fontWeight: 500,
     fontSize: "16px",
     lineHeight: "19px",
+    letterSpacing: "0.02em",
     color: TEXT_BLACK,
-    margin: "0 0 12px",
+    margin: 0,
+  },
+  columnHeaderRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: "20px",
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  columnHeaderCell: {
+    flex: "1 1 0",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  rowWrap: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "20px",
+    width: "100%",
+    alignSelf: "stretch",
+    height: "40px",
+  },
+  rowCell: {
+    flex: "1 1 0",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    margin: 0,
+  },
+  actionsCell: {
+    flex: "1 1 0",
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteButton: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "10px",
+    width: "44px",
+    height: "40px",
+    borderRadius: "4px",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+  },
+  emptyText: {
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: LABEL_GREY,
+    margin: 0,
   },
 };
 
@@ -337,9 +410,6 @@ export default function BlackoutDatesPage() {
   const pendingIntent = isSubmitting
     ? String(fetcher.formData?.get("intent") ?? "")
     : "";
-  const pendingDeleteId = isSubmitting
-    ? String(fetcher.formData?.get("id") ?? "")
-    : "";
   const isAdding = pendingIntent === "add";
 
   const handleAdd = () => {
@@ -354,32 +424,14 @@ export default function BlackoutDatesPage() {
   return (
     <>
       <div style={styles.card}>
-        <style>{`
-          .eb-blackout-date-input::-webkit-calendar-picker-indicator {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            opacity: 0;
-            cursor: pointer;
-          }
-          .eb-blackout-date-input {
-            position: relative;
-          }
-        `}</style>
-
         <div style={styles.body}>
           <div style={styles.headerRow}>
             <div style={styles.headerLeft}>
               <p style={styles.title}>Add a Blackout Date</p>
-              <div style={styles.descRow}>
-                <p style={styles.descText}>
-                  Block bookings across your store on specific dates —
-                  holidays, closures, and one-off events.
-                </p>
-                <InfoIcon />
-              </div>
+              <p style={styles.descText}>
+                Block bookings across your store on specific dates —
+                holidays, closures, and one-off events.
+              </p>
             </div>
             <button
               type="button"
@@ -399,13 +451,16 @@ export default function BlackoutDatesPage() {
                 <div style={styles.fieldGroupDate}>
                   <p style={styles.fieldLabel}>Date</p>
                   <div style={styles.inputBoxDate}>
-                    <CalendarIcon />
+                    <img src="/date-icon.svg" width={18} height={20} alt="" />
+                    <span style={styles.dateDisplayText}>
+                      {date ? formatDisplayDate(date) : "DD - MM - YYYY"}
+                    </span>
                     <input
                       type="date"
-                      className="eb-blackout-date-input"
-                      style={styles.dateInput}
+                      style={styles.hiddenDateInput}
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
+                      aria-label="Date"
                     />
                   </div>
                   {errors.date && (
@@ -458,39 +513,51 @@ export default function BlackoutDatesPage() {
       </div>
 
       <div style={styles.listCard}>
-        <h2 style={styles.listHeading}>Current Blackout Dates</h2>
+        <div style={styles.listHeaderRow}>
+          <div style={styles.listHeaderLeft}>
+            <p style={styles.listTitle}>Current Blackout Dates</p>
+            <p style={styles.descText}>
+              All shop-wide blackout dates block bookings across your entire
+              store.
+            </p>
+          </div>
+        </div>
+
+        <hr style={styles.divider} />
+
+        <div style={styles.columnHeaderRow}>
+          <p style={styles.columnHeaderCell}>Date</p>
+          <p style={styles.columnHeaderCell}>Reason</p>
+          <p style={{ ...styles.columnHeaderCell, textAlign: "center" }}>
+            Actions
+          </p>
+        </div>
+
+        <hr style={styles.divider} />
 
         {blackoutDates.length === 0 ? (
-          <s-paragraph>No shop-wide blackout dates yet.</s-paragraph>
+          <p style={styles.emptyText}>No shop-wide blackout dates yet.</p>
         ) : (
-          <s-table>
-            <s-table-header-row>
-              <s-table-header>Date</s-table-header>
-              <s-table-header>Reason</s-table-header>
-              <s-table-header>Remove</s-table-header>
-            </s-table-header-row>
-            <s-table-body>
-              {blackoutDates.map((b) => (
-                <s-table-row key={b.id}>
-                  <s-table-cell>{b.date}</s-table-cell>
-                  <s-table-cell>{b.reason ?? "—"}</s-table-cell>
-                  <s-table-cell>
-                    <s-button
-                      variant="tertiary"
-                      tone="critical"
-                      onClick={() => handleDelete(b.id)}
-                      {...(isSubmitting ? { disabled: true } : {})}
-                      {...(pendingIntent === "delete" && pendingDeleteId === b.id
-                        ? { loading: true }
-                        : {})}
-                    >
-                      Remove
-                    </s-button>
-                  </s-table-cell>
-                </s-table-row>
-              ))}
-            </s-table-body>
-          </s-table>
+          blackoutDates.map((b) => (
+            <div key={b.id}>
+              <div style={styles.rowWrap}>
+                <p style={styles.rowCell}>{b.date}</p>
+                <p style={styles.rowCell}>{b.reason ?? "—"}</p>
+                <div style={styles.actionsCell}>
+                  <button
+                    type="button"
+                    style={styles.deleteButton}
+                    onClick={() => handleDelete(b.id)}
+                    disabled={isSubmitting}
+                    aria-label="Delete blackout date"
+                  >
+                    <img src="/delete-icon.svg" width={19} height={20} alt="Delete" />
+                  </button>
+                </div>
+              </div>
+              <hr style={styles.divider} />
+            </div>
+          ))
         )}
       </div>
     </>
