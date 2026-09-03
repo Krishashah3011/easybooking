@@ -529,7 +529,7 @@ export default function BookingSettingsPage() {
         )}
       </div>
 
-      <div style={styles.card}>
+      <div style={{ ...styles.card, marginTop: "16px" }}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Daily Booking Window</p>
           <p style={styles.descText}>
@@ -581,7 +581,7 @@ export default function BookingSettingsPage() {
         </div>
       </div>
 
-      <div style={styles.card}>
+      <div style={{ ...styles.card, marginTop: "16px" }}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Slot Configuration</p>
         </div>
@@ -697,7 +697,7 @@ export default function BookingSettingsPage() {
         </div>
       </div>
 
-      <div style={styles.card}>
+      <div style={{ ...styles.card, marginTop: "16px" }}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Advance Booking Rules</p>
           <p style={styles.descText}>
@@ -782,7 +782,7 @@ export default function BookingSettingsPage() {
         </div>
       </div>
 
-      <div style={styles.card}>
+      <div style={{ ...styles.card, marginTop: "16px" }}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Booking Start and End Date</p>
           <p style={styles.descText}>
@@ -847,7 +847,7 @@ export default function BookingSettingsPage() {
         </div>
       </div>
 
-      <div style={styles.card}>
+      <div style={{ ...styles.card, marginTop: "16px" }}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Email Notifications</p>
           <p style={styles.descText}>
