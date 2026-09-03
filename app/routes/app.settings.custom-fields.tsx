@@ -685,37 +685,37 @@ function FieldEditor({
             )}
 
             {showChrome && <hr style={styles.divider} />}
+
+            <div style={styles.buttonRow}>
+              {onCancel && (
+                <button
+                  type="button"
+                  style={styles.cancelButton}
+                  onClick={onCancel}
+                  disabled={isSaving}
+                >
+                  <span style={styles.cancelButtonLabel}>Cancel</span>
+                </button>
+              )}
+              <button
+                type="button"
+                style={{
+                  ...styles.addButton,
+                  ...(isSaving ? styles.addButtonDisabled : {}),
+                }}
+                onClick={handleSubmit}
+                disabled={isSaving}
+              >
+                <span style={styles.addButtonLabel}>{submitLabel}</span>
+                {!isEdit && (
+                  <span style={styles.plusWrap}>
+                    <PlusIcon />
+                  </span>
+                )}
+              </button>
+            </div>
           </>
         )}
-      </div>
-
-      <div style={styles.buttonRow}>
-        {onCancel && (
-          <button
-            type="button"
-            style={styles.cancelButton}
-            onClick={onCancel}
-            disabled={isSaving}
-          >
-            <span style={styles.cancelButtonLabel}>Cancel</span>
-          </button>
-        )}
-        <button
-          type="button"
-          style={{
-            ...styles.addButton,
-            ...(isSaving ? styles.addButtonDisabled : {}),
-          }}
-          onClick={handleSubmit}
-          disabled={isSaving}
-        >
-          <span style={styles.addButtonLabel}>{submitLabel}</span>
-          {!isEdit && (
-            <span style={styles.plusWrap}>
-              <PlusIcon />
-            </span>
-          )}
-        </button>
       </div>
     </div>
   );

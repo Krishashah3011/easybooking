@@ -523,24 +523,24 @@ export default function BlackoutDatesPage() {
               </div>
 
               <hr style={styles.divider} />
+
+              <button
+                type="button"
+                style={{
+                  ...styles.addButton,
+                  ...(isAdding ? styles.addButtonDisabled : {}),
+                }}
+                onClick={handleAdd}
+                disabled={isAdding}
+              >
+                <span style={styles.addButtonLabel}>Add Blackout Date</span>
+                <span style={styles.plusWrap}>
+                  <PlusIcon />
+                </span>
+              </button>
             </>
           )}
         </div>
-
-        <button
-          type="button"
-          style={{
-            ...styles.addButton,
-            ...(isAdding ? styles.addButtonDisabled : {}),
-          }}
-          onClick={handleAdd}
-          disabled={isAdding}
-        >
-          <span style={styles.addButtonLabel}>Add Blackout Date</span>
-          <span style={styles.plusWrap}>
-            <PlusIcon />
-          </span>
-        </button>
       </div>
 
       <div style={styles.listCard}>
