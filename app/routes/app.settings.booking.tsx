@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -207,17 +207,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: LABEL_GREY,
     margin: 0,
   },
-  descRow: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: "8px",
-    width: "100%",
-    alignSelf: "stretch",
-  },
-  infoIcon: {
-    flexShrink: 0,
-  },
   selectBox: {
     boxSizing: "border-box",
     display: "flex",
@@ -245,6 +234,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: `1px solid ${INPUT_BORDER}`,
     borderRadius: "4px",
     position: "relative",
+    cursor: "pointer",
   },
   dateInput: {
     flex: "1 1 auto",
@@ -258,32 +248,37 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: "19px",
     color: TEXT_BLACK,
     padding: 0,
+    cursor: "pointer",
+  },
+  stepperWrap: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    height: "16px",
+    marginLeft: "4px",
+  },
+  stepperBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "12px",
+    height: "7px",
+    padding: 0,
+    margin: 0,
+    border: "none",
+    background: "none",
+    cursor: "pointer",
+    lineHeight: 0,
   },
 };
-
-function InfoIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      style={styles.infoIcon}
-      aria-hidden="true"
-    >
-      <path
-        d="M9 12.5H8.5V8.031a.5.5 0 0 0-.5-.531H7a.5.5 0 0 0 0 1h.5v4H7a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1ZM8 6.5A1 1 0 1 0 8 4.5a1 1 0 0 0 0 2ZM8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 12.984A5.984 5.984 0 1 1 8 1.032a5.984 5.984 0 0 1 0 11.952Z"
-        fill={ACCENT}
-      />
-    </svg>
-  );
-}
 
 function ChevronDownIcon() {
   return (
     <svg
-      width="11"
-      height="6"
+      width="9"
+      height="5"
       viewBox="0 0 11 6"
       fill="none"
       aria-hidden="true"
@@ -300,24 +295,40 @@ function ChevronDownIcon() {
   );
 }
 
-function CalendarIcon() {
+function NumberStepper({
+  onIncrement,
+  onDecrement,
+  incrementLabel,
+  decrementLabel,
+}: {
+  onIncrement: () => void;
+  onDecrement: () => void;
+  incrementLabel: string;
+  decrementLabel: string;
+}) {
   return (
-    <svg
-      width="18"
-      height="20"
-      viewBox="0 0 18 20"
-      fill="none"
-      aria-hidden="true"
-      style={{ flexShrink: 0 }}
-    >
-      <path
-        d="M1 8h16M4.5 1v3M13.5 1v3M3 3h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
-        stroke={ACCENT}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <div style={styles.stepperWrap}>
+      <button
+        type="button"
+        style={styles.stepperBtn}
+        onClick={onIncrement}
+        aria-label={incrementLabel}
+        tabIndex={-1}
+      >
+        <span style={{ display: "flex", transform: "rotate(180deg)" }}>
+          <ChevronDownIcon />
+        </span>
+      </button>
+      <button
+        type="button"
+        style={styles.stepperBtn}
+        onClick={onDecrement}
+        aria-label={decrementLabel}
+        tabIndex={-1}
+      >
+        <ChevronDownIcon />
+      </button>
+    </div>
   );
 }
 
@@ -378,6 +389,19 @@ export default function BookingSettingsPage() {
 
   const [values, setValues] =
     useState<BookingSettingsFormValues>(initialValues);
+
+  const bookingStartDateRef = useRef<HTMLInputElement>(null);
+  const bookingEndDateRef = useRef<HTMLInputElement>(null);
+
+  const openDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof el.showPicker === "function") {
+      el.showPicker();
+    } else {
+      el.focus();
+    }
+  };
 
   const errors: BookingSettingsFieldErrors = fetcher.data?.errors ?? {};
   const isSaving =
@@ -459,6 +483,15 @@ export default function BookingSettingsPage() {
         }
         .no-spinner-input {
           -moz-appearance: textfield;
+        }
+        .booking-date-input::-webkit-calendar-picker-indicator {
+          opacity: 0;
+          position: absolute;
+          right: 0;
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          cursor: pointer;
         }
       `}</style>
 
@@ -556,7 +589,7 @@ export default function BookingSettingsPage() {
         <div style={styles.fieldsRow}>
           <div style={styles.fieldGroupThird}>
             <p style={styles.fieldLabelBlack}>Slot Duration (minutes)</p>
-            <div style={styles.inputBox}>
+            <div style={styles.selectBox}>
               <input
                 type="number"
                 className="no-spinner-input"
@@ -571,6 +604,19 @@ export default function BookingSettingsPage() {
                   )
                 }
               />
+              <NumberStepper
+                incrementLabel="Increase slot duration"
+                decrementLabel="Decrease slot duration"
+                onIncrement={() =>
+                  setField("slotDurationMinutes", values.slotDurationMinutes + 5)
+                }
+                onDecrement={() =>
+                  setField(
+                    "slotDurationMinutes",
+                    Math.max(5, values.slotDurationMinutes - 5),
+                  )
+                }
+              />
             </div>
             {errors.slotDurationMinutes && (
               <p style={{ ...styles.hintText, color: "#D82C0D" }}>
@@ -582,7 +628,7 @@ export default function BookingSettingsPage() {
             <p style={styles.fieldLabelBlack}>
               Buffer Time Between Slots (minutes)
             </p>
-            <div style={styles.inputBox}>
+            <div style={styles.selectBox}>
               <input
                 type="number"
                 className="no-spinner-input"
@@ -594,6 +640,16 @@ export default function BookingSettingsPage() {
                   setField("bufferMinutes", Number(e.currentTarget.value))
                 }
               />
+              <NumberStepper
+                incrementLabel="Increase buffer time"
+                decrementLabel="Decrease buffer time"
+                onIncrement={() =>
+                  setField("bufferMinutes", values.bufferMinutes + 5)
+                }
+                onDecrement={() =>
+                  setField("bufferMinutes", Math.max(0, values.bufferMinutes - 5))
+                }
+              />
             </div>
             {errors.bufferMinutes && (
               <p style={{ ...styles.hintText, color: "#D82C0D" }}>
@@ -603,7 +659,7 @@ export default function BookingSettingsPage() {
           </div>
           <div style={styles.fieldGroupThird}>
             <p style={styles.fieldLabelBlack}>Max Bookings Per Slot</p>
-            <div style={styles.inputBox}>
+            <div style={styles.selectBox}>
               <input
                 type="number"
                 className="no-spinner-input"
@@ -615,6 +671,19 @@ export default function BookingSettingsPage() {
                   setField(
                     "maxBookingsPerSlot",
                     Number(e.currentTarget.value),
+                  )
+                }
+              />
+              <NumberStepper
+                incrementLabel="Increase max bookings per slot"
+                decrementLabel="Decrease max bookings per slot"
+                onIncrement={() =>
+                  setField("maxBookingsPerSlot", values.maxBookingsPerSlot + 1)
+                }
+                onDecrement={() =>
+                  setField(
+                    "maxBookingsPerSlot",
+                    Math.max(1, values.maxBookingsPerSlot - 1),
                   )
                 }
               />
@@ -631,13 +700,10 @@ export default function BookingSettingsPage() {
       <div style={styles.card}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Advance Booking Rules</p>
-          <div style={styles.descRow}>
-            <p style={styles.descText}>
-              Control how soon and how far ahead customers are allowed to
-              book an appointment.
-            </p>
-            <InfoIcon />
-          </div>
+          <p style={styles.descText}>
+            Control how soon and how far ahead customers are allowed to
+            book an appointment.
+          </p>
         </div>
         <hr style={styles.divider} />
         <div style={styles.fieldsRow}>
@@ -657,7 +723,19 @@ export default function BookingSettingsPage() {
                   setField("minAdvanceHours", Number(e.currentTarget.value))
                 }
               />
-              <ChevronDownIcon />
+              <NumberStepper
+                incrementLabel="Increase minimum advance booking time"
+                decrementLabel="Decrease minimum advance booking time"
+                onIncrement={() =>
+                  setField("minAdvanceHours", values.minAdvanceHours + 1)
+                }
+                onDecrement={() =>
+                  setField(
+                    "minAdvanceHours",
+                    Math.max(0, values.minAdvanceHours - 1),
+                  )
+                }
+              />
             </div>
             {errors.minAdvanceHours && (
               <p style={{ ...styles.hintText, color: "#D82C0D" }}>
@@ -681,7 +759,19 @@ export default function BookingSettingsPage() {
                   setField("maxAdvanceDays", Number(e.currentTarget.value))
                 }
               />
-              <ChevronDownIcon />
+              <NumberStepper
+                incrementLabel="Increase maximum advance booking days"
+                decrementLabel="Decrease maximum advance booking days"
+                onIncrement={() =>
+                  setField("maxAdvanceDays", values.maxAdvanceDays + 1)
+                }
+                onDecrement={() =>
+                  setField(
+                    "maxAdvanceDays",
+                    Math.max(1, values.maxAdvanceDays - 1),
+                  )
+                }
+              />
             </div>
             {errors.maxAdvanceDays && (
               <p style={{ ...styles.hintText, color: "#D82C0D" }}>
@@ -695,27 +785,31 @@ export default function BookingSettingsPage() {
       <div style={styles.card}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Booking Start and End Date</p>
-          <div style={styles.descRow}>
-            <p style={styles.descText}>
-              Optional. Restricts the overall window bookings are accepted
-              in — leave blank for no restriction (e.g. a seasonal service).
-            </p>
-            <InfoIcon />
-          </div>
+          <p style={styles.descText}>
+            Optional. Restricts the overall window bookings are accepted
+            in — leave blank for no restriction (e.g. a seasonal service).
+          </p>
         </div>
         <hr style={styles.divider} />
         <div style={styles.fieldsRow}>
           <div style={styles.fieldGroupHalf}>
             <p style={styles.fieldLabelBlack}>Booking Start Date</p>
-            <div style={styles.dateBox}>
-              <CalendarIcon />
+            <div
+              style={styles.dateBox}
+              onClick={() => openDatePicker(bookingStartDateRef)}
+            >
+              <img src="/date-icon.svg" width={18} height={20} alt="" />
               <input
+                ref={bookingStartDateRef}
                 type="date"
+                className="booking-date-input"
                 style={styles.dateInput}
                 value={values.bookingStartDate ?? ""}
                 onChange={(e: FieldChangeEvent) =>
                   setField("bookingStartDate", e.currentTarget.value || null)
                 }
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Booking Start Date"
               />
             </div>
             {errors.bookingStartDate && (
@@ -726,15 +820,22 @@ export default function BookingSettingsPage() {
           </div>
           <div style={styles.fieldGroupHalf}>
             <p style={styles.fieldLabelBlack}>Booking End Date</p>
-            <div style={styles.dateBox}>
-              <CalendarIcon />
+            <div
+              style={styles.dateBox}
+              onClick={() => openDatePicker(bookingEndDateRef)}
+            >
+              <img src="/date-icon.svg" width={18} height={20} alt="" />
               <input
+                ref={bookingEndDateRef}
                 type="date"
+                className="booking-date-input"
                 style={styles.dateInput}
                 value={values.bookingEndDate ?? ""}
                 onChange={(e: FieldChangeEvent) =>
                   setField("bookingEndDate", e.currentTarget.value || null)
                 }
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Booking End Date"
               />
             </div>
             {errors.bookingEndDate && (
@@ -749,14 +850,11 @@ export default function BookingSettingsPage() {
       <div style={styles.card}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Email Notifications</p>
-          <div style={styles.descRow}>
-            <p style={styles.descText}>
-              The display name customers see as the sender on booking
-              confirmation, reminder, and cancellation emails. Leave blank
-              to use the default.
-            </p>
-            <InfoIcon />
-          </div>
+          <p style={styles.descText}>
+            The display name customers see as the sender on booking
+            confirmation, reminder, and cancellation emails. Leave blank
+            to use the default.
+          </p>
         </div>
         <hr style={styles.divider} />
         <div style={styles.fieldsRow}>
