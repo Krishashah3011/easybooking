@@ -168,6 +168,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
     textDecoration: "none",
     color: "inherit",
+    cursor: "pointer",
   },
   statTileHeader: {
     display: "flex",

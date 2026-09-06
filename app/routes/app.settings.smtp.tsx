@@ -16,7 +16,7 @@ import {
   type SmtpSettingsFieldErrors,
   type SmtpSettingsFormValues,
 } from "../models/smtpSettings.server";
-import { styles, EyeIcon, EyeOffIcon } from "../components/SettingsUI";
+import { styles } from "../components/SettingsUI";
 import type { RegisterSave } from "./app.settings";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -163,7 +163,7 @@ export default function SmtpSettingsTab() {
                 aria-label={showPass ? "Hide SMTP password" : "Show SMTP password"}
                 title={showPass ? "Hide" : "Show"}
               >
-                {showPass ? <EyeOffIcon /> : <EyeIcon />}
+                <img src="/eye-icon.svg" width={22} height={20} alt="" />
               </button>
             </div>
             {smtpErrors.password && (

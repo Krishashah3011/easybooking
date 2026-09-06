@@ -642,6 +642,7 @@ function FieldEditor({
                     <option value="NUMBER">Number</option>
                     <option value="SELECT">Dropdown</option>
                   </select>
+                  <ChevronIcon open={false} />
                 </div>
               </div>
             </div>

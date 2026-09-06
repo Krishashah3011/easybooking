@@ -256,36 +256,39 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    width: "14px",
     height: "16px",
     marginLeft: "4px",
+    overflow: "hidden",
   },
   stepperBtn: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "12px",
-    height: "7px",
+    width: "14px",
+    height: "8px",
     padding: 0,
     margin: 0,
     border: "none",
     background: "none",
     cursor: "pointer",
     lineHeight: 0,
+    flexShrink: 0,
   },
 };
 
 function ChevronDownIcon() {
   return (
     <svg
-      width="9"
-      height="5"
-      viewBox="0 0 11 6"
+      width="10"
+      height="6"
+      viewBox="0 0 10 6"
       fill="none"
       aria-hidden="true"
-      style={{ flexShrink: 0 }}
+      style={{ flexShrink: 0, display: "block" }}
     >
       <path
-        d="M1 1l4.195 4.577c.527.575.79.862 1.116.925.124.024.252.024.377 0 .325-.063.588-.35 1.116-.925L11.999 1"
+        d="M1 1l3.15 3.433c.395.431.593.647.837.694.093.018.189.018.282 0 .244-.047.442-.263.837-.694L9.25 1"
         stroke={ACCENT}
         strokeWidth="1.5"
         strokeLinecap="round"
