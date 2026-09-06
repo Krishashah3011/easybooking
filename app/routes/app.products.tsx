@@ -13,6 +13,7 @@ import {
   setBookableProductEnabled,
 } from "../models/bookableProduct.server";
 import { listEnabledLocations } from "../models/bookingLocation.server";
+import { styles as settingsStyles } from "../components/SettingsUI";
 
 type ProductListItem = {
   id: string;
@@ -137,10 +138,10 @@ const styles: Record<string, React.CSSProperties> = {
   td: {
     fontFamily: "Inter",
     fontWeight: 400,
-    fontSize: "14px",
-    lineHeight: "17px",
+    fontSize: "13px",
+    lineHeight: "16px",
     color: TEXT_BLACK,
-    padding: "12px 8px",
+    padding: "6px 8px",
     borderTop: `1px solid ${LINE_BORDER}`,
     verticalAlign: "middle",
   },
@@ -327,13 +328,16 @@ export default function BookingProductsPage() {
   }, [products, query]);
 
   return (
-    <s-page heading="Booking Products" inlineSize="950px">
+    <s-page inlineSize="700px">
       <s-section>
-        <s-paragraph>
-          Turn booking on for any product, then configure its slot rules if it
-          needs anything different from your shop&apos;s default Booking
-          Settings.
-        </s-paragraph>
+        <div>
+          <h1 style={settingsStyles.heading}>Products</h1>
+          <p style={settingsStyles.pageSubtitle}>
+            Turn booking on for any product, then configure its slot
+            rules if it needs anything different from your shop&apos;s
+            default Booking Settings.
+          </p>
+        </div>
 
         {!hasLocations && (
           <s-banner tone="warning" heading="No locations configured">
