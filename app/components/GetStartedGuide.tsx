@@ -69,15 +69,6 @@ const ArrowRightIcon = () => (
   </svg>
 );
 
-const LockIcon = () => (
-  <svg width="13" height="14" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="15" width="30" height="20" rx="3" stroke="#fff" strokeWidth="2.4" />
-    <path d="M7 15V9C7 4.58172 10.5817 1 15 1H17C21.4183 1 25 4.58172 25 9V15" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
-    <circle cx="16" cy="24" r="2.4" fill="#fff" />
-    <path d="M16 26.4V29.4" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
-  </svg>
-);
-
 const styles: Record<string, React.CSSProperties> = {
   card: {
     background: "#FFFFFF",
@@ -186,23 +177,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "13px",
   },
-  lockedButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "10px 16px",
-    background: "#8C8C8C",
-    borderRadius: "8px",
-    color: "#FFFFFF",
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 600,
-    fontSize: "13px",
-    lineHeight: "16px",
-    border: "none",
-    cursor: "pointer",
-    textDecoration: "none",
-    whiteSpace: "nowrap",
-  },
 };
 
 export type GuideStep = {
@@ -212,7 +186,6 @@ export type GuideStep = {
   href: string;
   done?: boolean;
   external?: boolean;
-  locked?: boolean;
 };
 
 export default function GetStartedGuide({
@@ -277,11 +250,6 @@ export default function GetStartedGuide({
                     <CheckIcon />
                     Completed
                   </span>
-                ) : step.locked ? (
-                  <Link to="/app/account" style={styles.lockedButton}>
-                    <LockIcon />
-                    Register to unlock
-                  </Link>
                 ) : step.external ? (
                   <a
                     href={step.href}

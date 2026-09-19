@@ -342,7 +342,7 @@ function buildGuideSteps(
   apiKey: string,
   registered: boolean,
 ): GuideStep[] {
-  const lockedSteps: GuideStep[] = [
+  const workingSteps: GuideStep[] = [
     {
       title: "Turn on the booking widget",
       body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page — no manual placement needed.",
@@ -380,7 +380,7 @@ function buildGuideSteps(
       cta: "Go to Bookings",
       href: "/app/bookings",
     },
-  ].map((step) => ({ ...step, locked: !registered }));
+  ];
 
   return [
     {
@@ -390,7 +390,7 @@ function buildGuideSteps(
       href: "/app/account",
       done: registered,
     },
-    ...lockedSteps,
+    ...workingSteps,
   ];
 }
 
