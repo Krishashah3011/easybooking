@@ -1438,12 +1438,15 @@ function BookingsListPage({
     <s-page heading="Bookings" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <s-section>
         <div style={S.pageHeaderRow}>
-          <div style={S.subtitleRow}>
-            <p style={{ ...settingsStyles.pageSubtitle, margin: 0, fontSize: "12px" }}>
-              Search, filter, reschedule or cancel every booking made in your
-              store.
-            </p>
-            <InfoIcon />
+          <div>
+            <h1 style={settingsStyles.heading}>Bookings</h1>
+            <div style={S.subtitleRow}>
+              <p style={{ ...settingsStyles.pageSubtitle, margin: 0, fontSize: "12px" }}>
+                Search, filter, reschedule or cancel every booking made in your
+                store.
+              </p>
+              <InfoIcon />
+            </div>
           </div>
           <Link to="/app/bookings/new" style={S.newBookingButton}>
             New Booking
