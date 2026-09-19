@@ -3,7 +3,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { Link, useFetcher, useLoaderData } from "react-router";
+import { Link, useFetcher, useLoaderData, useRevalidator } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import type { BookingType } from "@prisma/client";
@@ -1147,6 +1147,174 @@ function BookingDetails({
 }
 
 /* ------------------------------------------------------------------ */
+/* Unified details card for a BUNDLE group (Slot 1..N rows)            */
+/* ------------------------------------------------------------------ */
+
+const SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5"];
+
+function slotValueFor(booking: BookingWithProductTitle): string {
+  const when = whenLines(booking);
+  return when.sub ? `${when.date} · ${when.sub}` : when.date;
+}
+
+function BundleGroupDetails({
+  group,
+  customFieldLabels,
+  onToggle,
+}: {
+  group: BookingGroup;
+  customFieldLabels: Record<string, string>;
+  onToggle?: () => void;
+}) {
+  const shopify = useAppBridge();
+  const revalidator = useRevalidator();
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const first = group.bookings[0];
+  const activeBookings = group.bookings.filter((b) => b.status !== "CANCELLED");
+  const isCancelled = activeBookings.length === 0;
+  const isCompleted =
+    !isCancelled && group.bookings.every((b) => b.displayStatus === "COMPLETED");
+
+  const statuses = new Set(group.bookings.map((b) => b.displayStatus));
+  const groupStatus = statuses.size > 1 ? "MIXED" : first.displayStatus;
+  const statusColors = STATUS_COLORS[groupStatus] ?? STATUS_COLORS.CONFIRMED;
+
+  const when = whenLines(first);
+
+  const handleCancelAll = async () => {
+    setIsCancelling(true);
+    for (const booking of activeBookings) {
+      const formData = new FormData();
+      formData.set("intent", "cancel");
+      formData.set("id", booking.id);
+      await fetch(window.location.pathname + window.location.search, {
+        method: "POST",
+        body: formData,
+      });
+    }
+    setIsCancelling(false);
+    shopify.toast.show("Bundle cancelled");
+    revalidator.revalidate();
+  };
+
+  return (
+    <div style={S.detailsCard}>
+      {/* Header: "Booking for" + customer chip, date/time chips, status, collapse chevron */}
+      <div style={S.detailsHeaderRow}>
+        <div style={S.detailsHeaderLeft}>
+          <span style={S.bookingForText}>Booking for</span>
+          <span style={S.customerChip}>{first.customerName ?? "—"}</span>
+        </div>
+
+        <div style={S.dateTimeChipsRow}>
+          <span style={S.dateTimeChip}>{when.date}</span>
+          {when.sub && <span style={S.dateTimeChip}>{when.sub}</span>}
+        </div>
+
+        <div
+          style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}
+        >
+          <span
+            style={{
+              ...S.statusChipLarge,
+              background: statusColors.bg,
+              color: statusColors.fg,
+            }}
+          >
+            {groupStatus.toLowerCase()}
+          </span>
+          {onToggle && (
+            <button
+              type="button"
+              style={S.chevronToggle}
+              onClick={onToggle}
+              aria-label="Collapse booking details"
+            >
+              <ChevronToggleIcon expanded />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <hr style={S.detailsDivider} />
+
+      {/* Row 1: Customer Mail / Booking Type / Location */}
+      <div style={S.fieldsRow}>
+        <FieldBlock label="Customer Mail">
+          {first.customerEmail ?? "—"}
+        </FieldBlock>
+        <FieldBlock label="Booking Type">
+          {TYPE_SHORT_LABELS[first.bookingType]}
+        </FieldBlock>
+        <FieldBlock label="Location">{first.location ?? "—"}</FieldBlock>
+      </div>
+
+      <hr style={S.detailsDivider} />
+
+      {/* Row 2: Booking Date / Booking Time / Quantity */}
+      <div style={S.fieldsRow}>
+        <FieldBlock label="Booking Date">{when.date}</FieldBlock>
+        <FieldBlock label="Booking Time">{when.sub ?? "Whole day"}</FieldBlock>
+        <FieldBlock label="Quantity">{first.quantity}</FieldBlock>
+      </div>
+
+      <hr style={S.detailsDivider} />
+
+      {/* Slot rows: up to 5 sessions per row of 3 */}
+      {Array.from(
+        { length: Math.ceil(Math.min(group.bookings.length, SLOT_LABELS.length) / 3) },
+        (_, rowIndex) => (
+          <Fragment key={rowIndex}>
+            <div style={S.fieldsRow}>
+              {group.bookings.slice(rowIndex * 3, rowIndex * 3 + 3).map((booking, i) => (
+                <FieldBlock
+                  key={booking.id}
+                  label={SLOT_LABELS[rowIndex * 3 + i] ?? `Slot ${rowIndex * 3 + i + 1}`}
+                >
+                  {slotValueFor(booking)}
+                </FieldBlock>
+              ))}
+            </div>
+            <hr style={S.detailsDivider} />
+          </Fragment>
+        ),
+      )}
+
+      {/* Final row: Booked at / Note / Cancel Booking action */}
+      <div style={S.fieldsRow}>
+        <FieldBlock label="Booked at">
+          {formatInstantInTimezone(first.createdAt, first.locationTimezone)}
+          {" · "}
+          {bookingSourceLabel(first.source)}
+        </FieldBlock>
+        <FieldBlock label="Note">
+          <BookingNotes
+            responses={first.customFieldResponses}
+            labels={customFieldLabels}
+          />
+        </FieldBlock>
+
+        {!isCancelled && !isCompleted ? (
+          <div style={S.cancelBookingWrap}>
+            <button
+              type="button"
+              style={{ ...S.cancelBookingBtn, ...(isCancelling ? { opacity: 0.5 } : {}) }}
+              disabled={isCancelling}
+              onClick={handleCancelAll}
+            >
+              {isCancelling ? "Cancelling…" : "Cancel Booking"}
+            </button>
+          </div>
+        ) : (
+          <div style={{ flex: "1 1 140px", minWidth: "140px" }} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Rows                                                                */
 /* ------------------------------------------------------------------ */
 
@@ -1316,15 +1484,23 @@ function GroupRow({
       {open && (
         <tr>
           <td colSpan={COLUMN_COUNT} style={{ ...S.td, ...S.tdExpanded }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {group.bookings.map((booking) => (
-                <GroupChild
-                  key={booking.id}
-                  booking={booking}
-                  customFieldLabels={customFieldLabels}
-                />
-              ))}
-            </div>
+            {first.bookingType === "BUNDLE" ? (
+              <BundleGroupDetails
+                group={group}
+                customFieldLabels={customFieldLabels}
+                onToggle={() => setOpen(false)}
+              />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {group.bookings.map((booking) => (
+                  <GroupChild
+                    key={booking.id}
+                    booking={booking}
+                    customFieldLabels={customFieldLabels}
+                  />
+                ))}
+              </div>
+            )}
           </td>
         </tr>
       )}
