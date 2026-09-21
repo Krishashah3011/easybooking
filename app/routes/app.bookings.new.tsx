@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -142,32 +142,107 @@ const S = {
     color: BLUE,
     textDecoration: "none",
   } as React.CSSProperties,
+  // Quantity + Note share one card: [Quantity 110px][Note grows]
+  qtyNoteCard: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    padding: "10px 10px 13px",
+    gap: "12px",
+    width: "100%",
+    background: "#FFFFFF",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "4px",
+  } as React.CSSProperties,
+  qtyNoteRow: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    gap: "12px",
+    width: "100%",
+  } as React.CSSProperties,
+  qtyBlock: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "8px",
+    flex: "0 0 auto",
+    minWidth: "110px",
+  } as React.CSSProperties,
+  noteBlock: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    gap: "12px",
+    flex: "1 1 240px",
+    minWidth: 0,
+  } as React.CSSProperties,
+  noteField: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "8px",
+    flex: "1 1 220px",
+    minWidth: 0,
+  } as React.CSSProperties,
+  qtyNoteLabelRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: "8px",
+    minHeight: "17px",
+    width: "100%",
+  } as React.CSSProperties,
+  qtyNoteLabel: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_DARK,
+    whiteSpace: "nowrap",
+  } as React.CSSProperties,
+  qtyNoteHint: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "12px",
+    lineHeight: "15px",
+    color: TEXT_MUTED,
+    whiteSpace: "nowrap",
+  } as React.CSSProperties,
   quantityBox: {
-    display: "inline-flex",
-    alignItems: "stretch",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "5px 10px",
+    gap: "20px",
     width: "110px",
     height: "34px",
-    boxSizing: "border-box",
+    background: "#FFFFFF",
     border: `1px solid ${LICENSE_BORDER}`,
     borderRadius: "4px",
-    overflow: "hidden",
-    background: "#fff",
   } as React.CSSProperties,
   quantityStepBtn: {
-    flex: "1 1 auto",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "20px",
+    height: "20px",
+    padding: 0,
     border: "none",
     background: "transparent",
     cursor: "pointer",
-    fontSize: "16px",
-    color: BLUE,
+    flexShrink: 0,
   } as React.CSSProperties,
   quantityValue: {
-    flex: "1 1 auto",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
     fontFamily: "Inter",
+    fontWeight: 400,
     fontSize: "14px",
+    lineHeight: "17px",
     color: TEXT_DARK,
   } as React.CSSProperties,
   dateTimeCard: {
@@ -353,6 +428,29 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+function MinusIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M5 10H15" stroke={BLUE} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PlusStepIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M10 5V15M15 10H5" stroke={BLUE} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// "Note (Any specific request?)" -> title "Note" + muted hint "(Any specific request?)"
+function splitFieldLabel(label: string): { title: string; hint: string | null } {
+  const match = /^(.*?)\s*(\([^()]+\))\s*$/.exec(label.trim());
+  if (match && match[1]) return { title: match[1], hint: match[2] };
+  return { title: label, hint: null };
+}
+
 function NavChevron({
   direction,
   color,
@@ -401,6 +499,16 @@ function DropdownChevron() {
     </svg>
   );
 }
+
+type QueuedEntry = {
+  bookableProductId: string;
+  productTitle: string;
+  date: string;
+  slot: TimeSlot;
+  endDate?: string | null;
+  quantity: number;
+  error?: string;
+};
 
 type QueuedSlotInput = {
   bookableProductId: string;
@@ -679,17 +787,11 @@ export default function NewBookingPage() {
   const [customFieldValues, setCustomFieldValues] = useState<
     Record<string, string>
   >({});
-  const [queuedSlots, setQueuedSlots] = useState<
-    Array<{
-      bookableProductId: string;
-      productTitle: string;
-      date: string;
-      slot: TimeSlot;
-      endDate?: string | null;
-      quantity: number;
-      error?: string;
-    }>
-  >([]);
+  // Only used for bundles (sessions picked one by one) and for bookings that
+  // failed and need a retry. A normal booking is built from the current
+  // selection, so there is no "Add to list" step.
+  const [queuedSlots, setQueuedSlots] = useState<QueuedEntry[]>([]);
+  const submittedRef = useRef<QueuedEntry[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
@@ -789,6 +891,10 @@ export default function NewBookingPage() {
   const createError =
     createResult && "error" in createResult ? createResult.error : null;
 
+  // Bundles: quantity is chosen on the first session and locked afterwards.
+  const quantityLocked =
+    selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0;
+
   const maxQuantity = Math.max(
     1,
     typeof selectedSlot?.remainingCapacity === "number"
@@ -869,6 +975,11 @@ export default function NewBookingPage() {
         : `Created ${createdCount} booking(s)`,
     );
 
+    // The current selection has been submitted either way; clear it.
+    setDate("");
+    setCheckoutDate("");
+    setSelectedSlot(null);
+
     if (failedCount === 0) {
       setQueuedSlots([]);
       setCustomFieldValues({});
@@ -879,8 +990,8 @@ export default function NewBookingPage() {
       setCustomerPhone("");
       setSubmitAttempted(false);
     } else {
-      setQueuedSlots((prev) =>
-        prev
+      setQueuedSlots(
+        submittedRef.current
           .map((entry) => {
             const match = results.find(
               (r) =>
@@ -891,7 +1002,7 @@ export default function NewBookingPage() {
             if (!match) return entry;
             return match.ok ? null : { ...entry, error: match.error };
           })
-          .filter((entry): entry is (typeof prev)[number] => entry !== null),
+          .filter((entry): entry is QueuedEntry => entry !== null),
       );
     }
     loadAvailability(bookableProductId, viewYear, viewMonth);
@@ -1027,34 +1138,46 @@ export default function NewBookingPage() {
         ? "Please enter a valid email address"
         : undefined;
 
-  const handleAddToList = () => {
-    if (!date || !selectedSlot) return;
-    if (selectedBookingType === "MULTI_DAY" && !checkoutDate) return;
+  // The booking being built right now from the calendar + quantity selection.
+  const currentEntry: QueuedEntry | null = (() => {
+    if (!date || !selectedSlot) return null;
+    if (selectedBookingType === "MULTI_DAY" && !checkoutDate) return null;
     const alreadyQueued = queuedSlots.some(
       (entry) =>
         entry.bookableProductId === bookableProductId &&
         entry.date === date &&
         entry.slot.startsAt === selectedSlot.startsAt,
     );
-    if (!alreadyQueued) {
-      const productTitle =
-        products.find((p) => p.id === bookableProductId)?.title ?? "";
-      const effectiveQuantity =
+    if (alreadyQueued) return null;
+    return {
+      bookableProductId,
+      productTitle: selectedProduct?.title ?? "",
+      date,
+      slot: selectedSlot,
+      endDate: selectedBookingType === "MULTI_DAY" ? checkoutDate : null,
+      quantity:
         selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0
           ? bundleSessionsQueued[0].quantity
-          : quantity;
-      setQueuedSlots((prev) => [
-        ...prev,
-        {
-          bookableProductId,
-          productTitle,
-          date,
-          slot: selectedSlot,
-          endDate: selectedBookingType === "MULTI_DAY" ? checkoutDate : null,
-          quantity: effectiveQuantity,
-        },
-      ]);
-    }
+          : quantity,
+    };
+  })();
+
+  // Everything that will be booked when "Create Booking" is pressed.
+  const submissionSlots: QueuedEntry[] = currentEntry
+    ? [...queuedSlots, currentEntry]
+    : queuedSlots;
+
+  // Bundles need several sessions: "Next slot" stores this one and lets the
+  // admin pick the next. Every other booking type goes straight to details.
+  const needsNextSlot =
+    !!selectedSlot &&
+    selectedBookingType === "BUNDLE" &&
+    bundleSessionCount !== null &&
+    bundleSessionsQueued.length + 1 < bundleSessionCount;
+
+  const handleNextSlot = () => {
+    if (!currentEntry) return;
+    setQueuedSlots((prev) => [...prev, currentEntry]);
     setDate("");
     setCheckoutDate("");
     setSelectedSlot(null);
@@ -1065,14 +1188,14 @@ export default function NewBookingPage() {
   };
 
   const incompleteBundleTitles = Array.from(
-    new Set(queuedSlots.map((entry) => entry.bookableProductId)),
+    new Set(submissionSlots.map((entry) => entry.bookableProductId)),
   )
     .map((id) => {
       const product = products.find((p) => p.id === id);
       if (!product || product.bookingType !== "BUNDLE" || product.bundleSessionCount === null) {
         return null;
       }
-      const queuedCount = queuedSlots.filter(
+      const queuedCount = submissionSlots.filter(
         (entry) => entry.bookableProductId === id,
       ).length;
       return queuedCount !== product.bundleSessionCount ? product.title : null;
@@ -1085,7 +1208,7 @@ export default function NewBookingPage() {
     setEmailTouched(true);
 
     if (
-      queuedSlots.length === 0 ||
+      submissionSlots.length === 0 ||
       incompleteBundleTitles.length > 0 ||
       !customerName.trim() ||
       !customerEmail.trim() ||
@@ -1096,6 +1219,8 @@ export default function NewBookingPage() {
 
     const selectedLocation = locations.find((l) => l.id === locationId);
 
+    submittedRef.current = submissionSlots;
+
     createFetcher.submit(
       {
         intent: "createBooking",
@@ -1103,7 +1228,7 @@ export default function NewBookingPage() {
         locationId: selectedLocation?.id ?? "",
         customFieldResponses: JSON.stringify(customFieldValues),
         slots: JSON.stringify(
-          queuedSlots.map((entry) => ({
+          submissionSlots.map((entry) => ({
             bookableProductId: entry.bookableProductId,
             date: entry.date,
             slotStart: entry.slot.start,
@@ -1302,6 +1427,10 @@ export default function NewBookingPage() {
           .nb-nav:focus-visible {
             outline: 2px solid ${CAL_BLUE};
             outline-offset: 2px;
+          }
+          .nb-note-input::placeholder {
+            color: #000000;
+            opacity: 1;
           }
           .nb-month-picker:focus-within {
             outline: 2px solid ${CAL_BLUE};
@@ -1534,73 +1663,102 @@ export default function NewBookingPage() {
           </div>
         )}
 
-        {selectedSlot &&
-          selectedBookingType === "BUNDLE" &&
-          bundleSessionsQueued.length > 0 && (
-            <div style={S.card}>
-              <span style={S.cardHeading}>Quantity</span>
-              <span style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
-                {bundleSessionsQueued[0].quantity} — set on the first session of
-                this bundle.
-              </span>
-              <div>
-                <button
-                  type="button"
-                  style={{ ...saveButtonStyle(false), width: "auto", padding: "10px 20px" }}
-                  onClick={handleAddToList}
-                >
-                  {bundleSessionCount !== null &&
-                  bundleSessionsQueued.length + 1 < bundleSessionCount
-                    ? "Next slot"
-                    : "Add to list"}
-                </button>
-              </div>
-            </div>
-          )}
+        {(selectedSlot || customFields.length > 0) && (
+          <div style={S.qtyNoteCard}>
+            <div style={S.qtyNoteRow}>
+              {selectedSlot && (
+                <div style={S.qtyBlock}>
+                  <div style={S.qtyNoteLabelRow}>
+                    <span style={S.qtyNoteLabel}>Quantity</span>
+                    {!quantityLocked && maxQuantity <= 5 && (
+                      <span style={S.qtyNoteHint}>(max {maxQuantity})</span>
+                    )}
+                  </div>
+                  {quantityLocked ? (
+                    <div
+                      style={S.quantityBox}
+                      title="Set on the first session of this bundle"
+                    >
+                      <span style={S.quantityValue}>
+                        {bundleSessionsQueued[0].quantity}
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={S.quantityBox}>
+                      <button
+                        type="button"
+                        style={{
+                          ...S.quantityStepBtn,
+                          ...(quantity <= 1 ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+                        }}
+                        disabled={quantity <= 1}
+                        aria-label="Decrease quantity"
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      >
+                        <MinusIcon />
+                      </button>
+                      <span style={S.quantityValue}>{quantity}</span>
+                      <button
+                        type="button"
+                        style={{
+                          ...S.quantityStepBtn,
+                          ...(quantity >= maxQuantity ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+                        }}
+                        disabled={quantity >= maxQuantity}
+                        aria-label="Increase quantity"
+                        onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                      >
+                        <PlusStepIcon />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
-        {selectedSlot &&
-          !(selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0) && (
-          <div style={S.card}>
-            <span style={S.cardHeading}>Quantity</span>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={S.quantityBox}>
-                <button
-                  type="button"
-                  style={S.quantityStepBtn}
-                  disabled={quantity <= 1}
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                >
-                  −
-                </button>
-                <span style={S.quantityValue}>{quantity}</span>
-                <button
-                  type="button"
-                  style={S.quantityStepBtn}
-                  disabled={quantity >= maxQuantity}
-                  onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-                >
-                  +
-                </button>
-              </div>
-              {maxQuantity <= 5 && (
-                <span style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED }}>
-                  Only {maxQuantity} left for this slot.
-                </span>
+              {customFields.length > 0 && (
+                <div style={S.noteBlock}>
+                  {customFields.map((field) => {
+                    const { title, hint } = splitFieldLabel(field.label);
+                    return (
+                      <div key={field.fieldKey} style={S.noteField}>
+                        <div style={S.qtyNoteLabelRow}>
+                          <span style={S.qtyNoteLabel}>{title}</span>
+                          {hint && <span style={S.qtyNoteHint}>{hint}</span>}
+                        </div>
+                        <input
+                          type="text"
+                          className="nb-note-input"
+                          style={S.input}
+                          placeholder="Enter message here"
+                          aria-label={field.label}
+                          required={field.required}
+                          value={customFieldValues[field.fieldKey] ?? ""}
+                          onChange={(e: FieldChangeEvent) => {
+                            const value = e.currentTarget.value;
+                            setCustomFieldValues((prev) => ({
+                              ...prev,
+                              [field.fieldKey]: value,
+                            }));
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-            <div>
-              <button
-                type="button"
-                style={{ ...saveButtonStyle(false), width: "auto", padding: "10px 20px" }}
-                onClick={handleAddToList}
-              >
-                {selectedBookingType === "BUNDLE" &&
-                bundleSessionCount !== null &&
-                bundleSessionsQueued.length + 1 < bundleSessionCount
-                  ? "Next slot"
-                  : "Add to list"}
-              </button>
-            </div>
+          </div>
+        )}
+
+        {needsNextSlot && (
+          <div>
+            <button
+              type="button"
+              style={{ ...saveButtonStyle(false), width: "auto", padding: "10px 20px" }}
+              onClick={handleNextSlot}
+            >
+              Next slot
+            </button>
           </div>
         )}
 
@@ -1648,33 +1806,7 @@ export default function NewBookingPage() {
           </div>
         )}
 
-        {customFields.length > 0 && (
-          <div style={S.card}>
-            <span style={S.cardHeading}>Notes</span>
-            <div style={S.fieldsRow}>
-              {customFields.map((field) => (
-                <div key={field.fieldKey} style={S.fieldBlock}>
-                  <span style={S.fieldLabel}>{field.label}</span>
-                  <input
-                    type="text"
-                    style={S.input}
-                    required={field.required}
-                    value={customFieldValues[field.fieldKey] ?? ""}
-                    onChange={(e: FieldChangeEvent) => {
-                      const value = e.currentTarget.value;
-                      setCustomFieldValues((prev) => ({
-                        ...prev,
-                        [field.fieldKey]: value,
-                      }));
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {queuedSlots.length > 0 && (
+        {submissionSlots.length > 0 && !needsNextSlot && (
           <div style={S.card}>
             <span style={S.cardHeading}>Customer details</span>
             <div style={S.fieldsRow}>
@@ -1738,15 +1870,21 @@ export default function NewBookingPage() {
             )}
 
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <div style={saveWrapperStyle()}>
+              <div style={{ ...saveWrapperStyle(), width: "auto" }}>
                 <button
                   type="button"
-                  style={saveButtonStyle(isCreatingBooking)}
+                  style={{
+                    ...saveButtonStyle(isCreatingBooking),
+                    width: "auto",
+                    minWidth: "132px",
+                    padding: "7px 20px",
+                    whiteSpace: "nowrap",
+                  }}
                   disabled={isCreatingBooking}
                   onClick={handleCreateBooking}
                 >
-                  {queuedSlots.length > 1
-                    ? `Create ${queuedSlots.length} bookings`
+                  {submissionSlots.length > 1
+                    ? `Create ${submissionSlots.length} bookings`
                     : "Create Booking"}
                 </button>
               </div>
