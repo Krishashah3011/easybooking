@@ -838,7 +838,7 @@ function LocationEditor({
               </div>
               <p style={styles.descText}>
                 Leave blank to use the shop default. Only set these if
-                this location's hours differ — e.g. it closes earlier.
+                this location's hours differ.
               </p>
             </div>
 

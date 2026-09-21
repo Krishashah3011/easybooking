@@ -548,8 +548,7 @@ export default function BlackoutDatesPage() {
           <div style={styles.listHeaderLeft}>
             <p style={styles.listTitle}>Current Blackout Dates</p>
             <p style={styles.descText}>
-              All shop-wide blackout dates block bookings across your entire
-              store.
+              This blackout dates block bookings across your entire store.
             </p>
           </div>
         </div>

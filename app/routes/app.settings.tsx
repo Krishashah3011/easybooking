@@ -56,7 +56,7 @@ export default function SettingsLayout() {
           <div>
             <h1 style={styles.heading}>Configurations</h1>
             <p style={styles.pageSubtitle}>
-              Configure your booking rules and customize how customers book appointments on your store.
+              Configure your store's booking rules and preferences.
             </p>
           </div>
           <div style={saveWrapperStyle()}>

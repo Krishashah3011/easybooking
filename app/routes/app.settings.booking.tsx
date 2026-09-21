@@ -558,9 +558,6 @@ export default function BookingSettingsPage() {
       <div style={{ ...styles.card, marginTop: "16px" }}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Daily Booking Window</p>
-          <p style={styles.descText}>
-            The earliest and latest time a slot can start each working day.
-          </p>
         </div>
         <hr style={styles.divider} />
         <div style={styles.fieldsRow}>
@@ -621,9 +618,7 @@ export default function BookingSettingsPage() {
         <div style={styles.headerLeft}>
           <p style={styles.title}>Slot Configuration</p>
           <p style={styles.descText}>
-            Only applies to bookable products set to Slot or Bundle. Full
-            Day and Multi Day products use the daily start/end time above
-            and ignore these settings.
+            Only applies to bookable products set to Slot or Bundle.
           </p>
         </div>
         <hr style={styles.divider} />
@@ -842,8 +837,7 @@ export default function BookingSettingsPage() {
         <div style={styles.headerLeft}>
           <p style={styles.title}>Booking Start and End Date</p>
           <p style={styles.descText}>
-            Restricts the overall window bookings are accepted
-            in. (leave blank for no restriction)
+            Set the overall window in which bookings are accepted (leave blank to accept bookings anytime).
           </p>
         </div>
         <hr style={styles.divider} />
@@ -908,8 +902,7 @@ export default function BookingSettingsPage() {
           <p style={styles.title}>Email Notifications</p>
           <p style={styles.descText}>
             The display name customers see as the sender on booking
-            confirmation, reminder, and cancellation emails. Leave blank
-            to use the default.
+            confirmation, reminder, and cancellation emails.
           </p>
         </div>
         <hr style={styles.divider} />
@@ -928,9 +921,8 @@ export default function BookingSettingsPage() {
               />
             </div>
             <p style={styles.hintText}>
-              Shown as e.g. &quot;Acme Bookings
-              &lt;bookings@yourdomain.com&gt;&quot; — the email address
-              itself can&apos;t be changed here.
+              Example &quot;Milople Bookings
+              &lt;bookings@yourdomain.com&gt;&quot;
             </p>
             {errors.emailFromName && (
               <p style={{ ...styles.hintText, color: "#D82C0D" }}>

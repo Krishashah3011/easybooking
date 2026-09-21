@@ -345,7 +345,7 @@ function buildGuideSteps(
   const workingSteps: GuideStep[] = [
     {
       title: "Turn on the booking widget",
-      body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page — no manual placement needed.",
+      body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page - no manual placement needed.",
       cta: "Activate App Embed",
       href: `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${apiKey}/${BOOKING_WIDGET_BLOCK_HANDLE}`,
       external: true,
@@ -357,26 +357,26 @@ function buildGuideSteps(
       href: "/app/products",
     },
     {
-      title: "Set your booking schedule",
-      body: "In Booking Settings, choose working days, daily hours, slot duration, buffer time between slots, how far in advance customers can book, how many bookings are allowed per slot, and set up your business locations.",
+      title: "Set your booking schedule and Location",
+      body: "In Booking Settings, set your working days, hours, slot rules, and det up your business locations.",
       cta: "Go to Booking Settings",
       href: "/app/settings/booking",
     },
     {
       title: "Block off unavailable days & collect extra info (optional)",
-      body: "Add holidays or one-off closures on the Blackout Dates tab, shop-wide or for a specific product. You can also collect extra info like notes or special requests at booking time using Custom Fields — you'll see customers' answers on each booking.",
+      body: "Add holidays or closures on the Blackout Dates tab, shop-wide or for a specific product. You can also collect extra info like notes or special requests at booking time using Custom Fields.",
       cta: "Go to Blackout Dates",
       href: "/app/settings/blackout-dates",
     },
     {
       title: "Turn on booking emails",
-      body: "Configure SMTP in Settings → SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
-      cta: "Go to Settings",
+      body: "Configure SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
+      cta: "Go to SMTP Settings",
       href: "/app/settings",
     },
     {
       title: "Manage bookings as they come in",
-      body: "View, search, reschedule, or cancel bookings from Bookings. You can also add bookings manually from the New Booking tab there. If two customers ever land in the same slot, it's flagged as Overbooked so you can review and resolve it — you'll see a banner for that at the top of this page when it happens.",
+      body: "View, search, reschedule, or cancel bookings from Bookings. You can also add bookings manually from the New Booking tab there.",
       cta: "Go to Bookings",
       href: "/app/bookings",
     },
@@ -385,7 +385,7 @@ function buildGuideSteps(
   return [
     {
       title: "Create your account",
-      body: "Register with your name and email to unlock the rest of EasyBooking. Every other page stays locked until this is done.",
+      body: "Register with your name and email to unlock the rest of EasyBooking.",
       cta: "Register",
       href: "/app/account",
       done: registered,

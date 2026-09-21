@@ -900,6 +900,11 @@ export default function NewBookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [locationId, setLocationId] = useState("");
+  // The date/time card (month calendars + slots) only makes sense once we
+  // know which product AND which location we're checking availability for.
+  // If the shop has no locations configured, a location pick isn't needed.
+  const readyForCalendar =
+    Boolean(bookableProductId) && (locations.length === 0 || Boolean(locationId));
   const [customFieldValues, setCustomFieldValues] = useState<
     Record<string, string>
   >({});
@@ -1055,11 +1060,12 @@ export default function NewBookingPage() {
     setCheckoutDate("");
     setCheckoutError(null);
     setSelectedSlot(null);
+    if (!readyForCalendar) return;
     loadAvailability(bookableProductId, viewYear, viewMonth);
     if (isTwoMonthType) {
       loadSecondMonthAvailability(bookableProductId, secondYear, secondMonth);
     }
-  }, [bookableProductId, viewYear, viewMonth, locationId, isTwoMonthType]);
+  }, [bookableProductId, viewYear, viewMonth, locationId, isTwoMonthType, readyForCalendar]);
 
   useEffect(() => {
     if (selectedSlot) {
@@ -1672,6 +1678,7 @@ export default function NewBookingPage() {
         </div>
 
         {/* Date + time */}
+        {readyForCalendar && (
         <div style={S.dateTimeCard}>
           {selectedBookingType === "MULTI_DAY" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -1854,6 +1861,7 @@ export default function NewBookingPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Bundle sessions chosen so far / bookings that need a retry */}
         {queuedSlots.length > 0 && (
