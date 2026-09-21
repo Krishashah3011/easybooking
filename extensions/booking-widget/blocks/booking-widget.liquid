@@ -166,22 +166,26 @@
         </div>
       </div>
 
-      <div class="booking-widget__review-step" data-booking-review-step hidden>
-        <div class="booking-widget__review-header">
-          <p class="booking-widget__review-title">Review your booking</p>
+      <div class="booking-widget__review-body" data-booking-review-body hidden>
+        <div class="booking-widget__review-step" data-booking-review-step hidden>
+          <div class="booking-widget__review-header">
+            <p class="booking-widget__review-title">Review your booking</p>
+          </div>
+          <dl class="booking-widget__review-list" data-booking-review-list></dl>
         </div>
-        <dl class="booking-widget__review-list" data-booking-review-list></dl>
-      </div>
 
-      {% comment %}
-        Custom booking fields container. Filled in dynamically by
-        booking-widget.js once a date and time slot have been picked,
-        with whatever extra questions the merchant has defined on the
-        app's Custom Fields admin page (e.g. "Note for your
-        appointment"). None of these are required — they're optional,
-        collected alongside the date/time selection.
-      {% endcomment %}
-      <div class="booking-widget__fields-pane" data-booking-custom-fields hidden></div>
+        {% comment %}
+          Custom booking fields container. Filled in dynamically by
+          booking-widget.js once a date and time slot have been picked,
+          with whatever extra questions the merchant has defined on the
+          app's Custom Fields admin page (e.g. "Note for your
+          appointment"). None of these are required — they're optional,
+          collected alongside the date/time selection. Kept right after
+          the review step (and its price total) with no stretched gap
+          in between — see .booking-widget__review-body.
+        {% endcomment %}
+        <div class="booking-widget__fields-pane" data-booking-custom-fields hidden></div>
+      </div>
 
       <div class="booking-widget__modal-footer" data-booking-modal-footer>
         <div class="booking-widget__quantity" data-booking-quantity hidden>

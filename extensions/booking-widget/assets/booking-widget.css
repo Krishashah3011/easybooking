@@ -1017,11 +1017,17 @@ body.booking-widget-lock-scroll {
   white-space: nowrap;
 }
 
-.booking-widget__review-step {
-  padding: 1.75rem 1.5rem;
+.booking-widget__review-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-widget__review-step {
+  padding: 1.75rem 1.5rem 0.25rem;
+  flex: none;
 }
 
 .booking-widget__review-header {
@@ -1208,8 +1214,9 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__fields-pane {
-  padding: 1.1rem 1.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0.25rem 1.5rem 1.1rem;
+  border-top: none;
+  flex: none;
   display: flex;
   flex-direction: column;
   gap: 14px;

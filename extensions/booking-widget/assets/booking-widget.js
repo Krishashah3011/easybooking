@@ -314,6 +314,7 @@
       "[data-booking-quantity-increase]",
     );
     var quantityNoteEl = root.querySelector("[data-booking-quantity-note]");
+    var reviewBodyEl = root.querySelector("[data-booking-review-body]");
     var reviewStepEl = root.querySelector("[data-booking-review-step]");
     var reviewListEl = root.querySelector("[data-booking-review-list]");
     var reviewBackBtn = root.querySelector("[data-booking-review-back]");
@@ -1017,6 +1018,7 @@
       viewYear = freshToday.getUTCFullYear();
       viewMonth = freshToday.getUTCMonth() + 1;
       if (reviewStepEl) reviewStepEl.hidden = true;
+      if (reviewBodyEl) reviewBodyEl.hidden = true;
       refreshQuantityForSelection();
       modalBodyEl.hidden = false;
       modalFooterEl.hidden = false;
@@ -1946,6 +1948,7 @@
       modalBodyEl.hidden = true;
       if (quantityWrapEl) quantityWrapEl.hidden = true;
       if (reviewStepEl) reviewStepEl.hidden = false;
+      if (reviewBodyEl) reviewBodyEl.hidden = false;
       if (subheaderEl) subheaderEl.hidden = true;
       renderCustomFields();
       updateConfirmButton();
@@ -1954,6 +1957,7 @@
     function exitReviewStep() {
       atReviewStep = false;
       if (reviewStepEl) reviewStepEl.hidden = true;
+      if (reviewBodyEl) reviewBodyEl.hidden = true;
       modalBodyEl.hidden = false;
       renderCustomFields();
     }
