@@ -743,7 +743,7 @@ export default function BookingSettingsPage() {
           </div>
           <div style={styles.fieldGroupHalf}>
             <p style={styles.fieldLabelBlack}>
-              Minimum Advance Booking (days)
+              Maximum Advance Booking (days)
             </p>
             <div style={styles.selectBox}>
               <input

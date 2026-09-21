@@ -707,14 +707,6 @@ const RefreshIcon = () => (
   </svg>
 );
 
-const InfoIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <circle cx="8" cy="8" r="7.25" stroke={BLUE} strokeWidth="1" />
-    <path d="M8 7.2V11.2" stroke={BLUE} strokeWidth="1.2" strokeLinecap="round" />
-    <circle cx="8" cy="4.9" r="0.8" fill={BLUE} />
-  </svg>
-);
-
 const PlusIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
     <path
@@ -1621,7 +1613,6 @@ function BookingsListPage({
                 Search, filter, reschedule or cancel every booking made in your
                 store.
               </p>
-              <InfoIcon />
             </div>
           </div>
           <Link to="/app/bookings/new" style={S.newBookingButton}>
