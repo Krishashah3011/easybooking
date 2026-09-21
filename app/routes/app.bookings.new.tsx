@@ -36,7 +36,16 @@ import {
   saveButtonStyle,
 } from "../components/SettingsUI";
 
-const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAY_HEADERS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+// Exact blue from the Figma design for the month calendar + time-slot section
+// (selected date, next-month button, slot pills). Tints use the same colour.
+const CAL_BLUE = "#0060E6";
+const BLUE_TINT = "rgba(0, 96, 230, 0.08)";
+const NAV_ARROW = "#4C4C4C";
+const DISABLED_DATE = "#ADADAD";
+// How many months (from the current month) the month dropdown lists.
+const MONTH_PICKER_SPAN = 24;
 
 const S = {
   page: {
@@ -161,50 +170,177 @@ const S = {
     fontSize: "14px",
     color: TEXT_DARK,
   } as React.CSSProperties,
-  calendarNavBtn: {
+  dateTimeCard: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    padding: "10px",
+    background: "#FFFFFF",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "4px",
+  } as React.CSSProperties,
+  // Row = [months][slots]. The flex-basis of the months column is its minimum
+  // (2 panes x 200px + gap) so the slots only drop below on very narrow
+  // screens; on wider screens the months grow up to 654px (2 x 315 + 24).
+  calendarLayout: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    gap: "24px",
+    width: "100%",
+  } as React.CSSProperties,
+  calendarColumn: {
+    display: "flex",
+    flexDirection: "column",
+    flex: "1 1 424px",
+    minWidth: 0,
+    maxWidth: "654px",
+  } as React.CSSProperties,
+  monthsRow: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    alignItems: "flex-start",
+    gap: "24px",
+    width: "100%",
+  } as React.CSSProperties,
+  monthPane: {
+    display: "flex",
+    flexDirection: "column",
+    flex: "1 1 0",
+    minWidth: 0,
+    maxWidth: "315px",
+  } as React.CSSProperties,
+  monthHeader: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: "38px",
+    // arrows sit centred over the first / last day column (3.5px at full width)
+    padding: "0 max(0px, calc((100% / 7 - 38px) / 2))",
+    marginBottom: "30px",
+  } as React.CSSProperties,
+  navBtn: {
+    display: "inline-flex",
+    justifyContent: "center",
+    alignItems: "center",
     width: "38px",
     height: "38px",
-    borderRadius: "999px",
+    padding: 0,
     border: "none",
+    borderRadius: "999px",
     background: "transparent",
     cursor: "pointer",
-    fontSize: "16px",
-    color: TEXT_DARK,
+    flexShrink: 0,
   } as React.CSSProperties,
-  monthLabel: {
+  navBtnNext: {
+    background: BLUE_TINT,
+  } as React.CSSProperties,
+  monthPicker: {
+    position: "relative",
+    display: "inline-flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "8px",
+    boxSizing: "border-box",
+    minWidth: 0,
+    height: "38px",
+    padding: "0 4px",
+    cursor: "pointer",
+  } as React.CSSProperties,
+  monthPickerText: {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
+    lineHeight: "17px",
     color: TEXT_DARK,
-    textAlign: "center",
+    whiteSpace: "nowrap",
+  } as React.CSSProperties,
+  monthPickerSelect: {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    margin: 0,
+    padding: 0,
+    border: "none",
+    opacity: 0,
+    cursor: "pointer",
+    fontFamily: "Inter",
+    fontSize: "14px",
   } as React.CSSProperties,
   weekdayRow: {
     display: "grid",
-    gridTemplateColumns: "repeat(7, 44px)",
-    gap: "0",
-    marginBottom: "4px",
+    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+    marginBottom: "15px",
   } as React.CSSProperties,
   weekdayLabel: {
     fontFamily: "Inter",
+    fontWeight: 400,
     fontSize: "12px",
+    lineHeight: "15px",
     textTransform: "uppercase",
     color: TEXT_DARK,
     textAlign: "center",
+  } as React.CSSProperties,
+  dayGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+    rowGap: "8px",
+  } as React.CSSProperties,
+  dayBtn: (
+    selected: boolean,
+    inRange: boolean,
+    available: boolean,
+  ): React.CSSProperties => ({
+    justifySelf: "center",
+    width: "100%",
+    maxWidth: "44px",
+    aspectRatio: "1 / 1",
+    padding: 0,
+    border: "none",
+    borderRadius: "999px",
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "16px",
+    lineHeight: "19px",
+    cursor: available ? "pointer" : "not-allowed",
+    background: selected
+      ? CAL_BLUE
+      : inRange
+        ? "rgba(0, 96, 230, 0.12)"
+        : "transparent",
+    color: selected ? "#FFFFFF" : available ? TEXT_DARK : DISABLED_DATE,
+  }),
+  slotsColumn: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "9px",
+    flex: "0 0 221px",
+    width: "221px",
+    maxWidth: "100%",
   } as React.CSSProperties,
   timeSlotBtn: (active: boolean, disabled: boolean): React.CSSProperties => ({
     boxSizing: "border-box",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    padding: "10px 16px",
+    padding: "0 16px",
     width: "100%",
-    height: "40px",
-    border: `1px solid ${BLUE}`,
-    borderRadius: "28px",
-    background: active ? BLUE : "transparent",
-    color: active ? "#fff" : TEXT_DARK,
+    height: "44px",
+    border: `1px solid ${CAL_BLUE}`,
+    borderRadius: "22px",
+    background: active ? CAL_BLUE : "#FFFFFF",
+    color: active ? "#FFFFFF" : TEXT_DARK,
     fontFamily: "Inter",
-    fontSize: "13px",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "17px",
+    whiteSpace: "nowrap",
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.5 : 1,
   }),
@@ -216,6 +352,55 @@ const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+
+function NavChevron({
+  direction,
+  color,
+}: {
+  direction: "left" | "right";
+  color: string;
+}) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="22 22 14 14"
+      fill="none"
+      aria-hidden="true"
+      style={{
+        display: "block",
+        transform: direction === "right" ? "scaleX(-1)" : undefined,
+      }}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M32.4806 34.9941C32.8398 34.6529 32.8398 34.0998 32.4806 33.7586L27.4706 29L32.4806 24.2414C32.8398 23.9002 32.8398 23.3471 32.4806 23.0059C32.1214 22.6647 31.539 22.6647 31.1798 23.0059L25.5194 28.3822C25.1602 28.7234 25.1602 29.2766 25.5194 29.6178L31.1798 34.9941C31.539 35.3353 32.1214 35.3353 32.4806 34.9941Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
+function DropdownChevron() {
+  return (
+    <svg
+      width="14"
+      height="12"
+      viewBox="192.5 23 14 12"
+      fill="none"
+      aria-hidden="true"
+      style={{ display: "block", flexShrink: 0 }}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M205.494 25.5194C205.153 25.1602 204.6 25.1602 204.259 25.5194L199.5 30.5294L194.741 25.5194C194.4 25.1602 193.847 25.1602 193.506 25.5194C193.165 25.8786 193.165 26.461 193.506 26.8202L198.882 32.4806C199.223 32.8398 199.777 32.8398 200.118 32.4806L205.494 26.8202C205.835 26.461 205.835 25.8786 205.494 25.5194Z"
+        fill={TEXT_DARK}
+      />
+    </svg>
+  );
+}
 
 type QueuedSlotInput = {
   bookableProductId: string;
@@ -555,6 +740,31 @@ export default function NewBookingPage() {
       : "23:59";
 
   const isTwoMonthType = true;
+
+  const todayMonthIndex = today.getUTCFullYear() * 12 + today.getUTCMonth();
+
+  // Month dropdown options for a pane. `offset` is how many months the pane
+  // sits after the first visible month (0 = left pane, 1 = right pane). The
+  // month currently shown is always included, even if it is outside the range.
+  const monthPickerOptions = (shownIndex: number, offset: number) => {
+    const start = todayMonthIndex + offset;
+    const end = start + MONTH_PICKER_SPAN - 1;
+    const from = Math.min(start, shownIndex);
+    const to = Math.max(end, shownIndex);
+    const options: Array<{ value: number; label: string }> = [];
+    for (let i = from; i <= to; i += 1) {
+      options.push({
+        value: i,
+        label: `${MONTH_NAMES[i % 12]} ${Math.floor(i / 12)}`,
+      });
+    }
+    return options;
+  };
+
+  const jumpToMonthIndex = (index: number) => {
+    setViewYear(Math.floor(index / 12));
+    setViewMonth((index % 12) + 1);
+  };
 
   let secondYear = viewYear;
   let secondMonth = viewMonth + 1;
@@ -951,19 +1161,13 @@ export default function NewBookingPage() {
   ) => (
     <div>
       <div style={S.weekdayRow}>
-        {WEEKDAY_LETTERS.map((letter, i) => (
-          <span key={`wd-${year}-${month}-${i}`} style={S.weekdayLabel}>
-            {letter}
+        {WEEKDAY_HEADERS.map((label) => (
+          <span key={`wd-${year}-${month}-${label}`} style={S.weekdayLabel}>
+            {label}
           </span>
         ))}
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, 44px)",
-          gap: "8px",
-        }}
-      >
+      <div style={S.dayGrid}>
         {Array.from({ length: monthFirstWeekday }).map((_, i) => (
           <span key={`blank-${year}-${month}-${i}`} />
         ))}
@@ -988,27 +1192,12 @@ export default function NewBookingPage() {
             <button
               key={dateStr}
               type="button"
+              className="nb-day"
               disabled={!isAvailable}
+              aria-pressed={isSelected}
+              aria-label={`${day} ${MONTH_NAMES[month - 1]} ${year}`}
               onClick={() => isAvailable && selectDate(dateStr)}
-              style={{
-                width: "44px",
-                height: "44px",
-                border: "none",
-                borderRadius: "999px",
-                fontFamily: "Inter",
-                fontSize: "16px",
-                cursor: isAvailable ? "pointer" : "not-allowed",
-                background: isSelected
-                  ? BLUE
-                  : isInRange
-                    ? "rgba(0,96,230,0.12)"
-                    : "transparent",
-                color: isSelected
-                  ? "#fff"
-                  : isAvailable
-                    ? TEXT_DARK
-                    : "#ADADAD",
-              }}
+              style={S.dayBtn(isSelected, isInRange, isAvailable)}
             >
               {day}
             </button>
@@ -1018,9 +1207,108 @@ export default function NewBookingPage() {
     </div>
   );
 
+  const renderMonthPane = (
+    year: number,
+    month: number,
+    monthDaysInMonth: number,
+    monthFirstWeekday: number,
+    monthAvailableSet: Set<string>,
+    isLoading: boolean,
+    hasAnyAvailability: boolean,
+    offset: number,
+  ) => {
+    const shownIndex = year * 12 + (month - 1);
+    const paneLabel = `${MONTH_NAMES[month - 1]} ${year}`;
+    return (
+      <div key={`pane-${year}-${month}`} style={S.monthPane}>
+        <div style={S.monthHeader}>
+          <button
+            type="button"
+            className="nb-nav"
+            style={S.navBtn}
+            onClick={() => goToMonth(-1)}
+            aria-label="Previous month"
+          >
+            <NavChevron direction="left" color={NAV_ARROW} />
+          </button>
+
+          <label className="nb-month-picker" style={S.monthPicker}>
+            <span style={S.monthPickerText}>{paneLabel}</span>
+            <DropdownChevron />
+            <select
+              style={S.monthPickerSelect}
+              aria-label={`Select month, currently ${paneLabel}`}
+              value={shownIndex}
+              onChange={(e: FieldChangeEvent) =>
+                jumpToMonthIndex(Number(e.currentTarget.value) - offset)
+              }
+            >
+              {monthPickerOptions(shownIndex, offset).map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            type="button"
+            className="nb-nav"
+            style={{ ...S.navBtn, ...S.navBtnNext }}
+            onClick={() => goToMonth(1)}
+            aria-label="Next month"
+          >
+            <NavChevron direction="right" color={CAL_BLUE} />
+          </button>
+        </div>
+
+        {isLoading ? (
+          <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: 0 }}>
+            Loading availability…
+          </p>
+        ) : (
+          renderMonthGrid(
+            year,
+            month,
+            monthDaysInMonth,
+            monthFirstWeekday,
+            monthAvailableSet,
+          )
+        )}
+        {!isLoading && !hasAnyAvailability && (
+          <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: "12px 0 0" }}>
+            No availability this month.
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <s-page heading="New Booking" inlineSize="950px">
       <div style={S.page}>
+        <style>{`
+          .nb-day:not(:disabled):not([aria-pressed="true"]):hover {
+            background: ${BLUE_TINT} !important;
+          }
+          .nb-slot:not(:disabled):not([aria-pressed="true"]):hover {
+            background: ${BLUE_TINT} !important;
+          }
+          .nb-nav:hover {
+            background: rgba(0, 96, 230, 0.14) !important;
+          }
+          .nb-day:focus-visible,
+          .nb-slot:focus-visible,
+          .nb-nav:focus-visible {
+            outline: 2px solid ${CAL_BLUE};
+            outline-offset: 2px;
+          }
+          .nb-month-picker:focus-within {
+            outline: 2px solid ${CAL_BLUE};
+            outline-offset: 2px;
+            border-radius: 4px;
+          }
+        `}</style>
         <div style={S.headerRow}>
           <span style={S.headerTitle}>Add New Booking</span>
           <a href="/app/bookings" style={S.iconButton} aria-label="Back to bookings">
@@ -1070,7 +1358,7 @@ export default function NewBookingPage() {
           </div>
         </div>
 
-        <div style={S.card}>
+        <div style={S.dateTimeCard}>
           {selectedBookingType === "MULTI_DAY" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <span style={S.cardHeading}>Select your preferred date & time</span>
@@ -1101,100 +1389,31 @@ export default function NewBookingPage() {
             </div>
           )}
 
-          <div style={{ display: "flex", gap: "32px", alignItems: "flex-start", flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 auto", minWidth: "16rem" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: "16px",
-                  maxWidth: isTwoMonthType ? "42rem" : "20rem",
-                }}
-              >
-                <button type="button" style={S.calendarNavBtn} onClick={() => goToMonth(-1)}>
-                  ‹
-                </button>
-                {!isTwoMonthType && (
-                  <span style={S.monthLabel}>
-                    {`${MONTH_NAMES[viewMonth - 1]} ${viewYear}`}
-                  </span>
+          <div style={S.calendarLayout}>
+            <div style={S.calendarColumn}>
+              <div style={S.monthsRow}>
+                {renderMonthPane(
+                  viewYear,
+                  viewMonth,
+                  daysInMonth,
+                  firstWeekday,
+                  availableSet,
+                  isLoadingAvailability,
+                  availableDates.length > 0,
+                  0,
                 )}
-                <button type="button" style={S.calendarNavBtn} onClick={() => goToMonth(1)}>
-                  ›
-                </button>
+                {isTwoMonthType &&
+                  renderMonthPane(
+                    secondYear,
+                    secondMonth,
+                    secondDaysInMonth,
+                    secondFirstWeekday,
+                    secondAvailableSet,
+                    isLoadingSecondMonth,
+                    secondMonthDates.length > 0,
+                    1,
+                  )}
               </div>
-
-              {isTwoMonthType ? (
-                <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
-                  <div>
-                    <div style={{ ...S.monthLabel, fontWeight: 600, marginBottom: "8px" }}>
-                      {MONTH_NAMES[viewMonth - 1]} {viewYear}
-                    </div>
-                    {isLoadingAvailability ? (
-                      <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
-                        Loading availability…
-                      </p>
-                    ) : (
-                      renderMonthGrid(
-                        viewYear,
-                        viewMonth,
-                        daysInMonth,
-                        firstWeekday,
-                        availableSet,
-                      )
-                    )}
-                    {!isLoadingAvailability && availableDates.length === 0 && (
-                      <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
-                        No availability this month.
-                      </p>
-                    )}
-                  </div>
-                  <div style={{ width: "1px", alignSelf: "stretch", background: BORDER }} />
-                  <div>
-                    <div style={{ ...S.monthLabel, fontWeight: 600, marginBottom: "8px" }}>
-                      {MONTH_NAMES[secondMonth - 1]} {secondYear}
-                    </div>
-                    {isLoadingSecondMonth ? (
-                      <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
-                        Loading availability…
-                      </p>
-                    ) : (
-                      renderMonthGrid(
-                        secondYear,
-                        secondMonth,
-                        secondDaysInMonth,
-                        secondFirstWeekday,
-                        secondAvailableSet,
-                      )
-                    )}
-                    {!isLoadingSecondMonth && secondMonthDates.length === 0 && (
-                      <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
-                        No availability this month.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : isLoadingAvailability ? (
-                <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
-                  Loading availability…
-                </p>
-              ) : (
-                <>
-                  {renderMonthGrid(
-                    viewYear,
-                    viewMonth,
-                    daysInMonth,
-                    firstWeekday,
-                    availableSet,
-                  )}
-                  {availableDates.length === 0 && (
-                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
-                      No availability this month.
-                    </p>
-                  )}
-                </>
-              )}
               {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
                 <div
                   style={{
@@ -1255,38 +1474,34 @@ export default function NewBookingPage() {
               (selectedBookingType === "SLOT" ||
                 selectedBookingType === "BUNDLE") && (
                 <div
-                  style={{
-                    flex: "0 0 14rem",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <span style={S.fieldLabel}>
-                    {selectedBookingType === "BUNDLE" &&
+                  style={S.slotsColumn}
+                  role="group"
+                  aria-label={
+                    selectedBookingType === "BUNDLE" &&
                     bundleSessionCount !== null
-                      ? `Available times \u2014 session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
-                      : "Available times"}
-                  </span>
+                      ? `Available times, session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
+                      : "Available times"
+                  }
+                >
                   {isLoadingSlots ? (
-                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: 0 }}>
                       Loading available times…
                     </p>
                   ) : slots.length === 0 ? (
-                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: 0 }}>
                       No slots at all on this date.
                     </p>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      {slots.map((slot) => (
+                    slots.map((slot) => {
+                      const isActive = selectedSlot?.startsAt === slot.startsAt;
+                      return (
                         <button
                           key={slot.startsAt}
                           type="button"
-                          style={S.timeSlotBtn(
-                            selectedSlot?.startsAt === slot.startsAt,
-                            !slot.available,
-                          )}
+                          className="nb-slot"
+                          style={S.timeSlotBtn(isActive, !slot.available)}
                           disabled={!slot.available}
+                          aria-pressed={isActive}
                           onClick={() => {
                             if (slot.available) setSelectedSlot(slot);
                           }}
@@ -1297,13 +1512,13 @@ export default function NewBookingPage() {
                             : typeof slot.remainingCapacity === "number"
                               ? ` (${
                                   slot.remainingCapacity === 1
-                                    ? "1 spot left"
-                                    : `${slot.remainingCapacity} spots left`
+                                    ? "1 slot left"
+                                    : `${slot.remainingCapacity} slots left`
                                 })`
                               : ""}
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })
                   )}
                 </div>
               )}
