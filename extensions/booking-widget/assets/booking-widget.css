@@ -523,8 +523,7 @@ body.booking-widget-lock-scroll {
   background: transparent;
   border: 0;
   color: #1a1a1a;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: "Inter";
 }
 
 .booking-widget__datetime-card button,
@@ -965,8 +964,7 @@ body.booking-widget-lock-scroll {
   justify-content: center;
   border: none;
   background: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial,
-    sans-serif;
+  font-family: "Inter";
   font-size: 1.3rem;
   font-weight: 700;
   font-style: normal;

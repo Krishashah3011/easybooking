@@ -12,7 +12,7 @@ const InfoIcon = () => (
       x="12"
       y="17.5"
       textAnchor="middle"
-      fontFamily="Georgia, 'Times New Roman', serif"
+      fontFamily="Inter"
       fontStyle="italic"
       fontWeight="700"
       fontSize="17"
@@ -96,7 +96,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   title: {
     flex: 1,
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "16px",
     lineHeight: "20px",
@@ -119,7 +119,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: "16px",
   },
   intro: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "13px",
     lineHeight: "18px",
@@ -127,7 +127,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 0 20px",
   },
   stepTitle: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
     lineHeight: "18px",
@@ -135,7 +135,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 0 6px",
   },
   stepDescription: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "13px",
     lineHeight: "19px",
@@ -151,7 +151,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#000000",
     borderRadius: "8px",
     color: "#FFFFFF",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "13px",
     lineHeight: "16px",
@@ -173,7 +173,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#E3F4E9",
     borderRadius: "8px",
     color: "#1F7A3F",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "13px",
   },
