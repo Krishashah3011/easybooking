@@ -108,8 +108,7 @@ export const styles: Record<string, React.CSSProperties> = {
   },
   clientCardHeader: {
     display: "flex",
-    alignItems: "center",
-    gap: "10px",
+    flexDirection: "column",
   },
   clientCardTitle: {
     fontFamily: "Inter",

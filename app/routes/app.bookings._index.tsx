@@ -722,16 +722,7 @@ const SearchIcon = () => (
 );
 
 const FilterIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-    <path
-      d="M3 5.5H10M14 5.5H17M3 14.5H6M10 14.5H17"
-      stroke={BLUE}
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    <circle cx="12" cy="5.5" r="2" stroke={BLUE} strokeWidth="1.5" />
-    <circle cx="8" cy="14.5" r="2" stroke={BLUE} strokeWidth="1.5" />
-  </svg>
+  <img src="/filter.svg" alt="" width={20} height={20} />
 );
 
 const RefreshIcon = () => (
@@ -1074,8 +1065,14 @@ function BookingDetails({
           <input
             type="date"
             aria-label="New date"
-            style={{ ...S.input, width: "160px" }}
+            style={{ ...S.input, width: "160px", cursor: "pointer" }}
             value={newDate}
+            onClick={(e) => {
+              const el = e.currentTarget;
+              if (typeof el.showPicker === "function") {
+                el.showPicker();
+              }
+            }}
             onChange={(e) => setNewDate(e.target.value)}
           />
           <select

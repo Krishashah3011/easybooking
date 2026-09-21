@@ -848,15 +848,24 @@ function LocationEditor({
                 <div style={styles.inputBox}>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    maxLength={5}
                     style={styles.textInput}
                     placeholder="Shop default"
                     value={values.dailyStartTime ?? ""}
-                    onChange={(e: FieldChangeEvent) =>
+                    onChange={(e: FieldChangeEvent) => {
+                      const digits = e.currentTarget.value
+                        .replace(/\D/g, "")
+                        .slice(0, 4);
+                      const formatted =
+                        digits.length <= 2
+                          ? digits
+                          : `${digits.slice(0, 2)}:${digits.slice(2)}`;
                       setValues((prev) => ({
                         ...prev,
-                        dailyStartTime: e.currentTarget.value || null,
-                      }))
-                    }
+                        dailyStartTime: formatted || null,
+                      }));
+                    }}
                   />
                 </div>
                 <p style={styles.hintText}>24-hour format, hh:mm</p>
@@ -871,15 +880,24 @@ function LocationEditor({
                 <div style={styles.inputBox}>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    maxLength={5}
                     style={styles.textInput}
                     placeholder="Shop default"
                     value={values.dailyEndTime ?? ""}
-                    onChange={(e: FieldChangeEvent) =>
+                    onChange={(e: FieldChangeEvent) => {
+                      const digits = e.currentTarget.value
+                        .replace(/\D/g, "")
+                        .slice(0, 4);
+                      const formatted =
+                        digits.length <= 2
+                          ? digits
+                          : `${digits.slice(0, 2)}:${digits.slice(2)}`;
                       setValues((prev) => ({
                         ...prev,
-                        dailyEndTime: e.currentTarget.value || null,
-                      }))
-                    }
+                        dailyEndTime: formatted || null,
+                      }));
+                    }}
                   />
                 </div>
                 <p style={styles.hintText}>24-hour format, hh:mm</p>

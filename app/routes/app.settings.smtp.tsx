@@ -93,10 +93,9 @@ export default function SmtpSettingsTab() {
         <div style={styles.clientCardBody}>
           <div style={styles.clientCardHeader}>
             <div style={styles.clientCardTitle}>Email (SMTP) Settings</div>
-          </div>
-
-          <div style={styles.subLabel}>
-            Used to send automated emails for reminders, booking confirmations, rescheduling updates, cancellations, and other booking-related notifications.
+            <div style={styles.subLabel}>
+              Used to send automated emails for reminders, booking confirmations, rescheduling updates, cancellations, and other booking-related notifications.
+            </div>
           </div>
 
           <div style={styles.clientDivider} />

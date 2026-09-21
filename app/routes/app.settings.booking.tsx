@@ -424,6 +424,34 @@ export default function BookingSettingsPage() {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Formats free-typed input into a 24-hour "HH:MM" time string:
+  // strips anything that isn't a digit, caps it at 4 digits, and
+  // auto-inserts the colon after the 2nd digit (e.g. "2200" -> "22:00").
+  const formatTimeInput = (raw: string) => {
+    const digits = raw.replace(/\D/g, "").slice(0, 4);
+    if (digits.length <= 2) return digits;
+    return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+  };
+
+  // Digits-only, length-capped numeric input handler for the plain
+  // number fields below (slot duration, buffer, etc). Strips letters
+  // and symbols (blocks the type="number" "e"/"+"/"-" loophole) and
+  // caps how many digits can be typed so values can't run away.
+  const handleNumericChange = <K extends keyof BookingSettingsFormValues>(
+    key: K,
+    raw: string,
+    maxDigits: number,
+  ) => {
+    const digits = raw.replace(/\D/g, "").slice(0, maxDigits);
+    setField(key, (digits === "" ? 0 : Number(digits)) as BookingSettingsFormValues[K]);
+  };
+
+  // Selects the whole field on focus so a default value like "0"
+  // is replaced by the next keystroke instead of the new digits
+  // being appended after it.
+  const selectAllOnFocus = (e: { currentTarget: HTMLInputElement }) =>
+    e.currentTarget.select();
+
   const toggleWorkingDay = (day: number) => {
     setValues((prev) => {
       const has = prev.workingDays.includes(day);
@@ -541,11 +569,16 @@ export default function BookingSettingsPage() {
             <div style={styles.inputBox}>
               <input
                 type="text"
+                inputMode="numeric"
+                maxLength={5}
                 style={styles.textInput}
                 placeholder="09:00"
                 value={values.dailyStartTime}
                 onChange={(e: FieldChangeEvent) =>
-                  setField("dailyStartTime", e.currentTarget.value)
+                  setField(
+                    "dailyStartTime",
+                    formatTimeInput(e.currentTarget.value),
+                  )
                 }
               />
             </div>
@@ -561,11 +594,16 @@ export default function BookingSettingsPage() {
             <div style={styles.inputBox}>
               <input
                 type="text"
+                inputMode="numeric"
+                maxLength={5}
                 style={styles.textInput}
                 placeholder="17:00"
                 value={values.dailyEndTime}
                 onChange={(e: FieldChangeEvent) =>
-                  setField("dailyEndTime", e.currentTarget.value)
+                  setField(
+                    "dailyEndTime",
+                    formatTimeInput(e.currentTarget.value),
+                  )
                 }
               />
             </div>
@@ -582,6 +620,11 @@ export default function BookingSettingsPage() {
       <div style={{ ...styles.card, marginTop: "16px" }}>
         <div style={styles.headerLeft}>
           <p style={styles.title}>Slot Configuration</p>
+          <p style={styles.descText}>
+            Only applies to bookable products set to Slot or Bundle. Full
+            Day and Multi Day products use the daily start/end time above
+            and ignore these settings.
+          </p>
         </div>
         <hr style={styles.divider} />
         <div style={styles.fieldsRow}>
@@ -589,16 +632,18 @@ export default function BookingSettingsPage() {
             <p style={styles.fieldLabelBlack}>Slot Duration (minutes)</p>
             <div style={styles.selectBox}>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
                 className="no-spinner-input"
                 style={styles.textInput}
                 value={values.slotDurationMinutes}
-                min={5}
-                step={5}
+                onFocus={selectAllOnFocus}
                 onChange={(e: FieldChangeEvent) =>
-                  setField(
+                  handleNumericChange(
                     "slotDurationMinutes",
-                    Number(e.currentTarget.value),
+                    e.currentTarget.value,
+                    4,
                   )
                 }
               />
@@ -628,14 +673,15 @@ export default function BookingSettingsPage() {
             </p>
             <div style={styles.selectBox}>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
                 className="no-spinner-input"
                 style={styles.textInput}
                 value={values.bufferMinutes}
-                min={0}
-                step={5}
+                onFocus={selectAllOnFocus}
                 onChange={(e: FieldChangeEvent) =>
-                  setField("bufferMinutes", Number(e.currentTarget.value))
+                  handleNumericChange("bufferMinutes", e.currentTarget.value, 4)
                 }
               />
               <NumberStepper
@@ -659,16 +705,18 @@ export default function BookingSettingsPage() {
             <p style={styles.fieldLabelBlack}>Max Bookings Per Slot</p>
             <div style={styles.selectBox}>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                maxLength={3}
                 className="no-spinner-input"
                 style={styles.textInput}
                 value={values.maxBookingsPerSlot}
-                min={1}
-                step={1}
+                onFocus={selectAllOnFocus}
                 onChange={(e: FieldChangeEvent) =>
-                  setField(
+                  handleNumericChange(
                     "maxBookingsPerSlot",
-                    Number(e.currentTarget.value),
+                    e.currentTarget.value,
+                    3,
                   )
                 }
               />
@@ -711,14 +759,19 @@ export default function BookingSettingsPage() {
             </p>
             <div style={styles.selectBox}>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
                 className="no-spinner-input"
                 style={styles.textInput}
                 value={values.minAdvanceHours}
-                min={0}
-                step={1}
+                onFocus={selectAllOnFocus}
                 onChange={(e: FieldChangeEvent) =>
-                  setField("minAdvanceHours", Number(e.currentTarget.value))
+                  handleNumericChange(
+                    "minAdvanceHours",
+                    e.currentTarget.value,
+                    4,
+                  )
                 }
               />
               <NumberStepper
@@ -747,14 +800,19 @@ export default function BookingSettingsPage() {
             </p>
             <div style={styles.selectBox}>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
                 className="no-spinner-input"
                 style={styles.textInput}
                 value={values.maxAdvanceDays}
-                min={1}
-                step={1}
+                onFocus={selectAllOnFocus}
                 onChange={(e: FieldChangeEvent) =>
-                  setField("maxAdvanceDays", Number(e.currentTarget.value))
+                  handleNumericChange(
+                    "maxAdvanceDays",
+                    e.currentTarget.value,
+                    4,
+                  )
                 }
               />
               <NumberStepper

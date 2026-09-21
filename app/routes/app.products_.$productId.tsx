@@ -928,12 +928,17 @@ function TimeField({
       <div style={ui.inputBox}>
         <input
           type="text"
+          inputMode="numeric"
+          maxLength={5}
           style={ui.timeInput}
           placeholder={placeholder}
           value={value ?? ""}
-          onChange={(e: FieldChangeEvent) =>
-            onChange(e.currentTarget.value || null)
-          }
+          onChange={(e: FieldChangeEvent) => {
+            const digits = e.currentTarget.value.replace(/\D/g, "").slice(0, 4);
+            const formatted =
+              digits.length <= 2 ? digits : `${digits.slice(0, 2)}:${digits.slice(2)}`;
+            onChange(formatted || null);
+          }}
         />
       </div>
     </FieldGroup>
@@ -968,21 +973,21 @@ function NumberField({
     <FieldGroup label={label} size={size} hint={hint} error={error}>
       <div style={ui.inputBox}>
         <input
-          type="number"
+          type="text"
+          inputMode="numeric"
+          maxLength={4}
           className="pc-no-spinner"
           style={ui.numberInput}
           placeholder={placeholder}
           value={value ?? ""}
-          min={min}
-          step={step}
           aria-label={label}
-          onChange={(e: FieldChangeEvent) =>
-            onChange(
-              e.currentTarget.value === ""
-                ? null
-                : Number(e.currentTarget.value),
-            )
+          onFocus={(e: { currentTarget: HTMLInputElement }) =>
+            e.currentTarget.select()
           }
+          onChange={(e: FieldChangeEvent) => {
+            const digits = e.currentTarget.value.replace(/\D/g, "").slice(0, 4);
+            onChange(digits === "" ? null : Number(digits));
+          }}
         />
         <NumberStepper
           label={label.toLowerCase()}
