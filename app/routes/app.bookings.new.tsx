@@ -50,6 +50,7 @@ const MONTH_PICKER_SPAN = 24;
 // Text colour used inside the calendar (Figma #1A1A1A, slightly softer than the
 // #000 used for form labels).
 const CAL_TEXT = "#1A1A1A";
+const PLACEHOLDER = "#6E6E6E";
 
 // Layout follows the Figma frame "Add New Booking": ONE outer card (950px page,
 // 16px padding) that holds a header row and four inner cards with a 16px gap.
@@ -888,9 +889,8 @@ export default function NewBookingPage() {
 
   const today = new Date();
 
-  const [bookableProductId, setBookableProductId] = useState(
-    products[0]?.id ?? "",
-  );
+  // Nothing is preselected: the admin picks the product and location.
+  const [bookableProductId, setBookableProductId] = useState("");
   const selectedProduct = products.find((p) => p.id === bookableProductId);
   const selectedBookingType = selectedProduct?.bookingType ?? "SLOT";
   const [viewYear, setViewYear] = useState(today.getUTCFullYear());
@@ -899,7 +899,7 @@ export default function NewBookingPage() {
   const [checkoutDate, setCheckoutDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [locationId, setLocationId] = useState(locations[0]?.id ?? "");
+  const [locationId, setLocationId] = useState("");
   const [customFieldValues, setCustomFieldValues] = useState<
     Record<string, string>
   >({});
@@ -1283,6 +1283,13 @@ export default function NewBookingPage() {
     ? [...queuedSlots, currentEntry]
     : queuedSlots;
 
+  const productError =
+    submitAttempted && !bookableProductId ? "Select a product" : undefined;
+  const locationError =
+    submitAttempted && locations.length > 0 && !locationId
+      ? "Select a location"
+      : undefined;
+
   const noSelectionError =
     submitAttempted && submissionSlots.length === 0
       ? selectedBookingType === "MULTI_DAY"
@@ -1331,6 +1338,8 @@ export default function NewBookingPage() {
     setEmailTouched(true);
 
     if (
+      !bookableProductId ||
+      (locations.length > 0 && !locationId) ||
       submissionSlots.length === 0 ||
       incompleteBundleTitles.length > 0 ||
       !customerName.trim() ||
@@ -1525,7 +1534,9 @@ export default function NewBookingPage() {
         )}
         {!isLoading && !hasAnyAvailability && (
           <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: "12px 0 0" }}>
-            No availability this month.
+            {bookableProductId
+              ? "No availability this month."
+              : "Select a product to see availability."}
           </p>
         )}
       </div>
@@ -1559,6 +1570,9 @@ export default function NewBookingPage() {
             color: #6E6E6E;
             opacity: 1;
           }
+          .nb-select option {
+            color: #000000;
+          }
           .nb-select:focus-visible,
           .nb-note-input:focus-visible,
           .nb-cust-input:focus-visible {
@@ -1572,24 +1586,10 @@ export default function NewBookingPage() {
           }
         `}</style>
 
-        {/* Header: title on the left, Save + icon on the right */}
+        {/* Header: title on the left, close icon on the right */}
         <div style={S.headerRow}>
           <span style={S.headerTitle}>Add New Booking</span>
           <div style={S.headerActions}>
-            <div style={{ ...saveWrapperStyle(), width: "82px" }}>
-              <button
-                type="button"
-                style={{
-                  ...saveButtonStyle(isCreatingBooking),
-                  width: "78px",
-                  padding: "7px 10px",
-                }}
-                disabled={isCreatingBooking}
-                onClick={handleCreateBooking}
-              >
-                Save
-              </button>
-            </div>
             <Link to="/app/bookings" style={S.iconButton} aria-label="Back to bookings">
               <CollapseIcon />
             </Link>
@@ -1607,12 +1607,19 @@ export default function NewBookingPage() {
                 <select
                   id="nb-product"
                   className="nb-select"
-                  style={S.select}
+                  style={{
+                    ...S.select,
+                    ...(!bookableProductId ? { color: PLACEHOLDER } : {}),
+                    ...(productError ? { borderColor: "#C0392B" } : {}),
+                  }}
                   value={bookableProductId}
                   onChange={(e: FieldChangeEvent) =>
                     setBookableProductId(e.currentTarget.value)
                   }
                 >
+                  <option value="" disabled>
+                    Select product
+                  </option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.title}
@@ -1621,6 +1628,9 @@ export default function NewBookingPage() {
                 </select>
                 <SelectChevron />
               </div>
+              {productError && (
+                <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{productError}</span>
+              )}
             </div>
 
             {locations.length > 0 && (
@@ -1632,12 +1642,19 @@ export default function NewBookingPage() {
                   <select
                     id="nb-location"
                     className="nb-select"
-                    style={S.select}
+                    style={{
+                      ...S.select,
+                      ...(!locationId ? { color: PLACEHOLDER } : {}),
+                      ...(locationError ? { borderColor: "#C0392B" } : {}),
+                    }}
                     value={locationId}
                     onChange={(e: FieldChangeEvent) =>
                       setLocationId(e.currentTarget.value)
                     }
                   >
+                    <option value="" disabled>
+                      Select location
+                    </option>
                     {locations.map((l) => (
                       <option key={l.id} value={l.id}>
                         {l.name}
@@ -1646,6 +1663,9 @@ export default function NewBookingPage() {
                   </select>
                   <SelectChevron />
                 </div>
+                {locationError && (
+                  <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{locationError}</span>
+                )}
               </div>
             )}
           </div>
