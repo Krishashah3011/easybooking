@@ -1,3 +1,5 @@
+import { formatTimeRangeDisplay } from "../utils/format";
+
 export type BookingEmailData = {
   productTitle: string;
   customerName: string | null;
@@ -22,7 +24,7 @@ export function confirmationEmail(data: BookingEmailData): {
     "",
     `Your booking is confirmed:`,
     `- ${data.productTitle}`,
-    `- ${data.date}, ${data.slotStart}\u2013${data.slotEnd}`,
+    `- ${data.date}, ${formatTimeRangeDisplay(data.slotStart, data.slotEnd)}`,
     "",
     `Thanks for booking with ${data.shopName}.`,
   ].join("\n");
@@ -32,7 +34,7 @@ export function confirmationEmail(data: BookingEmailData): {
     <p>Your booking is confirmed:</p>
     <ul>
       <li><strong>${escapeHtml(data.productTitle)}</strong></li>
-      <li>${escapeHtml(data.date)}, ${escapeHtml(data.slotStart)}\u2013${escapeHtml(data.slotEnd)}</li>
+      <li>${escapeHtml(data.date)}, ${escapeHtml(formatTimeRangeDisplay(data.slotStart, data.slotEnd))}</li>
     </ul>
     <p>Thanks for booking with ${escapeHtml(data.shopName)}.</p>
   `.trim();
@@ -56,7 +58,7 @@ export function bundleConfirmationEmail(data: BundleBookingEmailData): {
 } {
   const subject = `Booking confirmed: ${data.productTitle} (${data.sessions.length} sessions)`;
   const sessionLines = data.sessions.map(
-    (s) => `- ${s.date}, ${s.slotStart}\u2013${s.slotEnd}`,
+    (s) => `- ${s.date}, ${formatTimeRangeDisplay(s.slotStart, s.slotEnd)}`,
   );
   const text = [
     greeting(data.customerName),
@@ -71,7 +73,7 @@ export function bundleConfirmationEmail(data: BundleBookingEmailData): {
   const sessionListHtml = data.sessions
     .map(
       (s) =>
-        `<li>${escapeHtml(s.date)}, ${escapeHtml(s.slotStart)}\u2013${escapeHtml(s.slotEnd)}</li>`,
+        `<li>${escapeHtml(s.date)}, ${escapeHtml(formatTimeRangeDisplay(s.slotStart, s.slotEnd))}</li>`,
     )
     .join("");
   const html = `
@@ -96,7 +98,7 @@ export function reminderEmail(data: BookingEmailData): {
     "",
     `This is a reminder for your upcoming booking:`,
     `- ${data.productTitle}`,
-    `- ${data.date}, ${data.slotStart}\u2013${data.slotEnd}`,
+    `- ${data.date}, ${formatTimeRangeDisplay(data.slotStart, data.slotEnd)}`,
     "",
     `See you soon \u2014 ${data.shopName}.`,
   ].join("\n");
@@ -106,7 +108,7 @@ export function reminderEmail(data: BookingEmailData): {
     <p>This is a reminder for your upcoming booking:</p>
     <ul>
       <li><strong>${escapeHtml(data.productTitle)}</strong></li>
-      <li>${escapeHtml(data.date)}, ${escapeHtml(data.slotStart)}\u2013${escapeHtml(data.slotEnd)}</li>
+      <li>${escapeHtml(data.date)}, ${escapeHtml(formatTimeRangeDisplay(data.slotStart, data.slotEnd))}</li>
     </ul>
     <p>See you soon \u2014 ${escapeHtml(data.shopName)}.</p>
   `.trim();
@@ -125,7 +127,7 @@ export function cancellationEmail(data: BookingEmailData): {
     "",
     `Your booking has been cancelled:`,
     `- ${data.productTitle}`,
-    `- ${data.date}, ${data.slotStart}\u2013${data.slotEnd}`,
+    `- ${data.date}, ${formatTimeRangeDisplay(data.slotStart, data.slotEnd)}`,
     "",
     `If this wasn't expected, feel free to reach out to ${data.shopName}.`,
   ].join("\n");
@@ -135,7 +137,7 @@ export function cancellationEmail(data: BookingEmailData): {
     <p>Your booking has been cancelled:</p>
     <ul>
       <li><strong>${escapeHtml(data.productTitle)}</strong></li>
-      <li>${escapeHtml(data.date)}, ${escapeHtml(data.slotStart)}\u2013${escapeHtml(data.slotEnd)}</li>
+      <li>${escapeHtml(data.date)}, ${escapeHtml(formatTimeRangeDisplay(data.slotStart, data.slotEnd))}</li>
     </ul>
     <p>If this wasn't expected, feel free to reach out to ${escapeHtml(data.shopName)}.</p>
   `.trim();
@@ -160,8 +162,8 @@ export function rescheduledEmail(data: RescheduledEmailData): {
     "",
     `Your booking has been rescheduled:`,
     `- ${data.productTitle}`,
-    `- Was: ${data.previousDate}, ${data.previousSlotStart}\u2013${data.previousSlotEnd}`,
-    `- Now: ${data.date}, ${data.slotStart}\u2013${data.slotEnd}`,
+    `- Was: ${data.previousDate}, ${formatTimeRangeDisplay(data.previousSlotStart, data.previousSlotEnd)}`,
+    `- Now: ${data.date}, ${formatTimeRangeDisplay(data.slotStart, data.slotEnd)}`,
     "",
     `Thanks for your patience \u2014 ${data.shopName}.`,
   ].join("\n");
@@ -171,8 +173,8 @@ export function rescheduledEmail(data: RescheduledEmailData): {
     <p>Your booking has been rescheduled:</p>
     <ul>
       <li><strong>${escapeHtml(data.productTitle)}</strong></li>
-      <li>Was: ${escapeHtml(data.previousDate)}, ${escapeHtml(data.previousSlotStart)}\u2013${escapeHtml(data.previousSlotEnd)}</li>
-      <li>Now: ${escapeHtml(data.date)}, ${escapeHtml(data.slotStart)}\u2013${escapeHtml(data.slotEnd)}</li>
+      <li>Was: ${escapeHtml(data.previousDate)}, ${escapeHtml(formatTimeRangeDisplay(data.previousSlotStart, data.previousSlotEnd))}</li>
+      <li>Now: ${escapeHtml(data.date)}, ${escapeHtml(formatTimeRangeDisplay(data.slotStart, data.slotEnd))}</li>
     </ul>
     <p>Thanks for your patience \u2014 ${escapeHtml(data.shopName)}.</p>
   `.trim();

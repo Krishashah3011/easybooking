@@ -102,12 +102,23 @@
     });
   }
 
+  function to12Hour(timeStr) {
+    var m = /^(\d{1,2}):(\d{2})$/.exec(timeStr);
+    if (!m) return timeStr;
+    var hour = parseInt(m[1], 10);
+    var minute = m[2];
+    var period = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return hour + ":" + minute + " " + period;
+  }
+
   function formatTimeInBrowserTZ(isoString) {
     try {
-      var dtf = new Intl.DateTimeFormat("en-GB", {
-        hour: "2-digit",
+      var dtf = new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
         minute: "2-digit",
-        hour12: false,
+        hour12: true,
       });
       return dtf.format(new Date(isoString));
     } catch (e) {
@@ -117,11 +128,11 @@
 
   function formatTimeRangeDisplay(slot, convertToLocal) {
     if (convertToLocal === false) {
-      return slot.start + " - " + slot.end;
+      return to12Hour(slot.start) + " - " + to12Hour(slot.end);
     }
     var startLabel = formatTimeInBrowserTZ(slot.startsAt);
     if (!startLabel) {
-      return slot.start + " - " + slot.end;
+      return to12Hour(slot.start) + " - " + to12Hour(slot.end);
     }
     var durationMs = slotDurationMinutes(slot) * 60 * 1000;
     var endLabel = formatTimeInBrowserTZ(
@@ -1627,7 +1638,7 @@
           input.disabled = true;
           var bookedTag = document.createElement("span");
           bookedTag.className = "booking-widget__slot-tag";
-          bookedTag.textContent = strings.booked;
+          bookedTag.textContent = "(" + strings.booked + ")";
           row.appendChild(input);
           row.appendChild(textWrap);
           row.appendChild(bookedTag);
@@ -1640,7 +1651,7 @@
           input.disabled = true;
           var takenTag = document.createElement("span");
           takenTag.className = "booking-widget__slot-tag";
-          takenTag.textContent = strings.alreadySelected;
+          takenTag.textContent = "(" + strings.alreadySelected + ")";
           row.appendChild(input);
           row.appendChild(textWrap);
           row.appendChild(takenTag);
@@ -1655,9 +1666,11 @@
             "booking-widget__slot-tag" +
             (isLow ? " booking-widget__slot-tag--low" : "");
           remainingTag.textContent =
-            slot.remainingCapacity === 1
+            "(" +
+            (slot.remainingCapacity === 1
               ? strings.spotLeft
-              : format(strings.spotsLeft, { count: slot.remainingCapacity });
+              : format(strings.spotsLeft, { count: slot.remainingCapacity })) +
+            ")";
           row.appendChild(input);
           row.appendChild(textWrap);
           row.appendChild(remainingTag);

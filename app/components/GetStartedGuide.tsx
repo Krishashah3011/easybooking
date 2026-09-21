@@ -197,7 +197,7 @@ export default function GetStartedGuide({
   intro?: string;
   steps: GuideStep[];
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   return (
     <div

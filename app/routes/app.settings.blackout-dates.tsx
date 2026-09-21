@@ -392,7 +392,7 @@ export default function BlackoutDatesPage() {
 
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const openDatePicker = () => {

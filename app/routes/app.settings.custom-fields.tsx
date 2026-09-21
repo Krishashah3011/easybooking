@@ -862,7 +862,7 @@ export default function CustomFieldsPage() {
   const { fields: loaderFields } = useLoaderData<typeof loader>();
   const reorderFetcher = useFetcher<typeof action>();
   const [fields, setFields] = useState(loaderFields);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const isReordering = reorderFetcher.state !== "idle";
 
   useEffect(() => {

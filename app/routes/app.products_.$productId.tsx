@@ -1063,7 +1063,7 @@ export default function BookableProductPage() {
     useState<BookableProductFormValues>(initialValues);
   const [newBlackoutDate, setNewBlackoutDate] = useState("");
   const [newBlackoutReason, setNewBlackoutReason] = useState("");
-  const [blackoutOpen, setBlackoutOpen] = useState(true);
+  const [blackoutOpen, setBlackoutOpen] = useState(false);
 
   const errors: BookableProductFieldErrors =
     overridesFetcher.data?.intent === "saveOverrides"

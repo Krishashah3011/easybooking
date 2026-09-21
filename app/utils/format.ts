@@ -5,8 +5,19 @@ export function formatDateDisplay(dateStr: string): string {
   return `${day}-${month}-${year}`;
 }
 
+function to12Hour(time: string): string {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time);
+  if (!match) return time;
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const period = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  return `${hour}:${minute} ${period}`;
+}
+
 export function formatTimeRangeDisplay(start: string, end: string): string {
-  return `${start} \u2013 ${end}`;
+  return `${to12Hour(start)} \u2013 ${to12Hour(end)}`;
 }
 
 export function formatBookingWhenDisplay(booking: {

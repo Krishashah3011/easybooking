@@ -1104,7 +1104,7 @@ export default function LocationsPage() {
   const { locations: loaderLocations } = useLoaderData<typeof loader>();
   const reorderFetcher = useFetcher<typeof action>();
   const [locations, setLocations] = useState(loaderLocations);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const isReordering = reorderFetcher.state !== "idle";
 
   useEffect(() => {
