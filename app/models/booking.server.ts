@@ -245,6 +245,7 @@ async function countOverlappingMultiDayBookings(
   bookableProductId: string,
   checkin: string,
   checkout: string,
+  excludeBookingId?: string,
 ): Promise<number> {
   const overlapping = await prisma.booking.findMany({
     where: {
@@ -253,6 +254,7 @@ async function countOverlappingMultiDayBookings(
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       date: { lt: checkout },
       endDate: { gt: checkin },
+      ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
     },
     select: { quantity: true },
   });
@@ -1063,6 +1065,7 @@ export async function rescheduleBooking(
   id: string,
   newDate: string,
   newSlotStart: string,
+  newEndDate?: string | null,
 ): Promise<{ ok: true; booking: Booking } | { ok: false; error: string }> {
   const booking = await prisma.booking.findFirst({
     where: { id, shop },
@@ -1074,7 +1077,11 @@ export async function rescheduleBooking(
   if (booking.status === "CANCELLED") {
     return { ok: false, error: "A cancelled booking can't be rescheduled." };
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+    return { ok: false, error: "Pick a valid date." };
+  }
 
+  const bookingType = booking.bookableProduct.bookingType;
   const shopSettings = await getBookingSettings(shop);
   const rescheduleLocation = booking.locationId
     ? await getLocationById(shop, booking.locationId)
@@ -1084,38 +1091,147 @@ export async function rescheduleBooking(
     booking.bookableProduct,
     rescheduleLocation,
   );
-  const slotsForDate = computeSlotsForDate(
-    effectiveSettings,
-    newDate,
-    new Set(),
-    new Date(),
-    new Map(),
-    rescheduleLocation?.timezone ?? null,
-  );
-  const matchedSlot = slotsForDate.find((s) => s.start === newSlotStart);
-  if (!matchedSlot) {
-    return {
-      ok: false,
-      error: "That date/time isn't a valid slot for this product.",
-    };
-  }
 
-  const otherBookingsInSlot = await prisma.booking.aggregate({
-    where: {
+  let nextData: {
+    date: string;
+    endDate?: string | null;
+    slotStart?: string;
+    slotEnd?: string;
+    slotStartsAt: Date;
+  };
+
+  if (bookingType === "FULL_DAY") {
+    if (newDate < new Date().toISOString().slice(0, 10)) {
+      return { ok: false, error: "Pick a date that isn't in the past." };
+    }
+    const slotStartsAt = new Date(`${newDate}T00:00:00.000Z`);
+    const others = await prisma.booking.aggregate({
+      where: {
+        shop,
+        bookableProductId: booking.bookableProductId,
+        slotStartsAt,
+        status: { in: [...ACTIVE_BOOKING_STATUSES] },
+        id: { not: id },
+      },
+      _sum: { quantity: true },
+    });
+    if (
+      (others._sum.quantity ?? 0) + booking.quantity >
+      effectiveSettings.maxBookingsPerSlot
+    ) {
+      return { ok: false, error: "That day is already fully booked." };
+    }
+    nextData = { date: newDate, slotStartsAt };
+  } else if (bookingType === "MULTI_DAY") {
+    if (!newEndDate) {
+      return { ok: false, error: "Pick a check-out date." };
+    }
+    if (newEndDate <= newDate) {
+      return { ok: false, error: "Check-out must be after check-in." };
+    }
+    if (newDate < new Date().toISOString().slice(0, 10)) {
+      return { ok: false, error: "Pick a check-in date that isn't in the past." };
+    }
+    const nights = Math.round(
+      (new Date(`${newEndDate}T00:00:00.000Z`).getTime() -
+        new Date(`${newDate}T00:00:00.000Z`).getTime()) /
+        86400000,
+    );
+    const { minNights, maxNights } = booking.bookableProduct;
+    if (minNights !== null && nights < minNights) {
+      return {
+        ok: false,
+        error: `Minimum stay is ${minNights} night${minNights === 1 ? "" : "s"}.`,
+      };
+    }
+    if (maxNights !== null && nights > maxNights) {
+      return {
+        ok: false,
+        error: `Maximum stay is ${maxNights} night${maxNights === 1 ? "" : "s"}.`,
+      };
+    }
+    const overlapping = await countOverlappingMultiDayBookings(
       shop,
-      bookableProductId: booking.bookableProductId,
+      booking.bookableProductId,
+      newDate,
+      newEndDate,
+      id,
+    );
+    if (overlapping + booking.quantity > effectiveSettings.maxBookingsPerSlot) {
+      return { ok: false, error: "Those dates overlap an existing booking." };
+    }
+    nextData = {
+      date: newDate,
+      endDate: newEndDate,
+      slotStartsAt: new Date(`${newDate}T00:00:00.000Z`),
+    };
+  } else {
+    // SLOT and BUNDLE sessions: pick a valid time slot on the new date.
+    const slotsForDate = computeSlotsForDate(
+      effectiveSettings,
+      newDate,
+      new Set(),
+      new Date(),
+      new Map(),
+      rescheduleLocation?.timezone ?? null,
+    );
+    const matchedSlot = slotsForDate.find((s) => s.start === newSlotStart);
+    if (!matchedSlot) {
+      return {
+        ok: false,
+        error: "That date/time isn't a valid slot for this product.",
+      };
+    }
+
+    const otherBookingsInSlot = await prisma.booking.aggregate({
+      where: {
+        shop,
+        bookableProductId: booking.bookableProductId,
+        slotStartsAt: new Date(matchedSlot.startsAt),
+        status: { in: [...ACTIVE_BOOKING_STATUSES] },
+        id: { not: id },
+      },
+      _sum: { quantity: true },
+    });
+    if (
+      (otherBookingsInSlot._sum.quantity ?? 0) + booking.quantity >
+      effectiveSettings.maxBookingsPerSlot
+    ) {
+      return { ok: false, error: "That slot is already fully booked." };
+    }
+
+    // A bundle's sessions must all stay within its validity window.
+    const validityDays = booking.bookableProduct.bundleValidityDays;
+    if (bookingType === "BUNDLE" && validityDays != null && booking.groupId) {
+      const siblings = await prisma.booking.findMany({
+        where: {
+          shop,
+          groupId: booking.groupId,
+          status: { not: "CANCELLED" },
+          id: { not: id },
+        },
+        select: { date: true },
+      });
+      const dates = [...siblings.map((b) => b.date), newDate].sort();
+      const spanDays = Math.round(
+        (new Date(`${dates[dates.length - 1]}T00:00:00.000Z`).getTime() -
+          new Date(`${dates[0]}T00:00:00.000Z`).getTime()) /
+          86400000,
+      );
+      if (spanDays > validityDays) {
+        return {
+          ok: false,
+          error: `All sessions must fall within ${validityDays} days of the first session.`,
+        };
+      }
+    }
+
+    nextData = {
+      date: newDate,
+      slotStart: matchedSlot.start,
+      slotEnd: matchedSlot.end,
       slotStartsAt: new Date(matchedSlot.startsAt),
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
-      id: { not: id },
-    },
-    _sum: { quantity: true },
-  });
-  const otherQuantityInSlot = otherBookingsInSlot._sum.quantity ?? 0;
-  if (
-    otherQuantityInSlot + booking.quantity >
-    effectiveSettings.maxBookingsPerSlot
-  ) {
-    return { ok: false, error: "That slot is already fully booked." };
+    };
   }
 
   const previousDate = booking.date;
@@ -1125,23 +1241,21 @@ export async function rescheduleBooking(
   const updated = await prisma.booking.update({
     where: { id },
     data: {
-      date: newDate,
-      slotStart: matchedSlot.start,
-      slotEnd: matchedSlot.end,
-      slotStartsAt: new Date(matchedSlot.startsAt),
+      ...nextData,
       status: "RESCHEDULED",
       reminderSentAt: null,
     },
   });
 
-  await sendBookingRescheduled(
+  // Email in the background so a slow SMTP server never stalls the admin.
+  void sendBookingRescheduled(
     updated,
     booking.bookableProduct.productTitle,
     shop,
     previousDate,
     previousSlotStart,
     previousSlotEnd,
-  );
+  ).catch((error) => console.error("Failed to send reschedule email:", error));
 
   return { ok: true, booking: updated };
 }

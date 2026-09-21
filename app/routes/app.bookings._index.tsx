@@ -915,6 +915,16 @@ function BookingDetails({
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [newDate, setNewDate] = useState(booking.date);
   const [newSlotStart, setNewSlotStart] = useState(booking.slotStart);
+  const [newEndDate, setNewEndDate] = useState(booking.endDate ?? "");
+  // SLOT and BUNDLE sessions pick a time; FULL_DAY only a date; MULTI_DAY a range.
+  const needsTimeSlot =
+    booking.bookingType === "SLOT" || booking.bookingType === "BUNDLE";
+  const isMultiDay = booking.bookingType === "MULTI_DAY";
+  const canSaveReschedule = needsTimeSlot
+    ? !!newSlotStart
+    : isMultiDay
+      ? !!newDate && !!newEndDate && newEndDate > newDate
+      : !!newDate;
 
   const rescheduleError =
     rescheduleFetcher.data?.intent === "reschedule" &&
@@ -946,7 +956,7 @@ function BookingDetails({
   }, [cancelFetcher.data, shopify]);
 
   useEffect(() => {
-    if (!isRescheduling || !newDate) return;
+    if (!isRescheduling || !newDate || !needsTimeSlot) return;
     rescheduleSlotsFetcher.submit(
       { intent: "loadRescheduleSlots", id: booking.id, date: newDate },
       { method: "POST" },
@@ -976,6 +986,7 @@ function BookingDetails({
         id: booking.id,
         date: newDate,
         slotStart: newSlotStart,
+        endDate: isMultiDay ? newEndDate : "",
       },
       { method: "POST" },
     );
@@ -1039,10 +1050,13 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      {/* Row 1: Customer Mail / Booking Type / Location */}
+      {/* Row 1: Customer Mail / Customer Phone / Booking Type / Location */}
       <div style={S.fieldsRow}>
         <FieldBlock label="Customer Mail">
           {booking.customerEmail ?? "—"}
+        </FieldBlock>
+        <FieldBlock label="Customer Phone">
+          {booking.customerPhone ?? "—"}
         </FieldBlock>
         <FieldBlock label="Booking Type">
           {TYPE_SHORT_LABELS[booking.bookingType]}
@@ -1075,42 +1089,60 @@ function BookingDetails({
             }}
             onChange={(e) => setNewDate(e.target.value)}
           />
-          <select
-            aria-label="New time"
-            style={{ ...S.input, width: "240px" }}
-            value={newSlotStart}
-            disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
-            onChange={(e) => setNewSlotStart(e.target.value)}
-          >
-            {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
-              <option value="">Loading times…</option>
-            )}
-            {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
-              <option value="">No times on this date</option>
-            )}
-            {rescheduleSlots.map((slot) => (
-              <option
-                key={slot.startsAt}
-                value={slot.start}
-                disabled={!slot.available && slot.start !== booking.slotStart}
-              >
-                {formatTimeRangeDisplay(slot.start, slot.end)}
-                {!slot.available && slot.start !== booking.slotStart
-                  ? " (booked)"
-                  : typeof slot.remainingCapacity === "number"
-                    ? ` (${
-                        slot.remainingCapacity === 1
-                          ? "1 spot left"
-                          : `${slot.remainingCapacity} spots left`
-                      })`
-                    : ""}
-              </option>
-            ))}
-          </select>
+          {isMultiDay && (
+            <input
+              type="date"
+              aria-label="New check-out date"
+              style={{ ...S.input, width: "160px", cursor: "pointer" }}
+              value={newEndDate}
+              min={newDate || undefined}
+              onClick={(e) => {
+                const el = e.currentTarget;
+                if (typeof el.showPicker === "function") {
+                  el.showPicker();
+                }
+              }}
+              onChange={(e) => setNewEndDate(e.target.value)}
+            />
+          )}
+          {needsTimeSlot && (
+            <select
+              aria-label="New time"
+              style={{ ...S.input, width: "240px" }}
+              value={newSlotStart}
+              disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
+              onChange={(e) => setNewSlotStart(e.target.value)}
+            >
+              {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                <option value="">Loading times…</option>
+              )}
+              {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                <option value="">No times on this date</option>
+              )}
+              {rescheduleSlots.map((slot) => (
+                <option
+                  key={slot.startsAt}
+                  value={slot.start}
+                  disabled={!slot.available && slot.start !== booking.slotStart}
+                >
+                  {formatTimeRangeDisplay(slot.start, slot.end)}
+                  {!slot.available && slot.start !== booking.slotStart
+                    ? " (booked)"
+                    : typeof slot.remainingCapacity === "number"
+                      ? ` (${
+                          slot.remainingCapacity === 1
+                            ? "1 spot left"
+                            : `${slot.remainingCapacity} spots left`
+                        })`
+                      : ""}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             type="button"
-            style={{ ...S.primaryButton, ...(!newSlotStart ? { opacity: 0.5 } : {}) }}
-            disabled={!newSlotStart}
+            style={{ ...S.primaryButton, ...(!canSaveReschedule ? { opacity: 0.5 } : {}) }}
+            disabled={!canSaveReschedule || rescheduleFetcher.state !== "idle"}
             onClick={handleReschedule}
           >
             Save
@@ -1149,7 +1181,7 @@ function BookingDetails({
 
         {!isCancelled && !isCompleted ? (
           <div style={S.cancelBookingWrap}>
-            {!isRescheduling && booking.bookingType === "SLOT" && (
+            {!isRescheduling && (
               <button
                 type="button"
                 style={S.rescheduleBookingBtn}
@@ -1199,9 +1231,92 @@ function BundleGroupDetails({
   const shopify = useAppBridge();
   const revalidator = useRevalidator();
   const [isCancelling, setIsCancelling] = useState(false);
+  const rescheduleFetcher = useFetcher();
+  const rescheduleSlotsFetcher = useFetcher();
 
   const first = group.bookings[0];
   const activeBookings = group.bookings.filter((b) => b.status !== "CANCELLED");
+
+  // Reschedule one session of the bundle at a time.
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [rescheduleId, setRescheduleId] = useState(activeBookings[0]?.id ?? "");
+  const rescheduleTarget =
+    activeBookings.find((b) => b.id === rescheduleId) ?? activeBookings[0];
+  const [newDate, setNewDate] = useState(rescheduleTarget?.date ?? "");
+  const [newSlotStart, setNewSlotStart] = useState(
+    rescheduleTarget?.slotStart ?? "",
+  );
+
+  const rescheduleSlots: TimeSlot[] =
+    rescheduleSlotsFetcher.data?.intent === "loadRescheduleSlots" &&
+    rescheduleSlotsFetcher.data.ok
+      ? rescheduleSlotsFetcher.data.slots
+      : [];
+  const isLoadingRescheduleSlots = rescheduleSlotsFetcher.state !== "idle";
+  const rescheduleError =
+    rescheduleFetcher.data?.intent === "reschedule" &&
+    !rescheduleFetcher.data.ok
+      ? rescheduleFetcher.data.error
+      : null;
+
+  useEffect(() => {
+    if (
+      rescheduleFetcher.data?.intent === "reschedule" &&
+      rescheduleFetcher.data.ok
+    ) {
+      shopify.toast.show("Session rescheduled");
+      setIsRescheduling(false);
+    }
+  }, [rescheduleFetcher.data, shopify]);
+
+  useEffect(() => {
+    if (!isRescheduling || !rescheduleTarget || !newDate) return;
+    rescheduleSlotsFetcher.submit(
+      { intent: "loadRescheduleSlots", id: rescheduleTarget.id, date: newDate },
+      { method: "POST" },
+    );
+  }, [isRescheduling, rescheduleTarget?.id, newDate]);
+
+  useEffect(() => {
+    if (rescheduleSlots.length === 0 || !rescheduleTarget) return;
+    if (rescheduleSlots.some((s) => s.start === newSlotStart)) return;
+    const current = rescheduleSlots.find(
+      (s) => s.start === rescheduleTarget.slotStart,
+    );
+    const firstAvailable = rescheduleSlots.find((s) => s.available);
+    setNewSlotStart((current ?? firstAvailable ?? rescheduleSlots[0]).start);
+  }, [rescheduleSlots]);
+
+  const startRescheduling = () => {
+    const target = activeBookings[0];
+    if (!target) return;
+    setRescheduleId(target.id);
+    setNewDate(target.date);
+    setNewSlotStart(target.slotStart);
+    setIsRescheduling(true);
+  };
+
+  const pickSession = (id: string) => {
+    const target = activeBookings.find((b) => b.id === id);
+    if (!target) return;
+    setRescheduleId(id);
+    setNewDate(target.date);
+    setNewSlotStart(target.slotStart);
+  };
+
+  const handleRescheduleSession = () => {
+    if (!rescheduleTarget) return;
+    rescheduleFetcher.submit(
+      {
+        intent: "reschedule",
+        id: rescheduleTarget.id,
+        date: newDate,
+        slotStart: newSlotStart,
+        endDate: "",
+      },
+      { method: "POST" },
+    );
+  };
   const isCancelled = activeBookings.length === 0;
   const isCompleted =
     !isCancelled && group.bookings.every((b) => b.displayStatus === "COMPLETED");
@@ -1269,10 +1384,13 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      {/* Row 1: Customer Mail / Booking Type / Location */}
+      {/* Row 1: Customer Mail / Customer Phone / Booking Type / Location */}
       <div style={S.fieldsRow}>
         <FieldBlock label="Customer Mail">
           {first.customerEmail ?? "—"}
+        </FieldBlock>
+        <FieldBlock label="Customer Phone">
+          {first.customerPhone ?? "—"}
         </FieldBlock>
         <FieldBlock label="Booking Type">
           {TYPE_SHORT_LABELS[first.bookingType]}
@@ -1311,6 +1429,90 @@ function BundleGroupDetails({
         ),
       )}
 
+      {isRescheduling && rescheduleTarget && (
+        <>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <select
+              aria-label="Session to reschedule"
+              style={{ ...S.input, width: "200px" }}
+              value={rescheduleTarget.id}
+              onChange={(e) => pickSession(e.target.value)}
+            >
+              {activeBookings.map((b, i) => (
+                <option key={b.id} value={b.id}>
+                  {`Slot ${group.bookings.indexOf(b) + 1} · ${formatDateDisplay(b.date)}`}
+                </option>
+              ))}
+            </select>
+            <input
+              type="date"
+              aria-label="New date"
+              style={{ ...S.input, width: "160px", cursor: "pointer" }}
+              value={newDate}
+              onClick={(e) => {
+                const el = e.currentTarget;
+                if (typeof el.showPicker === "function") {
+                  el.showPicker();
+                }
+              }}
+              onChange={(e) => setNewDate(e.target.value)}
+            />
+            <select
+              aria-label="New time"
+              style={{ ...S.input, width: "240px" }}
+              value={newSlotStart}
+              disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
+              onChange={(e) => setNewSlotStart(e.target.value)}
+            >
+              {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                <option value="">Loading times…</option>
+              )}
+              {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+                <option value="">No times on this date</option>
+              )}
+              {rescheduleSlots.map((slot) => (
+                <option
+                  key={slot.startsAt}
+                  value={slot.start}
+                  disabled={
+                    !slot.available && slot.start !== rescheduleTarget.slotStart
+                  }
+                >
+                  {formatTimeRangeDisplay(slot.start, slot.end)}
+                  {!slot.available && slot.start !== rescheduleTarget.slotStart
+                    ? " (booked)"
+                    : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              style={{ ...S.primaryButton, ...(!newSlotStart ? { opacity: 0.5 } : {}) }}
+              disabled={!newSlotStart || rescheduleFetcher.state !== "idle"}
+              onClick={handleRescheduleSession}
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              style={{ ...S.ghostButton }}
+              onClick={() => setIsRescheduling(false)}
+            >
+              Cancel edit
+            </button>
+          </div>
+          {rescheduleError && <div style={S.errorBanner}>{rescheduleError}</div>}
+          <hr style={S.detailsDivider} />
+        </>
+      )}
+
       {/* Final row: Booked at / Note / Cancel Booking action */}
       <div style={S.actionRow}>
         <FieldBlock label="Booked at" style={S.actionRowField}>
@@ -1327,6 +1529,15 @@ function BundleGroupDetails({
 
         {!isCancelled && !isCompleted ? (
           <div style={S.cancelBookingWrap}>
+            {!isRescheduling && (
+              <button
+                type="button"
+                style={S.rescheduleBookingBtn}
+                onClick={startRescheduling}
+              >
+                Reschedule
+              </button>
+            )}
             <button
               type="button"
               style={{ ...S.cancelBookingBtn, ...(isCancelling ? { opacity: 0.5 } : {}) }}

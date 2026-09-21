@@ -41,7 +41,14 @@ export async function bookingListAction({ request }: ActionFunctionArgs) {
     const id = String(formData.get("id") ?? "");
     const date = String(formData.get("date") ?? "");
     const slotStart = String(formData.get("slotStart") ?? "");
-    const result = await rescheduleBooking(session.shop, id, date, slotStart);
+    const endDate = String(formData.get("endDate") ?? "") || null;
+    const result = await rescheduleBooking(
+      session.shop,
+      id,
+      date,
+      slotStart,
+      endDate,
+    );
     return { intent, ...result };
   }
 
