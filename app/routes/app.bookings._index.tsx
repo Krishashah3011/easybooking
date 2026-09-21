@@ -1376,8 +1376,29 @@ function SingleRow({
           {TYPE_SHORT_LABELS[booking.bookingType]}
         </td>
         <td style={{ ...S.td, ...S.tdCenter }}>
-          {when.date}
-          {when.sub && <span style={S.subLine}>{when.sub}</span>}
+          {booking.bookingType === "MULTI_DAY" ? (
+            <>
+              <div>{formatDateDisplay(booking.date)}</div>
+              <div
+                aria-hidden="true"
+                style={{
+                  fontSize: "12px",
+                  lineHeight: "12px",
+                  color: TEXT_MUTED,
+                }}
+              >
+                ↓
+              </div>
+              <div>
+                {booking.endDate ? formatDateDisplay(booking.endDate) : "—"}
+              </div>
+            </>
+          ) : (
+            <>
+              {when.date}
+              {when.sub && <span style={S.subLine}>{when.sub}</span>}
+            </>
+          )}
         </td>
         <td style={{ ...S.td, ...S.tdAction }}>
           <EyeButton

@@ -1187,6 +1187,25 @@ body.booking-widget-lock-scroll {
   background: rgba(0, 96, 230, 0.08);
 }
 
+/* Next Slot: solid date-picker blue */
+[data-booking-next-slot].booking-widget__btn--secondary {
+  background: #0060e6;
+  border-color: #0060e6;
+  color: #fff;
+}
+
+[data-booking-next-slot].booking-widget__btn--secondary:hover {
+  background: #004fc0;
+  border-color: #004fc0;
+}
+
+[data-booking-next-slot].booking-widget__btn--secondary:disabled,
+[data-booking-next-slot].booking-widget__btn--secondary:disabled:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.35);
+}
+
 .booking-widget__btn--secondary:disabled {
   background: rgba(0, 0, 0, 0.04);
   border-color: rgba(0, 0, 0, 0.15);

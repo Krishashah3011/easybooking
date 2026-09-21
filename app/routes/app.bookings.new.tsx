@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { Booking, BookingType } from "@prisma/client";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -19,12 +20,13 @@ import {
 import { resolveBookingContextById } from "../models/booking-context.server";
 import {
   createManualBooking,
+  sendManualBookingEmailsInBackground,
   getBookedCountsInRange,
   getBookedNightCountsInRange,
 } from "../models/booking.server";
 import { listEnabledLocations } from "../models/bookingLocation.server";
 import { listCustomFields, toPublicField } from "../models/customBookingField.server";
-import { formatTimeRangeDisplay } from "../utils/format";
+import { formatDateDisplay, formatTimeRangeDisplay } from "../utils/format";
 import {
   BLUE,
   BORDER,
@@ -840,6 +842,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const groupId = slots.length > 1 ? crypto.randomUUID() : undefined;
 
     const results: SlotResult[] = [];
+    const createdBookings: {
+      booking: Booking;
+      productTitle: string;
+      bookingType: BookingType;
+    }[] = [];
     for (const slot of slots) {
       const result = await createManualBooking(session.shop, {
         bookableProductId: slot.bookableProductId,
@@ -855,6 +862,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         customFieldResponses,
         groupId,
       });
+      if (result.ok) {
+        createdBookings.push({
+          booking: result.booking,
+          productTitle: result.productTitle,
+          bookingType: result.bookingType,
+        });
+      }
       results.push({
         bookableProductId: slot.bookableProductId,
         date: slot.date,
@@ -863,6 +877,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         error: result.ok ? undefined : result.error,
       });
     }
+
+    // Fire-and-forget: the admin gets the response right away.
+    sendManualBookingEmailsInBackground(session.shop, createdBookings);
 
     const createdCount = results.filter((r) => r.ok).length;
     const failedCount = results.length - createdCount;
@@ -918,10 +935,8 @@ export default function NewBookingPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [bundleValidityDeadline, setBundleValidityDeadline] = useState<
-    string | null
-  >(null);
 
   const bundleSessionsQueued = queuedSlots.filter(
     (entry) => entry.bookableProductId === bookableProductId,
@@ -934,15 +949,23 @@ export default function NewBookingPage() {
   const bundleComplete =
     bundleSessionCount !== null && bundleSessionsRemaining === 0;
 
-  useEffect(() => {
-    if (selectedBookingType !== "BUNDLE" || !selectedProduct?.bundleValidityDays) {
-      setBundleValidityDeadline(null);
-      return;
-    }
-    const deadline = new Date();
-    deadline.setUTCDate(deadline.getUTCDate() + selectedProduct.bundleValidityDays);
-    setBundleValidityDeadline(deadline.toISOString().slice(0, 10));
-  }, [bookableProductId, selectedBookingType, selectedProduct?.bundleValidityDays]);
+  // The validity window starts from the FIRST session date the admin picks
+  // (not from today): every other session must fall within N days of it.
+  const bundleValidityDays =
+    selectedBookingType === "BUNDLE"
+      ? (selectedProduct?.bundleValidityDays ?? null)
+      : null;
+  const bundleQueuedDates = bundleSessionsQueued.map((entry) => entry.date).sort();
+  const bundleWindowStart = bundleValidityDays ? (bundleQueuedDates[0] ?? null) : null;
+  const addDaysToIso = (iso: string, days: number) => {
+    const d = new Date(`${iso}T00:00:00.000Z`);
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString().slice(0, 10);
+  };
+  const bundleValidityDeadline =
+    bundleValidityDays && bundleWindowStart
+      ? addDaysToIso(bundleWindowStart, bundleValidityDays)
+      : null;
 
   const availableDates: string[] =
     availabilityFetcher.data?.intent === "loadAvailability" &&
@@ -1110,6 +1133,7 @@ export default function NewBookingPage() {
       setCustomerEmail("");
       setEmailTouched(false);
       setCustomerPhone("");
+      setPhoneTouched(false);
       setSubmitAttempted(false);
     } else {
       setQueuedSlots(
@@ -1260,6 +1284,13 @@ export default function NewBookingPage() {
         ? "Please enter a valid email address"
         : undefined;
 
+  const phoneError =
+    (phoneTouched || submitAttempted) &&
+    customerPhone !== "" &&
+    customerPhone.length !== 10
+      ? "Phone number must be exactly 10 digits"
+      : undefined;
+
   // The booking being built right now from the calendar + quantity selection.
   const currentEntry: QueuedEntry | null = (() => {
     if (!date || !selectedSlot) return null;
@@ -1294,6 +1325,23 @@ export default function NewBookingPage() {
   // booking, or bundle sessions / failed bookings already in the queue.
   const hasSelection = submissionSlots.length > 0;
 
+  // A bundle's sessions are ONE booking, so they count once on the button.
+  const createBookingCount =
+    submissionSlots.filter(
+      (entry) =>
+        products.find((p) => p.id === entry.bookableProductId)?.bookingType !==
+        "BUNDLE",
+    ).length +
+    new Set(
+      submissionSlots
+        .filter(
+          (entry) =>
+            products.find((p) => p.id === entry.bookableProductId)
+              ?.bookingType === "BUNDLE",
+        )
+        .map((entry) => entry.bookableProductId),
+    ).size;
+
   const productError =
     submitAttempted && !bookableProductId ? "Select a product" : undefined;
   const locationError =
@@ -1315,6 +1363,13 @@ export default function NewBookingPage() {
     selectedBookingType === "BUNDLE" &&
     bundleSessionCount !== null &&
     bundleSessionsQueued.length + 1 < bundleSessionCount;
+
+  // Final session of a bundle: show "Done" instead of "Next slot".
+  const isLastBundleSession =
+    !!selectedSlot &&
+    selectedBookingType === "BUNDLE" &&
+    bundleSessionCount !== null &&
+    bundleSessionsQueued.length + 1 === bundleSessionCount;
 
   const handleNextSlot = () => {
     if (!currentEntry) return;
@@ -1347,6 +1402,7 @@ export default function NewBookingPage() {
     setSubmitAttempted(true);
     setNameTouched(true);
     setEmailTouched(true);
+    setPhoneTouched(true);
 
     if (
       !bookableProductId ||
@@ -1355,7 +1411,8 @@ export default function NewBookingPage() {
       incompleteBundleTitles.length > 0 ||
       !customerName.trim() ||
       !customerEmail.trim() ||
-      !isValidEmail(customerEmail)
+      !isValidEmail(customerEmail) ||
+      (customerPhone !== "" && customerPhone.length !== 10)
     ) {
       return;
     }
@@ -1402,7 +1459,11 @@ export default function NewBookingPage() {
 
   const applyBundleDeadline = (dates: string[]) =>
     selectedBookingType === "BUNDLE" && bundleValidityDeadline
-      ? dates.filter((d) => d <= bundleValidityDeadline)
+      ? dates.filter(
+          (d) =>
+            d <= bundleValidityDeadline &&
+            (!bundleWindowStart || d >= bundleWindowStart),
+        )
       : dates;
 
   const availableSet = new Set(applyBundleDeadline(availableDates));
@@ -1709,8 +1770,10 @@ export default function NewBookingPage() {
                   ? `All ${bundleSessionCount} session(s) added for this bundle.`
                   : `Session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}` +
                     (bundleValidityDeadline
-                      ? ` — must be booked by ${bundleValidityDeadline}`
-                      : "")}
+                      ? ` — all sessions must be booked by ${formatDateDisplay(bundleValidityDeadline)}`
+                      : bundleValidityDays
+                        ? ` — all sessions within ${bundleValidityDays} days of the first session`
+                        : "")}
               </span>
             </div>
           )}
@@ -1846,23 +1909,27 @@ export default function NewBookingPage() {
             )}
           </div>
 
-          {needsNextSlot && (
+          {(needsNextSlot || isLastBundleSession) && (
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <div style={{ ...saveWrapperStyle(), width: "auto", height: "auto" }}>
-                <button
-                  type="button"
-                  style={{
-                    ...saveButtonStyle(false),
-                    width: "auto",
-                    height: "auto",
-                    padding: "9px 20px",
-                    whiteSpace: "nowrap",
-                  }}
-                  onClick={handleNextSlot}
-                >
-                  Next slot
-                </button>
-              </div>
+              <button
+                type="button"
+                style={{
+                  border: "none",
+                  borderRadius: "6px",
+                  background: CAL_BLUE,
+                  color: "#fff",
+                  fontFamily: "Inter",
+                  fontWeight: 600,
+                  fontSize: "16px",
+                  lineHeight: "19px",
+                  padding: "10px 22px",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+                onClick={handleNextSlot}
+              >
+                {needsNextSlot ? "Next slot" : "Done"}
+              </button>
             </div>
           )}
         </div>
@@ -2051,12 +2118,23 @@ export default function NewBookingPage() {
                   <input
                     id="nb-customer-phone"
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
                     className="nb-cust-input"
-                    placeholder="Enter phone number"
+                    placeholder="Enter 10-digit phone number"
                     style={S.input}
                     value={customerPhone}
-                    onChange={(e: FieldChangeEvent) => setCustomerPhone(e.currentTarget.value)}
+                    onChange={(e: FieldChangeEvent) =>
+                      setCustomerPhone(
+                        e.currentTarget.value.replace(/\D/g, "").slice(0, 10),
+                      )
+                    }
+                    onBlur={() => setPhoneTouched(true)}
                   />
+                  {phoneError && (
+                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{phoneError}</span>
+                  )}
                 </div>
               </div>
 
@@ -2102,8 +2180,8 @@ export default function NewBookingPage() {
                   disabled={isCreatingBooking}
                   onClick={handleCreateBooking}
                 >
-                  {submissionSlots.length > 1
-                    ? `Create ${submissionSlots.length} bookings`
+                  {createBookingCount > 1
+                    ? `Create ${createBookingCount} bookings`
                     : "Create Booking"}
                 </button>
               </div>
@@ -2114,6 +2192,11 @@ export default function NewBookingPage() {
     </s-page>
   );
 }
+
+// The loader data (products, locations, custom fields) never changes because of
+// this page's own actions (availability lookups, slot lookups, creating a
+// booking), so skip the extra loader round-trip after each of them.
+export const shouldRevalidate = () => false;
 
 export const headers: HeadersFunction = (headersArgs) => {
   return boundary.headers(headersArgs);

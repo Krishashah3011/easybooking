@@ -84,6 +84,9 @@
     multiDayMaxNights: "Maximum stay is {count} nights.",
     multiDayMinMaxNights: "Stay must be between {min} and {max} nights.",
     sessionProgress: "Session {current} of {total} — pick a date and time",
+    sessionProgressWithWindow:
+      "Session {current} of {total} — pick a date and time (all sessions within {days} days of your first)",
+    done: "Done",
     sessionProgressWithDeadline: "Session {current} of {total} — pick a date and time (by {deadline})",
     sessionConfirmed: "Session {number}",
     bundleSelected: "Bundle: {count} sessions",
@@ -350,7 +353,6 @@
     var bundleSessions = [];
     var bundleSessionCount = null;
     var bundleValidityDays = null;
-    var bundleValidityDeadline = null;
     var bundleQuantity = 1;
 
     var locations = [];
@@ -1101,11 +1103,6 @@
       if (typeof data.bundleSessionCount === "number") bundleSessionCount = data.bundleSessionCount;
       if (typeof data.bundleValidityDays === "number") {
         bundleValidityDays = data.bundleValidityDays;
-        if (!bundleValidityDeadline) {
-          var deadline = new Date(today);
-          deadline.setUTCDate(deadline.getUTCDate() + bundleValidityDays);
-          bundleValidityDeadline = deadline.toISOString().slice(0, 10);
-        }
       }
       dates.forEach(function (d) {
         availableDatesByDay[d] = true;
@@ -1201,12 +1198,45 @@
         });
     }
 
+    // The validity window starts from the FIRST session date the customer
+    // confirms (not from today): later sessions must fall within N days of it.
+    function bundleWindowStart() {
+      if (
+        productBookingType !== "BUNDLE" ||
+        bundleValidityDays === null ||
+        bundleSessions.length === 0
+      ) {
+        return null;
+      }
+      return bundleSessions
+        .map(function (session) {
+          return session.date;
+        })
+        .sort()[0];
+    }
+
+    function bundleValidityDeadline() {
+      var start = bundleWindowStart();
+      if (!start) return null;
+      var deadline = new Date(start + "T00:00:00.000Z");
+      deadline.setUTCDate(deadline.getUTCDate() + bundleValidityDays);
+      return deadline.toISOString().slice(0, 10);
+    }
+
     function sessionProgressText() {
-      if (bundleValidityDeadline) {
+      var deadlineStr = bundleValidityDeadline();
+      if (deadlineStr) {
         return format(strings.sessionProgressWithDeadline, {
           current: bundleSessions.length + 1,
           total: bundleSessionCount,
-          deadline: formatDateDisplay(bundleValidityDeadline),
+          deadline: formatDateDisplay(deadlineStr),
+        });
+      }
+      if (productBookingType === "BUNDLE" && bundleValidityDays !== null) {
+        return format(strings.sessionProgressWithWindow, {
+          current: bundleSessions.length + 1,
+          total: bundleSessionCount,
+          days: bundleValidityDays,
         });
       }
       return format(strings.sessionProgress, {
@@ -1241,10 +1271,12 @@
 
       var isCheckoutCandidate =
         choosingMultiDayCheckout && dateStr > pendingDate;
+      var windowStart = bundleWindowStart();
+      var windowEnd = bundleValidityDeadline();
       var withinBundleValidity =
         productBookingType !== "BUNDLE" ||
-        !bundleValidityDeadline ||
-        dateStr <= bundleValidityDeadline;
+        !windowStart ||
+        (dateStr >= windowStart && dateStr <= windowEnd);
       var isClickable =
         (availableDatesByDay[dateStr] || isCheckoutCandidate) &&
         withinBundleValidity;
@@ -1788,11 +1820,11 @@
         var isLastSession = bundleSessions.length >= totalSessions - 1;
 
         if (nextSlotBtn) {
-          nextSlotBtn.hidden = totalSessions <= 1;
+          nextSlotBtn.hidden = totalSessions <= 1 || isLastSession;
           nextSlotBtn.disabled = isLastSession || !(pendingDate && pendingSlot);
         }
         confirmBtn.disabled = !(isLastSession && pendingDate && pendingSlot);
-        confirmBtn.textContent = strings.next;
+        confirmBtn.textContent = isLastSession ? strings.done : strings.next;
         if (!confirmBtn.disabled && nextSlotBtn) {
           nextSlotBtn.disabled = true;
         }

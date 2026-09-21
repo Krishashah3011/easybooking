@@ -477,8 +477,9 @@ export async function createBookingsFromOrder(
 
       let bundleValidityDeadlineStr: string | null = null;
       if (bookableProduct.bundleValidityDays != null) {
-        const purchaseDate = order.created_at ? new Date(order.created_at) : new Date();
-        const deadline = new Date(purchaseDate);
+        // The window runs from the earliest (first) session date, not from purchase.
+        const firstSessionDate = sessions.map((session) => session.date).sort()[0];
+        const deadline = new Date(`${firstSessionDate}T00:00:00.000Z`);
         deadline.setUTCDate(deadline.getUTCDate() + bookableProduct.bundleValidityDays);
         bundleValidityDeadlineStr = deadline.toISOString().slice(0, 10);
       }
@@ -695,7 +696,43 @@ export type ManualBookingInput = {
 };
 
 export type ManualBookingResult =
-  { ok: true; booking: Booking } | { ok: false; error: string };
+  | { ok: true; booking: Booking; productTitle: string; bookingType: BookingType }
+  | { ok: false; error: string };
+
+// Sends confirmation emails for admin-created bookings AFTER the response has
+// gone back to the admin, so a slow SMTP server can never stall the page.
+// A bundle's sessions get one combined email; everything else one email each.
+export function sendManualBookingEmailsInBackground(
+  shop: string,
+  created: { booking: Booking; productTitle: string; bookingType: BookingType }[],
+): void {
+  void (async () => {
+    const bundleGroups = new Map<string, Booking[]>();
+    const titles = new Map<string, string>();
+    const singles: { booking: Booking; productTitle: string }[] = [];
+
+    for (const entry of created) {
+      if (entry.bookingType === "BUNDLE") {
+        const key = entry.booking.bookableProductId;
+        bundleGroups.set(key, [...(bundleGroups.get(key) ?? []), entry.booking]);
+        titles.set(key, entry.productTitle);
+      } else {
+        singles.push(entry);
+      }
+    }
+
+    await Promise.all([
+      ...[...bundleGroups.entries()].map(([productId, bookings]) =>
+        sendBundleBookingConfirmation(bookings, titles.get(productId) ?? "", shop),
+      ),
+      ...singles.map((entry) =>
+        sendBookingConfirmation(entry.booking, entry.productTitle, shop),
+      ),
+    ]);
+  })().catch((error) => {
+    console.error("Failed to send manual booking emails:", error);
+  });
+}
 
 export async function createManualBooking(
   shop: string,
@@ -831,9 +868,14 @@ export async function createManualBooking(
     },
   });
 
-  await sendBookingConfirmation(booking, bookableProduct.productTitle, shop);
-
-  return { ok: true, booking };
+  // Emails are sent by the caller in the background (see
+  // sendManualBookingEmailsInBackground) so creating a booking stays fast.
+  return {
+    ok: true,
+    booking,
+    productTitle: bookableProduct.productTitle,
+    bookingType: bookableProduct.bookingType,
+  };
 }
 
 export async function listBookingsForProduct(
