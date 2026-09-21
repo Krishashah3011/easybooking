@@ -4,7 +4,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { Link, useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -47,29 +47,63 @@ const DISABLED_DATE = "#ADADAD";
 // How many months (from the current month) the month dropdown lists.
 const MONTH_PICKER_SPAN = 24;
 
+// Text colour used inside the calendar (Figma #1A1A1A, slightly softer than the
+// #000 used for form labels).
+const CAL_TEXT = "#1A1A1A";
+
+// Layout follows the Figma frame "Add New Booking": ONE outer card (950px page,
+// 16px padding) that holds a header row and four inner cards with a 16px gap.
 const S = {
-  page: {
+  outerCard: {
+    boxSizing: "border-box",
+    width: "100%",
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
+    gap: "16px",
+    padding: "16px",
+    background: "#FFFFFF",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "8px",
   } as React.CSSProperties,
   headerRow: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "16px",
-    background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
-    borderRadius: "8px",
+    gap: "16px",
+    minHeight: "42px",
   } as React.CSSProperties,
   headerTitle: {
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "18px",
+    lineHeight: "22px",
     letterSpacing: "0.02em",
     color: TEXT_DARK,
   } as React.CSSProperties,
+  headerActions: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "16px",
+    flex: "none",
+  } as React.CSSProperties,
+  iconButton: {
+    display: "inline-flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "40px",
+    height: "40px",
+    padding: "10px",
+    boxSizing: "border-box",
+    borderRadius: "4px",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    color: BLUE,
+    textDecoration: "none",
+  } as React.CSSProperties,
+  // Standalone card (empty state).
   card: {
     display: "flex",
     flexDirection: "column",
@@ -84,6 +118,31 @@ const S = {
     fontWeight: 600,
     fontSize: "16px",
     color: TEXT_DARK,
+  } as React.CSSProperties,
+  // Inner cards inside the outer card: product/location, quantity/note,
+  // customer details (padding 10 10 13, gap 12).
+  innerCard: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: "12px",
+    padding: "10px 10px 13px",
+    background: "#FFFFFF",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "4px",
+  } as React.CSSProperties,
+  // Date + time card (padding 10 all round).
+  dateTimeCard: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: "12px",
+    padding: "10px",
+    background: "#FFFFFF",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "4px",
   } as React.CSSProperties,
   fieldsRow: {
     display: "flex",
@@ -102,6 +161,7 @@ const S = {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
+    lineHeight: "17px",
     color: TEXT_DARK,
   } as React.CSSProperties,
   input: {
@@ -116,45 +176,36 @@ const S = {
     fontSize: "14px",
     color: TEXT_DARK,
   } as React.CSSProperties,
+  selectWrap: {
+    position: "relative",
+    width: "100%",
+  } as React.CSSProperties,
   select: {
     width: "100%",
     boxSizing: "border-box",
     height: "34px",
-    padding: "5px 10px",
+    padding: "5px 34px 5px 10px",
     background: "#FFFFFF",
     border: `1px solid ${LICENSE_BORDER}`,
     borderRadius: "4px",
     fontFamily: "Inter",
     fontSize: "14px",
     color: TEXT_DARK,
-  } as React.CSSProperties,
-  iconButton: {
-    display: "inline-flex",
-    justifyContent: "center",
-    alignItems: "center",
-    width: "40px",
-    height: "40px",
-    padding: "10px",
-    borderRadius: "4px",
-    border: "none",
-    background: "transparent",
+    appearance: "none",
+    WebkitAppearance: "none",
+    MozAppearance: "none",
+    textOverflow: "ellipsis",
     cursor: "pointer",
-    color: BLUE,
-    textDecoration: "none",
   } as React.CSSProperties,
-  // Quantity + Note share one card: [Quantity 110px][Note grows]
-  qtyNoteCard: {
-    boxSizing: "border-box",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    padding: "10px 10px 13px",
-    gap: "12px",
-    width: "100%",
-    background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
-    borderRadius: "4px",
+  selectChevron: {
+    position: "absolute",
+    right: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    pointerEvents: "none",
+    display: "block",
   } as React.CSSProperties,
+  // Quantity + Note share one row: [Quantity 110px][Note grows]
   qtyNoteRow: {
     display: "flex",
     flexDirection: "row",
@@ -245,47 +296,38 @@ const S = {
     lineHeight: "17px",
     color: TEXT_DARK,
   } as React.CSSProperties,
-  dateTimeCard: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    padding: "10px",
-    background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
-    borderRadius: "4px",
-  } as React.CSSProperties,
-  // Row = [months][slots]. The flex-basis of the months column is its minimum
-  // (2 panes x 200px + gap) so the slots only drop below on very narrow
-  // screens; on wider screens the months grow up to 654px (2 x 315 + 24).
+  // Row = [month][month][times] with a 32px gap (Figma). The months column has
+  // a 532px basis (2 panes x 250px min + gap) so the times only drop below the
+  // calendars on narrow screens.
   calendarLayout: {
     display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "flex-start",
-    gap: "24px",
+    columnGap: "32px",
+    rowGap: "24px",
     width: "100%",
   } as React.CSSProperties,
   calendarColumn: {
     display: "flex",
     flexDirection: "column",
-    flex: "1 1 424px",
+    flex: "1 1 532px",
     minWidth: 0,
-    maxWidth: "654px",
   } as React.CSSProperties,
   monthsRow: {
     display: "flex",
     flexDirection: "row",
-    flexWrap: "nowrap",
+    flexWrap: "wrap",
     alignItems: "flex-start",
-    gap: "24px",
+    columnGap: "32px",
+    rowGap: "24px",
     width: "100%",
   } as React.CSSProperties,
   monthPane: {
     display: "flex",
     flexDirection: "column",
-    flex: "1 1 0",
-    minWidth: 0,
-    maxWidth: "315px",
+    flex: "1 1 250px",
+    minWidth: "250px",
   } as React.CSSProperties,
   monthHeader: {
     boxSizing: "border-box",
@@ -294,9 +336,9 @@ const S = {
     justifyContent: "space-between",
     alignItems: "center",
     height: "38px",
-    // arrows sit centred over the first / last day column (3.5px at full width)
+    // arrows sit centred over the first / last day column
     padding: "0 max(0px, calc((100% / 7 - 38px) / 2))",
-    marginBottom: "30px",
+    marginBottom: "32px",
   } as React.CSSProperties,
   navBtn: {
     display: "inline-flex",
@@ -318,7 +360,7 @@ const S = {
     position: "relative",
     display: "inline-flex",
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     gap: "8px",
     boxSizing: "border-box",
@@ -331,8 +373,8 @@ const S = {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
-    lineHeight: "17px",
-    color: TEXT_DARK,
+    lineHeight: "21px",
+    color: CAL_TEXT,
     whiteSpace: "nowrap",
   } as React.CSSProperties,
   monthPickerSelect: {
@@ -351,15 +393,15 @@ const S = {
   weekdayRow: {
     display: "grid",
     gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-    marginBottom: "15px",
+    marginBottom: "16px",
   } as React.CSSProperties,
   weekdayLabel: {
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "12px",
-    lineHeight: "15px",
+    lineHeight: "12px",
     textTransform: "uppercase",
-    color: TEXT_DARK,
+    color: CAL_TEXT,
     textAlign: "center",
   } as React.CSSProperties,
   dayGrid: {
@@ -382,42 +424,73 @@ const S = {
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "16px",
-    lineHeight: "19px",
+    lineHeight: "24px",
     cursor: available ? "pointer" : "not-allowed",
     background: selected
       ? CAL_BLUE
       : inRange
         ? "rgba(0, 96, 230, 0.12)"
         : "transparent",
-    color: selected ? "#FFFFFF" : available ? TEXT_DARK : DISABLED_DATE,
+    color: selected ? "#FFFFFF" : available ? CAL_TEXT : DISABLED_DATE,
   }),
+  // Time column: 222px wide, scrolls when there are many slots (Figma: 350px).
   slotsColumn: {
+    boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
-    gap: "9px",
-    flex: "0 0 221px",
-    width: "221px",
+    gap: "8px",
+    flex: "0 1 222px",
+    width: "222px",
+    minWidth: "100px",
     maxWidth: "100%",
+    maxHeight: "350px",
+    overflowY: "auto",
+  } as React.CSSProperties,
+  slotsHint: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "13px",
+    lineHeight: "18px",
+    color: TEXT_MUTED,
+    margin: 0,
   } as React.CSSProperties,
   timeSlotBtn: (active: boolean, disabled: boolean): React.CSSProperties => ({
     boxSizing: "border-box",
     display: "flex",
+    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    padding: "0 16px",
+    flex: "none",
+    padding: "12px 24px",
     width: "100%",
-    height: "44px",
+    minHeight: "45px",
     border: `1px solid ${CAL_BLUE}`,
-    borderRadius: "22px",
+    borderRadius: "28px",
     background: active ? CAL_BLUE : "#FFFFFF",
-    color: active ? "#FFFFFF" : TEXT_DARK,
+    color: active ? "#FFFFFF" : CAL_TEXT,
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
-    lineHeight: "17px",
+    lineHeight: "21px",
     whiteSpace: "nowrap",
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.5 : 1,
+  }),
+  chip: (tone: "info" | "ok"): React.CSSProperties => ({
+    alignSelf: "flex-start",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    marginTop: "16px",
+    padding: "5px 10px",
+    borderRadius: "999px",
+    background: tone === "ok" ? "#e3f6e8" : BLUE_TINT,
+  }),
+  chipText: (tone: "info" | "ok"): React.CSSProperties => ({
+    fontFamily: "Inter",
+    fontSize: "13px",
+    fontWeight: 600,
+    color: tone === "ok" ? "#1a7f37" : CAL_BLUE,
   }),
 };
 
@@ -427,6 +500,49 @@ const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+
+// Calendar headers use the short month name ("Sep 2026") as in the Figma.
+const MONTH_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Header icon from the Figma (two chevrons pointing at each other).
+function CollapseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M0 20L10 10L20 20M20 0L9.998 10L0 0"
+        stroke={BLUE}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// Chevron drawn on the right of the Select Product / Add Location fields.
+function SelectChevron() {
+  return (
+    <svg
+      width="12"
+      height="7"
+      viewBox="0 0 12 7"
+      fill="none"
+      aria-hidden="true"
+      style={S.selectChevron}
+    >
+      <path
+        d="M1 1L6 6L11 1"
+        stroke={BLUE}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function MinusIcon() {
   return (
@@ -1167,6 +1283,13 @@ export default function NewBookingPage() {
     ? [...queuedSlots, currentEntry]
     : queuedSlots;
 
+  const noSelectionError =
+    submitAttempted && submissionSlots.length === 0
+      ? selectedBookingType === "MULTI_DAY"
+        ? "Select check-in and check-out dates first."
+        : "Select a date and time first."
+      : undefined;
+
   // Bundles need several sessions: "Next slot" stores this one and lets the
   // admin pick the next. Every other booking type goes straight to details.
   const needsNextSlot =
@@ -1343,7 +1466,7 @@ export default function NewBookingPage() {
     offset: number,
   ) => {
     const shownIndex = year * 12 + (month - 1);
-    const paneLabel = `${MONTH_NAMES[month - 1]} ${year}`;
+    const paneLabel = `${MONTH_SHORT[month - 1]} ${year}`;
     return (
       <div key={`pane-${year}-${month}`} style={S.monthPane}>
         <div style={S.monthHeader}>
@@ -1411,7 +1534,7 @@ export default function NewBookingPage() {
 
   return (
     <s-page heading="New Booking" inlineSize="950px">
-      <div style={S.page}>
+      <div style={S.outerCard}>
         <style>{`
           .nb-day:not(:disabled):not([aria-pressed="true"]):hover {
             background: ${BLUE_TINT} !important;
@@ -1432,61 +1555,103 @@ export default function NewBookingPage() {
             color: #000000;
             opacity: 1;
           }
+          .nb-cust-input::placeholder {
+            color: #6E6E6E;
+            opacity: 1;
+          }
+          .nb-select:focus-visible,
+          .nb-note-input:focus-visible,
+          .nb-cust-input:focus-visible {
+            outline: 2px solid ${CAL_BLUE};
+            outline-offset: 1px;
+          }
           .nb-month-picker:focus-within {
             outline: 2px solid ${CAL_BLUE};
             outline-offset: 2px;
             border-radius: 4px;
           }
         `}</style>
+
+        {/* Header: title on the left, Save + icon on the right */}
         <div style={S.headerRow}>
           <span style={S.headerTitle}>Add New Booking</span>
-          <a href="/app/bookings" style={S.iconButton} aria-label="Back to bookings">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 12.5L10 6.5L16 12.5" stroke={BLUE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+          <div style={S.headerActions}>
+            <div style={{ ...saveWrapperStyle(), width: "82px" }}>
+              <button
+                type="button"
+                style={{
+                  ...saveButtonStyle(isCreatingBooking),
+                  width: "78px",
+                  padding: "7px 10px",
+                }}
+                disabled={isCreatingBooking}
+                onClick={handleCreateBooking}
+              >
+                Save
+              </button>
+            </div>
+            <Link to="/app/bookings" style={S.iconButton} aria-label="Back to bookings">
+              <CollapseIcon />
+            </Link>
+          </div>
         </div>
 
-        <div style={S.card}>
+        {/* Select Product + Add Location */}
+        <div style={S.innerCard}>
           <div style={S.fieldsRow}>
             <div style={S.fieldBlock}>
-              <span style={S.fieldLabel}>Select Product</span>
-              <select
-                style={S.select}
-                value={bookableProductId}
-                onChange={(e: FieldChangeEvent) =>
-                  setBookableProductId(e.currentTarget.value)
-                }
-              >
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor="nb-product" style={S.fieldLabel}>
+                Select Product
+              </label>
+              <div style={S.selectWrap}>
+                <select
+                  id="nb-product"
+                  className="nb-select"
+                  style={S.select}
+                  value={bookableProductId}
+                  onChange={(e: FieldChangeEvent) =>
+                    setBookableProductId(e.currentTarget.value)
+                  }
+                >
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+                <SelectChevron />
+              </div>
             </div>
 
             {locations.length > 0 && (
               <div style={S.fieldBlock}>
-                <span style={S.fieldLabel}>Add Location</span>
-                <select
-                  style={S.select}
-                  value={locationId}
-                  onChange={(e: FieldChangeEvent) =>
-                    setLocationId(e.currentTarget.value)
-                  }
-                >
-                  {locations.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
+                <label htmlFor="nb-location" style={S.fieldLabel}>
+                  Add Location
+                </label>
+                <div style={S.selectWrap}>
+                  <select
+                    id="nb-location"
+                    className="nb-select"
+                    style={S.select}
+                    value={locationId}
+                    onChange={(e: FieldChangeEvent) =>
+                      setLocationId(e.currentTarget.value)
+                    }
+                  >
+                    {locations.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
+                    ))}
+                  </select>
+                  <SelectChevron />
+                </div>
               </div>
             )}
           </div>
         </div>
 
+        {/* Date + time */}
         <div style={S.dateTimeCard}>
           {selectedBookingType === "MULTI_DAY" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -1543,55 +1708,52 @@ export default function NewBookingPage() {
                     1,
                   )}
               </div>
+
+              {selectedBookingType === "FULL_DAY" && date && (
+                <div style={S.chip("info")}>
+                  <span style={S.chipText("info")}>
+                    {formatTimeRangeDisplay(fullDayStartTime, fullDayEndTime)}{" "}
+                    {"\u2014"} {date}
+                  </span>
+                </div>
+              )}
               {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginTop: "16px",
-                    padding: "5px 10px",
-                    borderRadius: "999px",
-                    background: "rgba(0,96,230,0.08)",
-                  }}
-                >
-                  <span style={{ fontFamily: "Inter", fontSize: "13px", fontWeight: 600, color: BLUE }}>
+                <div style={S.chip("info")}>
+                  <span style={S.chipText("info")}>
                     Check-in {date}. Now pick a check-out date.
                   </span>
                 </div>
               )}
               {selectedBookingType === "MULTI_DAY" && checkoutError && (
-                <div style={{ ...S.card, borderColor: "#C0392B", padding: "10px" }}>
-                  <span style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B" }}>
-                    {checkoutError}
-                  </span>
-                </div>
-              )}
-              {selectedBookingType === "MULTI_DAY" && date && checkoutDate && (
-                <div
+                <span
+                  role="alert"
                   style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginTop: "16px",
-                    padding: "5px 10px",
-                    borderRadius: "999px",
-                    background: "#e3f6e8",
+                    marginTop: "12px",
+                    fontFamily: "Inter",
+                    fontSize: "13px",
+                    color: "#C0392B",
                   }}
                 >
-                  <span style={{ fontFamily: "Inter", fontSize: "13px", fontWeight: 600, color: "#1a7f37" }}>
+                  {checkoutError}
+                </span>
+              )}
+              {selectedBookingType === "MULTI_DAY" && date && checkoutDate && (
+                <div style={S.chip("ok")}>
+                  <span style={S.chipText("ok")}>
                     {date} → {checkoutDate} ({nightsBetween(date, checkoutDate)}{" "}
                     night{nightsBetween(date, checkoutDate) === 1 ? "" : "s"})
                   </span>
                   <button
                     type="button"
-                    style={{ border: "none", background: "transparent", color: BLUE, fontFamily: "Inter", fontSize: "13px", cursor: "pointer" }}
-                    onClick={() => {
-                      setDate("");
-                      setCheckoutDate("");
-                      setCheckoutError(null);
-                      setSelectedSlot(null);
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: BLUE,
+                      fontFamily: "Inter",
+                      fontSize: "13px",
+                      cursor: "pointer",
                     }}
+                    onClick={handleChangeMultiDayDates}
                   >
                     Change dates
                   </button>
@@ -1599,171 +1761,83 @@ export default function NewBookingPage() {
               )}
             </div>
 
-            {date &&
-              (selectedBookingType === "SLOT" ||
-                selectedBookingType === "BUNDLE") && (
-                <div
-                  style={S.slotsColumn}
-                  role="group"
-                  aria-label={
-                    selectedBookingType === "BUNDLE" &&
-                    bundleSessionCount !== null
-                      ? `Available times, session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
-                      : "Available times"
-                  }
-                >
-                  {isLoadingSlots ? (
-                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: 0 }}>
-                      Loading available times…
-                    </p>
-                  ) : slots.length === 0 ? (
-                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: 0 }}>
-                      No slots at all on this date.
-                    </p>
-                  ) : (
-                    slots.map((slot) => {
-                      const isActive = selectedSlot?.startsAt === slot.startsAt;
-                      return (
-                        <button
-                          key={slot.startsAt}
-                          type="button"
-                          className="nb-slot"
-                          style={S.timeSlotBtn(isActive, !slot.available)}
-                          disabled={!slot.available}
-                          aria-pressed={isActive}
-                          onClick={() => {
-                            if (slot.available) setSelectedSlot(slot);
-                          }}
-                        >
-                          {formatTimeRangeDisplay(slot.start, slot.end)}
-                          {!slot.available
-                            ? " (Booked)"
-                            : typeof slot.remainingCapacity === "number"
-                              ? ` (${
-                                  slot.remainingCapacity === 1
-                                    ? "1 slot left"
-                                    : `${slot.remainingCapacity} slots left`
-                                })`
-                              : ""}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              )}
+            {(selectedBookingType === "SLOT" ||
+              selectedBookingType === "BUNDLE") && (
+              <div
+                style={S.slotsColumn}
+                role="group"
+                aria-label={
+                  selectedBookingType === "BUNDLE" && bundleSessionCount !== null
+                    ? `Available times, session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
+                    : "Available times"
+                }
+              >
+                {!date ? (
+                  <p style={S.slotsHint}>Select a date to see available times.</p>
+                ) : isLoadingSlots ? (
+                  <p style={S.slotsHint}>Loading available times…</p>
+                ) : slots.length === 0 ? (
+                  <p style={S.slotsHint}>No slots at all on this date.</p>
+                ) : (
+                  slots.map((slot) => {
+                    const isActive = selectedSlot?.startsAt === slot.startsAt;
+                    const extra = !slot.available
+                      ? "Booked"
+                      : typeof slot.remainingCapacity === "number"
+                        ? slot.remainingCapacity === 1
+                          ? "1 slot left"
+                          : `${slot.remainingCapacity} slots left`
+                        : null;
+                    return (
+                      <button
+                        key={slot.startsAt}
+                        type="button"
+                        className="nb-slot"
+                        style={S.timeSlotBtn(isActive, !slot.available)}
+                        disabled={!slot.available}
+                        aria-pressed={isActive}
+                        onClick={() => {
+                          if (slot.available) setSelectedSlot(slot);
+                        }}
+                      >
+                        <span>{formatTimeRangeDisplay(slot.start, slot.end)}</span>
+                        {extra && (
+                          <span style={{ fontSize: "12px", lineHeight: "15px" }}>
+                            {extra}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
+
+          {needsNextSlot && (
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ ...saveWrapperStyle(), width: "auto", height: "auto" }}>
+                <button
+                  type="button"
+                  style={{
+                    ...saveButtonStyle(false),
+                    width: "auto",
+                    height: "auto",
+                    padding: "9px 20px",
+                    whiteSpace: "nowrap",
+                  }}
+                  onClick={handleNextSlot}
+                >
+                  Next slot
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {date && selectedBookingType === "FULL_DAY" && (
-          <div style={S.card}>
-            <span style={S.cardHeading}>Booking</span>
-            <p style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_DARK, margin: 0 }}>
-              {formatTimeRangeDisplay(fullDayStartTime, fullDayEndTime)} {"\u2014"} {date}
-            </p>
-          </div>
-        )}
-
-        {(selectedSlot || customFields.length > 0) && (
-          <div style={S.qtyNoteCard}>
-            <div style={S.qtyNoteRow}>
-              {selectedSlot && (
-                <div style={S.qtyBlock}>
-                  <div style={S.qtyNoteLabelRow}>
-                    <span style={S.qtyNoteLabel}>Quantity</span>
-                    {!quantityLocked && maxQuantity <= 5 && (
-                      <span style={S.qtyNoteHint}>(max {maxQuantity})</span>
-                    )}
-                  </div>
-                  {quantityLocked ? (
-                    <div
-                      style={S.quantityBox}
-                      title="Set on the first session of this bundle"
-                    >
-                      <span style={S.quantityValue}>
-                        {bundleSessionsQueued[0].quantity}
-                      </span>
-                    </div>
-                  ) : (
-                    <div style={S.quantityBox}>
-                      <button
-                        type="button"
-                        style={{
-                          ...S.quantityStepBtn,
-                          ...(quantity <= 1 ? { opacity: 0.4, cursor: "not-allowed" } : {}),
-                        }}
-                        disabled={quantity <= 1}
-                        aria-label="Decrease quantity"
-                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      >
-                        <MinusIcon />
-                      </button>
-                      <span style={S.quantityValue}>{quantity}</span>
-                      <button
-                        type="button"
-                        style={{
-                          ...S.quantityStepBtn,
-                          ...(quantity >= maxQuantity ? { opacity: 0.4, cursor: "not-allowed" } : {}),
-                        }}
-                        disabled={quantity >= maxQuantity}
-                        aria-label="Increase quantity"
-                        onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-                      >
-                        <PlusStepIcon />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {customFields.length > 0 && (
-                <div style={S.noteBlock}>
-                  {customFields.map((field) => {
-                    const { title, hint } = splitFieldLabel(field.label);
-                    return (
-                      <div key={field.fieldKey} style={S.noteField}>
-                        <div style={S.qtyNoteLabelRow}>
-                          <span style={S.qtyNoteLabel}>{title}</span>
-                          {hint && <span style={S.qtyNoteHint}>{hint}</span>}
-                        </div>
-                        <input
-                          type="text"
-                          className="nb-note-input"
-                          style={S.input}
-                          placeholder="Enter message here"
-                          aria-label={field.label}
-                          required={field.required}
-                          value={customFieldValues[field.fieldKey] ?? ""}
-                          onChange={(e: FieldChangeEvent) => {
-                            const value = e.currentTarget.value;
-                            setCustomFieldValues((prev) => ({
-                              ...prev,
-                              [field.fieldKey]: value,
-                            }));
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {needsNextSlot && (
-          <div>
-            <button
-              type="button"
-              style={{ ...saveButtonStyle(false), width: "auto", padding: "10px 20px" }}
-              onClick={handleNextSlot}
-            >
-              Next slot
-            </button>
-          </div>
-        )}
-
+        {/* Bundle sessions chosen so far / bookings that need a retry */}
         {queuedSlots.length > 0 && (
-          <div style={S.card}>
+          <div style={S.innerCard}>
             <span style={S.cardHeading}>Slots to book</span>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {queuedSlots.map((entry, index) => (
@@ -1806,91 +1880,199 @@ export default function NewBookingPage() {
           </div>
         )}
 
-        {submissionSlots.length > 0 && !needsNextSlot && (
-          <div style={S.card}>
-            <span style={S.cardHeading}>Customer details</span>
-            <div style={S.fieldsRow}>
-              <div style={S.fieldBlock}>
-                <span style={S.fieldLabel}>Customer Name</span>
-                <input
-                  type="text"
-                  required
-                  style={{ ...S.input, ...(nameError ? { borderColor: "#C0392B" } : {}) }}
-                  value={customerName}
-                  onChange={(e: FieldChangeEvent) => setCustomerName(e.currentTarget.value)}
-                  onBlur={() => setNameTouched(true)}
-                />
-                {nameError && (
-                  <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{nameError}</span>
+        {/* Quantity + Note */}
+        <div style={S.innerCard}>
+          <div style={S.qtyNoteRow}>
+            <div style={S.qtyBlock}>
+              <div style={S.qtyNoteLabelRow}>
+                <span style={S.qtyNoteLabel}>Quantity</span>
+                {selectedSlot && !quantityLocked && maxQuantity <= 5 && (
+                  <span style={S.qtyNoteHint}>(max {maxQuantity})</span>
                 )}
               </div>
-              <div style={S.fieldBlock}>
-                <span style={S.fieldLabel}>Customer Email</span>
-                <input
-                  type="email"
-                  required
-                  style={{ ...S.input, ...(emailError ? { borderColor: "#C0392B" } : {}) }}
-                  value={customerEmail}
-                  onChange={(e: FieldChangeEvent) => setCustomerEmail(e.currentTarget.value)}
-                  onBlur={() => setEmailTouched(true)}
-                />
-                {emailError && (
-                  <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{emailError}</span>
-                )}
-              </div>
-              <div style={S.fieldBlock}>
-                <span style={S.fieldLabel}>Phone number</span>
-                <input
-                  type="tel"
-                  style={S.input}
-                  value={customerPhone}
-                  onChange={(e: FieldChangeEvent) => setCustomerPhone(e.currentTarget.value)}
-                />
-              </div>
+              {quantityLocked ? (
+                <div
+                  style={S.quantityBox}
+                  title="Set on the first session of this bundle"
+                >
+                  <span style={S.quantityValue}>
+                    {bundleSessionsQueued[0].quantity}
+                  </span>
+                </div>
+              ) : (
+                <div style={S.quantityBox}>
+                  <button
+                    type="button"
+                    style={{
+                      ...S.quantityStepBtn,
+                      ...(!selectedSlot || quantity <= 1
+                        ? { opacity: 0.4, cursor: "not-allowed" }
+                        : {}),
+                    }}
+                    disabled={!selectedSlot || quantity <= 1}
+                    aria-label="Decrease quantity"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  >
+                    <MinusIcon />
+                  </button>
+                  <span style={S.quantityValue}>{quantity}</span>
+                  <button
+                    type="button"
+                    style={{
+                      ...S.quantityStepBtn,
+                      ...(!selectedSlot || quantity >= maxQuantity
+                        ? { opacity: 0.4, cursor: "not-allowed" }
+                        : {}),
+                    }}
+                    disabled={!selectedSlot || quantity >= maxQuantity}
+                    aria-label="Increase quantity"
+                    onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                  >
+                    <PlusStepIcon />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {createError && (
-              <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
-                {createError}
-              </p>
-            )}
-
-            {submitAttempted && (nameError || emailError) && (
-              <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
-                Please fix the highlighted fields before creating this booking.
-              </p>
-            )}
-
-            {incompleteBundleTitles.length > 0 && (
-              <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
-                {incompleteBundleTitles.length === 1
-                  ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
-                  : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
-              </p>
-            )}
-
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <div style={{ ...saveWrapperStyle(), width: "auto" }}>
-                <button
-                  type="button"
-                  style={{
-                    ...saveButtonStyle(isCreatingBooking),
-                    width: "auto",
-                    minWidth: "132px",
-                    padding: "7px 20px",
-                    whiteSpace: "nowrap",
-                  }}
-                  disabled={isCreatingBooking}
-                  onClick={handleCreateBooking}
-                >
-                  {submissionSlots.length > 1
-                    ? `Create ${submissionSlots.length} bookings`
-                    : "Create Booking"}
-                </button>
+            {customFields.length > 0 && (
+              <div style={S.noteBlock}>
+                {customFields.map((field) => {
+                  const { title, hint } = splitFieldLabel(field.label);
+                  return (
+                    <div key={field.fieldKey} style={S.noteField}>
+                      <div style={S.qtyNoteLabelRow}>
+                        <span style={S.qtyNoteLabel}>{title}</span>
+                        {hint && <span style={S.qtyNoteHint}>{hint}</span>}
+                      </div>
+                      <input
+                        type="text"
+                        className="nb-note-input"
+                        style={S.input}
+                        placeholder="Enter message here"
+                        aria-label={field.label}
+                        required={field.required}
+                        value={customFieldValues[field.fieldKey] ?? ""}
+                        onChange={(e: FieldChangeEvent) => {
+                          const value = e.currentTarget.value;
+                          setCustomFieldValues((prev) => ({
+                            ...prev,
+                            [field.fieldKey]: value,
+                          }));
+                        }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Customer details */}
+        <div style={S.innerCard}>
+          <div style={S.fieldsRow}>
+            <div style={S.fieldBlock}>
+              <label htmlFor="nb-customer-name" style={S.fieldLabel}>
+                Customer Name
+              </label>
+              <input
+                id="nb-customer-name"
+                type="text"
+                required
+                className="nb-cust-input"
+                placeholder="Enter name"
+                style={{ ...S.input, ...(nameError ? { borderColor: "#C0392B" } : {}) }}
+                value={customerName}
+                onChange={(e: FieldChangeEvent) => setCustomerName(e.currentTarget.value)}
+                onBlur={() => setNameTouched(true)}
+              />
+              {nameError && (
+                <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{nameError}</span>
+              )}
+            </div>
+            <div style={S.fieldBlock}>
+              <label htmlFor="nb-customer-email" style={S.fieldLabel}>
+                Customer Email
+              </label>
+              <input
+                id="nb-customer-email"
+                type="email"
+                required
+                className="nb-cust-input"
+                placeholder="Enter email"
+                style={{ ...S.input, ...(emailError ? { borderColor: "#C0392B" } : {}) }}
+                value={customerEmail}
+                onChange={(e: FieldChangeEvent) => setCustomerEmail(e.currentTarget.value)}
+                onBlur={() => setEmailTouched(true)}
+              />
+              {emailError && (
+                <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{emailError}</span>
+              )}
+            </div>
+            <div style={S.fieldBlock}>
+              <label htmlFor="nb-customer-phone" style={S.fieldLabel}>
+                Phone number
+              </label>
+              <input
+                id="nb-customer-phone"
+                type="tel"
+                className="nb-cust-input"
+                placeholder="Enter phone number"
+                style={S.input}
+                value={customerPhone}
+                onChange={(e: FieldChangeEvent) => setCustomerPhone(e.currentTarget.value)}
+              />
             </div>
           </div>
-        )}
+
+          {noSelectionError && (
+            <p role="alert" style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+              {noSelectionError}
+            </p>
+          )}
+
+          {createError && (
+            <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+              {createError}
+            </p>
+          )}
+
+          {submitAttempted && (nameError || emailError) && (
+            <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+              Please fix the highlighted fields before creating this booking.
+            </p>
+          )}
+
+          {incompleteBundleTitles.length > 0 && submitAttempted && (
+            <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+              {incompleteBundleTitles.length === 1
+                ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
+                : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
+            </p>
+          )}
+        </div>
+
+        {/* Create Booking (30px below the last card in the Figma) */}
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
+          <div style={{ ...saveWrapperStyle(), width: "auto", minWidth: "143px" }}>
+            <button
+              type="button"
+              style={{
+                ...saveButtonStyle(isCreatingBooking),
+                width: "auto",
+                minWidth: "139px",
+                padding: "7px 10px",
+                whiteSpace: "nowrap",
+              }}
+              disabled={isCreatingBooking}
+              onClick={handleCreateBooking}
+            >
+              {submissionSlots.length > 1
+                ? `Create ${submissionSlots.length} bookings`
+                : "Create Booking"}
+            </button>
+          </div>
+        </div>
       </div>
     </s-page>
   );
