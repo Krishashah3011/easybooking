@@ -2,7 +2,33 @@
   "use strict";
 
   var LOW_AVAILABILITY_THRESHOLD = 2;
-  var WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  var WEEKDAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+  // How many months (from the current month) each month dropdown lists.
+  var MONTH_PICKER_SPAN = 24;
+
+  // Calendar colours (match the admin "Add New Booking" calendar).
+  var CAL_BLUE = "#0060E6";
+  var NAV_ARROW = "#4C4C4C";
+
+  // Chevron icons taken from the admin design (same paths as the Figma SVG).
+  var NAV_CHEVRON_PATH =
+    "M32.4806 34.9941C32.8398 34.6529 32.8398 34.0998 32.4806 33.7586L27.4706 29L32.4806 24.2414C32.8398 23.9002 32.8398 23.3471 32.4806 23.0059C32.1214 22.6647 31.539 22.6647 31.1798 23.0059L25.5194 28.3822C25.1602 28.7234 25.1602 29.2766 25.5194 29.6178L31.1798 34.9941C31.539 35.3353 32.1214 35.3353 32.4806 34.9941Z";
+  var DROPDOWN_CHEVRON_SVG =
+    '<svg width="14" height="12" viewBox="192.5 23 14 12" fill="none" aria-hidden="true" focusable="false">' +
+    '<path fill-rule="evenodd" clip-rule="evenodd" d="M205.494 25.5194C205.153 25.1602 204.6 25.1602 204.259 25.5194L199.5 30.5294L194.741 25.5194C194.4 25.1602 193.847 25.1602 193.506 25.5194C193.165 25.8786 193.165 26.461 193.506 26.8202L198.882 32.4806C199.223 32.8398 199.777 32.8398 200.118 32.4806L205.494 26.8202C205.835 26.461 205.835 25.8786 205.494 25.5194Z" fill="#1A1A1A"/>' +
+    "</svg>";
+
+  function navChevronSvg(color) {
+    return (
+      '<svg width="14" height="14" viewBox="22 22 14 14" fill="none" aria-hidden="true" focusable="false">' +
+      '<path fill-rule="evenodd" clip-rule="evenodd" d="' +
+      NAV_CHEVRON_PATH +
+      '" fill="' +
+      color +
+      '"/></svg>'
+    );
+  }
 
   var ENGLISH_STRINGS = {
     loadingAvailability: "Loading availability…",
@@ -38,6 +64,8 @@
     previousMonth: "Previous month",
     nextMonth: "Next month",
     availableTimes: "Available times",
+    selectDateHint: "Select a date to see available times.",
+    selectMonth: "Select month, currently {month}",
     alreadyBooked: "This slots are added to Cart for this product:",
     removeSlot: "Remove this slot",
     addAnotherSlotLink: "+ Add another slot",
@@ -210,6 +238,17 @@
       });
     }
 
+    var monthShortFormatter;
+    try {
+      monthShortFormatter = new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+    } catch (e) {
+      monthShortFormatter = monthFormatter;
+    }
+
     var selectionEl = root.querySelector("[data-booking-selection]");
     var errorEl = root.querySelector("[data-booking-error]");
     var unavailableEl = root.querySelector("[data-booking-unavailable]");
@@ -240,9 +279,7 @@
       "[data-booking-location-empty-state]",
     );
     var calendarEl = root.querySelector("[data-booking-calendar]");
-    var weekdaysEl = root.querySelector("[data-booking-weekdays]");
-    var monthLabelEl = root.querySelector("[data-booking-month-label]");
-    var headerEl = root.querySelector("[data-booking-header]");
+    var datetimeCardEl = root.querySelector("[data-booking-datetime-card]");
     var durationEl = root.querySelector("[data-booking-duration]");
     var rangeSummaryEl = root.querySelector("[data-booking-range-summary]");
     var rangeHintEl = root.querySelector("[data-booking-range-hint]");
@@ -265,8 +302,6 @@
       "[data-booking-bundle-progress-fill]",
     );
     var slotListEl = root.querySelector("[data-booking-slot-list]");
-    var prevBtn = root.querySelector("[data-booking-prev]");
-    var nextBtn = root.querySelector("[data-booking-next]");
     var confirmBtn = root.querySelector("[data-booking-confirm]");
     var nextSlotBtn = root.querySelector("[data-booking-next-slot]");
     var customFieldsEl = root.querySelector("[data-booking-custom-fields]");
@@ -645,13 +680,6 @@
       addToCartBtn.addEventListener("click", guardAddToCart, true);
     }
 
-    weekdaysEl.innerHTML = "";
-    WEEKDAY_LABELS.forEach(function (label) {
-      var span = document.createElement("span");
-      span.textContent = label;
-      weekdaysEl.appendChild(span);
-    });
-
     if (locationTimezoneEl) locationTimezoneEl.textContent = timezoneLabel();
     loadCustomFields();
     loadLocations();
@@ -1015,8 +1043,17 @@
       document.body.classList.remove("booking-widget-lock-scroll");
     }
 
-    function isTwoMonthType(type) {
+    // FULL_DAY and MULTI_DAY bookings only pick dates (no time column).
+    function isDateOnlyType(type) {
       return type === "FULL_DAY" || type === "MULTI_DAY";
+    }
+
+    // Show the "Select a date to see available times." hint in the times
+    // column (used whenever no date is selected).
+    function showSelectDateHint() {
+      currentSlots = [];
+      if (durationEl) durationEl.hidden = true;
+      if (slotListEl) setStatus(slotListEl, strings.selectDateHint);
     }
 
     function addMonths(year, month, delta) {
@@ -1069,10 +1106,18 @@
     }
 
     function applyLayoutForType() {
-      if (slotsPaneEl) slotsPaneEl.hidden = isTwoMonthType(productBookingType);
-      if (slotsPaneOuterEl) {
-        slotsPaneOuterEl.hidden = isTwoMonthType(productBookingType);
+      // Two month panes are always shown; the times column only exists for
+      // booking types that pick a time slot.
+      var showTimes = !isDateOnlyType(productBookingType);
+      if (slotsPaneEl) slotsPaneEl.hidden = !showTimes;
+      if (slotsPaneOuterEl) slotsPaneOuterEl.hidden = !showTimes;
+      if (datetimeCardEl) {
+        datetimeCardEl.classList.toggle(
+          "booking-widget__datetime-card--times",
+          showTimes,
+        );
       }
+      if (showTimes && !pendingDate) showSelectDateHint();
     }
 
     function updateRangeSummary() {
@@ -1116,34 +1161,29 @@
       });
     }
 
+    var monthRequestId = 0;
+
     function loadMonth() {
+      var requestId = ++monthRequestId;
+      var second = addMonths(viewYear, viewMonth, 1);
       setStatus(calendarEl, strings.loadingAvailability);
 
-      fetchAvailability(viewYear, viewMonth)
-        .then(function (data) {
-          availableDates = applyAvailabilityData(data);
+      Promise.all([
+        fetchAvailability(viewYear, viewMonth),
+        fetchAvailability(second.year, second.month),
+      ])
+        .then(function (results) {
+          // Ignore responses for a month the shopper has already left.
+          if (requestId !== monthRequestId) return;
+          availableDates = applyAvailabilityData(results[0]);
+          secondMonthAvailableDates = applyAvailabilityData(results[1]);
           updateBundleProgress();
-
-          if (isTwoMonthType(productBookingType)) {
-            var second = addMonths(viewYear, viewMonth, 1);
-            fetchAvailability(second.year, second.month)
-              .then(function (data2) {
-                secondMonthAvailableDates = applyAvailabilityData(data2);
-                applyLayoutForType();
-                renderCalendar();
-                if (!pendingEndDate) updateRangeSummary();
-              })
-              .catch(function () {
-                setStatus(calendarEl, strings.availabilityError, loadMonth);
-              });
-          } else {
-            secondMonthAvailableDates = null;
-            applyLayoutForType();
-            renderCalendar();
-            if (!pendingEndDate) updateRangeSummary();
-          }
+          applyLayoutForType();
+          renderCalendar();
+          if (!pendingEndDate) updateRangeSummary();
         })
         .catch(function () {
+          if (requestId !== monthRequestId) return;
           setStatus(calendarEl, strings.availabilityError, loadMonth);
         });
     }
@@ -1247,7 +1287,7 @@
 
     function buildWeekdaysRow() {
       var row = document.createElement("div");
-      row.className = "booking-widget__weekdays booking-widget__weekdays--pane";
+      row.className = "booking-widget__weekdays";
       WEEKDAY_LABELS.forEach(function (label) {
         var span = document.createElement("span");
         span.textContent = label;
@@ -1256,13 +1296,60 @@
       return row;
     }
 
+    // "Sep 2026 v" dropdown in the middle of each month header. `offset` is
+    // how many months the pane sits after the first visible month.
+    function buildMonthPicker(year, month, offset) {
+      var shownIndex = year * 12 + (month - 1);
+      var label = monthShortFormatter.format(
+        new Date(Date.UTC(year, month - 1, 1)),
+      );
+
+      var wrap = document.createElement("div");
+      wrap.className = "booking-widget__month-picker";
+
+      var text = document.createElement("span");
+      text.className = "booking-widget__month-picker-text";
+      text.textContent = label;
+      wrap.appendChild(text);
+      wrap.insertAdjacentHTML("beforeend", DROPDOWN_CHEVRON_SVG);
+
+      var select = document.createElement("select");
+      select.className = "booking-widget__month-picker-select";
+      select.setAttribute(
+        "aria-label",
+        format(strings.selectMonth, { month: label }),
+      );
+
+      var now = new Date();
+      var todayIndex = now.getUTCFullYear() * 12 + now.getUTCMonth();
+      var start = todayIndex + offset;
+      var end = start + MONTH_PICKER_SPAN - 1;
+      // The month currently shown is always listed, even outside the range.
+      var from = Math.min(start, shownIndex);
+      var to = Math.max(end, shownIndex);
+      for (var i = from; i <= to; i++) {
+        var option = document.createElement("option");
+        option.value = String(i);
+        option.textContent = monthFormatter.format(
+          new Date(Date.UTC(Math.floor(i / 12), i % 12, 1)),
+        );
+        select.appendChild(option);
+      }
+      select.value = String(shownIndex);
+      select.addEventListener("change", function () {
+        changeViewMonth(Number(select.value) - offset);
+      });
+      wrap.appendChild(select);
+
+      return wrap;
+    }
+
     function buildMonthPane(
       year,
       month,
       choosingMultiDayCheckout,
       showNoAvailability,
-      isFirstPane,
-      isLastPane,
+      offset,
     ) {
       var pane = document.createElement("div");
       pane.className = "booking-widget__month-pane";
@@ -1270,55 +1357,37 @@
       var heading = document.createElement("div");
       heading.className = "booking-widget__month-pane-heading";
 
-      if (isFirstPane) {
-        var prevClone = document.createElement("button");
-        prevClone.type = "button";
-        prevClone.className = "booking-widget__nav";
-        prevClone.setAttribute("aria-label", strings.previousMonth);
-        prevClone.innerHTML = "&lsaquo;";
-        prevClone.addEventListener("click", function () {
-          goToMonth(-1);
-        });
-        heading.appendChild(prevClone);
-      } else {
-        var leftSpacer = document.createElement("span");
-        leftSpacer.className = "booking-widget__nav-spacer";
-        heading.appendChild(leftSpacer);
-      }
+      var prev = document.createElement("button");
+      prev.type = "button";
+      prev.className = "booking-widget__nav";
+      prev.setAttribute("aria-label", strings.previousMonth);
+      prev.innerHTML = navChevronSvg(NAV_ARROW);
+      prev.addEventListener("click", function () {
+        goToMonth(-1);
+      });
+      heading.appendChild(prev);
 
-      var title = document.createElement("span");
-      title.className = "booking-widget__month-pane-label";
-      title.textContent = monthFormatter.format(
-        new Date(Date.UTC(year, month - 1, 1)),
-      );
-      heading.appendChild(title);
+      heading.appendChild(buildMonthPicker(year, month, offset));
 
-      if (isLastPane) {
-        var nextClone = document.createElement("button");
-        nextClone.type = "button";
-        nextClone.className = "booking-widget__nav";
-        nextClone.setAttribute("aria-label", strings.nextMonth);
-        nextClone.innerHTML = "&rsaquo;";
-        nextClone.addEventListener("click", function () {
-          goToMonth(1);
-        });
-        heading.appendChild(nextClone);
-      } else {
-        var rightSpacer = document.createElement("span");
-        rightSpacer.className = "booking-widget__nav-spacer";
-        heading.appendChild(rightSpacer);
-      }
+      var next = document.createElement("button");
+      next.type = "button";
+      next.className = "booking-widget__nav booking-widget__nav--next";
+      next.setAttribute("aria-label", strings.nextMonth);
+      next.innerHTML = navChevronSvg(CAL_BLUE);
+      next.addEventListener("click", function () {
+        goToMonth(1);
+      });
+      heading.appendChild(next);
 
       pane.appendChild(heading);
       pane.appendChild(buildWeekdaysRow());
+      pane.appendChild(buildGrid(year, month, choosingMultiDayCheckout));
 
       if (showNoAvailability) {
         var status = document.createElement("p");
-        status.className = "booking-widget__status";
+        status.className = "booking-widget__status booking-widget__month-note";
         status.textContent = strings.noAvailability;
         pane.appendChild(status);
-      } else {
-        pane.appendChild(buildGrid(year, month, choosingMultiDayCheckout));
       }
 
       return pane;
@@ -1327,55 +1396,33 @@
     function renderCalendar() {
       var choosingMultiDayCheckout =
         productBookingType === "MULTI_DAY" && pendingDate && !pendingEndDate;
+      var second = addMonths(viewYear, viewMonth, 1);
+
+      var pane1NoAvail = availableDates.length === 0 && !choosingMultiDayCheckout;
+      var pane2NoAvail =
+        secondMonthAvailableDates !== null &&
+        secondMonthAvailableDates.length === 0 &&
+        !choosingMultiDayCheckout;
 
       calendarEl.innerHTML = "";
-
-      if (isTwoMonthType(productBookingType) && secondMonthAvailableDates !== null) {
-        if (headerEl) headerEl.hidden = true;
-        weekdaysEl.hidden = true;
-        calendarEl.classList.add("booking-widget__calendar--dual");
-
-        var second = addMonths(viewYear, viewMonth, 1);
-        var pane1NoAvail = availableDates.length === 0 && !choosingMultiDayCheckout;
-        var pane2NoAvail =
-          secondMonthAvailableDates.length === 0 && !choosingMultiDayCheckout;
-
-        calendarEl.appendChild(
-          buildMonthPane(
-            viewYear,
-            viewMonth,
-            choosingMultiDayCheckout,
-            pane1NoAvail,
-            true,
-            false,
-          ),
-        );
-        calendarEl.appendChild(
-          buildMonthPane(
-            second.year,
-            second.month,
-            choosingMultiDayCheckout,
-            pane2NoAvail,
-            false,
-            true,
-          ),
-        );
-        return;
-      }
-
-      if (headerEl) headerEl.hidden = false;
-      weekdaysEl.hidden = false;
-      calendarEl.classList.remove("booking-widget__calendar--dual");
-      monthLabelEl.textContent = monthFormatter.format(
-        new Date(Date.UTC(viewYear, viewMonth - 1, 1)),
+      calendarEl.appendChild(
+        buildMonthPane(
+          viewYear,
+          viewMonth,
+          choosingMultiDayCheckout,
+          pane1NoAvail,
+          0,
+        ),
       );
-
-      if (availableDates.length === 0 && !choosingMultiDayCheckout) {
-        setStatus(calendarEl, strings.noAvailability);
-        return;
-      }
-
-      calendarEl.appendChild(buildGrid(viewYear, viewMonth, choosingMultiDayCheckout));
+      calendarEl.appendChild(
+        buildMonthPane(
+          second.year,
+          second.month,
+          choosingMultiDayCheckout,
+          pane2NoAvail,
+          1,
+        ),
+      );
     }
 
     function multiDayRangeInfoText() {
@@ -1654,7 +1701,7 @@
       if (quantityIncreaseBtn) quantityIncreaseBtn.disabled = pendingQuantity >= max;
       if (quantityNoteEl) {
         var showsCapacityAlways =
-          isTwoMonthType(productBookingType) &&
+          isDateOnlyType(productBookingType) &&
           pendingSlot &&
           typeof pendingSlot.remainingCapacity === "number";
 
@@ -2067,36 +2114,28 @@
       cartReminderEl.hidden = false;
     }
 
-    function goToMonth(delta) {
-      viewMonth += delta;
-      if (viewMonth < 1) {
-        viewMonth = 12;
-        viewYear -= 1;
-      } else if (viewMonth > 12) {
-        viewMonth = 1;
-        viewYear += 1;
-      }
+    // Jump to a month given as (year * 12 + monthIndex). Used by the
+    // prev / next arrows and by the month dropdowns.
+    function changeViewMonth(index) {
+      viewYear = Math.floor(index / 12);
+      viewMonth = (index % 12) + 1;
       pendingDate = null;
       pendingSlot = null;
       pendingEndDate = null;
       refreshQuantityForSelection();
-      currentSlots = [];
-      durationEl.hidden = true;
-      setStatus(slotListEl, strings.noTimes);
+      showSelectDateHint();
       updateConfirmButton();
       renderCustomFields();
       loadMonth();
     }
 
+    function goToMonth(delta) {
+      changeViewMonth(viewYear * 12 + (viewMonth - 1) + delta);
+    }
+
     closeBtn.addEventListener("click", closeModal);
     overlayEl.addEventListener("click", function (event) {
       if (event.target === overlayEl) closeModal();
-    });
-    prevBtn.addEventListener("click", function () {
-      goToMonth(-1);
-    });
-    nextBtn.addEventListener("click", function () {
-      goToMonth(1);
     });
     if (nextSlotBtn) {
       nextSlotBtn.addEventListener("click", function () {
@@ -2118,7 +2157,7 @@
         renderCustomFields();
         refreshQuantityForSelection();
         if (slotsPaneEl) slotsPaneEl.hidden = false;
-        setStatus(slotListEl, strings.noTimes);
+        setStatus(slotListEl, strings.selectDateHint);
         durationEl.hidden = false;
         durationEl.textContent = sessionProgressText();
       });

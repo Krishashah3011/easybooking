@@ -1289,6 +1289,11 @@ export default function NewBookingPage() {
     ? [...queuedSlots, currentEntry]
     : queuedSlots;
 
+  // Quantity, notes, customer details and the Create button only appear once
+  // something has been selected: a time slot / date range for the current
+  // booking, or bundle sessions / failed bookings already in the queue.
+  const hasSelection = submissionSlots.length > 0;
+
   const productError =
     submitAttempted && !bookableProductId ? "Select a product" : undefined;
   const locationError =
@@ -1908,199 +1913,203 @@ export default function NewBookingPage() {
           </div>
         )}
 
-        {/* Quantity + Note */}
-        <div style={S.innerCard}>
-          <div style={S.qtyNoteRow}>
-            <div style={S.qtyBlock}>
-              <div style={S.qtyNoteLabelRow}>
-                <span style={S.qtyNoteLabel}>Quantity</span>
-                {selectedSlot && !quantityLocked && maxQuantity <= 5 && (
-                  <span style={S.qtyNoteHint}>(max {maxQuantity})</span>
+        {hasSelection && (
+          <>
+            {/* Quantity + Note */}
+            <div style={S.innerCard}>
+              <div style={S.qtyNoteRow}>
+                <div style={S.qtyBlock}>
+                  <div style={S.qtyNoteLabelRow}>
+                    <span style={S.qtyNoteLabel}>Quantity</span>
+                    {selectedSlot && !quantityLocked && maxQuantity <= 5 && (
+                      <span style={S.qtyNoteHint}>(max {maxQuantity})</span>
+                    )}
+                  </div>
+                  {quantityLocked ? (
+                    <div
+                      style={S.quantityBox}
+                      title="Set on the first session of this bundle"
+                    >
+                      <span style={S.quantityValue}>
+                        {bundleSessionsQueued[0].quantity}
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={S.quantityBox}>
+                      <button
+                        type="button"
+                        style={{
+                          ...S.quantityStepBtn,
+                          ...(!selectedSlot || quantity <= 1
+                            ? { opacity: 0.4, cursor: "not-allowed" }
+                            : {}),
+                        }}
+                        disabled={!selectedSlot || quantity <= 1}
+                        aria-label="Decrease quantity"
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      >
+                        <MinusIcon />
+                      </button>
+                      <span style={S.quantityValue}>{quantity}</span>
+                      <button
+                        type="button"
+                        style={{
+                          ...S.quantityStepBtn,
+                          ...(!selectedSlot || quantity >= maxQuantity
+                            ? { opacity: 0.4, cursor: "not-allowed" }
+                            : {}),
+                        }}
+                        disabled={!selectedSlot || quantity >= maxQuantity}
+                        aria-label="Increase quantity"
+                        onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                      >
+                        <PlusStepIcon />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {customFields.length > 0 && (
+                  <div style={S.noteBlock}>
+                    {customFields.map((field) => {
+                      const { title, hint } = splitFieldLabel(field.label);
+                      return (
+                        <div key={field.fieldKey} style={S.noteField}>
+                          <div style={S.qtyNoteLabelRow}>
+                            <span style={S.qtyNoteLabel}>{title}</span>
+                            {hint && <span style={S.qtyNoteHint}>{hint}</span>}
+                          </div>
+                          <input
+                            type="text"
+                            className="nb-note-input"
+                            style={S.input}
+                            placeholder="Enter message here"
+                            aria-label={field.label}
+                            required={field.required}
+                            value={customFieldValues[field.fieldKey] ?? ""}
+                            onChange={(e: FieldChangeEvent) => {
+                              const value = e.currentTarget.value;
+                              setCustomFieldValues((prev) => ({
+                                ...prev,
+                                [field.fieldKey]: value,
+                              }));
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-              {quantityLocked ? (
-                <div
-                  style={S.quantityBox}
-                  title="Set on the first session of this bundle"
-                >
-                  <span style={S.quantityValue}>
-                    {bundleSessionsQueued[0].quantity}
-                  </span>
-                </div>
-              ) : (
-                <div style={S.quantityBox}>
-                  <button
-                    type="button"
-                    style={{
-                      ...S.quantityStepBtn,
-                      ...(!selectedSlot || quantity <= 1
-                        ? { opacity: 0.4, cursor: "not-allowed" }
-                        : {}),
-                    }}
-                    disabled={!selectedSlot || quantity <= 1}
-                    aria-label="Decrease quantity"
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  >
-                    <MinusIcon />
-                  </button>
-                  <span style={S.quantityValue}>{quantity}</span>
-                  <button
-                    type="button"
-                    style={{
-                      ...S.quantityStepBtn,
-                      ...(!selectedSlot || quantity >= maxQuantity
-                        ? { opacity: 0.4, cursor: "not-allowed" }
-                        : {}),
-                    }}
-                    disabled={!selectedSlot || quantity >= maxQuantity}
-                    aria-label="Increase quantity"
-                    onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-                  >
-                    <PlusStepIcon />
-                  </button>
-                </div>
-              )}
             </div>
 
-            {customFields.length > 0 && (
-              <div style={S.noteBlock}>
-                {customFields.map((field) => {
-                  const { title, hint } = splitFieldLabel(field.label);
-                  return (
-                    <div key={field.fieldKey} style={S.noteField}>
-                      <div style={S.qtyNoteLabelRow}>
-                        <span style={S.qtyNoteLabel}>{title}</span>
-                        {hint && <span style={S.qtyNoteHint}>{hint}</span>}
-                      </div>
-                      <input
-                        type="text"
-                        className="nb-note-input"
-                        style={S.input}
-                        placeholder="Enter message here"
-                        aria-label={field.label}
-                        required={field.required}
-                        value={customFieldValues[field.fieldKey] ?? ""}
-                        onChange={(e: FieldChangeEvent) => {
-                          const value = e.currentTarget.value;
-                          setCustomFieldValues((prev) => ({
-                            ...prev,
-                            [field.fieldKey]: value,
-                          }));
-                        }}
-                      />
-                    </div>
-                  );
-                })}
+            {/* Customer details */}
+            <div style={S.innerCard}>
+              <div style={S.fieldsRow}>
+                <div style={S.fieldBlock}>
+                  <label htmlFor="nb-customer-name" style={S.fieldLabel}>
+                    Customer Name
+                  </label>
+                  <input
+                    id="nb-customer-name"
+                    type="text"
+                    required
+                    className="nb-cust-input"
+                    placeholder="Enter name"
+                    style={{ ...S.input, ...(nameError ? { borderColor: "#C0392B" } : {}) }}
+                    value={customerName}
+                    onChange={(e: FieldChangeEvent) => setCustomerName(e.currentTarget.value)}
+                    onBlur={() => setNameTouched(true)}
+                  />
+                  {nameError && (
+                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{nameError}</span>
+                  )}
+                </div>
+                <div style={S.fieldBlock}>
+                  <label htmlFor="nb-customer-email" style={S.fieldLabel}>
+                    Customer Email
+                  </label>
+                  <input
+                    id="nb-customer-email"
+                    type="email"
+                    required
+                    className="nb-cust-input"
+                    placeholder="Enter email"
+                    style={{ ...S.input, ...(emailError ? { borderColor: "#C0392B" } : {}) }}
+                    value={customerEmail}
+                    onChange={(e: FieldChangeEvent) => setCustomerEmail(e.currentTarget.value)}
+                    onBlur={() => setEmailTouched(true)}
+                  />
+                  {emailError && (
+                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{emailError}</span>
+                  )}
+                </div>
+                <div style={S.fieldBlock}>
+                  <label htmlFor="nb-customer-phone" style={S.fieldLabel}>
+                    Phone number
+                  </label>
+                  <input
+                    id="nb-customer-phone"
+                    type="tel"
+                    className="nb-cust-input"
+                    placeholder="Enter phone number"
+                    style={S.input}
+                    value={customerPhone}
+                    onChange={(e: FieldChangeEvent) => setCustomerPhone(e.currentTarget.value)}
+                  />
+                </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Customer details */}
-        <div style={S.innerCard}>
-          <div style={S.fieldsRow}>
-            <div style={S.fieldBlock}>
-              <label htmlFor="nb-customer-name" style={S.fieldLabel}>
-                Customer Name
-              </label>
-              <input
-                id="nb-customer-name"
-                type="text"
-                required
-                className="nb-cust-input"
-                placeholder="Enter name"
-                style={{ ...S.input, ...(nameError ? { borderColor: "#C0392B" } : {}) }}
-                value={customerName}
-                onChange={(e: FieldChangeEvent) => setCustomerName(e.currentTarget.value)}
-                onBlur={() => setNameTouched(true)}
-              />
-              {nameError && (
-                <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{nameError}</span>
+              {noSelectionError && (
+                <p role="alert" style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                  {noSelectionError}
+                </p>
+              )}
+
+              {createError && (
+                <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                  {createError}
+                </p>
+              )}
+
+              {submitAttempted && (nameError || emailError) && (
+                <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                  Please fix the highlighted fields before creating this booking.
+                </p>
+              )}
+
+              {incompleteBundleTitles.length > 0 && submitAttempted && (
+                <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                  {incompleteBundleTitles.length === 1
+                    ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
+                    : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
+                </p>
               )}
             </div>
-            <div style={S.fieldBlock}>
-              <label htmlFor="nb-customer-email" style={S.fieldLabel}>
-                Customer Email
-              </label>
-              <input
-                id="nb-customer-email"
-                type="email"
-                required
-                className="nb-cust-input"
-                placeholder="Enter email"
-                style={{ ...S.input, ...(emailError ? { borderColor: "#C0392B" } : {}) }}
-                value={customerEmail}
-                onChange={(e: FieldChangeEvent) => setCustomerEmail(e.currentTarget.value)}
-                onBlur={() => setEmailTouched(true)}
-              />
-              {emailError && (
-                <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{emailError}</span>
-              )}
+
+            {/* Create Booking (30px below the last card in the Figma) */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
+              <div style={{ ...saveWrapperStyle(), width: "auto", minWidth: "143px" }}>
+                <button
+                  type="button"
+                  style={{
+                    ...saveButtonStyle(isCreatingBooking),
+                    width: "auto",
+                    minWidth: "139px",
+                    padding: "7px 10px",
+                    whiteSpace: "nowrap",
+                  }}
+                  disabled={isCreatingBooking}
+                  onClick={handleCreateBooking}
+                >
+                  {submissionSlots.length > 1
+                    ? `Create ${submissionSlots.length} bookings`
+                    : "Create Booking"}
+                </button>
+              </div>
             </div>
-            <div style={S.fieldBlock}>
-              <label htmlFor="nb-customer-phone" style={S.fieldLabel}>
-                Phone number
-              </label>
-              <input
-                id="nb-customer-phone"
-                type="tel"
-                className="nb-cust-input"
-                placeholder="Enter phone number"
-                style={S.input}
-                value={customerPhone}
-                onChange={(e: FieldChangeEvent) => setCustomerPhone(e.currentTarget.value)}
-              />
-            </div>
-          </div>
-
-          {noSelectionError && (
-            <p role="alert" style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
-              {noSelectionError}
-            </p>
-          )}
-
-          {createError && (
-            <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
-              {createError}
-            </p>
-          )}
-
-          {submitAttempted && (nameError || emailError) && (
-            <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
-              Please fix the highlighted fields before creating this booking.
-            </p>
-          )}
-
-          {incompleteBundleTitles.length > 0 && submitAttempted && (
-            <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
-              {incompleteBundleTitles.length === 1
-                ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
-                : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
-            </p>
-          )}
-        </div>
-
-        {/* Create Booking (30px below the last card in the Figma) */}
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
-          <div style={{ ...saveWrapperStyle(), width: "auto", minWidth: "143px" }}>
-            <button
-              type="button"
-              style={{
-                ...saveButtonStyle(isCreatingBooking),
-                width: "auto",
-                minWidth: "139px",
-                padding: "7px 10px",
-                whiteSpace: "nowrap",
-              }}
-              disabled={isCreatingBooking}
-              onClick={handleCreateBooking}
-            >
-              {submissionSlots.length > 1
-                ? `Create ${submissionSlots.length} bookings`
-                : "Create Booking"}
-            </button>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </s-page>
   );

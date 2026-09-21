@@ -144,26 +144,22 @@
             </div>
           </div>
 
-          <div class="booking-widget__calendar-pane">
-            <div class="booking-widget__header" data-booking-header>
-              <button type="button" class="booking-widget__nav" data-booking-prev aria-label="Previous month">&lsaquo;</button>
-              <span class="booking-widget__month-label" data-booking-month-label></span>
-              <button type="button" class="booking-widget__nav" data-booking-next aria-label="Next month">&rsaquo;</button>
+          <div class="booking-widget__datetime-card" data-booking-datetime-card>
+            <div class="booking-widget__calendar-pane">
+              <div class="booking-widget__calendar" data-booking-calendar>
+                <p class="booking-widget__status" data-booking-status>
+                  Loading availability…
+                </p>
+              </div>
             </div>
-            <div class="booking-widget__weekdays" data-booking-weekdays></div>
-            <div class="booking-widget__calendar" data-booking-calendar>
-              <p class="booking-widget__status" data-booking-status>
-                Loading availability…
-              </p>
-            </div>
-          </div>
 
-          <div class="booking-widget__slots-pane" data-booking-slots-pane>
-            <div class="booking-widget__duration" data-booking-duration hidden></div>
-            <div class="booking-widget__slots" data-booking-slots>
-              <p class="booking-widget__slots-label">Available times</p>
-              <div class="booking-widget__slot-list" data-booking-slot-list>
-                <p class="booking-widget__status">No times available on this date.</p>
+            <div class="booking-widget__slots-pane" data-booking-slots-pane hidden>
+              <div class="booking-widget__duration" data-booking-duration hidden></div>
+              <div class="booking-widget__slots" data-booking-slots>
+                <p class="booking-widget__slots-label">Available times</p>
+                <div class="booking-widget__slot-list" data-booking-slot-list>
+                  <p class="booking-widget__status">Select a date to see available times.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -233,6 +229,9 @@
   </div>
 </div>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
 {{ 'booking-widget.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'booking-widget.js' | asset_url }}" defer></script>
 {% endif %}

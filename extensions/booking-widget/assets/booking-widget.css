@@ -463,75 +463,82 @@ body.booking-widget-lock-scroll {
   opacity: 0.95;
 }
 
-.booking-widget__calendar-pane {
-  flex: 1;
-  min-width: 0;
+/* ==========================================================================
+   Date + time card
+   Follows the admin "Add New Booking" calendar design (same colours, Inter,
+   pill slots, [month][month][times] layout) at a compact scale so it fits
+   the modal at its original size. No surrounding box — the months and times
+   sit directly on the modal. Only the months and the time slots are styled
+   here — the rest of the modal is unchanged.
+   Palette: blue #0060E6, text #1A1A1A, disabled #ADADAD.
+   ========================================================================== */
+
+.booking-widget__datetime-card {
+  box-sizing: border-box;
+  flex: 1 0 100%;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-start;
+  column-gap: 16px;
+  row-gap: 16px;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: #1a1a1a;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
-.booking-widget__slots-pane {
-  flex: 1;
-  min-width: 0;
+.booking-widget__datetime-card button,
+.booking-widget__datetime-card select {
+  font-family: inherit;
+}
+
+/* ---- Month column (holds both month panes) ---- */
+
+.booking-widget__calendar-pane {
   display: flex;
   flex-direction: column;
+  flex: 1 1 416px;
+  min-width: 0;
 }
 
-@media (max-width: 560px) {
-  .booking-widget__datetime-step {
-    flex-wrap: nowrap;
-    flex-direction: column;
-  }
-
-  .booking-widget__calendar-pane,
-  .booking-widget__slots-pane {
-    flex: none;
-    width: 100%;
-  }
-
-  .booking-widget__modal {
-    width: 96vw;
-    height: 92vh;
-    height: 92svh;
-    max-height: 92vh;
-  }
-
-  .booking-widget__overlay {
-    padding: 0.5rem;
-  }
-}
-
-.booking-widget__header {
+.booking-widget__calendar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.6rem;
+  flex-flow: row wrap;
+  align-items: flex-start;
+  column-gap: 16px;
+  row-gap: 16px;
+  width: 100%;
 }
 
-.booking-widget__month-label {
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: #111;
+.booking-widget__calendar > .booking-widget__status {
+  flex: 1 1 100%;
 }
 
-.booking-widget__nav {
-  background: none;
-  border: 1.5px solid #111;
-  border-radius: 6px;
-  width: 2.2rem;
-  height: 2.2rem;
-  cursor: pointer;
-  font-size: 1.1rem;
-  line-height: 1;
-  font-weight: 700;
-}
-
-.booking-widget__nav:hover {
-  background: #111;
-  color: #fff;
+.booking-widget__month-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 200px;
+  min-width: min(200px, 100%);
 }
 
 .booking-widget__status {
   color: rgba(0, 0, 0, 0.6);
   font-size: 0.95rem;
+}
+
+.booking-widget__datetime-card .booking-widget__status {
+  margin: 0;
+  color: #373737;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.booking-widget__datetime-card .booking-widget__month-note {
+  margin: 8px 0 0;
 }
 
 .booking-widget__status-retry {
@@ -551,134 +558,333 @@ body.booking-widget-lock-scroll {
   background: rgba(0, 0, 0, 0.05);
 }
 
+/* ---- Month header: [prev] [Sep 2026 v] [next] ---- */
+
+.booking-widget__month-pane-heading {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  /* arrows sit centred over the first / last day column */
+  padding: 0 max(0px, calc((100% / 7 - 30px) / 2));
+  margin-bottom: 16px;
+}
+
+.booking-widget__nav {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.booking-widget__nav svg {
+  display: block;
+  width: 11px;
+  height: 11px;
+  pointer-events: none;
+}
+
+.booking-widget__nav--next {
+  background: rgba(0, 96, 230, 0.08);
+}
+
+.booking-widget__nav--next svg {
+  transform: scaleX(-1);
+}
+
+.booking-widget__nav:hover {
+  background: rgba(0, 96, 230, 0.14);
+}
+
+.booking-widget__month-picker {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.booking-widget__month-picker svg {
+  display: block;
+  flex-shrink: 0;
+  width: 11px;
+  height: 9px;
+}
+
+.booking-widget__month-picker-text {
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 18px;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.booking-widget__month-picker-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 14px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.booking-widget__month-picker:focus-within {
+  outline: 2px solid #0060e6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- Weekday labels + day grid ---- */
+
 .booking-widget__weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 8px;
+}
+
+.booking-widget__weekdays span {
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 12px;
   text-align: center;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.5);
-  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  color: #1a1a1a;
 }
 
 .booking-widget__grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.3rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 4px;
 }
 
 .booking-widget__day {
-  aspect-ratio: 1;
-  border: none;
-  background: none;
-  border-radius: 50%;
-  font-size: 1.15rem;
-  font-weight: 600;
+  box-sizing: border-box;
+  justify-self: center;
+  width: 100%;
+  max-width: 30px;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: #adadad;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 20px;
   cursor: not-allowed;
-  color: rgba(0, 0, 0, 0.3);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .booking-widget__day--available {
+  color: #1a1a1a;
   cursor: pointer;
-  color: #111;
 }
 
 .booking-widget__day--available:hover {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 96, 230, 0.08);
 }
 
-.booking-widget__day--selected {
-  background: #111;
-  color: #fff;
+.booking-widget__day--in-range,
+.booking-widget__day--in-range:hover {
+  background: rgba(0, 96, 230, 0.12);
 }
 
-.booking-widget__day--in-range {
-  background: #111;
-  color: #fff;
-  border-radius: 50%;
+.booking-widget__day--selected,
+.booking-widget__day--selected:hover {
+  background: #0060e6;
+  color: #ffffff;
 }
 
-.booking-widget__calendar--dual {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+.booking-widget__day:focus-visible,
+.booking-widget__nav:focus-visible {
+  outline: 2px solid #0060e6;
+  outline-offset: 2px;
 }
 
-.booking-widget__month-pane:last-child {
-  border-left: 1px solid rgba(0, 0, 0, 0.12);
-  padding-left: 1rem;
-}
+/* ---- Times column: scrolls when there are many slots ---- */
 
-.booking-widget__month-pane-heading {
+.booking-widget__slots-pane {
+  position: relative;
+  box-sizing: border-box;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.booking-widget__month-pane-label {
-  flex: 1;
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.05rem;
-  margin: 0;
-}
-
-.booking-widget__nav-spacer {
-  width: 2rem;
-  height: 2rem;
-  flex: none;
-}
-
-.booking-widget__weekdays--pane {
-  margin-bottom: 0.25rem;
-}
-
-@media (max-width: 560px) {
-  .booking-widget__calendar--dual {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .booking-widget__month-pane:last-child {
-    border-left: none;
-    border-top: 1px solid rgba(0, 0, 0, 0.12);
-    padding-left: 0;
-    padding-top: 1rem;
-  }
-}
-
-.booking-widget__duration {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.7);
-  margin-bottom: 0.6rem;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 1 132px;
+  width: 132px;
+  min-width: 100px;
+  max-width: 100%;
+  max-height: 290px;
+  overflow-y: auto;
 }
 
 .booking-widget__slots {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
+/* The design has no heading / duration line above the pills; keep them for
+   screen readers only. */
+.booking-widget__duration,
 .booking-widget__slots-label {
-  font-weight: 700;
-  font-size: 0.95rem;
-  margin: 0 0 0.6rem;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .booking-widget__slot-list {
-  overflow-y: auto;
-  max-height: 260px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding-right: 0.25rem;
+  gap: 6px;
+}
+
+.booking-widget__slot-row {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 100%;
+  min-height: 34px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid #0060e6;
+  border-radius: 28px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.booking-widget__slot-row:hover {
+  background: rgba(0, 96, 230, 0.08);
+}
+
+.booking-widget__slot-row--selected,
+.booking-widget__slot-row--selected:hover {
+  background: #0060e6;
+  color: #ffffff;
+}
+
+.booking-widget__slot-row--unavailable,
+.booking-widget__slot-row--unavailable:hover {
+  background: #ffffff;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.booking-widget__slot-row:has(.booking-widget__slot-radio:focus-visible) {
+  outline: 2px solid #0060e6;
+  outline-offset: 2px;
+}
+
+.booking-widget__slot-radio {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.booking-widget__slot-text {
+  display: block;
+}
+
+.booking-widget__slot-tag,
+.booking-widget__slot-tag--low {
+  display: block;
+  color: inherit;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 13px;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .booking-widget__datetime-step {
+    flex-wrap: nowrap;
+    flex-direction: column;
+  }
+
+  .booking-widget__datetime-card {
+    flex: none;
+  }
+
+  /* One month + the times underneath on phones (both months still stack
+     for the date-only booking types). */
+  .booking-widget__datetime-card--times .booking-widget__month-pane:nth-child(2) {
+    display: none;
+  }
+
+  /* Larger touch targets on phones. */
+  .booking-widget__day {
+    max-width: 40px;
+    font-size: 14px;
+  }
+
+  .booking-widget__slots-pane {
+    flex: 1 1 100%;
+    width: 100%;
+    max-height: 260px;
+  }
+
+  .booking-widget__slot-row {
+    min-height: 40px;
+  }
+
+  .booking-widget__modal {
+    width: 96vw;
+    height: 92vh;
+    height: 92svh;
+    max-height: 92vh;
+  }
+
+  .booking-widget__overlay {
+    padding: 0.5rem;
+  }
 }
 
 .booking-widget__quantity {
@@ -876,59 +1082,6 @@ body.booking-widget-lock-scroll {
   font-size: 1.45rem;
   font-weight: 700;
   color: #111;
-}
-
-.booking-widget__slot-row {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  border: 1.5px solid rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  padding: 0.8rem 0.95rem;
-  cursor: pointer;
-  font-size: 1.02rem;
-  font-weight: 700;
-  color: #111;
-}
-
-.booking-widget__slot-row:hover {
-  border-color: #111;
-}
-
-.booking-widget__slot-row--selected {
-  border-color: #111;
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.booking-widget__slot-row--unavailable {
-  opacity: 0.45;
-  cursor: not-allowed;
-  background: rgba(0, 0, 0, 0.02);
-}
-
-.booking-widget__slot-row--unavailable:hover {
-  border-color: rgba(0, 0, 0, 0.2);
-}
-
-.booking-widget__slot-radio {
-  margin: 0;
-  flex-shrink: 0;
-  accent-color: #111;
-}
-
-.booking-widget__slot-text {
-  flex: 1;
-}
-
-.booking-widget__slot-tag {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.7);
-  white-space: nowrap;
-}
-
-.booking-widget__slot-tag--low {
-  color: #4a4a4a;
 }
 
 .booking-widget__modal-footer {
