@@ -4,7 +4,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { Link, useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -444,8 +444,8 @@ export default function BookingProductsPage() {
                           </button>
                         </td>
                         <td style={{ ...styles.td, ...styles.tdAction }}>
-                          <a
-                            href={`/app/products/${product.id.split("/").pop()}`}
+                          <Link
+                            to={`/app/products/${product.id.split("/").pop()}`}
                             style={styles.iconButton}
                             aria-label={`Configure ${product.title}`}
                           >
@@ -455,7 +455,7 @@ export default function BookingProductsPage() {
                               height={40}
                               alt=""
                             />
-                          </a>
+                          </Link>
                         </td>
                       </tr>
                     );

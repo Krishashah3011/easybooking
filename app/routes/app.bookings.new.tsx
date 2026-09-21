@@ -25,6 +25,190 @@ import {
 import { listEnabledLocations } from "../models/bookingLocation.server";
 import { listCustomFields, toPublicField } from "../models/customBookingField.server";
 import { formatTimeRangeDisplay } from "../utils/format";
+import {
+  BLUE,
+  BORDER,
+  LICENSE_BORDER,
+  TEXT_DARK,
+  TEXT_MUTED,
+  styles as settingsStyles,
+  saveWrapperStyle,
+  saveButtonStyle,
+} from "../components/SettingsUI";
+
+const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
+
+const S = {
+  page: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  } as React.CSSProperties,
+  headerRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "16px",
+    background: "#FFFFFF",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "8px",
+  } as React.CSSProperties,
+  headerTitle: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "18px",
+    letterSpacing: "0.02em",
+    color: TEXT_DARK,
+  } as React.CSSProperties,
+  card: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    padding: "16px",
+    background: "#FFFFFF",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "4px",
+  } as React.CSSProperties,
+  cardHeading: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "16px",
+    color: TEXT_DARK,
+  } as React.CSSProperties,
+  fieldsRow: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: "12px",
+  } as React.CSSProperties,
+  fieldBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    flex: "1 1 220px",
+    minWidth: "160px",
+  } as React.CSSProperties,
+  fieldLabel: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    color: TEXT_DARK,
+  } as React.CSSProperties,
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    height: "34px",
+    padding: "5px 10px",
+    background: "#FFFFFF",
+    border: `1px solid ${LICENSE_BORDER}`,
+    borderRadius: "4px",
+    fontFamily: "Inter",
+    fontSize: "14px",
+    color: TEXT_DARK,
+  } as React.CSSProperties,
+  select: {
+    width: "100%",
+    boxSizing: "border-box",
+    height: "34px",
+    padding: "5px 10px",
+    background: "#FFFFFF",
+    border: `1px solid ${LICENSE_BORDER}`,
+    borderRadius: "4px",
+    fontFamily: "Inter",
+    fontSize: "14px",
+    color: TEXT_DARK,
+  } as React.CSSProperties,
+  iconButton: {
+    display: "inline-flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "40px",
+    height: "40px",
+    padding: "10px",
+    borderRadius: "4px",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    color: BLUE,
+    textDecoration: "none",
+  } as React.CSSProperties,
+  quantityBox: {
+    display: "inline-flex",
+    alignItems: "stretch",
+    width: "110px",
+    height: "34px",
+    boxSizing: "border-box",
+    border: `1px solid ${LICENSE_BORDER}`,
+    borderRadius: "4px",
+    overflow: "hidden",
+    background: "#fff",
+  } as React.CSSProperties,
+  quantityStepBtn: {
+    flex: "1 1 auto",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    fontSize: "16px",
+    color: BLUE,
+  } as React.CSSProperties,
+  quantityValue: {
+    flex: "1 1 auto",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontFamily: "Inter",
+    fontSize: "14px",
+    color: TEXT_DARK,
+  } as React.CSSProperties,
+  calendarNavBtn: {
+    width: "38px",
+    height: "38px",
+    borderRadius: "999px",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    fontSize: "16px",
+    color: TEXT_DARK,
+  } as React.CSSProperties,
+  monthLabel: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    color: TEXT_DARK,
+    textAlign: "center",
+  } as React.CSSProperties,
+  weekdayRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7, 44px)",
+    gap: "0",
+    marginBottom: "4px",
+  } as React.CSSProperties,
+  weekdayLabel: {
+    fontFamily: "Inter",
+    fontSize: "12px",
+    textTransform: "uppercase",
+    color: TEXT_DARK,
+    textAlign: "center",
+  } as React.CSSProperties,
+  timeSlotBtn: (active: boolean, disabled: boolean): React.CSSProperties => ({
+    boxSizing: "border-box",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "10px 16px",
+    width: "100%",
+    height: "40px",
+    border: `1px solid ${BLUE}`,
+    borderRadius: "28px",
+    background: active ? BLUE : "transparent",
+    color: active ? "#fff" : TEXT_DARK,
+    fontFamily: "Inter",
+    fontSize: "13px",
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.5 : 1,
+  }),
+};
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
@@ -728,12 +912,12 @@ export default function NewBookingPage() {
   if (products.length === 0) {
     return (
       <s-page heading="New Booking" inlineSize="950px">
-        <s-section>
-          <s-paragraph>
+        <div style={S.card}>
+          <p style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_MUTED, margin: 0 }}>
             No products have booking enabled yet. Enable booking on a
             product first from the Products page.
-          </s-paragraph>
-        </s-section>
+          </p>
+        </div>
       </s-page>
     );
   }
@@ -765,560 +949,596 @@ export default function NewBookingPage() {
     monthFirstWeekday: number,
     monthAvailableSet: Set<string>,
   ) => (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(7, 2.4rem)",
-        gap: "0.25rem",
-        maxWidth: "20rem",
-      }}
-    >
-      {Array.from({ length: monthFirstWeekday }).map((_, i) => (
-        <span key={`blank-${year}-${month}-${i}`} />
-      ))}
-      {Array.from({ length: monthDaysInMonth }).map((_, i) => {
-        const day = i + 1;
-        const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        const isPickingCheckout =
-          selectedBookingType === "MULTI_DAY" && !!date && !checkoutDate;
-        const isAvailable = isPickingCheckout
-          ? dateStr > date
-          : monthAvailableSet.has(dateStr) && !bundleComplete;
-        const isSelected =
-          dateStr === date ||
-          (selectedBookingType === "MULTI_DAY" && dateStr === checkoutDate);
-        const isInRange =
-          selectedBookingType === "MULTI_DAY" &&
-          !!date &&
-          !!checkoutDate &&
-          dateStr > date &&
-          dateStr < checkoutDate;
-        return (
-          <button
-            key={dateStr}
-            type="button"
-            disabled={!isAvailable}
-            onClick={() => isAvailable && selectDate(dateStr)}
-            style={{
-              aspectRatio: "1",
-              border: "none",
-              borderRadius: "4px",
-              fontSize: "0.85rem",
-              cursor: isAvailable ? "pointer" : "not-allowed",
-              background: isSelected
-                ? "#111"
-                : isInRange
-                  ? "rgba(0,0,0,0.12)"
-                  : isAvailable
-                    ? "rgba(0,0,0,0.06)"
+    <div>
+      <div style={S.weekdayRow}>
+        {WEEKDAY_LETTERS.map((letter, i) => (
+          <span key={`wd-${year}-${month}-${i}`} style={S.weekdayLabel}>
+            {letter}
+          </span>
+        ))}
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 44px)",
+          gap: "8px",
+        }}
+      >
+        {Array.from({ length: monthFirstWeekday }).map((_, i) => (
+          <span key={`blank-${year}-${month}-${i}`} />
+        ))}
+        {Array.from({ length: monthDaysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const isPickingCheckout =
+            selectedBookingType === "MULTI_DAY" && !!date && !checkoutDate;
+          const isAvailable = isPickingCheckout
+            ? dateStr > date
+            : monthAvailableSet.has(dateStr) && !bundleComplete;
+          const isSelected =
+            dateStr === date ||
+            (selectedBookingType === "MULTI_DAY" && dateStr === checkoutDate);
+          const isInRange =
+            selectedBookingType === "MULTI_DAY" &&
+            !!date &&
+            !!checkoutDate &&
+            dateStr > date &&
+            dateStr < checkoutDate;
+          return (
+            <button
+              key={dateStr}
+              type="button"
+              disabled={!isAvailable}
+              onClick={() => isAvailable && selectDate(dateStr)}
+              style={{
+                width: "44px",
+                height: "44px",
+                border: "none",
+                borderRadius: "999px",
+                fontFamily: "Inter",
+                fontSize: "16px",
+                cursor: isAvailable ? "pointer" : "not-allowed",
+                background: isSelected
+                  ? BLUE
+                  : isInRange
+                    ? "rgba(0,96,230,0.12)"
                     : "transparent",
-              color: isSelected
-                ? "#fff"
-                : isAvailable
-                  ? "inherit"
-                  : "rgba(0,0,0,0.3)",
-            }}
-          >
-            {day}
-          </button>
-        );
-      })}
+                color: isSelected
+                  ? "#fff"
+                  : isAvailable
+                    ? TEXT_DARK
+                    : "#ADADAD",
+              }}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 
   return (
     <s-page heading="New Booking" inlineSize="950px">
-      <s-section heading="Product">
-        <s-select
-          label="Product"
-          value={bookableProductId}
-          onChange={(e: FieldChangeEvent) =>
-            setBookableProductId(e.currentTarget.value)
-          }
-        >
-          {products.map((p) => (
-            <s-option key={p.id} value={p.id}>
-              {p.title}
-            </s-option>
-          ))}
-        </s-select>
-      </s-section>
+      <div style={S.page}>
+        <div style={S.headerRow}>
+          <span style={S.headerTitle}>Add New Booking</span>
+          <a href="/app/bookings" style={S.iconButton} aria-label="Back to bookings">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 12.5L10 6.5L16 12.5" stroke={BLUE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
+        </div>
 
-      {locations.length > 0 && (
-        <s-section heading="Location">
-          <s-select
-            label="Location"
-            value={locationId}
-            onChange={(e: FieldChangeEvent) =>
-              setLocationId(e.currentTarget.value)
-            }
-          >
-            {locations.map((l) => (
-              <s-option key={l.id} value={l.id}>
-                {l.name}
-              </s-option>
-            ))}
-          </s-select>
-        </s-section>
-      )}
-
-      <s-section heading="Date">
-        {selectedBookingType === "MULTI_DAY" && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.15rem",
-              marginBottom: "0.75rem",
-            }}
-          >
-            <s-text weight="bold">Select your preferred date & time</s-text>
-            {multiDayStayLengthMessage && (
-              <s-text tone="subdued">{multiDayStayLengthMessage}</s-text>
-            )}
-          </div>
-        )}
-        {selectedBookingType === "BUNDLE" && bundleSessionCount !== null && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.15rem",
-              marginBottom: "0.75rem",
-            }}
-          >
-            <s-text weight="bold">Select your preferred date & time</s-text>
-            <s-text tone={bundleComplete ? "success" : "subdued"}>
-              {bundleComplete
-                ? `All ${bundleSessionCount} session(s) added for this bundle.`
-                : `Session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}` +
-                  (bundleValidityDeadline
-                    ? ` — must be booked by ${bundleValidityDeadline}`
-                    : "")}
-            </s-text>
-          </div>
-        )}
-        <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 auto", minWidth: "16rem" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "0.75rem",
-                maxWidth: isTwoMonthType ? "42rem" : "20rem",
-              }}
-            >
-              <s-button variant="tertiary" onClick={() => goToMonth(-1)}>
-                ‹
-              </s-button>
-              {!isTwoMonthType && (
-                <span style={{ fontWeight: 600 }}>
-                  {`${MONTH_NAMES[viewMonth - 1]} ${viewYear}`}
-                </span>
-              )}
-              <s-button variant="tertiary" onClick={() => goToMonth(1)}>
-                ›
-              </s-button>
+        <div style={S.card}>
+          <div style={S.fieldsRow}>
+            <div style={S.fieldBlock}>
+              <span style={S.fieldLabel}>Select Product</span>
+              <select
+                style={S.select}
+                value={bookableProductId}
+                onChange={(e: FieldChangeEvent) =>
+                  setBookableProductId(e.currentTarget.value)
+                }
+              >
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {isTwoMonthType ? (
-              <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-                <div>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      marginBottom: "0.5rem",
-                      textAlign: "center",
-                    }}
-                  >
-                    {MONTH_NAMES[viewMonth - 1]} {viewYear}
-                  </div>
-                  {isLoadingAvailability ? (
-                    <s-paragraph>Loading availability…</s-paragraph>
-                  ) : (
-                    renderMonthGrid(
-                      viewYear,
-                      viewMonth,
-                      daysInMonth,
-                      firstWeekday,
-                      availableSet,
-                    )
-                  )}
-                  {!isLoadingAvailability && availableDates.length === 0 && (
-                    <s-paragraph>No availability this month.</s-paragraph>
-                  )}
-                </div>
-                <div
-                  style={{
-                    width: "1px",
-                    alignSelf: "stretch",
-                    background: "#e1e3e5",
-                  }}
-                />
-                <div>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      marginBottom: "0.5rem",
-                      textAlign: "center",
-                    }}
-                  >
-                    {MONTH_NAMES[secondMonth - 1]} {secondYear}
-                  </div>
-                  {isLoadingSecondMonth ? (
-                    <s-paragraph>Loading availability…</s-paragraph>
-                  ) : (
-                    renderMonthGrid(
-                      secondYear,
-                      secondMonth,
-                      secondDaysInMonth,
-                      secondFirstWeekday,
-                      secondAvailableSet,
-                    )
-                  )}
-                  {!isLoadingSecondMonth && secondMonthDates.length === 0 && (
-                    <s-paragraph>No availability this month.</s-paragraph>
-                  )}
-                </div>
-              </div>
-            ) : isLoadingAvailability ? (
-              <s-paragraph>Loading availability…</s-paragraph>
-            ) : (
-              <>
-                {renderMonthGrid(
-                  viewYear,
-                  viewMonth,
-                  daysInMonth,
-                  firstWeekday,
-                  availableSet,
-                )}
-                {availableDates.length === 0 && (
-                  <s-paragraph>No availability this month.</s-paragraph>
-                )}
-              </>
-            )}
-            {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  marginTop: "1rem",
-                  padding: "0.3rem 0.65rem",
-                  borderRadius: "999px",
-                  background: "#e6f0fb",
-                }}
-              >
-                <s-text tone="info" weight="bold">
-                  Check-in {date}. Now pick a check-out date.
-                </s-text>
-              </div>
-            )}
-            {selectedBookingType === "MULTI_DAY" && checkoutError && (
-              <s-banner tone="critical">{checkoutError}</s-banner>
-            )}
-            {selectedBookingType === "MULTI_DAY" && date && checkoutDate && (
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  marginTop: "1rem",
-                  padding: "0.3rem 0.65rem",
-                  borderRadius: "999px",
-                  background: "#e3f6e8",
-                }}
-              >
-                <s-text tone="success" weight="bold">
-                  {date} → {checkoutDate} ({nightsBetween(date, checkoutDate)}{" "}
-                  night{nightsBetween(date, checkoutDate) === 1 ? "" : "s"})
-                </s-text>
-                <s-button
-                  variant="tertiary"
-                  onClick={() => {
-                    setDate("");
-                    setCheckoutDate("");
-                    setCheckoutError(null);
-                    setSelectedSlot(null);
-                  }}
+            {locations.length > 0 && (
+              <div style={S.fieldBlock}>
+                <span style={S.fieldLabel}>Add Location</span>
+                <select
+                  style={S.select}
+                  value={locationId}
+                  onChange={(e: FieldChangeEvent) =>
+                    setLocationId(e.currentTarget.value)
+                  }
                 >
-                  Change dates
-                </s-button>
+                  {locations.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
           </div>
+        </div>
 
-          {date &&
-            (selectedBookingType === "SLOT" ||
-              selectedBookingType === "BUNDLE") && (
-              <div
+        <div style={S.card}>
+          {selectedBookingType === "MULTI_DAY" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={S.cardHeading}>Select your preferred date & time</span>
+              {multiDayStayLengthMessage && (
+                <span style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                  {multiDayStayLengthMessage}
+                </span>
+              )}
+            </div>
+          )}
+          {selectedBookingType === "BUNDLE" && bundleSessionCount !== null && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={S.cardHeading}>Select your preferred date & time</span>
+              <span
                 style={{
-                  flex: "0 0 14rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.5rem",
+                  fontFamily: "Inter",
+                  fontSize: "13px",
+                  color: bundleComplete ? "#1a7f37" : TEXT_MUTED,
                 }}
               >
-                <s-text weight="bold">
-                  {selectedBookingType === "BUNDLE" &&
-                  bundleSessionCount !== null
-                    ? `Available times \u2014 session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
-                    : "Available times"}
-                </s-text>
-                {isLoadingSlots ? (
-                  <s-paragraph>Loading available times…</s-paragraph>
-                ) : slots.length === 0 ? (
-                  <s-paragraph>No slots at all on this date.</s-paragraph>
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.4rem",
+                {bundleComplete
+                  ? `All ${bundleSessionCount} session(s) added for this bundle.`
+                  : `Session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}` +
+                    (bundleValidityDeadline
+                      ? ` — must be booked by ${bundleValidityDeadline}`
+                      : "")}
+              </span>
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: "32px", alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 auto", minWidth: "16rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "16px",
+                  maxWidth: isTwoMonthType ? "42rem" : "20rem",
+                }}
+              >
+                <button type="button" style={S.calendarNavBtn} onClick={() => goToMonth(-1)}>
+                  ‹
+                </button>
+                {!isTwoMonthType && (
+                  <span style={S.monthLabel}>
+                    {`${MONTH_NAMES[viewMonth - 1]} ${viewYear}`}
+                  </span>
+                )}
+                <button type="button" style={S.calendarNavBtn} onClick={() => goToMonth(1)}>
+                  ›
+                </button>
+              </div>
+
+              {isTwoMonthType ? (
+                <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ ...S.monthLabel, fontWeight: 600, marginBottom: "8px" }}>
+                      {MONTH_NAMES[viewMonth - 1]} {viewYear}
+                    </div>
+                    {isLoadingAvailability ? (
+                      <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                        Loading availability…
+                      </p>
+                    ) : (
+                      renderMonthGrid(
+                        viewYear,
+                        viewMonth,
+                        daysInMonth,
+                        firstWeekday,
+                        availableSet,
+                      )
+                    )}
+                    {!isLoadingAvailability && availableDates.length === 0 && (
+                      <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                        No availability this month.
+                      </p>
+                    )}
+                  </div>
+                  <div style={{ width: "1px", alignSelf: "stretch", background: BORDER }} />
+                  <div>
+                    <div style={{ ...S.monthLabel, fontWeight: 600, marginBottom: "8px" }}>
+                      {MONTH_NAMES[secondMonth - 1]} {secondYear}
+                    </div>
+                    {isLoadingSecondMonth ? (
+                      <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                        Loading availability…
+                      </p>
+                    ) : (
+                      renderMonthGrid(
+                        secondYear,
+                        secondMonth,
+                        secondDaysInMonth,
+                        secondFirstWeekday,
+                        secondAvailableSet,
+                      )
+                    )}
+                    {!isLoadingSecondMonth && secondMonthDates.length === 0 && (
+                      <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                        No availability this month.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : isLoadingAvailability ? (
+                <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                  Loading availability…
+                </p>
+              ) : (
+                <>
+                  {renderMonthGrid(
+                    viewYear,
+                    viewMonth,
+                    daysInMonth,
+                    firstWeekday,
+                    availableSet,
+                  )}
+                  {availableDates.length === 0 && (
+                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                      No availability this month.
+                    </p>
+                  )}
+                </>
+              )}
+              {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginTop: "16px",
+                    padding: "5px 10px",
+                    borderRadius: "999px",
+                    background: "rgba(0,96,230,0.08)",
+                  }}
+                >
+                  <span style={{ fontFamily: "Inter", fontSize: "13px", fontWeight: 600, color: BLUE }}>
+                    Check-in {date}. Now pick a check-out date.
+                  </span>
+                </div>
+              )}
+              {selectedBookingType === "MULTI_DAY" && checkoutError && (
+                <div style={{ ...S.card, borderColor: "#C0392B", padding: "10px" }}>
+                  <span style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B" }}>
+                    {checkoutError}
+                  </span>
+                </div>
+              )}
+              {selectedBookingType === "MULTI_DAY" && date && checkoutDate && (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginTop: "16px",
+                    padding: "5px 10px",
+                    borderRadius: "999px",
+                    background: "#e3f6e8",
+                  }}
+                >
+                  <span style={{ fontFamily: "Inter", fontSize: "13px", fontWeight: 600, color: "#1a7f37" }}>
+                    {date} → {checkoutDate} ({nightsBetween(date, checkoutDate)}{" "}
+                    night{nightsBetween(date, checkoutDate) === 1 ? "" : "s"})
+                  </span>
+                  <button
+                    type="button"
+                    style={{ border: "none", background: "transparent", color: BLUE, fontFamily: "Inter", fontSize: "13px", cursor: "pointer" }}
+                    onClick={() => {
+                      setDate("");
+                      setCheckoutDate("");
+                      setCheckoutError(null);
+                      setSelectedSlot(null);
                     }}
                   >
-                    {slots.map((slot) => (
-                      <s-button
-                        key={slot.startsAt}
-                        variant={
-                          selectedSlot?.startsAt === slot.startsAt
-                            ? "primary"
-                            : "secondary"
-                        }
-                        {...(!slot.available ? { disabled: true } : {})}
-                        onClick={() => {
-                          if (slot.available) setSelectedSlot(slot);
-                        }}
-                      >
-                        {formatTimeRangeDisplay(slot.start, slot.end)}
-                        {!slot.available
-                          ? " (Booked)"
-                          : typeof slot.remainingCapacity === "number"
-                            ? ` (${
-                                slot.remainingCapacity === 1
-                                  ? "1 spot left"
-                                  : `${slot.remainingCapacity} spots left`
-                              })`
-                            : ""}
-                      </s-button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                    Change dates
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {date &&
+              (selectedBookingType === "SLOT" ||
+                selectedBookingType === "BUNDLE") && (
+                <div
+                  style={{
+                    flex: "0 0 14rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  <span style={S.fieldLabel}>
+                    {selectedBookingType === "BUNDLE" &&
+                    bundleSessionCount !== null
+                      ? `Available times \u2014 session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
+                      : "Available times"}
+                  </span>
+                  {isLoadingSlots ? (
+                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                      Loading available times…
+                    </p>
+                  ) : slots.length === 0 ? (
+                    <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                      No slots at all on this date.
+                    </p>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {slots.map((slot) => (
+                        <button
+                          key={slot.startsAt}
+                          type="button"
+                          style={S.timeSlotBtn(
+                            selectedSlot?.startsAt === slot.startsAt,
+                            !slot.available,
+                          )}
+                          disabled={!slot.available}
+                          onClick={() => {
+                            if (slot.available) setSelectedSlot(slot);
+                          }}
+                        >
+                          {formatTimeRangeDisplay(slot.start, slot.end)}
+                          {!slot.available
+                            ? " (Booked)"
+                            : typeof slot.remainingCapacity === "number"
+                              ? ` (${
+                                  slot.remainingCapacity === 1
+                                    ? "1 spot left"
+                                    : `${slot.remainingCapacity} spots left`
+                                })`
+                              : ""}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+          </div>
         </div>
-      </s-section>
 
-      {date && selectedBookingType === "FULL_DAY" && (
-        <s-section heading="Booking">
-          <s-paragraph>{formatTimeRangeDisplay(fullDayStartTime, fullDayEndTime)} {"\u2014"} {date}</s-paragraph>
-        </s-section>
-      )}
+        {date && selectedBookingType === "FULL_DAY" && (
+          <div style={S.card}>
+            <span style={S.cardHeading}>Booking</span>
+            <p style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_DARK, margin: 0 }}>
+              {formatTimeRangeDisplay(fullDayStartTime, fullDayEndTime)} {"\u2014"} {date}
+            </p>
+          </div>
+        )}
 
-      {selectedSlot &&
-        selectedBookingType === "BUNDLE" &&
-        bundleSessionsQueued.length > 0 && (
-          <s-section heading="Quantity">
-            <s-text tone="subdued">
-              {bundleSessionsQueued[0].quantity} — set on the first session of
-              this bundle.
-            </s-text>
-            <div style={{ marginTop: "0.75rem" }}>
-              <s-button variant="primary" onClick={handleAddToList}>
-                {bundleSessionCount !== null &&
+        {selectedSlot &&
+          selectedBookingType === "BUNDLE" &&
+          bundleSessionsQueued.length > 0 && (
+            <div style={S.card}>
+              <span style={S.cardHeading}>Quantity</span>
+              <span style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                {bundleSessionsQueued[0].quantity} — set on the first session of
+                this bundle.
+              </span>
+              <div>
+                <button
+                  type="button"
+                  style={{ ...saveButtonStyle(false), width: "auto", padding: "10px 20px" }}
+                  onClick={handleAddToList}
+                >
+                  {bundleSessionCount !== null &&
+                  bundleSessionsQueued.length + 1 < bundleSessionCount
+                    ? "Next slot"
+                    : "Add to list"}
+                </button>
+              </div>
+            </div>
+          )}
+
+        {selectedSlot &&
+          !(selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0) && (
+          <div style={S.card}>
+            <span style={S.cardHeading}>Quantity</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={S.quantityBox}>
+                <button
+                  type="button"
+                  style={S.quantityStepBtn}
+                  disabled={quantity <= 1}
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                >
+                  −
+                </button>
+                <span style={S.quantityValue}>{quantity}</span>
+                <button
+                  type="button"
+                  style={S.quantityStepBtn}
+                  disabled={quantity >= maxQuantity}
+                  onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                >
+                  +
+                </button>
+              </div>
+              {maxQuantity <= 5 && (
+                <span style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED }}>
+                  Only {maxQuantity} left for this slot.
+                </span>
+              )}
+            </div>
+            <div>
+              <button
+                type="button"
+                style={{ ...saveButtonStyle(false), width: "auto", padding: "10px 20px" }}
+                onClick={handleAddToList}
+              >
+                {selectedBookingType === "BUNDLE" &&
+                bundleSessionCount !== null &&
                 bundleSessionsQueued.length + 1 < bundleSessionCount
                   ? "Next slot"
                   : "Add to list"}
-              </s-button>
+              </button>
             </div>
-          </s-section>
+          </div>
         )}
 
-      {selectedSlot &&
-        !(selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0) && (
-        <s-section heading="Quantity">
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "stretch",
-                width: "fit-content",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                overflow: "hidden",
-                background: "#fff",
-              }}
-            >
-              <s-button
-                variant="tertiary"
-                {...(quantity <= 1 ? { disabled: true } : {})}
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              >
-                −
-              </s-button>
-              <span
-                style={{
-                  minWidth: "3rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 600,
-                  borderLeft: "1px solid #e1e3e5",
-                  borderRight: "1px solid #e1e3e5",
-                  background: "#fafbfb",
-                }}
-              >
-                {quantity}
-              </span>
-              <s-button
-                variant="tertiary"
-                {...(quantity >= maxQuantity ? { disabled: true } : {})}
-                onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-              >
-                +
-              </s-button>
-            </div>
-            {maxQuantity <= 5 && (
-              <s-text tone="subdued">Only {maxQuantity} left for this slot.</s-text>
-            )}
-          </div>
-          <div style={{ marginTop: "0.75rem" }}>
-            <s-button variant="primary" onClick={handleAddToList}>
-              {selectedBookingType === "BUNDLE" &&
-              bundleSessionCount !== null &&
-              bundleSessionsQueued.length + 1 < bundleSessionCount
-                ? "Next slot"
-                : "Add to list"}
-            </s-button>
-          </div>
-        </s-section>
-      )}
-
-      {queuedSlots.length > 0 && (
-        <s-section heading="Slots to book">
-          <s-stack direction="block" gap="small">
-            {queuedSlots.map((entry, index) => (
-              <s-stack
-                key={entry.bookableProductId + entry.date + entry.slot.startsAt}
-                direction="inline"
-                gap="small"
-                alignItems="center"
-              >
-                <s-text>
-                  <b>{entry.productTitle}</b> —{" "}
-                  {(() => {
-                    const entryType =
-                      products.find((p) => p.id === entry.bookableProductId)
-                        ?.bookingType ?? "SLOT";
-                    if (entryType === "FULL_DAY") {
-                      return `${entry.date} \u00b7 ${formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}`;
-                    }
-                    if (entryType === "MULTI_DAY") {
-                      return `${entry.date} \u2192 ${entry.endDate ?? "—"}`;
-                    }
-                    return `${entry.date} | ${formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}`;
-                  })()}
-                  {entry.quantity > 1 ? ` × ${entry.quantity}` : ""}
-                </s-text>
-                {entry.error && (
-                  <s-text tone="critical">{entry.error}</s-text>
-                )}
-                <s-button
-                  variant="tertiary"
-                  onClick={() => handleRemoveQueued(index)}
-                  {...(isCreatingBooking ? { disabled: true } : {})}
+        {queuedSlots.length > 0 && (
+          <div style={S.card}>
+            <span style={S.cardHeading}>Slots to book</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {queuedSlots.map((entry, index) => (
+                <div
+                  key={entry.bookableProductId + entry.date + entry.slot.startsAt}
+                  style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}
                 >
-                  Remove
-                </s-button>
-              </s-stack>
-            ))}
-          </s-stack>
-        </s-section>
-      )}
+                  <span style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_DARK }}>
+                    <b>{entry.productTitle}</b> —{" "}
+                    {(() => {
+                      const entryType =
+                        products.find((p) => p.id === entry.bookableProductId)
+                          ?.bookingType ?? "SLOT";
+                      if (entryType === "FULL_DAY") {
+                        return `${entry.date} \u00b7 ${formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}`;
+                      }
+                      if (entryType === "MULTI_DAY") {
+                        return `${entry.date} \u2192 ${entry.endDate ?? "—"}`;
+                      }
+                      return `${entry.date} | ${formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}`;
+                    })()}
+                    {entry.quantity > 1 ? ` × ${entry.quantity}` : ""}
+                  </span>
+                  {entry.error && (
+                    <span style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B" }}>
+                      {entry.error}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    style={{ border: "none", background: "transparent", color: BLUE, fontFamily: "Inter", fontSize: "13px", cursor: isCreatingBooking ? "default" : "pointer" }}
+                    disabled={isCreatingBooking}
+                    onClick={() => handleRemoveQueued(index)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {customFields.length > 0 && (
-        <s-section heading="Notes">
-          <s-stack direction="block" gap="base">
-            {customFields.map((field) => (
-              <s-text-field
-                key={field.fieldKey}
-                label={field.label}
-                {...(field.required ? { required: true } : {})}
-                value={customFieldValues[field.fieldKey] ?? ""}
-                onChange={(e: FieldChangeEvent) => {
-                  const value = e.currentTarget.value;
-                  setCustomFieldValues((prev) => ({
-                    ...prev,
-                    [field.fieldKey]: value,
-                  }));
-                }}
-              ></s-text-field>
-            ))}
-          </s-stack>
-        </s-section>
-      )}
+        {customFields.length > 0 && (
+          <div style={S.card}>
+            <span style={S.cardHeading}>Notes</span>
+            <div style={S.fieldsRow}>
+              {customFields.map((field) => (
+                <div key={field.fieldKey} style={S.fieldBlock}>
+                  <span style={S.fieldLabel}>{field.label}</span>
+                  <input
+                    type="text"
+                    style={S.input}
+                    required={field.required}
+                    value={customFieldValues[field.fieldKey] ?? ""}
+                    onChange={(e: FieldChangeEvent) => {
+                      const value = e.currentTarget.value;
+                      setCustomFieldValues((prev) => ({
+                        ...prev,
+                        [field.fieldKey]: value,
+                      }));
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {queuedSlots.length > 0 && (
-        <s-section heading="Customer details">
-          <s-stack direction="inline" gap="base">
-            <s-text-field
-              label="Name"
-              required
-              value={customerName}
-              error={nameError}
-              onChange={(e: FieldChangeEvent) =>
-                setCustomerName(e.currentTarget.value)
-              }
-              onBlur={() => setNameTouched(true)}
-            ></s-text-field>
-              <s-text-field
-                label="Email"
-                required
-                value={customerEmail}
-                error={emailError}
-                onChange={(e: FieldChangeEvent) =>
-                  setCustomerEmail(e.currentTarget.value)
-                }
-                onBlur={() => setEmailTouched(true)}
-              ></s-text-field>
-            <s-text-field
-              label="Phone"
-              value={customerPhone}
-              onChange={(e: FieldChangeEvent) =>
-                setCustomerPhone(e.currentTarget.value)
-              }
-            ></s-text-field>
-          </s-stack>
+        {queuedSlots.length > 0 && (
+          <div style={S.card}>
+            <span style={S.cardHeading}>Customer details</span>
+            <div style={S.fieldsRow}>
+              <div style={S.fieldBlock}>
+                <span style={S.fieldLabel}>Customer Name</span>
+                <input
+                  type="text"
+                  required
+                  style={{ ...S.input, ...(nameError ? { borderColor: "#C0392B" } : {}) }}
+                  value={customerName}
+                  onChange={(e: FieldChangeEvent) => setCustomerName(e.currentTarget.value)}
+                  onBlur={() => setNameTouched(true)}
+                />
+                {nameError && (
+                  <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{nameError}</span>
+                )}
+              </div>
+              <div style={S.fieldBlock}>
+                <span style={S.fieldLabel}>Customer Email</span>
+                <input
+                  type="email"
+                  required
+                  style={{ ...S.input, ...(emailError ? { borderColor: "#C0392B" } : {}) }}
+                  value={customerEmail}
+                  onChange={(e: FieldChangeEvent) => setCustomerEmail(e.currentTarget.value)}
+                  onBlur={() => setEmailTouched(true)}
+                />
+                {emailError && (
+                  <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{emailError}</span>
+                )}
+              </div>
+              <div style={S.fieldBlock}>
+                <span style={S.fieldLabel}>Phone number</span>
+                <input
+                  type="tel"
+                  style={S.input}
+                  value={customerPhone}
+                  onChange={(e: FieldChangeEvent) => setCustomerPhone(e.currentTarget.value)}
+                />
+              </div>
+            </div>
 
-          {createError && <s-banner tone="critical">{createError}</s-banner>}
+            {createError && (
+              <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                {createError}
+              </p>
+            )}
 
-          {submitAttempted && (nameError || emailError) && (
-            <s-banner tone="critical">
-              Please fix the highlighted fields before creating this booking.
-            </s-banner>
-          )}
+            {submitAttempted && (nameError || emailError) && (
+              <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                Please fix the highlighted fields before creating this booking.
+              </p>
+            )}
 
-          {incompleteBundleTitles.length > 0 && (
-            <s-banner tone="critical">
-              {incompleteBundleTitles.length === 1
-                ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
-                : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
-            </s-banner>
-          )}
+            {incompleteBundleTitles.length > 0 && (
+              <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                {incompleteBundleTitles.length === 1
+                  ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
+                  : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
+              </p>
+            )}
 
-          {}
-          <s-button
-            variant="primary"
-            onClick={handleCreateBooking}
-            {...(isCreatingBooking ? { loading: true } : {})}
-          >
-            {queuedSlots.length > 1
-              ? `Create ${queuedSlots.length} bookings`
-              : "Create booking"}
-          </s-button>
-        </s-section>
-      )}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div style={saveWrapperStyle()}>
+                <button
+                  type="button"
+                  style={saveButtonStyle(isCreatingBooking)}
+                  disabled={isCreatingBooking}
+                  onClick={handleCreateBooking}
+                >
+                  {queuedSlots.length > 1
+                    ? `Create ${queuedSlots.length} bookings`
+                    : "Create Booking"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </s-page>
   );
 }
