@@ -588,13 +588,33 @@ const S: Record<string, React.CSSProperties> = {
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
+  // Last row (Booked at / Note / actions): everything sits on the bottom edge
+  // of the boxes, 10px apart, like the Figma. The boxes share the free width
+  // and the buttons keep their own size.
+  actionRow: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-end",
+    gap: "10px",
+    width: "100%",
+  },
+  actionRowField: {
+    flex: "1 1 0",
+    minWidth: "160px",
+  },
   cancelBookingWrap: {
     display: "flex",
     flexDirection: "row",
     alignItems: "flex-end",
-    flex: "1 1 140px",
-    minWidth: "140px",
     justifyContent: "flex-end",
+    flex: "0 0 auto",
+    marginLeft: "auto",
+    gap: "10px",
+  },
+  // Keeps the boxes the same width when there are no buttons.
+  actionSpacer: {
+    flex: "0 0 141px",
   },
   cancelBookingBtn: {
     display: "inline-flex",
@@ -607,6 +627,25 @@ const S: Record<string, React.CSSProperties> = {
     border: "none",
     background: "transparent",
     color: "#E00000",
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "16px",
+    lineHeight: "19px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+  // Same size / font / padding as Cancel Booking, keeps the blue colour.
+  rescheduleBookingBtn: {
+    display: "inline-flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "10px",
+    gap: "4px",
+    height: "34px",
+    borderRadius: "10px",
+    border: "none",
+    background: "transparent",
+    color: BLUE,
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "16px",
@@ -755,12 +794,14 @@ function DetailRow({
 function FieldBlock({
   label,
   children,
+  style,
 }: {
   label: string;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }) {
   return (
-    <div style={S.fieldBlock}>
+    <div style={style ? { ...S.fieldBlock, ...style } : S.fieldBlock}>
       <span style={S.fieldBlockLabel}>{label}</span>
       <div style={S.fieldBlockBox}>{children}</div>
     </div>
@@ -1096,13 +1137,13 @@ function BookingDetails({
       <hr style={S.detailsDivider} />
 
       {/* Row 3: Booked at / Note / Cancel Booking action */}
-      <div style={S.fieldsRow}>
-        <FieldBlock label="Booked at">
+      <div style={S.actionRow}>
+        <FieldBlock label="Booked at" style={S.actionRowField}>
           {formatInstantInTimezone(booking.createdAt, booking.locationTimezone)}
           {" · "}
           {bookingSourceLabel(booking.source)}
         </FieldBlock>
-        <FieldBlock label="Note">
+        <FieldBlock label="Note" style={S.actionRowField}>
           <BookingNotes
             responses={booking.customFieldResponses}
             labels={customFieldLabels}
@@ -1114,7 +1155,7 @@ function BookingDetails({
             {!isRescheduling && booking.bookingType === "SLOT" && (
               <button
                 type="button"
-                style={{ ...S.textButton, marginRight: "4px" }}
+                style={S.rescheduleBookingBtn}
                 onClick={() => setIsRescheduling(true)}
               >
                 Reschedule
@@ -1129,7 +1170,7 @@ function BookingDetails({
             </button>
           </div>
         ) : (
-          <div style={{ flex: "1 1 140px", minWidth: "140px" }} />
+          <div style={S.actionSpacer} />
         )}
       </div>
 
@@ -1274,13 +1315,13 @@ function BundleGroupDetails({
       )}
 
       {/* Final row: Booked at / Note / Cancel Booking action */}
-      <div style={S.fieldsRow}>
-        <FieldBlock label="Booked at">
+      <div style={S.actionRow}>
+        <FieldBlock label="Booked at" style={S.actionRowField}>
           {formatInstantInTimezone(first.createdAt, first.locationTimezone)}
           {" · "}
           {bookingSourceLabel(first.source)}
         </FieldBlock>
-        <FieldBlock label="Note">
+        <FieldBlock label="Note" style={S.actionRowField}>
           <BookingNotes
             responses={first.customFieldResponses}
             labels={customFieldLabels}
@@ -1299,7 +1340,7 @@ function BundleGroupDetails({
             </button>
           </div>
         ) : (
-          <div style={{ flex: "1 1 140px", minWidth: "140px" }} />
+          <div style={S.actionSpacer} />
         )}
       </div>
     </div>
