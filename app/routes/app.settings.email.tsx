@@ -70,7 +70,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return { ok: true as const, kind: "reset" as const, templates };
   }
 
-  // intent === "save": saves SMTP settings and all email templates together
   const { values, errors } = parseSmtpSettingsForm(formData);
   if (Object.keys(errors).length > 0) {
     return { ok: false as const, kind: "save" as const, errors, values };
@@ -187,8 +186,6 @@ export default function EmailSettingsTab() {
       setTemplateField(type, "body", `${current}${token}`);
       return;
     }
-    // Insert at the cursor position inside the rich text editor; the
-    // editor's own onChange keeps templateValues in sync afterward.
     editorHandle.insertText(token);
   };
 
@@ -227,7 +224,6 @@ export default function EmailSettingsTab() {
   useEffect(() => {
     registerSave(handleSave, isSaving);
     return () => registerSave(null, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerSave, smtpValues, templateValues, isSaving]);
 
   return (
@@ -380,32 +376,33 @@ export default function EmailSettingsTab() {
 
                   {isOpen && (
                     <>
-                      <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                        <button
-                          type="button"
-                          onClick={() => togglePreview(template.type)}
-                          style={resetButtonStyle(false)}
-                        >
-                          {previewOpen[template.type] ? "Hide preview" : "Preview"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleResetTemplate(template.type)}
-                          disabled={!template.isCustomized || isResetting}
-                          style={resetButtonStyle(!template.isCustomized || isResetting)}
-                        >
-                          Reset to default
-                        </button>
-                      </div>
-
-                      <div style={styles.clientFieldGroup}>
-                        <div style={styles.clientFieldLabel}>Subject</div>
-                        <input
-                          type="text"
-                          style={styles.clientInput}
-                          value={editable.subject}
-                          onChange={(e) => setTemplateField(template.type, "subject", e.target.value)}
-                        />
+                      <div style={subjectRowStyle}>
+                        <div style={subjectFieldGroupStyle}>
+                          <div style={styles.clientFieldLabel}>Subject</div>
+                          <input
+                            type="text"
+                            style={styles.clientInput}
+                            value={editable.subject}
+                            onChange={(e) => setTemplateField(template.type, "subject", e.target.value)}
+                          />
+                        </div>
+                        <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            onClick={() => togglePreview(template.type)}
+                            style={resetButtonStyle(false)}
+                          >
+                            {previewOpen[template.type] ? "Hide preview" : "Preview"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleResetTemplate(template.type)}
+                            disabled={!template.isCustomized || isResetting}
+                            style={resetButtonStyle(!template.isCustomized || isResetting)}
+                          >
+                            Reset to default
+                          </button>
+                        </div>
                       </div>
 
                       <div style={editorPreviewRowStyle}>
@@ -435,6 +432,9 @@ export default function EmailSettingsTab() {
 
                         {previewOpen[template.type] && (
                           <div style={previewColumnStyle}>
+                            <div style={hiddenLabelSpacerStyle} aria-hidden="true">
+                              Email Body
+                            </div>
                             <EmailPreview type={template.type} subject={editable.subject} body={editable.body} />
                           </div>
                         )}
@@ -475,14 +475,27 @@ function EmailPreview({
   );
 }
 
+const subjectRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-end",
+  gap: "16px",
+};
+
+const subjectFieldGroupStyle: React.CSSProperties = {
+  ...styles.clientFieldGroup,
+  flex: "1 1 50%",
+  minWidth: 0,
+};
+
 const editorPreviewRowStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  display: "flex",
   alignItems: "stretch",
   gap: "16px",
 };
 
 const editorColumnStyle: React.CSSProperties = {
+  flex: "0 1 50%",
+  maxWidth: "50%",
   minWidth: 0,
   display: "flex",
   flexDirection: "column",
@@ -494,9 +507,19 @@ const editorFieldGroupStyle: React.CSSProperties = {
 };
 
 const previewColumnStyle: React.CSSProperties = {
+  flex: "0 1 50%",
+  maxWidth: "50%",
   minWidth: 0,
   display: "flex",
   flexDirection: "column",
+  gap: "4px",
+};
+
+const hiddenLabelSpacerStyle: React.CSSProperties = {
+  ...styles.clientFieldLabel,
+  visibility: "hidden",
+  height: "17px",
+  lineHeight: "17px",
 };
 
 const previewWrapStyle: React.CSSProperties = {
@@ -507,7 +530,6 @@ const previewWrapStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   flex: 1,
-  height: "100%",
 };
 
 const previewNoteStyle: React.CSSProperties = {
@@ -534,7 +556,6 @@ const previewBodyStyle: React.CSSProperties = {
   fontSize: "14px",
   color: TEXT_DARK,
   lineHeight: 1.5,
-  minHeight: "140px",
   flex: 1,
 };
 

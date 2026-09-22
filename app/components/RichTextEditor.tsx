@@ -162,7 +162,7 @@ const toolbarStyle: React.CSSProperties = {
 
 const editorAreaStyle: React.CSSProperties = {
   padding: "10px",
-  minHeight: "140px",
+  minHeight: "220px",
   flex: 1,
   fontFamily: "Inter",
   fontSize: "14px",
@@ -180,7 +180,7 @@ const footerStyle: React.CSSProperties = {
 
 const PROSEMIRROR_CSS = `
   .rte-wrap .ProseMirror {
-    min-height: 140px;
+    min-height: 220px;
     outline: none;
   }
   .rte-wrap .ProseMirror p {
