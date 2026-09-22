@@ -10,6 +10,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
   listBookableProducts,
+  setAllBookableProductsEnabled,
   setBookableProductEnabled,
 } from "../models/bookableProduct.server";
 import { listEnabledLocations } from "../models/bookingLocation.server";
@@ -58,6 +59,27 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER}`,
     borderRadius: "8px",
+  },
+  headerActions: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "16px",
+    flexWrap: "wrap",
+  },
+  enableAllWrap: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "8px",
+  },
+  enableAllLabel: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    whiteSpace: "nowrap",
   },
   listCard: {
     boxSizing: "border-box",
@@ -273,9 +295,39 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
 
+  const intent = String(formData.get("intent") ?? "toggle");
+  const isEnabled = formData.get("isEnabled") === "true";
+
+  if (intent === "bulkToggle") {
+    if (isEnabled) {
+      const enabledLocations = await listEnabledLocations(session.shop);
+      if (enabledLocations.length === 0) {
+        return {
+          ok: false as const,
+          error:
+            "Add at least one location in Booking Settings before enabling booking for products.",
+        };
+      }
+    }
+
+    const productsRaw = String(formData.get("products") ?? "[]");
+    let products: { id: string; title: string }[] = [];
+    try {
+      products = JSON.parse(productsRaw);
+    } catch {
+      products = [];
+    }
+
+    if (products.length === 0) {
+      return { ok: false as const };
+    }
+
+    await setAllBookableProductsEnabled(session.shop, products, isEnabled);
+    return { ok: true as const };
+  }
+
   const productId = String(formData.get("productId") ?? "");
   const productTitle = String(formData.get("productTitle") ?? "");
-  const isEnabled = formData.get("isEnabled") === "true";
 
   if (!productId || !productTitle) {
     return { ok: false as const };
@@ -309,9 +361,14 @@ export default function BookingProductsPage() {
   const [query, setQuery] = useState("");
 
   const isSubmitting = fetcher.state !== "idle";
-  const pendingProductId = isSubmitting
-    ? String(fetcher.formData?.get("productId") ?? "")
+  const pendingIntent = isSubmitting
+    ? String(fetcher.formData?.get("intent") ?? "toggle")
     : "";
+  const isBulkSubmitting = pendingIntent === "bulkToggle";
+  const pendingProductId =
+    isSubmitting && !isBulkSubmitting
+      ? String(fetcher.formData?.get("productId") ?? "")
+      : "";
 
   useEffect(() => {
     if (fetcher.data && !fetcher.data.ok && "error" in fetcher.data) {
@@ -325,6 +382,25 @@ export default function BookingProductsPage() {
         productId: product.id,
         productTitle: product.title,
         isEnabled: String(!product.isEnabled),
+      },
+      { method: "POST" },
+    );
+  };
+
+  const allEnabled =
+    products.length > 0 && products.every((product) => product.isEnabled);
+
+  const toggleAll = () => {
+    fetcher.submit(
+      {
+        intent: "bulkToggle",
+        isEnabled: String(!allEnabled),
+        products: JSON.stringify(
+          products.map((product) => ({
+            id: product.id,
+            title: product.title,
+          })),
+        ),
       },
       { method: "POST" },
     );
@@ -365,15 +441,46 @@ export default function BookingProductsPage() {
         <div style={styles.listCard}>
           <div style={styles.listHeaderRow}>
             <p style={styles.listTitle}>All Products</p>
-            <div style={styles.searchBox}>
-              <SearchIcon />
-              <input
-                type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search by product name"
-                style={styles.searchInput}
-              />
+            <div style={styles.headerActions}>
+              {products.length > 0 && (
+                <div style={styles.enableAllWrap}>
+                  <span style={styles.enableAllLabel}>
+                    {isBulkSubmitting ? "Updating..." : "Enable all"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={allEnabled}
+                    aria-label="Enable booking for all products"
+                    onClick={toggleAll}
+                    disabled={isSubmitting || (!hasLocations && !allEnabled)}
+                    style={{
+                      ...styles.toggleButton,
+                      ...(isSubmitting || (!hasLocations && !allEnabled)
+                        ? { opacity: 0.5, cursor: "not-allowed" }
+                        : {}),
+                    }}
+                  >
+                    {allEnabled ? (
+                      <img src="/enable.svg" width={46} height={24} alt="" />
+                    ) : (
+                      <span style={styles.toggleOff}>
+                        <span style={styles.toggleKnob} />
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
+              <div style={styles.searchBox}>
+                <SearchIcon />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search by product name"
+                  style={styles.searchInput}
+                />
+              </div>
             </div>
           </div>
 

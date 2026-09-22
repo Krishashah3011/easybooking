@@ -327,6 +327,27 @@ export async function setBookableProductEnabled(
   });
 }
 
+export async function setAllBookableProductsEnabled(
+  shop: string,
+  products: { id: string; title: string }[],
+  isEnabled: boolean,
+): Promise<void> {
+  await prisma.$transaction(
+    products.map((product) =>
+      prisma.bookableProduct.upsert({
+        where: { shop_productId: { shop, productId: product.id } },
+        create: {
+          shop,
+          productId: product.id,
+          productTitle: product.title,
+          isEnabled,
+        },
+        update: { productTitle: product.title, isEnabled },
+      }),
+    ),
+  );
+}
+
 export async function upsertBookableProductOverrides(
   shop: string,
   productId: string,

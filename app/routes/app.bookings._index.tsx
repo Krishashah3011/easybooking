@@ -562,6 +562,13 @@ const S: Record<string, React.CSSProperties> = {
     gap: "16px",
     width: "100%",
   },
+  topFieldsRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    alignItems: "flex-start",
+    gap: "16px",
+    width: "100%",
+  },
   fieldBlock: {
     display: "flex",
     flexDirection: "column",
@@ -1041,7 +1048,7 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      <div style={S.fieldsRow}>
+      <div style={S.topFieldsRow}>
         <FieldBlock label="Customer Mail">
           {booking.customerEmail ?? "—"}
         </FieldBlock>
@@ -1367,7 +1374,7 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      <div style={S.fieldsRow}>
+      <div style={S.topFieldsRow}>
         <FieldBlock label="Customer Mail">
           {first.customerEmail ?? "—"}
         </FieldBlock>
