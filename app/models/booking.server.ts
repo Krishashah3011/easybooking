@@ -822,6 +822,9 @@ export async function createManualBooking(
       effectiveSettings,
       input.date,
       new Set(),
+      new Date(),
+      new Map(),
+      resolvedLocation?.timezone ?? null,
     );
     const matchedSlot = slotsForDate.find((s) => s.start === input.slotStart);
     if (!matchedSlot) {
