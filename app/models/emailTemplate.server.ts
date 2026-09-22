@@ -1,21 +1,12 @@
 import type { EmailTemplate } from "@prisma/client";
 import prisma from "../db.server";
 import { formatTimeRangeDisplay } from "../utils/format";
+import {
+  EMAIL_TEMPLATE_TYPES,
+  type EmailTemplateType,
+} from "./emailTemplateTypes";
 
-export type EmailTemplateType =
-  | "confirmation"
-  | "bundleConfirmation"
-  | "reminder"
-  | "cancellation"
-  | "rescheduled";
-
-export const EMAIL_TEMPLATE_TYPES: EmailTemplateType[] = [
-  "confirmation",
-  "bundleConfirmation",
-  "reminder",
-  "cancellation",
-  "rescheduled",
-];
+export { EMAIL_TEMPLATE_TYPES, type EmailTemplateType } from "./emailTemplateTypes";
 
 export const EMAIL_TEMPLATE_LABELS: Record<EmailTemplateType, string> = {
   confirmation: "Booking Confirmation",

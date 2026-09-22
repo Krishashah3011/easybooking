@@ -17,12 +17,14 @@ import {
   type SmtpSettingsFormValues,
 } from "../models/smtpSettings.server";
 import {
-  EMAIL_TEMPLATE_TYPES,
   listEmailTemplates,
   resetEmailTemplate,
   upsertEmailTemplate,
-  type EmailTemplateType,
 } from "../models/emailTemplate.server";
+import {
+  EMAIL_TEMPLATE_TYPES,
+  type EmailTemplateType,
+} from "../models/emailTemplateTypes";
 import { styles, BORDER, TEXT_DARK, TEXT_MUTED, BLUE } from "../components/SettingsUI";
 import type { RegisterSave } from "./app.settings";
 
