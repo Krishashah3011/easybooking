@@ -1272,7 +1272,6 @@ export default function BookableProductPage() {
               <div style={ui.toggleRow}>
                 <div style={ui.toggleText}>
                   <p style={ui.fieldLabelBlack}>Bookings</p>
-                  <p style={ui.hintText}>Booking enabled for this product</p>
                 </div>
                 <Toggle
                   checked={values.isEnabled}
@@ -1288,7 +1287,7 @@ export default function BookableProductPage() {
 
             <Card
               title="Booking Type"
-              description="Choose how this product is booked. Changing this only affects what settings apply below — existing bookings aren’t touched."
+              description="Choose how this product is booked. Changing this only affects what settings apply below, existing bookings aren’t touched."
             >
               <div style={ui.fieldsRow}>
                 <FieldGroup label="Booking Type" size="grow">
@@ -1324,7 +1323,7 @@ export default function BookableProductPage() {
               values.bookingType === "BUNDLE") && (
               <Card
                 title="Working Days"
-                description="Leave every day unchecked below and this product will use the shop default instead. Check any day to set a custom schedule just for this product."
+                description="Choose which days of the week customers can book appointments on (Leave blank to use the shop default)."
               >
                 <div style={ui.daysGroup}>
                   <div style={ui.daysRow}>
@@ -1358,7 +1357,7 @@ export default function BookableProductPage() {
               values.bookingType === "FULL_DAY") && (
               <Card
                 title="Daily Booking Window"
-                description="The earliest and latest time a slot can start each working day. Leave blank to use the shop default."
+                description="The earliest and latest time a slot can start each working day (Leave blank to use the shop default)."
               >
                 <div style={ui.fieldsRow}>
                   <TimeField
@@ -1530,7 +1529,7 @@ export default function BookableProductPage() {
 
             <Card
               title="Advance Booking Rules"
-              description="Control how soon and how far ahead customers can book this product. Leave blank to use the shop default."
+              description="Control how soon and how far ahead customers can book this product (Leave blank to use the shop default)."
             >
               <div style={ui.fieldsRow}>
                 <NumberField
@@ -1558,7 +1557,7 @@ export default function BookableProductPage() {
 
             <Card
               title="Booking Start and End Date"
-              description="Restricts the overall window bookings are accepted in for this product. Leave blank to use the shop default."
+              description="Set the overall window in which bookings are accepted (Leave blank to use the shop default)."
             >
               <div style={ui.fieldsRow}>
                 <DateField
@@ -1578,7 +1577,7 @@ export default function BookableProductPage() {
 
             <Card
               title="Add a Blackout Date"
-              description="Dates this specific product can’t be booked on — e.g. maintenance or a specific staff member’s day off — on top of any shop-wide blackout dates."
+              description="Block bookings of this product on specific dates- holidays, closures, and one-off events (on top of any shop-wide blackout dates)."
               collapsible
               open={blackoutOpen}
               onToggle={() => setBlackoutOpen((prev) => !prev)}
