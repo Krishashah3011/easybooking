@@ -424,19 +424,12 @@ export default function BookingSettingsPage() {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Formats free-typed input into a 24-hour "HH:MM" time string:
-  // strips anything that isn't a digit, caps it at 4 digits, and
-  // auto-inserts the colon after the 2nd digit (e.g. "2200" -> "22:00").
   const formatTimeInput = (raw: string) => {
     const digits = raw.replace(/\D/g, "").slice(0, 4);
     if (digits.length <= 2) return digits;
     return `${digits.slice(0, 2)}:${digits.slice(2)}`;
   };
 
-  // Digits-only, length-capped numeric input handler for the plain
-  // number fields below (slot duration, buffer, etc). Strips letters
-  // and symbols (blocks the type="number" "e"/"+"/"-" loophole) and
-  // caps how many digits can be typed so values can't run away.
   const handleNumericChange = <K extends keyof BookingSettingsFormValues>(
     key: K,
     raw: string,
@@ -446,9 +439,6 @@ export default function BookingSettingsPage() {
     setField(key, (digits === "" ? 0 : Number(digits)) as BookingSettingsFormValues[K]);
   };
 
-  // Selects the whole field on focus so a default value like "0"
-  // is replaced by the next keystroke instead of the new digits
-  // being appended after it.
   const selectAllOnFocus = (e: { currentTarget: HTMLInputElement }) =>
     e.currentTarget.select();
 

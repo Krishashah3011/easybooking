@@ -479,7 +479,6 @@ export async function createBookingsFromOrder(
 
       let bundleValidityDeadlineStr: string | null = null;
       if (bookableProduct.bundleValidityDays != null) {
-        // The window runs from the earliest (first) session date, not from purchase.
         const firstSessionDate = sessions.map((session) => session.date).sort()[0];
         const deadline = new Date(`${firstSessionDate}T00:00:00.000Z`);
         deadline.setUTCDate(deadline.getUTCDate() + bookableProduct.bundleValidityDays);
@@ -701,9 +700,6 @@ export type ManualBookingResult =
   | { ok: true; booking: Booking; productTitle: string; bookingType: BookingType }
   | { ok: false; error: string };
 
-// Sends confirmation emails for admin-created bookings AFTER the response has
-// gone back to the admin, so a slow SMTP server can never stall the page.
-// A bundle's sessions get one combined email; everything else one email each.
 export function sendManualBookingEmailsInBackground(
   shop: string,
   created: { booking: Booking; productTitle: string; bookingType: BookingType }[],
@@ -870,8 +866,6 @@ export async function createManualBooking(
     },
   });
 
-  // Emails are sent by the caller in the background (see
-  // sendManualBookingEmailsInBackground) so creating a booking stays fast.
   return {
     ok: true,
     booking,
@@ -1166,7 +1160,6 @@ export async function rescheduleBooking(
       slotStartsAt: new Date(`${newDate}T00:00:00.000Z`),
     };
   } else {
-    // SLOT and BUNDLE sessions: pick a valid time slot on the new date.
     const slotsForDate = computeSlotsForDate(
       effectiveSettings,
       newDate,
@@ -1200,7 +1193,6 @@ export async function rescheduleBooking(
       return { ok: false, error: "That slot is already fully booked." };
     }
 
-    // A bundle's sessions must all stay within its validity window.
     const validityDays = booking.bookableProduct.bundleValidityDays;
     if (bookingType === "BUNDLE" && validityDays != null && booking.groupId) {
       const siblings = await prisma.booking.findMany({
@@ -1247,7 +1239,6 @@ export async function rescheduleBooking(
     },
   });
 
-  // Email in the background so a slow SMTP server never stalls the admin.
   void sendBookingRescheduled(
     updated,
     booking.bookableProduct.productTitle,

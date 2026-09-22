@@ -133,9 +133,6 @@
   margin: 0 0 0.75rem;
 }
 
-/* Same blue as the selected date in the calendar. The custom properties
-   cover themes (e.g. Dawn) that build their buttons from them; the plain
-   properties cover everything else. */
 .booking-widget .booking-widget__trigger {
   --color-button: 0, 96, 230;
   --color-button-text: 255, 255, 255;
@@ -500,16 +497,6 @@ body.booking-widget-lock-scroll {
   opacity: 0.95;
 }
 
-/* ==========================================================================
-   Date + time card
-   Follows the admin "Add New Booking" calendar design (same colours, Inter,
-   pill slots, [month][month][times] layout) at a compact scale so it fits
-   the modal at its original size. No surrounding box — the months and times
-   sit directly on the modal. Only the months and the time slots are styled
-   here — the rest of the modal is unchanged.
-   Palette: blue #0060E6, text #1A1A1A, disabled #ADADAD.
-   ========================================================================== */
-
 .booking-widget__datetime-card {
   box-sizing: border-box;
   flex: 1 0 100%;
@@ -530,8 +517,6 @@ body.booking-widget-lock-scroll {
 .booking-widget__datetime-card select {
   font-family: inherit;
 }
-
-/* ---- Month column (holds both month panes) ---- */
 
 .booking-widget__calendar-pane {
   display: flex;
@@ -594,8 +579,6 @@ body.booking-widget-lock-scroll {
   background: rgba(0, 96, 230, 0.08);
 }
 
-/* ---- Month header: [prev] [Sep 2026 v] [next] ---- */
-
 .booking-widget__month-pane-heading {
   box-sizing: border-box;
   display: flex;
@@ -603,7 +586,6 @@ body.booking-widget-lock-scroll {
   align-items: center;
   justify-content: space-between;
   height: 30px;
-  /* arrows sit centred over the first / last day column */
   padding: 0 max(0px, calc((100% / 7 - 30px) / 2));
   margin-bottom: 16px;
 }
@@ -697,8 +679,6 @@ body.booking-widget-lock-scroll {
   border-radius: 4px;
 }
 
-/* ---- Weekday labels + day grid ---- */
-
 .booking-widget__weekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -769,17 +749,12 @@ body.booking-widget-lock-scroll {
   outline-offset: 2px;
 }
 
-/* ---- Times column: scrolls when there are many slots ---- */
-
 .booking-widget__slots-pane {
   position: relative;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  /* Fixed footprint: the column keeps the same width AND height whether it
-     shows the "select a date" hint, "Loading times…" or the slot pills, so
-     the calendar next to it never expands / contracts while slots load. */
   flex: 0 0 230px;
   width: 230px;
   min-width: 230px;
@@ -794,8 +769,6 @@ body.booking-widget-lock-scroll {
   flex-direction: column;
 }
 
-/* The design has no heading / duration line above the pills; keep them for
-   screen readers only. */
 .booking-widget__duration,
 .booking-widget__slots-label {
   position: absolute;
@@ -896,13 +869,10 @@ body.booking-widget-lock-scroll {
     flex: none;
   }
 
-  /* One month + the times underneath on phones (both months still stack
-     for the date-only booking types). */
   .booking-widget__datetime-card--times .booking-widget__month-pane:nth-child(2) {
     display: none;
   }
 
-  /* Larger touch targets on phones. */
   .booking-widget__day {
     max-width: 40px;
     font-size: 14px;
@@ -965,8 +935,6 @@ body.booking-widget-lock-scroll {
   }
 }
 
-/* Short / landscape phone screens: the modal's vh-based height can crowd
-   the content, so cap it more aggressively and let the body scroll. */
 @media (max-height: 480px) {
   .booking-widget__modal {
     height: 94svh;
@@ -984,8 +952,6 @@ body.booking-widget-lock-scroll {
   }
 }
 
-/* Tablet-width phones/small tablets: keep the two-pane layout but tighten
-   spacing before the 560px stacked layout kicks in. */
 @media (min-width: 561px) and (max-width: 780px) {
   .booking-widget__modal {
     width: 94vw;
@@ -1265,7 +1231,6 @@ body.booking-widget-lock-scroll {
   background: rgba(0, 96, 230, 0.08);
 }
 
-/* Next Slot: solid date-picker blue */
 [data-booking-next-slot].booking-widget__btn--secondary {
   background: #0060e6;
   border-color: #0060e6;

@@ -40,22 +40,15 @@ import {
 
 const WEEKDAY_HEADERS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-// Exact blue from the Figma design for the month calendar + time-slot section
-// (selected date, next-month button, slot pills). Tints use the same colour.
 const CAL_BLUE = "#0060E6";
 const BLUE_TINT = "rgba(0, 96, 230, 0.08)";
 const NAV_ARROW = "#4C4C4C";
 const DISABLED_DATE = "#ADADAD";
-// How many months (from the current month) the month dropdown lists.
 const MONTH_PICKER_SPAN = 24;
 
-// Text colour used inside the calendar (Figma #1A1A1A, slightly softer than the
-// #000 used for form labels).
 const CAL_TEXT = "#1A1A1A";
 const PLACEHOLDER = "#6E6E6E";
 
-// Layout follows the Figma frame "Add New Booking": ONE outer card (950px page,
-// 16px padding) that holds a header row and four inner cards with a 16px gap.
 const S = {
   outerCard: {
     boxSizing: "border-box",
@@ -106,7 +99,6 @@ const S = {
     color: BLUE,
     textDecoration: "none",
   } as React.CSSProperties,
-  // Standalone card (empty state).
   card: {
     display: "flex",
     flexDirection: "column",
@@ -122,8 +114,6 @@ const S = {
     fontSize: "16px",
     color: TEXT_DARK,
   } as React.CSSProperties,
-  // Inner cards inside the outer card: product/location, quantity/note,
-  // customer details (padding 10 10 13, gap 12).
   innerCard: {
     boxSizing: "border-box",
     display: "flex",
@@ -135,7 +125,6 @@ const S = {
     border: `1px solid ${BORDER}`,
     borderRadius: "4px",
   } as React.CSSProperties,
-  // Date + time card (padding 10 all round).
   dateTimeCard: {
     boxSizing: "border-box",
     display: "flex",
@@ -208,7 +197,6 @@ const S = {
     pointerEvents: "none",
     display: "block",
   } as React.CSSProperties,
-  // Quantity + Note share one row: [Quantity 110px][Note grows]
   qtyNoteRow: {
     display: "flex",
     flexDirection: "row",
@@ -299,9 +287,6 @@ const S = {
     lineHeight: "17px",
     color: TEXT_DARK,
   } as React.CSSProperties,
-  // Row = [month][month][times] with a 32px gap (Figma). The months column has
-  // a 532px basis (2 panes x 250px min + gap) so the times only drop below the
-  // calendars on narrow screens.
   calendarLayout: {
     display: "flex",
     flexDirection: "row",
@@ -339,7 +324,6 @@ const S = {
     justifyContent: "space-between",
     alignItems: "center",
     height: "38px",
-    // arrows sit centred over the first / last day column
     padding: "0 max(0px, calc((100% / 7 - 38px) / 2))",
     marginBottom: "32px",
   } as React.CSSProperties,
@@ -436,7 +420,6 @@ const S = {
         : "transparent",
     color: selected ? "#FFFFFF" : available ? CAL_TEXT : DISABLED_DATE,
   }),
-  // Time column: 222px wide, scrolls when there are many slots (Figma: 350px).
   slotsColumn: {
     boxSizing: "border-box",
     display: "flex",
@@ -504,13 +487,11 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-// Calendar headers use the short month name ("Sep 2026") as in the Figma.
 const MONTH_SHORT = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// Header icon from the Figma (two chevrons pointing at each other).
 function CollapseIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -525,7 +506,6 @@ function CollapseIcon() {
   );
 }
 
-// Chevron drawn on the right of the Select Product / Add Location fields.
 function SelectChevron() {
   return (
     <svg
@@ -563,7 +543,6 @@ function PlusStepIcon() {
   );
 }
 
-// "Note (Any specific request?)" -> title "Note" + muted hint "(Any specific request?)"
 function splitFieldLabel(label: string): { title: string; hint: string | null } {
   const match = /^(.*?)\s*(\([^()]+\))\s*$/.exec(label.trim());
   if (match && match[1]) return { title: match[1], hint: match[2] };
@@ -878,7 +857,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     }
 
-    // Fire-and-forget: the admin gets the response right away.
     sendManualBookingEmailsInBackground(session.shop, createdBookings);
 
     const createdCount = results.filter((r) => r.ok).length;
@@ -906,7 +884,6 @@ export default function NewBookingPage() {
 
   const today = new Date();
 
-  // Nothing is preselected: the admin picks the product and location.
   const [bookableProductId, setBookableProductId] = useState("");
   const selectedProduct = products.find((p) => p.id === bookableProductId);
   const selectedBookingType = selectedProduct?.bookingType ?? "SLOT";
@@ -917,17 +894,11 @@ export default function NewBookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [locationId, setLocationId] = useState("");
-  // The date/time card (month calendars + slots) only makes sense once we
-  // know which product AND which location we're checking availability for.
-  // If the shop has no locations configured, a location pick isn't needed.
   const readyForCalendar =
     Boolean(bookableProductId) && (locations.length === 0 || Boolean(locationId));
   const [customFieldValues, setCustomFieldValues] = useState<
     Record<string, string>
   >({});
-  // Only used for bundles (sessions picked one by one) and for bookings that
-  // failed and need a retry. A normal booking is built from the current
-  // selection, so there is no "Add to list" step.
   const [queuedSlots, setQueuedSlots] = useState<QueuedEntry[]>([]);
   const submittedRef = useRef<QueuedEntry[]>([]);
   const [customerName, setCustomerName] = useState("");
@@ -949,8 +920,6 @@ export default function NewBookingPage() {
   const bundleComplete =
     bundleSessionCount !== null && bundleSessionsRemaining === 0;
 
-  // The validity window starts from the FIRST session date the admin picks
-  // (not from today): every other session must fall within N days of it.
   const bundleValidityDays =
     selectedBookingType === "BUNDLE"
       ? (selectedProduct?.bundleValidityDays ?? null)
@@ -989,9 +958,6 @@ export default function NewBookingPage() {
 
   const todayMonthIndex = today.getUTCFullYear() * 12 + today.getUTCMonth();
 
-  // Month dropdown options for a pane. `offset` is how many months the pane
-  // sits after the first visible month (0 = left pane, 1 = right pane). The
-  // month currently shown is always included, even if it is outside the range.
   const monthPickerOptions = (shownIndex: number, offset: number) => {
     const start = todayMonthIndex + offset;
     const end = start + MONTH_PICKER_SPAN - 1;
@@ -1035,7 +1001,6 @@ export default function NewBookingPage() {
   const createError =
     createResult && "error" in createResult ? createResult.error : null;
 
-  // Bundles: quantity is chosen on the first session and locked afterwards.
   const quantityLocked =
     selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0;
 
@@ -1120,7 +1085,6 @@ export default function NewBookingPage() {
         : `Created ${createdCount} booking(s)`,
     );
 
-    // The current selection has been submitted either way; clear it.
     setDate("");
     setCheckoutDate("");
     setSelectedSlot(null);
@@ -1290,8 +1254,6 @@ export default function NewBookingPage() {
     customerPhone.length !== 10
       ? "Phone number must be exactly 10 digits"
       : undefined;
-
-  // The booking being built right now from the calendar + quantity selection.
   const currentEntry: QueuedEntry | null = (() => {
     if (!date || !selectedSlot) return null;
     if (selectedBookingType === "MULTI_DAY" && !checkoutDate) return null;
@@ -1315,17 +1277,12 @@ export default function NewBookingPage() {
     };
   })();
 
-  // Everything that will be booked when "Create Booking" is pressed.
   const submissionSlots: QueuedEntry[] = currentEntry
     ? [...queuedSlots, currentEntry]
     : queuedSlots;
 
-  // Quantity, notes, customer details and the Create button only appear once
-  // something has been selected: a time slot / date range for the current
-  // booking, or bundle sessions / failed bookings already in the queue.
   const hasSelection = submissionSlots.length > 0;
 
-  // A bundle's sessions are ONE booking, so they count once on the button.
   const createBookingCount =
     submissionSlots.filter(
       (entry) =>
@@ -1356,15 +1313,12 @@ export default function NewBookingPage() {
         : "Select a date and time first."
       : undefined;
 
-  // Bundles need several sessions: "Next slot" stores this one and lets the
-  // admin pick the next. Every other booking type goes straight to details.
   const needsNextSlot =
     !!selectedSlot &&
     selectedBookingType === "BUNDLE" &&
     bundleSessionCount !== null &&
     bundleSessionsQueued.length + 1 < bundleSessionCount;
 
-  // Final session of a bundle: show "Done" instead of "Next slot".
   const isLastBundleSession =
     !!selectedSlot &&
     selectedBookingType === "BUNDLE" &&
@@ -1658,7 +1612,7 @@ export default function NewBookingPage() {
           }
         `}</style>
 
-        {/* Header: title on the left, close icon on the right */}
+        {}
         <div style={S.headerRow}>
           <span style={S.headerTitle}>Add New Booking</span>
           <div style={S.headerActions}>
@@ -1668,7 +1622,7 @@ export default function NewBookingPage() {
           </div>
         </div>
 
-        {/* Select Product + Add Location */}
+        {}
         <div style={S.innerCard}>
           <div style={S.fieldsRow}>
             <div style={S.fieldBlock}>
@@ -1743,7 +1697,7 @@ export default function NewBookingPage() {
           </div>
         </div>
 
-        {/* Date + time */}
+        {}
         {readyForCalendar && (
         <div style={S.dateTimeCard}>
           {selectedBookingType === "MULTI_DAY" && (
@@ -1935,7 +1889,7 @@ export default function NewBookingPage() {
         </div>
         )}
 
-        {/* Bundle sessions chosen so far / bookings that need a retry */}
+        {}
         {queuedSlots.length > 0 && (
           <div style={S.innerCard}>
             <span style={S.cardHeading}>Slots to book</span>
@@ -1982,7 +1936,7 @@ export default function NewBookingPage() {
 
         {hasSelection && (
           <>
-            {/* Quantity + Note */}
+            {}
             <div style={S.innerCard}>
               <div style={S.qtyNoteRow}>
                 <div style={S.qtyBlock}>
@@ -2070,7 +2024,7 @@ export default function NewBookingPage() {
               </div>
             </div>
 
-            {/* Customer details */}
+            {}
             <div style={S.innerCard}>
               <div style={S.fieldsRow}>
                 <div style={S.fieldBlock}>
@@ -2165,7 +2119,7 @@ export default function NewBookingPage() {
               )}
             </div>
 
-            {/* Create Booking (30px below the last card in the Figma) */}
+            {}
             <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
               <div style={{ ...saveWrapperStyle(), width: "auto", minWidth: "143px" }}>
                 <button
@@ -2193,9 +2147,6 @@ export default function NewBookingPage() {
   );
 }
 
-// The loader data (products, locations, custom fields) never changes because of
-// this page's own actions (availability lookups, slot lookups, creating a
-// booking), so skip the extra loader round-trip after each of them.
 export const shouldRevalidate = () => false;
 
 export const headers: HeadersFunction = (headersArgs) => {

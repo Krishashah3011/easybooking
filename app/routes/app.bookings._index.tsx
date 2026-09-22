@@ -114,10 +114,6 @@ type BookingsListFilters = {
   dateTo: string;
 };
 
-/* ------------------------------------------------------------------ */
-/* Design tokens (same values as the redesigned Products page)         */
-/* ------------------------------------------------------------------ */
-
 const TYPE_SHORT_LABELS: Record<BookingType, string> = {
   SLOT: "Slot Booking",
   FULL_DAY: "Full-Day Booking",
@@ -588,9 +584,6 @@ const S: Record<string, React.CSSProperties> = {
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
-  // Last row (Booked at / Note / actions): everything sits on the bottom edge
-  // of the boxes, 10px apart, like the Figma. The boxes share the free width
-  // and the buttons keep their own size.
   actionRow: {
     display: "flex",
     flexDirection: "row",
@@ -612,7 +605,6 @@ const S: Record<string, React.CSSProperties> = {
     marginLeft: "auto",
     gap: "10px",
   },
-  // Keeps the boxes the same width when there are no buttons.
   actionSpacer: {
     flex: "0 0 141px",
   },
@@ -634,7 +626,6 @@ const S: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
-  // Same size / font / padding as Cancel Booking, keeps the blue colour.
   rescheduleBookingBtn: {
     display: "inline-flex",
     justifyContent: "center",
@@ -703,10 +694,6 @@ const S: Record<string, React.CSSProperties> = {
   },
 };
 
-/* ------------------------------------------------------------------ */
-/* Icons                                                               */
-/* ------------------------------------------------------------------ */
-
 const SearchIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
     <path
@@ -747,10 +734,6 @@ const PlusIcon = () => (
     />
   </svg>
 );
-
-/* ------------------------------------------------------------------ */
-/* Small building blocks                                               */
-/* ------------------------------------------------------------------ */
 
 function StatusPill({ status }: { status: string }) {
   const colors = STATUS_COLORS[status] ?? STATUS_COLORS.CANCELLED;
@@ -894,10 +877,6 @@ function whenLines(booking: BookingWithProductTitle): {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Expanded details for one booking (reschedule / cancel live here)    */
-/* ------------------------------------------------------------------ */
-
 function BookingDetails({
   booking,
   customFieldLabels,
@@ -916,7 +895,6 @@ function BookingDetails({
   const [newDate, setNewDate] = useState(booking.date);
   const [newSlotStart, setNewSlotStart] = useState(booking.slotStart);
   const [newEndDate, setNewEndDate] = useState(booking.endDate ?? "");
-  // SLOT and BUNDLE sessions pick a time; FULL_DAY only a date; MULTI_DAY a range.
   const needsTimeSlot =
     booking.bookingType === "SLOT" || booking.bookingType === "BUNDLE";
   const isMultiDay = booking.bookingType === "MULTI_DAY";
@@ -1011,7 +989,7 @@ function BookingDetails({
 
   return (
     <div style={S.detailsCard}>
-      {/* Header: "Booking for" + customer chip, date/time chips, status, collapse chevron */}
+      {}
       <div style={S.detailsHeaderRow}>
         <div style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
@@ -1050,7 +1028,7 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      {/* Row 1: Customer Mail / Customer Phone / Booking Type / Location */}
+      {}
       <div style={S.fieldsRow}>
         <FieldBlock label="Customer Mail">
           {booking.customerEmail ?? "—"}
@@ -1066,7 +1044,7 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      {/* Row 2: Booking Date / Booking Time / Quantity (or reschedule controls) */}
+      {}
       {isRescheduling ? (
         <div
           style={{
@@ -1165,7 +1143,7 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      {/* Row 3: Booked at / Note / Cancel Booking action */}
+      {}
       <div style={S.actionRow}>
         <FieldBlock label="Booked at" style={S.actionRowField}>
           {formatInstantInTimezone(booking.createdAt, booking.locationTimezone)}
@@ -1208,10 +1186,6 @@ function BookingDetails({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Unified details card for a BUNDLE group (Slot 1..N rows)            */
-/* ------------------------------------------------------------------ */
-
 const SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5"];
 
 function slotValueFor(booking: BookingWithProductTitle): string {
@@ -1237,7 +1211,6 @@ function BundleGroupDetails({
   const first = group.bookings[0];
   const activeBookings = group.bookings.filter((b) => b.status !== "CANCELLED");
 
-  // Reschedule one session of the bundle at a time.
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [rescheduleId, setRescheduleId] = useState(activeBookings[0]?.id ?? "");
   const rescheduleTarget =
@@ -1345,7 +1318,7 @@ function BundleGroupDetails({
 
   return (
     <div style={S.detailsCard}>
-      {/* Header: "Booking for" + customer chip, date/time chips, status, collapse chevron */}
+      {}
       <div style={S.detailsHeaderRow}>
         <div style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
@@ -1384,7 +1357,7 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      {/* Row 1: Customer Mail / Customer Phone / Booking Type / Location */}
+      {}
       <div style={S.fieldsRow}>
         <FieldBlock label="Customer Mail">
           {first.customerEmail ?? "—"}
@@ -1400,7 +1373,7 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      {/* Row 2: Booking Date / Booking Time / Quantity */}
+      {}
       <div style={S.fieldsRow}>
         <FieldBlock label="Booking Date">{when.date}</FieldBlock>
         <FieldBlock label="Booking Time">{when.sub ?? "Whole day"}</FieldBlock>
@@ -1409,7 +1382,7 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      {/* Slot rows: up to 5 sessions per row of 3 */}
+      {}
       {Array.from(
         { length: Math.ceil(Math.min(group.bookings.length, SLOT_LABELS.length) / 3) },
         (_, rowIndex) => (
@@ -1513,7 +1486,7 @@ function BundleGroupDetails({
         </>
       )}
 
-      {/* Final row: Booked at / Note / Cancel Booking action */}
+      {}
       <div style={S.actionRow}>
         <FieldBlock label="Booked at" style={S.actionRowField}>
           {formatInstantInTimezone(first.createdAt, first.locationTimezone)}
@@ -1554,10 +1527,6 @@ function BundleGroupDetails({
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/* Rows                                                                */
-/* ------------------------------------------------------------------ */
 
 const COLUMN_COUNT = 6;
 
@@ -1784,10 +1753,6 @@ function BookingsEmptyState({
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/* Page                                                                */
-/* ------------------------------------------------------------------ */
 
 function matchesQuery(booking: BookingWithProductTitle, term: string): boolean {
   const haystack = [

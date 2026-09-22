@@ -4,14 +4,11 @@
   var LOW_AVAILABILITY_THRESHOLD = 2;
   var WEEKDAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-  // How many months (from the current month) each month dropdown lists.
   var MONTH_PICKER_SPAN = 24;
 
-  // Calendar colours (match the admin "Add New Booking" calendar).
   var CAL_BLUE = "#0060E6";
   var NAV_ARROW = "#4C4C4C";
 
-  // Chevron icons taken from the admin design (same paths as the Figma SVG).
   var NAV_CHEVRON_PATH =
     "M32.4806 34.9941C32.8398 34.6529 32.8398 34.0998 32.4806 33.7586L27.4706 29L32.4806 24.2414C32.8398 23.9002 32.8398 23.3471 32.4806 23.0059C32.1214 22.6647 31.539 22.6647 31.1798 23.0059L25.5194 28.3822C25.1602 28.7234 25.1602 29.2766 25.5194 29.6178L31.1798 34.9941C31.539 35.3353 32.1214 35.3353 32.4806 34.9941Z";
   var DROPDOWN_CHEVRON_SVG =
@@ -1058,13 +1055,10 @@
       document.body.classList.remove("booking-widget-lock-scroll");
     }
 
-    // FULL_DAY and MULTI_DAY bookings only pick dates (no time column).
     function isDateOnlyType(type) {
       return type === "FULL_DAY" || type === "MULTI_DAY";
     }
 
-    // Show the "Select a date to see available times." hint in the times
-    // column (used whenever no date is selected).
     function showSelectDateHint() {
       currentSlots = [];
       if (durationEl) durationEl.hidden = true;
@@ -1116,8 +1110,6 @@
     }
 
     function applyLayoutForType() {
-      // Two month panes are always shown; the times column only exists for
-      // booking types that pick a time slot.
       var showTimes = !isDateOnlyType(productBookingType);
       if (slotsPaneEl) slotsPaneEl.hidden = !showTimes;
       if (slotsPaneOuterEl) slotsPaneOuterEl.hidden = !showTimes;
@@ -1183,7 +1175,6 @@
         fetchAvailability(second.year, second.month),
       ])
         .then(function (results) {
-          // Ignore responses for a month the shopper has already left.
           if (requestId !== monthRequestId) return;
           availableDates = applyAvailabilityData(results[0]);
           secondMonthAvailableDates = applyAvailabilityData(results[1]);
@@ -1198,8 +1189,6 @@
         });
     }
 
-    // The validity window starts from the FIRST session date the customer
-    // confirms (not from today): later sessions must fall within N days of it.
     function bundleWindowStart() {
       if (
         productBookingType !== "BUNDLE" ||
@@ -1341,8 +1330,6 @@
       return row;
     }
 
-    // "Sep 2026 v" dropdown in the middle of each month header. `offset` is
-    // how many months the pane sits after the first visible month.
     function buildMonthPicker(year, month, offset) {
       var shownIndex = year * 12 + (month - 1);
       var label = monthShortFormatter.format(
@@ -1369,7 +1356,6 @@
       var todayIndex = now.getUTCFullYear() * 12 + now.getUTCMonth();
       var start = todayIndex + offset;
       var end = start + MONTH_PICKER_SPAN - 1;
-      // The month currently shown is always listed, even outside the range.
       var from = Math.min(start, shownIndex);
       var to = Math.max(end, shownIndex);
       for (var i = from; i <= to; i++) {
@@ -2163,8 +2149,6 @@
       cartReminderEl.hidden = false;
     }
 
-    // Jump to a month given as (year * 12 + monthIndex). Used by the
-    // prev / next arrows and by the month dropdowns.
     function changeViewMonth(index) {
       viewYear = Math.floor(index / 12);
       viewMonth = (index % 12) + 1;

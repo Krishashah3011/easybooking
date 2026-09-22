@@ -30,7 +30,6 @@ async function getTransporter(
     port: settings.port,
     secure: settings.port === 465,
     auth: { user: settings.username, pass: settings.password },
-    // Fail fast instead of hanging for minutes on an unreachable SMTP server.
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
     socketTimeout: 20_000,
