@@ -77,6 +77,8 @@ model BookableProduct {
   productTitle String
   isEnabled Boolean @default(false)
   bookingType BookingType @default(SLOT)
+  countryMode String @default("ALL")
+  countryCodes String?
   workingDays          String?
   dailyStartTime       String?
   dailyEndTime         String?

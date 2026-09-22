@@ -220,6 +220,7 @@
     var unitPrice = parseFloat(root.dataset.unitPrice || "");
     if (!isFinite(unitPrice)) unitPrice = null;
     var currencyCode = root.dataset.currencyCode || "USD";
+    var countryCode = root.dataset.country || "";
     var moneyFormatter;
     try {
       moneyFormatter = new Intl.NumberFormat(navigator.language || "en-US", {
@@ -727,7 +728,11 @@
 
     function loadLocations() {
       if (!locationStepEl || !locationListEl) return;
-      fetch(proxyBase + "/locations?productId=" + encodeURIComponent(productId))
+      var url = proxyBase + "/locations?productId=" + encodeURIComponent(productId);
+      if (countryCode) {
+        url += "&country=" + encodeURIComponent(countryCode);
+      }
+      fetch(url)
         .then(function (res) {
           return res.json();
         })

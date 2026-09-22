@@ -30,6 +30,7 @@ import {
   type BlackoutDateFieldErrors,
 } from "../models/blackoutDate.server";
 import { listEnabledLocations } from "../models/bookingLocation.server";
+import { COUNTRIES } from "../utils/countries";
 import {
   BLUE,
   BORDER,
@@ -556,6 +557,33 @@ const ui: Record<string, React.CSSProperties> = {
     lineHeight: "15px",
     color: ERROR_RED,
     margin: 0,
+  },
+  textInput: {
+    boxSizing: "border-box",
+    width: "100%",
+    height: "34px",
+    padding: "5px 10px",
+    background: "#FFFFFF",
+    border: `1px solid ${INPUT_BORDER}`,
+    borderRadius: "4px",
+    outline: "none",
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_DARK,
+  },
+  countryListScroll: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    width: "100%",
+    maxHeight: "220px",
+    overflowY: "auto",
+    padding: "10px",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "4px",
   },
   toggleButton: {
     display: "inline-flex",
@@ -1188,6 +1216,7 @@ export default function BookableProductPage() {
   const [newBlackoutDate, setNewBlackoutDate] = useState("");
   const [newBlackoutReason, setNewBlackoutReason] = useState("");
   const [blackoutOpen, setBlackoutOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
   const errors: BookableProductFieldErrors =
     overridesFetcher.data?.intent === "saveOverrides"
@@ -1245,6 +1274,20 @@ export default function BookableProductPage() {
     });
   };
 
+  const toggleCountry = (code: string) => {
+    setValues((prev) => {
+      const has = prev.countryCodes.includes(code);
+      const countryCodes = has
+        ? prev.countryCodes.filter((c) => c !== code)
+        : [...prev.countryCodes, code];
+      return { ...prev, countryCodes };
+    });
+  };
+
+  const filteredCountries = COUNTRIES.filter((country) =>
+    country.name.toLowerCase().includes(countrySearch.trim().toLowerCase()),
+  );
+
   const allWeekdaysSelected = WEEKDAY_LABELS.every((day) =>
     (values.workingDays ?? []).includes(day.value),
   );
@@ -1298,6 +1341,8 @@ export default function BookableProductPage() {
           values.bundleValidityDays !== null
             ? String(values.bundleValidityDays)
             : "",
+        countryMode: values.countryMode,
+        countryCodes: values.countryCodes.join(","),
       },
       { method: "POST" },
     );
@@ -1444,6 +1489,77 @@ export default function BookableProductPage() {
                   </div>
                 </FieldGroup>
               </div>
+            </Card>
+
+            <Card
+              title="Country Availability"
+              description='Control which countries can book this product. Leave as "All countries" to keep it open everywhere.'
+            >
+              <div style={ui.fieldsRow}>
+                <FieldGroup label="Availability" size="grow">
+                  <div style={ui.selectWrap}>
+                    <select
+                      style={ui.select}
+                      value={values.countryMode}
+                      aria-label="Country Availability"
+                      onChange={(e: FieldChangeEvent) => {
+                        const nextMode = e.currentTarget
+                          .value as BookableProductFormValues["countryMode"];
+                        setField("countryMode", nextMode);
+                        if (nextMode === "ALL") {
+                          setField("countryCodes", []);
+                        }
+                      }}
+                    >
+                      <option value="ALL">All countries</option>
+                      <option value="INCLUDE">Only these countries</option>
+                      <option value="EXCLUDE">
+                        All except these countries
+                      </option>
+                    </select>
+                    <span style={ui.selectChevron}>
+                      <ChevronDownIcon />
+                    </span>
+                  </div>
+                </FieldGroup>
+              </div>
+
+              {values.countryMode !== "ALL" && (
+                <div style={{ marginTop: "12px" }}>
+                  <input
+                    type="text"
+                    style={ui.textInput}
+                    placeholder="Search countries…"
+                    value={countrySearch}
+                    onChange={(e: FieldChangeEvent) =>
+                      setCountrySearch(e.currentTarget.value)
+                    }
+                  />
+                  <div style={{ ...ui.countryListScroll, marginTop: "8px" }}>
+                    {filteredCountries.map((country) => (
+                      <Checkbox
+                        key={country.code}
+                        checked={values.countryCodes.includes(country.code)}
+                        onChange={() => toggleCountry(country.code)}
+                        label={country.name}
+                      />
+                    ))}
+                    {filteredCountries.length === 0 && (
+                      <p style={ui.hintText}>No countries match your search.</p>
+                    )}
+                  </div>
+                  {values.countryCodes.length > 0 && (
+                    <p style={ui.hintText}>
+                      {values.countryMode === "INCLUDE"
+                        ? `Bookable only from: ${values.countryCodes.join(", ")}`
+                        : `Blocked in: ${values.countryCodes.join(", ")}`}
+                    </p>
+                  )}
+                  {errors.countryCodes && (
+                    <p style={ui.errorText}>{errors.countryCodes}</p>
+                  )}
+                </div>
+              )}
             </Card>
 
             {(values.bookingType === "SLOT" ||

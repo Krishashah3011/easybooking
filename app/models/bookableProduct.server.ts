@@ -9,6 +9,10 @@ import { BOOKING_TYPES } from "./bookingTypes";
 
 export { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "./bookingTypes";
 
+export type CountryMode = "ALL" | "INCLUDE" | "EXCLUDE";
+
+export const COUNTRY_MODES: CountryMode[] = ["ALL", "INCLUDE", "EXCLUDE"];
+
 export type BookableProductFormValues = {
   isEnabled: boolean;
   bookingType: BookingType;
@@ -27,6 +31,8 @@ export type BookableProductFormValues = {
   bundleSessionCount: number | null;
   bundleSessionDurationMinutes: number | null;
   bundleValidityDays: number | null;
+  countryMode: CountryMode;
+  countryCodes: string[];
 };
 
 export type BookableProductFieldErrors = Partial<
@@ -115,12 +121,28 @@ export function toBookableProductFormValues(
     bundleSessionCount: product.bundleSessionCount,
     bundleSessionDurationMinutes: product.bundleSessionDurationMinutes,
     bundleValidityDays: product.bundleValidityDays,
+    countryMode: parseCountryMode(product.countryMode),
+    countryCodes: parseCountryCodes(product.countryCodes),
   };
 }
 
 function toDateInputValue(date: Date | null): string | null {
   if (!date) return null;
   return date.toISOString().slice(0, 10);
+}
+
+function parseCountryMode(value: string | null | undefined): CountryMode {
+  return COUNTRY_MODES.includes(value as CountryMode)
+    ? (value as CountryMode)
+    : "ALL";
+}
+
+function parseCountryCodes(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((v) => v.trim().toUpperCase())
+    .filter(Boolean);
 }
 
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -274,6 +296,23 @@ export function parseBookableProductForm(formData: FormData): {
     errors.bundleValidityDays = "Validity window must be at least 1 day.";
   }
 
+  const countryModeRaw = String(formData.get("countryMode") ?? "ALL");
+  const countryMode: CountryMode = COUNTRY_MODES.includes(
+    countryModeRaw as CountryMode,
+  )
+    ? (countryModeRaw as CountryMode)
+    : "ALL";
+
+  const countryCodesRaw = String(formData.get("countryCodes") ?? "");
+  const countryCodes = countryCodesRaw
+    .split(",")
+    .map((v) => v.trim().toUpperCase())
+    .filter(Boolean);
+  if (countryMode !== "ALL" && countryCodes.length === 0) {
+    errors.countryCodes =
+      "Select at least one country, or switch back to all countries.";
+  }
+
   return {
     values: {
       isEnabled,
@@ -293,6 +332,8 @@ export function parseBookableProductForm(formData: FormData): {
       bundleSessionCount,
       bundleSessionDurationMinutes,
       bundleValidityDays,
+      countryMode,
+      countryCodes,
     },
     errors,
   };
@@ -377,6 +418,11 @@ export async function upsertBookableProductOverrides(
     bundleSessionCount: values.bundleSessionCount,
     bundleSessionDurationMinutes: values.bundleSessionDurationMinutes,
     bundleValidityDays: values.bundleValidityDays,
+    countryMode: values.countryMode,
+    countryCodes:
+      values.countryMode === "ALL" || values.countryCodes.length === 0
+        ? null
+        : values.countryCodes.join(","),
   };
 
   return prisma.bookableProduct.upsert({
@@ -384,6 +430,28 @@ export async function upsertBookableProductOverrides(
     create: { shop, productId, ...data },
     update: data,
   });
+}
+
+/**
+ * Whether a bookable product should be shown to a visitor from the given
+ * country. `countryCode` is an ISO 3166-1 alpha-2 code (e.g. "IN", "CN").
+ * When it's null/unknown (country couldn't be detected), the product is
+ * treated as available — we only ever gate on a country we're sure of.
+ */
+export function isProductAvailableForCountry(
+  product: Pick<BookableProduct, "countryMode" | "countryCodes">,
+  countryCode: string | null,
+): boolean {
+  const mode = parseCountryMode(product.countryMode);
+  if (mode === "ALL") return true;
+
+  const codes = parseCountryCodes(product.countryCodes);
+  if (codes.length === 0) return true;
+  if (!countryCode) return true;
+
+  const normalized = countryCode.trim().toUpperCase();
+  const isListed = codes.includes(normalized);
+  return mode === "INCLUDE" ? isListed : !isListed;
 }
 
 export type LocationHoursOverride = {
