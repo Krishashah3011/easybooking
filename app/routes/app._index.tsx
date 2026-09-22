@@ -19,6 +19,17 @@ const TRACK_GREY = "#DBDBDB";
 const MUTED_GREY = "#898989";
 
 const analyticsStyles: Record<string, React.CSSProperties> = {
+  outerCard: {
+    boxSizing: "border-box",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    padding: "16px",
+    background: "#FFFFFF",
+    border: `1px solid ${DIVIDER}`,
+    borderRadius: "8px",
+  },
   card: {
     height: "353px",
     background: "#FFFFFF",
@@ -536,7 +547,14 @@ export default function Dashboard() {
   const remainingSteps = setupSteps.filter((s) => !s.done);
 
   return (
-    <s-page heading="Dashboard" inlineSize="large" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Dashboard" inlineSize="950px" style={{ fontFamily: "Inter" }}>
+      <GetStartedGuide
+        appName="EasyBooking"
+        intro="A quick walkthrough of how to get bookings running end to end."
+        steps={guideSteps}
+      />
+
+      <div style={analyticsStyles.outerCard}>
       {!registered && (
         <s-banner tone="info" heading="Register to unlock EasyBooking">
           <s-paragraph>
@@ -582,12 +600,6 @@ export default function Dashboard() {
           )}
         </>
       )}
-
-      <GetStartedGuide
-        appName="EasyBooking"
-        intro="A quick walkthrough of how to get bookings running end to end."
-        steps={guideSteps}
-      />
 
       {registered && report && (
         <>
@@ -747,6 +759,7 @@ export default function Dashboard() {
         </>
       )}
 
+      </div>
     </s-page>
   );
 }

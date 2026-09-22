@@ -132,6 +132,17 @@ const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
 };
 
 const S: Record<string, React.CSSProperties> = {
+  outerCard: {
+    boxSizing: "border-box",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    padding: "16px",
+    background: "#FFFFFF",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "8px",
+  },
   pageHeaderRow: {
     display: "flex",
     flexDirection: "row",
@@ -175,9 +186,8 @@ const S: Record<string, React.CSSProperties> = {
     width: "100%",
     background: "#FFFFFF",
     border: `1px solid ${BORDER}`,
-    borderRadius: "8px",
+    borderRadius: "4px",
     padding: "16px",
-    marginTop: "16px",
   },
   listHeaderRow: {
     display: "flex",
@@ -1838,6 +1848,7 @@ function BookingsListPage({
   return (
     <s-page heading="Bookings" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <s-section>
+      <div style={S.outerCard}>
         <div style={S.pageHeaderRow}>
           <div>
             <h1 style={settingsStyles.heading}>Bookings</h1>
@@ -2025,6 +2036,7 @@ function BookingsListPage({
             </div>
           )}
         </div>
+      </div>
       </s-section>
     </s-page>
   );

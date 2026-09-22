@@ -48,6 +48,17 @@ const SearchIcon = () => (
 );
 
 const styles: Record<string, React.CSSProperties> = {
+  outerCard: {
+    boxSizing: "border-box",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    padding: "16px",
+    background: "#FFFFFF",
+    border: `1px solid ${LINE_BORDER}`,
+    borderRadius: "8px",
+  },
   listCard: {
     boxSizing: "border-box",
     display: "flex",
@@ -56,9 +67,8 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER}`,
-    borderRadius: "8px",
+    borderRadius: "4px",
     padding: "16px",
-    marginTop: "16px",
   },
   listHeaderRow: {
     display: "flex",
@@ -331,6 +341,7 @@ export default function BookingProductsPage() {
   return (
     <s-page inlineSize="700px">
       <s-section>
+      <div style={styles.outerCard}>
         <div>
           <h1 style={settingsStyles.heading}>Products</h1>
           <p style={settingsStyles.pageSubtitle}>
@@ -466,6 +477,7 @@ export default function BookingProductsPage() {
             </div>
           )}
         </div>
+      </div>
       </s-section>
     </s-page>
   );
