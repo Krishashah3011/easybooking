@@ -940,10 +940,6 @@ function Card({
   );
 }
 
-// --- 12-hour time input helpers (inlined here — no separate file) ---
-// The stored/submitted value stays a 24-hour "HH:MM" string everywhere
-// else in the app; these only translate it to/from the 3 pieces a
-// 12-hour input needs (hour 1-12, minute, AM/PM).
 type TwelveHourParts = { hour: string; minute: string; period: "AM" | "PM" };
 
 function to12HourParts(value: string | null | undefined): TwelveHourParts {
@@ -1010,10 +1006,6 @@ function TimeField({
     if (fromTwelveHourParts(parts) !== value) {
       setParts(to12HourParts(value));
     }
-    // Only resync from the parent when its value no longer matches what
-    // these parts would produce (e.g. an external reset) — not on every
-    // keystroke, so typing across the hour/minute fields isn't clobbered.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const commit = (next: TwelveHourParts) => {
@@ -1768,10 +1760,7 @@ export default function BookableProductPage() {
                 <div style={ui.cardHeaderText}>
                   <p style={ui.title}>Current Blackout Dates</p>
                   <p style={ui.descText}>
-                    Store-wide blackout dates are included below alongside
-                    this product's own. Removing a store-wide date here only
-                    opts this product out of it \u2014 it stays blacked out
-                    for every other product.
+                    This blackout dates block bookings for this product.
                   </p>
                 </div>
 
@@ -1780,7 +1769,6 @@ export default function BookableProductPage() {
                 <div style={ui.columnHeaderRow}>
                   <p style={ui.columnHeaderCell}>Date</p>
                   <p style={ui.columnHeaderCell}>Reason</p>
-                  <p style={ui.columnHeaderCell}>Source</p>
                   <p style={{ ...ui.columnHeaderCell, textAlign: "center" }}>
                     Actions
                   </p>
@@ -1799,47 +1787,26 @@ export default function BookableProductPage() {
                       <div style={ui.rowWrap}>
                         <p style={ui.rowCell}>{b.date}</p>
                         <p style={ui.rowCell}>{b.reason ?? "—"}</p>
-                        <p style={ui.rowCell}>
-                          {b.source === "shop" ? "Store-wide" : "This product"}
-                        </p>
                         <div style={ui.actionsCell}>
-                          {b.source === "shop" ? (
-                            <button
-                              type="button"
-                              style={{
-                                ...ui.deleteButton,
-                                width: "auto",
-                                height: "auto",
-                                padding: "6px 10px",
-                                fontFamily: "Inter",
-                                fontSize: "12px",
-                                fontWeight: 600,
-                                color: TEXT_DARK,
-                                border: `1px solid ${INPUT_BORDER}`,
-                                borderRadius: "4px",
-                              }}
-                              onClick={() => handleExcludeBlackoutDate(b.date)}
-                              disabled={isBlackoutBusy}
-                            >
-                              Remove for this product
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              style={ui.deleteButton}
-                              onClick={() => handleDeleteBlackoutDate(b.id)}
-                              disabled={isBlackoutBusy}
-                              aria-label="Delete blackout date"
-                            >
-                              <img
-                                src="/delete-icon.svg"
-                                width={44}
-                                height={40}
-                                alt="Delete"
-                                style={{ display: "block" }}
-                              />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            style={ui.deleteButton}
+                            onClick={() =>
+                              b.source === "shop"
+                                ? handleExcludeBlackoutDate(b.date)
+                                : handleDeleteBlackoutDate(b.id)
+                            }
+                            disabled={isBlackoutBusy}
+                            aria-label="Delete blackout date"
+                          >
+                            <img
+                              src="/delete-icon.svg"
+                              width={44}
+                              height={40}
+                              alt="Delete"
+                              style={{ display: "block" }}
+                            />
+                          </button>
                         </div>
                       </div>
                       <hr style={ui.divider} />
