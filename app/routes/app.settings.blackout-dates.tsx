@@ -57,7 +57,8 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "flex-end",
     padding: "10px 10px 13px",
     gap: "16px",
-    width: "886px",
+    width: "100%",
+    maxWidth: "886px",
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER}`,
     borderRadius: "4px",
@@ -123,6 +124,7 @@ const styles: Record<string, React.CSSProperties> = {
   fieldsRow: {
     display: "flex",
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "flex-start",
     gap: "12px",
     width: "100%",
@@ -134,6 +136,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "flex-start",
     gap: "4px",
     width: "200px",
+    maxWidth: "100%",
     flex: "none",
   },
   fieldGroupReason: {
@@ -141,7 +144,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "flex-start",
     gap: "4px",
-    flex: "1 1 auto",
+    flex: "1 1 220px",
+    minWidth: 0,
   },
   fieldLabel: {
     fontFamily: "Inter",
@@ -446,7 +450,7 @@ export default function BlackoutDatesPage() {
           position: relative;
         }
       `}</style>
-      <div style={{ ...styles.card, height: open ? "225px" : "auto" }}>
+      <div style={{ ...styles.card, minHeight: open ? "225px" : "auto", height: "auto" }}>
         <div style={styles.body}>
           <div
             style={{ ...styles.headerRow, cursor: "pointer" }}

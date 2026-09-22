@@ -220,9 +220,10 @@ const ui: Record<string, React.CSSProperties> = {
   toggleRow: {
     display: "flex",
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "128px",
+    gap: "12px",
     width: "100%",
   },
   toggleText: {
@@ -231,6 +232,8 @@ const ui: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     alignItems: "flex-start",
     gap: "4px",
+    minWidth: 0,
+    flex: "1 1 200px",
   },
   cardHeaderRow: {
     display: "flex",

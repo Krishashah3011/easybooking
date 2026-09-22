@@ -929,6 +929,81 @@ body.booking-widget-lock-scroll {
   .booking-widget__overlay {
     padding: 0.5rem;
   }
+
+  .booking-widget__modal-header,
+  .booking-widget__modal-body,
+  .booking-widget__review-step,
+  .booking-widget__fields-pane,
+  .booking-widget__modal-footer,
+  .booking-widget__ask-more {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .booking-widget__location-field {
+    max-width: none;
+    width: 100%;
+  }
+
+  .booking-widget__quantity-note {
+    white-space: normal;
+  }
+
+  .booking-widget__modal-footer {
+    justify-content: center;
+  }
+
+  .booking-widget__footer-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .booking-widget__btn--confirm,
+  .booking-widget__btn--secondary {
+    flex: 1 1 auto;
+  }
+}
+
+/* Short / landscape phone screens: the modal's vh-based height can crowd
+   the content, so cap it more aggressively and let the body scroll. */
+@media (max-height: 480px) {
+  .booking-widget__modal {
+    height: 94svh;
+    height: 94vh;
+    max-height: 94vh;
+  }
+
+  .booking-widget__modal-header {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .booking-widget__review-step {
+    padding-top: 1rem;
+  }
+}
+
+/* Tablet-width phones/small tablets: keep the two-pane layout but tighten
+   spacing before the 560px stacked layout kicks in. */
+@media (min-width: 561px) and (max-width: 780px) {
+  .booking-widget__modal {
+    width: 94vw;
+  }
+
+  .booking-widget__datetime-step {
+    gap: 1rem;
+  }
+
+  .booking-widget__calendar-pane {
+    flex-basis: 340px;
+  }
+
+  .booking-widget__slots-pane {
+    flex-basis: 200px;
+    width: 200px;
+    min-width: 200px;
+  }
 }
 
 .booking-widget__quantity {

@@ -281,7 +281,11 @@ function StatTile({
   width?: string;
 }) {
   return (
-    <a href={href} style={width ? { ...analyticsStyles.statTile, width } : analyticsStyles.statTile}>
+    <a
+      className="eb-stat-tile"
+      href={href}
+      style={width ? { ...analyticsStyles.statTile, width } : analyticsStyles.statTile}
+    >
       <div style={analyticsStyles.statTileHeader}>
         <p style={analyticsStyles.statTileLabel}>{label}</p>
         <img src={icon} alt="" width={20} height={20} />
@@ -599,10 +603,34 @@ export default function Dashboard() {
             .eb-date-input {
               position: relative;
             }
+            @media (max-width: 700px) {
+              .eb-analytics-card {
+                height: auto !important;
+              }
+              .eb-analytics-filter-row {
+                flex-wrap: wrap !important;
+                height: auto !important;
+              }
+              .eb-analytics-filter-row > div {
+                flex: 1 1 100% !important;
+                height: auto !important;
+              }
+              .eb-analytics-stats-row {
+                flex-wrap: wrap !important;
+              }
+              .eb-stat-tile {
+                flex: 1 1 calc(50% - 9px) !important;
+              }
+            }
+            @media (max-width: 420px) {
+              .eb-stat-tile {
+                flex: 1 1 100% !important;
+              }
+            }
           `}</style>
-          <div style={analyticsStyles.card}>
+          <div className="eb-analytics-card" style={analyticsStyles.card}>
             <h2 style={analyticsStyles.heading}>Store Analytics</h2>
-            <div style={analyticsStyles.filterRow}>
+            <div className="eb-analytics-filter-row" style={analyticsStyles.filterRow}>
               <div style={analyticsStyles.productFilterField}>
                 <label style={analyticsStyles.filterLabel}>Products</label>
                 <select
@@ -651,7 +679,7 @@ export default function Dashboard() {
               </div>
             </div>
             <hr style={analyticsStyles.divider} />
-            <div style={analyticsStyles.statsRow}>
+            <div className="eb-analytics-stats-row" style={analyticsStyles.statsRow}>
               <StatTile
                 label="Bookings Today"
                 value={stats.todayCount}
@@ -670,7 +698,7 @@ export default function Dashboard() {
                 icon="/msg-icon.svg"
               />
             </div>
-            <div style={analyticsStyles.statsRow}>
+            <div className="eb-analytics-stats-row" style={analyticsStyles.statsRow}>
               <StatTile
                 label="Confirmed Bookings"
                 value={report.confirmedCount}
@@ -684,7 +712,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div style={analyticsStyles.card}>
+          <div className="eb-analytics-card" style={analyticsStyles.card}>
             <h2 style={analyticsStyles.heading}>Bookings by Product</h2>
             <hr style={analyticsStyles.divider} />
             <BarRows
@@ -695,7 +723,7 @@ export default function Dashboard() {
             />
           </div>
 
-          <div style={analyticsStyles.card}>
+          <div className="eb-analytics-card" style={analyticsStyles.card}>
             <h2 style={analyticsStyles.heading}>Peak Hours</h2>
             <hr style={analyticsStyles.divider} />
             <BarRows
@@ -706,7 +734,7 @@ export default function Dashboard() {
             />
           </div>
 
-          <div style={analyticsStyles.card}>
+          <div className="eb-analytics-card" style={analyticsStyles.card}>
             <h2 style={analyticsStyles.heading}>Popular Days</h2>
             <hr style={analyticsStyles.divider} />
             <BarRows

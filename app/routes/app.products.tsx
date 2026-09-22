@@ -117,6 +117,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   table: {
     width: "100%",
+    minWidth: "640px",
     borderCollapse: "collapse",
   },
   th: {

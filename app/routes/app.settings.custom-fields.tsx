@@ -77,7 +77,8 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "flex-end",
     padding: "10px 10px 13px",
     gap: "16px",
-    width: "886px",
+    width: "100%",
+    maxWidth: "886px",
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER}`,
     borderRadius: "4px",
@@ -143,6 +144,7 @@ const styles: Record<string, React.CSSProperties> = {
   fieldsRow: {
     display: "flex",
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "flex-start",
     gap: "12px",
     width: "100%",
@@ -161,7 +163,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "flex-start",
     gap: "4px",
-    flex: "1 1 0",
+    flex: "1 1 200px",
     minWidth: 0,
   },
   fieldGroupOptions: {
