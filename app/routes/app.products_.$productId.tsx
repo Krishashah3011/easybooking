@@ -9,7 +9,6 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
-import { TimeField12h } from "../components/TimeField12h";
 import { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "../models/bookingTypes";
 import { getBookingSettings } from "../models/bookingSettings.server";
 import {
@@ -941,6 +940,57 @@ function Card({
   );
 }
 
+// --- 12-hour time input helpers (inlined here — no separate file) ---
+// The stored/submitted value stays a 24-hour "HH:MM" string everywhere
+// else in the app; these only translate it to/from the 3 pieces a
+// 12-hour input needs (hour 1-12, minute, AM/PM).
+type TwelveHourParts = { hour: string; minute: string; period: "AM" | "PM" };
+
+function to12HourParts(value: string | null | undefined): TwelveHourParts {
+  const match = value ? /^(\d{1,2}):(\d{2})$/.exec(value) : null;
+  if (!match) return { hour: "", minute: "", period: "AM" };
+  const hour24 = Number(match[1]);
+  const period: "AM" | "PM" = hour24 >= 12 ? "PM" : "AM";
+  let hour12 = hour24 % 12;
+  if (hour12 === 0) hour12 = 12;
+  return { hour: String(hour12), minute: match[2], period };
+}
+
+function fromTwelveHourParts(parts: TwelveHourParts): string | null {
+  const hour12 = Number(parts.hour);
+  const minute = Number(parts.minute);
+  if (
+    !parts.hour ||
+    !parts.minute ||
+    parts.minute.length < 2 ||
+    !Number.isFinite(hour12) ||
+    hour12 < 1 ||
+    hour12 > 12 ||
+    !Number.isFinite(minute) ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+  let hour24 = hour12 % 12;
+  if (parts.period === "PM") hour24 += 12;
+  return `${String(hour24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function sanitizeHourInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 2);
+  if (digits === "") return "";
+  const n = Math.min(12, Math.max(0, Number(digits)));
+  return n === 0 ? digits : String(n);
+}
+
+function sanitizeMinuteInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 2);
+  if (digits === "") return "";
+  const n = Math.min(59, Number(digits));
+  return String(n).padStart(digits.length, "0").slice(0, 2);
+}
+
 function TimeField({
   label,
   value,
@@ -954,17 +1004,75 @@ function TimeField({
   error?: string;
   onChange: (next: string | null) => void;
 }) {
+  const [parts, setParts] = useState(() => to12HourParts(value));
+
+  useEffect(() => {
+    if (fromTwelveHourParts(parts) !== value) {
+      setParts(to12HourParts(value));
+    }
+    // Only resync from the parent when its value no longer matches what
+    // these parts would produce (e.g. an external reset) — not on every
+    // keystroke, so typing across the hour/minute fields isn't clobbered.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const commit = (next: TwelveHourParts) => {
+    setParts(next);
+    onChange(fromTwelveHourParts(next));
+  };
+
+  const placeholderParts = to12HourParts(
+    /^\d{1,2}:\d{2}$/.test(placeholder) ? placeholder : null,
+  );
+
   return (
     <FieldGroup label={label} grey hint="12-hour format, hh:mm AM/PM" error={error}>
-      <TimeField12h
-        value={value}
-        placeholder={placeholder}
-        onChange={onChange}
-        inputBoxStyle={ui.inputBox}
-        inputStyle={ui.timeInput}
-        borderColor={INPUT_BORDER}
-        textColor={TEXT_DARK}
-      />
+      <div style={{ ...ui.inputBox, gap: "6px" }}>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={2}
+          style={{ ...ui.timeInput, flex: "0 0 22px", textAlign: "right" }}
+          placeholder={placeholderParts.hour || "09"}
+          value={parts.hour}
+          onChange={(e: FieldChangeEvent) =>
+            commit({ ...parts, hour: sanitizeHourInput(e.currentTarget.value) })
+          }
+        />
+        <span style={{ color: TEXT_DARK }}>:</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={2}
+          style={{ ...ui.timeInput, flex: "0 0 22px" }}
+          placeholder={placeholderParts.minute || "00"}
+          value={parts.minute}
+          onChange={(e: FieldChangeEvent) =>
+            commit({ ...parts, minute: sanitizeMinuteInput(e.currentTarget.value) })
+          }
+        />
+        <button
+          type="button"
+          onClick={() =>
+            commit({ ...parts, period: parts.period === "AM" ? "PM" : "AM" })
+          }
+          style={{
+            marginLeft: "auto",
+            flex: "0 0 auto",
+            border: `1px solid ${INPUT_BORDER}`,
+            borderRadius: "4px",
+            background: "#fff",
+            color: TEXT_DARK,
+            fontFamily: "Inter",
+            fontWeight: 600,
+            fontSize: "12px",
+            padding: "3px 8px",
+            cursor: "pointer",
+          }}
+        >
+          {parts.period}
+        </button>
+      </div>
     </FieldGroup>
   );
 }
