@@ -1847,7 +1847,6 @@ function BookingsListPage({
 
   return (
     <s-page heading="Bookings" inlineSize="950px" style={{ fontFamily: "Inter" }}>
-      <s-section>
       <div style={S.outerCard}>
         <div style={S.pageHeaderRow}>
           <div>
@@ -2037,7 +2036,6 @@ function BookingsListPage({
           )}
         </div>
       </div>
-      </s-section>
     </s-page>
   );
 }

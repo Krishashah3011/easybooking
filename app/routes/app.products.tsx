@@ -340,7 +340,6 @@ export default function BookingProductsPage() {
 
   return (
     <s-page inlineSize="700px">
-      <s-section>
       <div style={styles.outerCard}>
         <div>
           <h1 style={settingsStyles.heading}>Products</h1>
@@ -478,7 +477,6 @@ export default function BookingProductsPage() {
           )}
         </div>
       </div>
-      </s-section>
     </s-page>
   );
 }
