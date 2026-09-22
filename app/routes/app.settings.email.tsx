@@ -29,7 +29,15 @@ import {
   EMAIL_TEMPLATE_TYPES,
   type EmailTemplateType,
 } from "../models/emailTemplateTypes";
-import { styles, BORDER, TEXT_DARK, TEXT_MUTED, BLUE } from "../components/SettingsUI";
+import {
+  styles,
+  BORDER,
+  TEXT_DARK,
+  TEXT_MUTED,
+  BLUE,
+  ChevronDownIcon,
+  collapsibleHeaderStyle,
+} from "../components/SettingsUI";
 import type { RegisterSave } from "./app.settings";
 
 type TemplateRow = Awaited<ReturnType<typeof listEmailTemplates>>[number];
@@ -123,6 +131,7 @@ export default function EmailSettingsTab() {
     toEditableValues(initialTemplates),
   );
   const [previewOpen, setPreviewOpen] = useState<Record<string, boolean>>({});
+  const [openTemplates, setOpenTemplates] = useState<Record<string, boolean>>({});
   const bodyRefs = useRef<Record<string, RichTextEditorHandle | null>>({});
 
   const smtpErrors: SmtpSettingsFieldErrors =
@@ -185,6 +194,10 @@ export default function EmailSettingsTab() {
 
   const togglePreview = (type: EmailTemplateType) => {
     setPreviewOpen((prev) => ({ ...prev, [type]: !prev[type] }));
+  };
+
+  const toggleTemplateOpen = (type: EmailTemplateType) => {
+    setOpenTemplates((prev) => ({ ...prev, [type]: !prev[type] }));
   };
 
   const handleSave = () => {
@@ -331,26 +344,53 @@ export default function EmailSettingsTab() {
 
           {templates.map((template, index) => {
             const editable = templateValues[template.type] ?? { subject: "", body: "" };
+            const isOpen = !!openTemplates[template.type];
             return (
               <div key={template.type}>
                 {index > 0 && <div style={styles.clientDivider} />}
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "6px 0" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                    <div>
-                      <div style={{ ...styles.label, fontSize: "15px" }}>{template.label}</div>
-                      <div style={styles.subLabel}>{template.description}</div>
+                  <div
+                    style={{ ...collapsibleHeaderStyle(), alignItems: "flex-start" }}
+                    onClick={() => toggleTemplateOpen(template.type)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleTemplateOpen(template.type);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isOpen}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <ChevronDownIcon open={isOpen} />
+                      <div>
+                        <div style={styles.label}>
+                          {template.label}
+                          {template.isCustomized && (
+                            <span style={customizedPillStyle}>Customized</span>
+                          )}
+                        </div>
+                        <div style={styles.subLabel}>{template.description}</div>
+                      </div>
                     </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
                       <button
                         type="button"
-                        onClick={() => togglePreview(template.type)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePreview(template.type);
+                        }}
                         style={resetButtonStyle(false)}
                       >
                         {previewOpen[template.type] ? "Hide preview" : "Preview"}
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleResetTemplate(template.type)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleResetTemplate(template.type);
+                        }}
                         disabled={!template.isCustomized || isResetting}
                         style={resetButtonStyle(!template.isCustomized || isResetting)}
                       >
@@ -359,40 +399,44 @@ export default function EmailSettingsTab() {
                     </div>
                   </div>
 
-                  <div style={styles.clientFieldGroup}>
-                    <div style={styles.clientFieldLabel}>Subject</div>
-                    <input
-                      type="text"
-                      style={styles.clientInput}
-                      value={editable.subject}
-                      onChange={(e) => setTemplateField(template.type, "subject", e.target.value)}
-                    />
-                  </div>
+                  {isOpen && (
+                    <>
+                      <div style={styles.clientFieldGroup}>
+                        <div style={styles.clientFieldLabel}>Subject</div>
+                        <input
+                          type="text"
+                          style={styles.clientInput}
+                          value={editable.subject}
+                          onChange={(e) => setTemplateField(template.type, "subject", e.target.value)}
+                        />
+                      </div>
 
-                  <div style={styles.clientFieldGroup}>
-                    <div style={styles.clientFieldLabel}>Email Body</div>
-                    <RichTextEditor
-                      ref={(el) => {
-                        bodyRefs.current[template.type] = el;
-                      }}
-                      value={editable.body}
-                      onChange={(html) => setTemplateField(template.type, "body", html)}
-                    />
-                  </div>
+                      <div style={styles.clientFieldGroup}>
+                        <div style={styles.clientFieldLabel}>Email Body</div>
+                        <RichTextEditor
+                          ref={(el) => {
+                            bodyRefs.current[template.type] = el;
+                          }}
+                          value={editable.body}
+                          onChange={(html) => setTemplateField(template.type, "body", html)}
+                        />
+                      </div>
 
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                    {template.placeholders.map((p) => (
-                      <button
-                        key={p.token}
-                        type="button"
-                        title={p.description}
-                        onClick={() => insertToken(template.type, p.token)}
-                        style={tokenPillStyle}
-                      >
-                        {p.token}
-                      </button>
-                    ))}
-                  </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                        {template.placeholders.map((p) => (
+                          <button
+                            key={p.token}
+                            type="button"
+                            title={p.description}
+                            onClick={() => insertToken(template.type, p.token)}
+                            style={tokenPillStyle}
+                          >
+                            {p.token}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
 
                   {previewOpen[template.type] && (
                     <EmailPreview type={template.type} subject={editable.subject} body={editable.body} />
@@ -462,6 +506,18 @@ const previewBodyStyle: React.CSSProperties = {
   fontSize: "14px",
   color: TEXT_DARK,
   lineHeight: 1.5,
+};
+
+const customizedPillStyle: React.CSSProperties = {
+  marginLeft: "8px",
+  padding: "1px 8px",
+  borderRadius: "999px",
+  background: "#EAF1FB",
+  color: BLUE,
+  fontFamily: "Inter",
+  fontWeight: 500,
+  fontSize: "11px",
+  verticalAlign: "middle",
 };
 
 const tokenPillStyle: React.CSSProperties = {
