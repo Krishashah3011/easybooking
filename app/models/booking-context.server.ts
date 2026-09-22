@@ -7,6 +7,7 @@ import {
 } from "./bookableProduct.server";
 import {
   listProductBlackoutDates,
+  listProductBlackoutExclusions,
   listShopBlackoutDates,
 } from "./blackoutDate.server";
 import { getLocationById } from "./bookingLocation.server";
@@ -35,13 +36,16 @@ async function buildBookingContext(
     return null;
   }
 
-  const [shopBlackouts, productBlackouts] = await Promise.all([
+  const [shopBlackouts, productBlackouts, productExclusions] = await Promise.all([
     listShopBlackoutDates(shop),
     listProductBlackoutDates(shop, bookableProduct.id),
+    listProductBlackoutExclusions(shop, bookableProduct.id),
   ]);
 
   const blackoutDates = new Set<string>([
-    ...shopBlackouts.map((b) => b.date.toISOString().slice(0, 10)),
+    ...shopBlackouts
+      .map((b) => b.date.toISOString().slice(0, 10))
+      .filter((dateStr) => !productExclusions.has(dateStr)),
     ...productBlackouts.map((b) => b.date.toISOString().slice(0, 10)),
   ]);
 

@@ -9,6 +9,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
+import { TimeField12h } from "../components/TimeField12h";
 import { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "../models/bookingTypes";
 import { getBookingSettings } from "../models/bookingSettings.server";
 import {
@@ -22,7 +23,10 @@ import {
 import {
   addBlackoutDate,
   deleteBlackoutDate,
+  excludeShopBlackoutDateForProduct,
   listProductBlackoutDates,
+  listProductBlackoutExclusions,
+  listShopBlackoutDates,
   parseBlackoutDateForm,
   type BlackoutDateFieldErrors,
 } from "../models/blackoutDate.server";
@@ -66,11 +70,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     productId,
     product.title,
   );
-  const [shopSettings, blackoutDates, enabledLocations] = await Promise.all([
-    getBookingSettings(session.shop),
-    listProductBlackoutDates(session.shop, bookableProduct.id),
-    listEnabledLocations(session.shop),
-  ]);
+  const [shopSettings, blackoutDates, shopBlackoutDates, productExclusions, enabledLocations] =
+    await Promise.all([
+      getBookingSettings(session.shop),
+      listProductBlackoutDates(session.shop, bookableProduct.id),
+      listShopBlackoutDates(session.shop),
+      listProductBlackoutExclusions(session.shop, bookableProduct.id),
+      listEnabledLocations(session.shop),
+    ]);
 
   return {
     productId,
@@ -87,13 +94,24 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       maxAdvanceDays: shopSettings.maxAdvanceDays,
       maxBookingsPerSlot: shopSettings.maxBookingsPerSlot,
     },
-    blackoutDates: blackoutDates.map(
-      (b: { id: string; date: Date; reason: string | null }) => ({
-        id: b.id,
-        date: b.date.toISOString().slice(0, 10),
-        reason: b.reason,
-      }),
-    ),
+    blackoutDates: [
+      ...shopBlackoutDates
+        .filter((b: { date: Date }) => !productExclusions.has(b.date.toISOString().slice(0, 10)))
+        .map((b: { id: string; date: Date; reason: string | null }) => ({
+          id: b.id,
+          date: b.date.toISOString().slice(0, 10),
+          reason: b.reason,
+          source: "shop" as const,
+        })),
+      ...blackoutDates.map(
+        (b: { id: string; date: Date; reason: string | null }) => ({
+          id: b.id,
+          date: b.date.toISOString().slice(0, 10),
+          reason: b.reason,
+          source: "product" as const,
+        }),
+      ),
+    ],
   };
 };
 
@@ -102,7 +120,11 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   const productId = `gid://shopify/Product/${params.productId}`;
   const formData = await request.formData();
   const intent = String(formData.get("intent") ?? "") as
-    "saveOverrides" | "addBlackoutDate" | "deleteBlackoutDate" | "";
+    | "saveOverrides"
+    | "addBlackoutDate"
+    | "deleteBlackoutDate"
+    | "excludeBlackoutDate"
+    | "";
 
   if (intent === "saveOverrides") {
     const productTitle = String(formData.get("productTitle") ?? "");
@@ -158,6 +180,20 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   if (intent === "deleteBlackoutDate") {
     const id = String(formData.get("id") ?? "");
     await deleteBlackoutDate(session.shop, id);
+    return { intent, ok: true as const };
+  }
+
+  if (intent === "excludeBlackoutDate") {
+    const bookableProduct = await ensureBookableProduct(
+      session.shop,
+      productId,
+      String(formData.get("productTitle") ?? ""),
+    );
+    const date = String(formData.get("date") ?? "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return { intent, ok: false as const };
+    }
+    await excludeShopBlackoutDateForProduct(session.shop, bookableProduct.id, date);
     return { intent, ok: true as const };
   }
 
@@ -220,10 +256,9 @@ const ui: Record<string, React.CSSProperties> = {
   toggleRow: {
     display: "flex",
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "12px",
+    gap: "128px",
     width: "100%",
   },
   toggleText: {
@@ -232,8 +267,6 @@ const ui: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     alignItems: "flex-start",
     gap: "4px",
-    minWidth: 0,
-    flex: "1 1 200px",
   },
   cardHeaderRow: {
     display: "flex",
@@ -922,28 +955,16 @@ function TimeField({
   onChange: (next: string | null) => void;
 }) {
   return (
-    <FieldGroup
-      label={label}
-      grey
-      hint="24-hour format, hh:mm"
-      error={error}
-    >
-      <div style={ui.inputBox}>
-        <input
-          type="text"
-          inputMode="numeric"
-          maxLength={5}
-          style={ui.timeInput}
-          placeholder={placeholder}
-          value={value ?? ""}
-          onChange={(e: FieldChangeEvent) => {
-            const digits = e.currentTarget.value.replace(/\D/g, "").slice(0, 4);
-            const formatted =
-              digits.length <= 2 ? digits : `${digits.slice(0, 2)}:${digits.slice(2)}`;
-            onChange(formatted || null);
-          }}
-        />
-      </div>
+    <FieldGroup label={label} grey hint="12-hour format, hh:mm AM/PM" error={error}>
+      <TimeField12h
+        value={value}
+        placeholder={placeholder}
+        onChange={onChange}
+        inputBoxStyle={ui.inputBox}
+        inputStyle={ui.timeInput}
+        borderColor={INPUT_BORDER}
+        textColor={TEXT_DARK}
+      />
     </FieldGroup>
   );
 }
@@ -1202,6 +1223,13 @@ export default function BookableProductPage() {
     );
   };
 
+  const handleExcludeBlackoutDate = (date: string) => {
+    blackoutFetcher.submit(
+      { intent: "excludeBlackoutDate", productTitle, date },
+      { method: "POST" },
+    );
+  };
+
   return (
     <s-page inlineSize="large">
       <div style={ui.root}>
@@ -1272,6 +1300,7 @@ export default function BookableProductPage() {
               <div style={ui.toggleRow}>
                 <div style={ui.toggleText}>
                   <p style={ui.fieldLabelBlack}>Bookings</p>
+                  <p style={ui.hintText}>Booking enabled for this product</p>
                 </div>
                 <Toggle
                   checked={values.isEnabled}
@@ -1287,7 +1316,7 @@ export default function BookableProductPage() {
 
             <Card
               title="Booking Type"
-              description="Choose how this product is booked. Changing this only affects what settings apply below, existing bookings aren’t touched."
+              description="Choose how this product is booked. Changing this only affects what settings apply below — existing bookings aren’t touched."
             >
               <div style={ui.fieldsRow}>
                 <FieldGroup label="Booking Type" size="grow">
@@ -1323,7 +1352,7 @@ export default function BookableProductPage() {
               values.bookingType === "BUNDLE") && (
               <Card
                 title="Working Days"
-                description="Choose which days of the week customers can book appointments on (Leave blank to use the shop default)."
+                description="Leave every day unchecked below and this product will use the shop default instead. Check any day to set a custom schedule just for this product."
               >
                 <div style={ui.daysGroup}>
                   <div style={ui.daysRow}>
@@ -1357,7 +1386,7 @@ export default function BookableProductPage() {
               values.bookingType === "FULL_DAY") && (
               <Card
                 title="Daily Booking Window"
-                description="The earliest and latest time a slot can start each working day (Leave blank to use the shop default)."
+                description="The earliest and latest time a slot can start each working day. Leave blank to use the shop default."
               >
                 <div style={ui.fieldsRow}>
                   <TimeField
@@ -1529,7 +1558,7 @@ export default function BookableProductPage() {
 
             <Card
               title="Advance Booking Rules"
-              description="Control how soon and how far ahead customers can book this product (Leave blank to use the shop default)."
+              description="Control how soon and how far ahead customers can book this product. Leave blank to use the shop default."
             >
               <div style={ui.fieldsRow}>
                 <NumberField
@@ -1557,7 +1586,7 @@ export default function BookableProductPage() {
 
             <Card
               title="Booking Start and End Date"
-              description="Set the overall window in which bookings are accepted (Leave blank to use the shop default)."
+              description="Restricts the overall window bookings are accepted in for this product. Leave blank to use the shop default."
             >
               <div style={ui.fieldsRow}>
                 <DateField
@@ -1577,7 +1606,7 @@ export default function BookableProductPage() {
 
             <Card
               title="Add a Blackout Date"
-              description="Block bookings of this product on specific dates- holidays, closures, and one-off events (on top of any shop-wide blackout dates)."
+              description="Dates this specific product can’t be booked on — e.g. maintenance or a specific staff member’s day off — on top of any shop-wide blackout dates."
               collapsible
               open={blackoutOpen}
               onToggle={() => setBlackoutOpen((prev) => !prev)}
@@ -1631,7 +1660,10 @@ export default function BookableProductPage() {
                 <div style={ui.cardHeaderText}>
                   <p style={ui.title}>Current Blackout Dates</p>
                   <p style={ui.descText}>
-                    Blackout dates that apply to this product only.
+                    Store-wide blackout dates are included below alongside
+                    this product's own. Removing a store-wide date here only
+                    opts this product out of it \u2014 it stays blacked out
+                    for every other product.
                   </p>
                 </div>
 
@@ -1640,6 +1672,7 @@ export default function BookableProductPage() {
                 <div style={ui.columnHeaderRow}>
                   <p style={ui.columnHeaderCell}>Date</p>
                   <p style={ui.columnHeaderCell}>Reason</p>
+                  <p style={ui.columnHeaderCell}>Source</p>
                   <p style={{ ...ui.columnHeaderCell, textAlign: "center" }}>
                     Actions
                   </p>
@@ -1648,27 +1681,57 @@ export default function BookableProductPage() {
                 <hr style={ui.divider} />
 
                 {blackoutDates.map(
-                  (b: { id: string; date: string; reason: string | null }) => (
+                  (b: {
+                    id: string;
+                    date: string;
+                    reason: string | null;
+                    source: "shop" | "product";
+                  }) => (
                     <div key={b.id} style={{ width: "100%" }}>
                       <div style={ui.rowWrap}>
                         <p style={ui.rowCell}>{b.date}</p>
                         <p style={ui.rowCell}>{b.reason ?? "—"}</p>
+                        <p style={ui.rowCell}>
+                          {b.source === "shop" ? "Store-wide" : "This product"}
+                        </p>
                         <div style={ui.actionsCell}>
-                          <button
-                            type="button"
-                            style={ui.deleteButton}
-                            onClick={() => handleDeleteBlackoutDate(b.id)}
-                            disabled={isBlackoutBusy}
-                            aria-label="Delete blackout date"
-                          >
-                            <img
-                              src="/delete-icon.svg"
-                              width={44}
-                              height={40}
-                              alt="Delete"
-                              style={{ display: "block" }}
-                            />
-                          </button>
+                          {b.source === "shop" ? (
+                            <button
+                              type="button"
+                              style={{
+                                ...ui.deleteButton,
+                                width: "auto",
+                                height: "auto",
+                                padding: "6px 10px",
+                                fontFamily: "Inter",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                color: TEXT_DARK,
+                                border: `1px solid ${INPUT_BORDER}`,
+                                borderRadius: "4px",
+                              }}
+                              onClick={() => handleExcludeBlackoutDate(b.date)}
+                              disabled={isBlackoutBusy}
+                            >
+                              Remove for this product
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              style={ui.deleteButton}
+                              onClick={() => handleDeleteBlackoutDate(b.id)}
+                              disabled={isBlackoutBusy}
+                              aria-label="Delete blackout date"
+                            >
+                              <img
+                                src="/delete-icon.svg"
+                                width={44}
+                                height={40}
+                                alt="Delete"
+                                style={{ display: "block" }}
+                              />
+                            </button>
+                          )}
                         </div>
                       </div>
                       <hr style={ui.divider} />
