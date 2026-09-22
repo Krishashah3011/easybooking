@@ -7,20 +7,7 @@ const TEXT_BLACK = "#000000";
 const TEXT_MUTED = "#616161";
 
 const InfoIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <text
-      x="12"
-      y="17.5"
-      textAnchor="middle"
-      fontFamily="Inter"
-      fontStyle="italic"
-      fontWeight="700"
-      fontSize="17"
-      fill="#1B1B4D"
-    >
-      i
-    </text>
-  </svg>
+  <img src="/infoicon.svg" width={7} height={14} alt="" />
 );
 
 const ChevronIcon = ({ open }: { open: boolean }) => (
@@ -203,12 +190,7 @@ export default function GetStartedGuide({
     <div
       style={{
         ...styles.card,
-        height: open ? "auto" : "56px",
-        padding: open ? styles.card.padding : "8px 20px",
         overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: open ? "flex-start" : "center",
       }}
     >
       <div
