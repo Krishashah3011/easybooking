@@ -435,7 +435,7 @@ const S = {
   slotsHint: {
     fontFamily: "Inter",
     fontWeight: 400,
-    fontSize: "13px",
+    fontSize: "12px",
     lineHeight: "18px",
     color: TEXT_MUTED,
     margin: 0,
@@ -474,7 +474,7 @@ const S = {
   }),
   chipText: (tone: "info" | "ok"): React.CSSProperties => ({
     fontFamily: "Inter",
-    fontSize: "13px",
+    fontSize: "12px",
     fontWeight: 600,
     color: tone === "ok" ? "#1a7f37" : CAL_BLUE,
   }),
@@ -1254,6 +1254,7 @@ export default function NewBookingPage() {
     customerPhone.length !== 10
       ? "Phone number must be exactly 10 digits"
       : undefined;
+
   const currentEntry: QueuedEntry | null = (() => {
     if (!date || !selectedSlot) return null;
     if (selectedBookingType === "MULTI_DAY" && !checkoutDate) return null;
@@ -1546,7 +1547,7 @@ export default function NewBookingPage() {
         </div>
 
         {isLoading ? (
-          <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: 0 }}>
+          <p style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED, margin: 0 }}>
             Loading availability…
           </p>
         ) : (
@@ -1559,7 +1560,7 @@ export default function NewBookingPage() {
           )
         )}
         {!isLoading && !hasAnyAvailability && (
-          <p style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED, margin: "12px 0 0" }}>
+          <p style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED, margin: "12px 0 0" }}>
             {bookableProductId
               ? "No availability this month."
               : "Select a product to see availability."}
@@ -1612,7 +1613,6 @@ export default function NewBookingPage() {
           }
         `}</style>
 
-        {}
         <div style={S.headerRow}>
           <span style={S.headerTitle}>Add New Booking</span>
           <div style={S.headerActions}>
@@ -1622,7 +1622,6 @@ export default function NewBookingPage() {
           </div>
         </div>
 
-        {}
         <div style={S.innerCard}>
           <div style={S.fieldsRow}>
             <div style={S.fieldBlock}>
@@ -1697,14 +1696,13 @@ export default function NewBookingPage() {
           </div>
         </div>
 
-        {}
         {readyForCalendar && (
         <div style={S.dateTimeCard}>
           {selectedBookingType === "MULTI_DAY" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <span style={S.cardHeading}>Select your preferred date & time</span>
               {multiDayStayLengthMessage && (
-                <span style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_MUTED }}>
+                <span style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED }}>
                   {multiDayStayLengthMessage}
                 </span>
               )}
@@ -1716,7 +1714,7 @@ export default function NewBookingPage() {
               <span
                 style={{
                   fontFamily: "Inter",
-                  fontSize: "13px",
+                  fontSize: "12px",
                   color: bundleComplete ? "#1a7f37" : TEXT_MUTED,
                 }}
               >
@@ -1779,7 +1777,7 @@ export default function NewBookingPage() {
                   style={{
                     marginTop: "12px",
                     fontFamily: "Inter",
-                    fontSize: "13px",
+                    fontSize: "12px",
                     color: "#C0392B",
                   }}
                 >
@@ -1799,7 +1797,7 @@ export default function NewBookingPage() {
                       background: "transparent",
                       color: BLUE,
                       fontFamily: "Inter",
-                      fontSize: "13px",
+                      fontSize: "14px",
                       cursor: "pointer",
                     }}
                     onClick={handleChangeMultiDayDates}
@@ -1889,7 +1887,6 @@ export default function NewBookingPage() {
         </div>
         )}
 
-        {}
         {queuedSlots.length > 0 && (
           <div style={S.innerCard}>
             <span style={S.cardHeading}>Slots to book</span>
@@ -1899,7 +1896,7 @@ export default function NewBookingPage() {
                   key={entry.bookableProductId + entry.date + entry.slot.startsAt}
                   style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}
                 >
-                  <span style={{ fontFamily: "Inter", fontSize: "13px", color: TEXT_DARK }}>
+                  <span style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_DARK }}>
                     <b>{entry.productTitle}</b> —{" "}
                     {(() => {
                       const entryType =
@@ -1916,13 +1913,13 @@ export default function NewBookingPage() {
                     {entry.quantity > 1 ? ` × ${entry.quantity}` : ""}
                   </span>
                   {entry.error && (
-                    <span style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B" }}>
+                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>
                       {entry.error}
                     </span>
                   )}
                   <button
                     type="button"
-                    style={{ border: "none", background: "transparent", color: BLUE, fontFamily: "Inter", fontSize: "13px", cursor: isCreatingBooking ? "default" : "pointer" }}
+                    style={{ border: "none", background: "transparent", color: BLUE, fontFamily: "Inter", fontSize: "14px", cursor: isCreatingBooking ? "default" : "pointer" }}
                     disabled={isCreatingBooking}
                     onClick={() => handleRemoveQueued(index)}
                   >
@@ -1936,7 +1933,6 @@ export default function NewBookingPage() {
 
         {hasSelection && (
           <>
-            {}
             <div style={S.innerCard}>
               <div style={S.qtyNoteRow}>
                 <div style={S.qtyBlock}>
@@ -2024,7 +2020,6 @@ export default function NewBookingPage() {
               </div>
             </div>
 
-            {}
             <div style={S.innerCard}>
               <div style={S.fieldsRow}>
                 <div style={S.fieldBlock}>
@@ -2093,25 +2088,25 @@ export default function NewBookingPage() {
               </div>
 
               {noSelectionError && (
-                <p role="alert" style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                <p role="alert" style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B", margin: 0 }}>
                   {noSelectionError}
                 </p>
               )}
 
               {createError && (
-                <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                <p style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B", margin: 0 }}>
                   {createError}
                 </p>
               )}
 
               {submitAttempted && (nameError || emailError) && (
-                <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                <p style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B", margin: 0 }}>
                   Please fix the highlighted fields before creating this booking.
                 </p>
               )}
 
               {incompleteBundleTitles.length > 0 && submitAttempted && (
-                <p style={{ fontFamily: "Inter", fontSize: "13px", color: "#C0392B", margin: 0 }}>
+                <p style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B", margin: 0 }}>
                   {incompleteBundleTitles.length === 1
                     ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
                     : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
@@ -2119,7 +2114,6 @@ export default function NewBookingPage() {
               )}
             </div>
 
-            {}
             <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
               <div style={{ ...saveWrapperStyle(), width: "auto", minWidth: "143px" }}>
                 <button

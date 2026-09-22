@@ -29,7 +29,7 @@ export const styles: Record<string, React.CSSProperties> = {
   pageSubtitle: {
     fontFamily: "Inter",
     fontWeight: 400,
-    fontSize: "13px",
+    fontSize: "12px",
     color: TEXT_MUTED,
     margin: "4px 0 0",
   },
@@ -198,7 +198,7 @@ export function tabButtonStyle(active: boolean): React.CSSProperties {
     border: "none",
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "13.5px",
+    fontSize: "14px",
     cursor: "pointer",
     background: active ? BLUE : "#ECECEC",
     color: active ? "#fff" : TEXT_DARK,

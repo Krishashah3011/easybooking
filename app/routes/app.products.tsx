@@ -139,7 +139,7 @@ const styles: Record<string, React.CSSProperties> = {
   td: {
     fontFamily: "Inter",
     fontWeight: 400,
-    fontSize: "13px",
+    fontSize: "14px",
     lineHeight: "16px",
     color: TEXT_BLACK,
     padding: "6px 8px",

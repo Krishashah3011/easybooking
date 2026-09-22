@@ -114,6 +114,7 @@ type BookingsListFilters = {
   dateTo: string;
 };
 
+
 const TYPE_SHORT_LABELS: Record<BookingType, string> = {
   SLOT: "Slot Booking",
   FULL_DAY: "Full-Day Booking",
@@ -338,7 +339,7 @@ const S: Record<string, React.CSSProperties> = {
     color: BLUE,
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "13px",
+    fontSize: "14px",
     cursor: "pointer",
   },
   tableWrap: {
@@ -366,7 +367,7 @@ const S: Record<string, React.CSSProperties> = {
   td: {
     fontFamily: "Inter",
     fontWeight: 400,
-    fontSize: "13px",
+    fontSize: "14px",
     lineHeight: "16px",
     color: TEXT_DARK,
     padding: "6px 8px",
@@ -429,7 +430,7 @@ const S: Record<string, React.CSSProperties> = {
     gap: "8px",
     alignItems: "flex-start",
     fontFamily: "Inter",
-    fontSize: "13px",
+    fontSize: "14px",
     lineHeight: "16px",
     color: TEXT_DARK,
   },
@@ -657,12 +658,12 @@ const S: Record<string, React.CSSProperties> = {
     gap: "12px",
     padding: "4px 8px 4px 12px",
     fontFamily: "Inter",
-    fontSize: "13px",
+    fontSize: "14px",
     color: TEXT_DARK,
   },
   errorBanner: {
     fontFamily: "Inter",
-    fontSize: "13px",
+    fontSize: "12px",
     color: "#C0392B",
     background: "#FDECEA",
     border: "1px solid #F5C6C1",
@@ -680,7 +681,7 @@ const S: Record<string, React.CSSProperties> = {
   emptyTitle: {
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "15px",
+    fontSize: "14px",
     color: TEXT_DARK,
     margin: 0,
   },
@@ -693,6 +694,7 @@ const S: Record<string, React.CSSProperties> = {
     margin: 0,
   },
 };
+
 
 const SearchIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -734,6 +736,7 @@ const PlusIcon = () => (
     />
   </svg>
 );
+
 
 function StatusPill({ status }: { status: string }) {
   const colors = STATUS_COLORS[status] ?? STATUS_COLORS.CANCELLED;
@@ -877,6 +880,7 @@ function whenLines(booking: BookingWithProductTitle): {
   };
 }
 
+
 function BookingDetails({
   booking,
   customFieldLabels,
@@ -989,7 +993,6 @@ function BookingDetails({
 
   return (
     <div style={S.detailsCard}>
-      {}
       <div style={S.detailsHeaderRow}>
         <div style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
@@ -1028,7 +1031,6 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      {}
       <div style={S.fieldsRow}>
         <FieldBlock label="Customer Mail">
           {booking.customerEmail ?? "—"}
@@ -1044,7 +1046,6 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      {}
       {isRescheduling ? (
         <div
           style={{
@@ -1143,7 +1144,6 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      {}
       <div style={S.actionRow}>
         <FieldBlock label="Booked at" style={S.actionRowField}>
           {formatInstantInTimezone(booking.createdAt, booking.locationTimezone)}
@@ -1185,6 +1185,7 @@ function BookingDetails({
     </div>
   );
 }
+
 
 const SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5"];
 
@@ -1318,7 +1319,6 @@ function BundleGroupDetails({
 
   return (
     <div style={S.detailsCard}>
-      {}
       <div style={S.detailsHeaderRow}>
         <div style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
@@ -1357,7 +1357,6 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      {}
       <div style={S.fieldsRow}>
         <FieldBlock label="Customer Mail">
           {first.customerEmail ?? "—"}
@@ -1373,7 +1372,6 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      {}
       <div style={S.fieldsRow}>
         <FieldBlock label="Booking Date">{when.date}</FieldBlock>
         <FieldBlock label="Booking Time">{when.sub ?? "Whole day"}</FieldBlock>
@@ -1382,7 +1380,6 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      {}
       {Array.from(
         { length: Math.ceil(Math.min(group.bookings.length, SLOT_LABELS.length) / 3) },
         (_, rowIndex) => (
@@ -1486,7 +1483,6 @@ function BundleGroupDetails({
         </>
       )}
 
-      {}
       <div style={S.actionRow}>
         <FieldBlock label="Booked at" style={S.actionRowField}>
           {formatInstantInTimezone(first.createdAt, first.locationTimezone)}
@@ -1527,6 +1523,7 @@ function BundleGroupDetails({
     </div>
   );
 }
+
 
 const COLUMN_COUNT = 6;
 
@@ -1753,6 +1750,7 @@ function BookingsEmptyState({
     </div>
   );
 }
+
 
 function matchesQuery(booking: BookingWithProductTitle, term: string): boolean {
   const haystack = [
