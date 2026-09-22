@@ -476,13 +476,13 @@ function EmailPreview({
 }
 
 const editorPreviewRowStyle: React.CSSProperties = {
-  display: "flex",
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
   alignItems: "stretch",
   gap: "16px",
 };
 
 const editorColumnStyle: React.CSSProperties = {
-  flex: "1 1 50%",
   minWidth: 0,
   display: "flex",
   flexDirection: "column",
@@ -494,7 +494,6 @@ const editorFieldGroupStyle: React.CSSProperties = {
 };
 
 const previewColumnStyle: React.CSSProperties = {
-  flex: "1 1 50%",
   minWidth: 0,
   display: "flex",
   flexDirection: "column",
@@ -508,6 +507,7 @@ const previewWrapStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   flex: 1,
+  height: "100%",
 };
 
 const previewNoteStyle: React.CSSProperties = {
@@ -534,6 +534,7 @@ const previewBodyStyle: React.CSSProperties = {
   fontSize: "14px",
   color: TEXT_DARK,
   lineHeight: 1.5,
+  minHeight: "140px",
   flex: 1,
 };
 

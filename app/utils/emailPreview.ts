@@ -1,7 +1,5 @@
 import type { EmailTemplateType } from "../models/emailTemplateTypes";
 
-// Sample values used ONLY to render a preview in the settings UI.
-// These never touch real customer data.
 const SAMPLE_SESSIONS_LIST = [
   "  <li>Oct 5, 2026, 10:00 AM &ndash; 11:00 AM</li>",
   "  <li>Oct 12, 2026, 10:00 AM &ndash; 11:00 AM</li>",

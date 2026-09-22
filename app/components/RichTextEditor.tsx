@@ -11,13 +11,9 @@ export type RichTextEditorHandle = {
 type RichTextEditorProps = {
   value: string;
   onChange: (html: string) => void;
-  // Optional content rendered inside the same bordered box, below the
-  // editable area, separated by a divider (e.g. token pills).
   footer?: React.ReactNode;
 };
 
-// A deliberately small toolbar: bold, italic, bullet list, link.
-// Merchants never see or type raw HTML tags.
 const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
   function RichTextEditor({ value, onChange, footer }, ref) {
     const editor = useEditor({
@@ -39,14 +35,11 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
       },
     });
 
-    // Keep editor content in sync when switching templates or after
-    // a reset/save round-trip replaces the value from outside.
     useEffect(() => {
       if (!editor) return;
       if (value !== editor.getHTML()) {
         editor.commands.setContent(value, { emitUpdate: false });
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value, editor]);
 
     useImperativeHandle(

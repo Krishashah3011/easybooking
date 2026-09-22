@@ -40,11 +40,11 @@ export const EMAIL_TEMPLATE_PLACEHOLDERS: Record<
   reminder: COMMON_PLACEHOLDERS,
   cancellation: COMMON_PLACEHOLDERS,
   bundleConfirmation: [
-    COMMON_PLACEHOLDERS[0], // {{customer_name}}
-    COMMON_PLACEHOLDERS[1], // {{product_title}}
+    COMMON_PLACEHOLDERS[0],
+    COMMON_PLACEHOLDERS[1],
     { token: "{{session_count}}", description: "Number of sessions in the bundle" },
     { token: "{{sessions_list}}", description: "A formatted list of every session's date and time" },
-    COMMON_PLACEHOLDERS[4], // {{shop_name}}
+    COMMON_PLACEHOLDERS[4],
   ],
   rescheduled: [
     ...COMMON_PLACEHOLDERS,
