@@ -370,9 +370,7 @@ export default function EmailSettingsTab() {
                             <span style={customizedPillStyle}>Customized</span>
                           )}
                         </div>
-                        {isOpen && (
-                          <div style={styles.subLabel}>{template.description}</div>
-                        )}
+                        <div style={styles.subLabel}>{template.description}</div>
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
@@ -382,6 +380,24 @@ export default function EmailSettingsTab() {
 
                   {isOpen && (
                     <>
+                      <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          onClick={() => togglePreview(template.type)}
+                          style={resetButtonStyle(false)}
+                        >
+                          {previewOpen[template.type] ? "Hide preview" : "Preview"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResetTemplate(template.type)}
+                          disabled={!template.isCustomized || isResetting}
+                          style={resetButtonStyle(!template.isCustomized || isResetting)}
+                        >
+                          Reset to default
+                        </button>
+                      </div>
+
                       <div style={styles.clientFieldGroup}>
                         <div style={styles.clientFieldLabel}>Subject</div>
                         <input
@@ -392,59 +408,37 @@ export default function EmailSettingsTab() {
                         />
                       </div>
 
-                      <div style={styles.clientFieldGroup}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <div style={styles.clientFieldLabel}>Email Body</div>
-                          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                            <button
-                              type="button"
-                              onClick={() => togglePreview(template.type)}
-                              style={resetButtonStyle(false)}
-                            >
-                              {previewOpen[template.type] ? "Hide preview" : "Preview"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleResetTemplate(template.type)}
-                              disabled={!template.isCustomized || isResetting}
-                              style={resetButtonStyle(!template.isCustomized || isResetting)}
-                            >
-                              Reset to default
-                            </button>
+                      <div style={editorPreviewRowStyle}>
+                        <div style={editorColumnStyle}>
+                          <div style={editorFieldGroupStyle}>
+                            <div style={styles.clientFieldLabel}>Email Body</div>
+                            <RichTextEditor
+                              ref={(el) => {
+                                bodyRefs.current[template.type] = el;
+                              }}
+                              value={editable.body}
+                              onChange={(html) => setTemplateField(template.type, "body", html)}
+                              footer={template.placeholders.map((p) => (
+                                <button
+                                  key={p.token}
+                                  type="button"
+                                  title={p.description}
+                                  onClick={() => insertToken(template.type, p.token)}
+                                  style={tokenPillStyle}
+                                >
+                                  {p.token}
+                                </button>
+                              ))}
+                            />
                           </div>
                         </div>
-                        <RichTextEditor
-                          ref={(el) => {
-                            bodyRefs.current[template.type] = el;
-                          }}
-                          value={editable.body}
-                          onChange={(html) => setTemplateField(template.type, "body", html)}
-                        />
-                      </div>
 
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                        {template.placeholders.map((p) => (
-                          <button
-                            key={p.token}
-                            type="button"
-                            title={p.description}
-                            onClick={() => insertToken(template.type, p.token)}
-                            style={tokenPillStyle}
-                          >
-                            {p.token}
-                          </button>
-                        ))}
+                        {previewOpen[template.type] && (
+                          <div style={previewColumnStyle}>
+                            <EmailPreview type={template.type} subject={editable.subject} body={editable.body} />
+                          </div>
+                        )}
                       </div>
-
-                      {previewOpen[template.type] && (
-                        <EmailPreview type={template.type} subject={editable.subject} body={editable.body} />
-                      )}
                     </>
                   )}
                 </div>
@@ -481,11 +475,39 @@ function EmailPreview({
   );
 }
 
+const editorPreviewRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "stretch",
+  gap: "16px",
+};
+
+const editorColumnStyle: React.CSSProperties = {
+  flex: "1 1 50%",
+  minWidth: 0,
+  display: "flex",
+  flexDirection: "column",
+};
+
+const editorFieldGroupStyle: React.CSSProperties = {
+  ...styles.clientFieldGroup,
+  flex: 1,
+};
+
+const previewColumnStyle: React.CSSProperties = {
+  flex: "1 1 50%",
+  minWidth: 0,
+  display: "flex",
+  flexDirection: "column",
+};
+
 const previewWrapStyle: React.CSSProperties = {
   border: `1px solid ${BORDER}`,
   borderRadius: "6px",
   overflow: "hidden",
   background: "#fff",
+  display: "flex",
+  flexDirection: "column",
+  flex: 1,
 };
 
 const previewNoteStyle: React.CSSProperties = {
@@ -512,6 +534,7 @@ const previewBodyStyle: React.CSSProperties = {
   fontSize: "14px",
   color: TEXT_DARK,
   lineHeight: 1.5,
+  flex: 1,
 };
 
 const customizedPillStyle: React.CSSProperties = {

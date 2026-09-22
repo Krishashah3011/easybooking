@@ -11,12 +11,15 @@ export type RichTextEditorHandle = {
 type RichTextEditorProps = {
   value: string;
   onChange: (html: string) => void;
+  // Optional content rendered inside the same bordered box, below the
+  // editable area, separated by a divider (e.g. token pills).
+  footer?: React.ReactNode;
 };
 
 // A deliberately small toolbar: bold, italic, bullet list, link.
 // Merchants never see or type raw HTML tags.
 const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
-  function RichTextEditor({ value, onChange }, ref) {
+  function RichTextEditor({ value, onChange, footer }, ref) {
     const editor = useEditor({
       extensions: [
         StarterKit.configure({
@@ -103,6 +106,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
           </ToolbarButton>
         </div>
         <EditorContent editor={editor} style={editorAreaStyle} />
+        {footer && <div style={footerStyle}>{footer}</div>}
       </div>
     );
   },
@@ -149,6 +153,10 @@ const wrapStyle: React.CSSProperties = {
   border: `1px solid ${BORDER}`,
   borderRadius: "4px",
   overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
+  flex: 1,
+  height: "100%",
 };
 
 const toolbarStyle: React.CSSProperties = {
@@ -162,9 +170,19 @@ const toolbarStyle: React.CSSProperties = {
 const editorAreaStyle: React.CSSProperties = {
   padding: "10px",
   minHeight: "140px",
+  flex: 1,
   fontFamily: "Inter",
   fontSize: "14px",
   lineHeight: 1.5,
+};
+
+const footerStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "6px",
+  padding: "8px 10px",
+  borderTop: `1px solid ${BORDER}`,
+  background: "#F5F6F7",
 };
 
 const PROSEMIRROR_CSS = `
