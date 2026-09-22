@@ -3,6 +3,7 @@ import { authenticate } from "../shopify.server";
 import { resolveBookingContext } from "../models/booking-context.server";
 import { computeSlotsForDate } from "../models/slotAvailability.server";
 import { getBookedCountsInRange } from "../models/booking.server";
+import { getOrCreateShopSettings } from "../models/shopSettings.server";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -10,6 +11,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.public.appProxy(request);
   if (!session) {
     return Response.json({ error: "Unknown shop" }, { status: 401 });
+  }
+
+  const shopSettings = await getOrCreateShopSettings(session.shop);
+  if (!shopSettings.isAppEnabled) {
+    return Response.json({ error: "Booking is currently unavailable" }, { status: 403 });
   }
 
   const url = new URL(request.url);

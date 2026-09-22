@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import { resolveBookingContext } from "../models/booking-context.server";
+import { getOrCreateShopSettings } from "../models/shopSettings.server";
 import {
   getAvailableDatesInMonth,
   getAvailableFullDayDatesInMonth,
@@ -18,6 +19,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.public.appProxy(request);
   if (!session) {
     return Response.json({ error: "Unknown shop" }, { status: 401 });
+  }
+
+  const shopSettings = await getOrCreateShopSettings(session.shop);
+  if (!shopSettings.isAppEnabled) {
+    return Response.json({ error: "Booking is currently unavailable" }, { status: 403 });
   }
 
   const url = new URL(request.url);
