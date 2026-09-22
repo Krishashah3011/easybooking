@@ -370,7 +370,9 @@ export default function EmailSettingsTab() {
                             <span style={customizedPillStyle}>Customized</span>
                           )}
                         </div>
-                        <div style={styles.subLabel}>{template.description}</div>
+                        {isOpen && (
+                          <div style={styles.subLabel}>{template.description}</div>
+                        )}
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
@@ -380,24 +382,6 @@ export default function EmailSettingsTab() {
 
                   {isOpen && (
                     <>
-                      <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                        <button
-                          type="button"
-                          onClick={() => togglePreview(template.type)}
-                          style={resetButtonStyle(false)}
-                        >
-                          {previewOpen[template.type] ? "Hide preview" : "Preview"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleResetTemplate(template.type)}
-                          disabled={!template.isCustomized || isResetting}
-                          style={resetButtonStyle(!template.isCustomized || isResetting)}
-                        >
-                          Reset to default
-                        </button>
-                      </div>
-
                       <div style={styles.clientFieldGroup}>
                         <div style={styles.clientFieldLabel}>Subject</div>
                         <input
@@ -409,7 +393,32 @@ export default function EmailSettingsTab() {
                       </div>
 
                       <div style={styles.clientFieldGroup}>
-                        <div style={styles.clientFieldLabel}>Email Body</div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div style={styles.clientFieldLabel}>Email Body</div>
+                          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                            <button
+                              type="button"
+                              onClick={() => togglePreview(template.type)}
+                              style={resetButtonStyle(false)}
+                            >
+                              {previewOpen[template.type] ? "Hide preview" : "Preview"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleResetTemplate(template.type)}
+                              disabled={!template.isCustomized || isResetting}
+                              style={resetButtonStyle(!template.isCustomized || isResetting)}
+                            >
+                              Reset to default
+                            </button>
+                          </div>
+                        </div>
                         <RichTextEditor
                           ref={(el) => {
                             bodyRefs.current[template.type] = el;
