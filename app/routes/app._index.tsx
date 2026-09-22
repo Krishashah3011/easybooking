@@ -386,8 +386,8 @@ function buildGuideSteps(
     {
       title: "Turn on booking emails",
       body: "Configure SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
-      cta: "Go to SMTP Settings",
-      href: "/app/settings",
+      cta: "Go to Email Settings",
+      href: "/app/settings/email",
     },
     {
       title: "Manage bookings as they come in",

@@ -16,7 +16,7 @@ const TABS = [
   { to: "/app/settings/locations", label: "Locations" },
   { to: "/app/settings/blackout-dates", label: "Blackout Dates" },
   { to: "/app/settings/custom-fields", label: "Custom Fields" },
-  { to: "/app/settings/smtp", label: "SMTP Settings" },
+  { to: "/app/settings/email", label: "Email Settings" },
 ];
 
 export type RegisterSave = (

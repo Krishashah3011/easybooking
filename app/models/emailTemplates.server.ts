@@ -1,192 +1,48 @@
-import { formatTimeRangeDisplay } from "../utils/format";
+import { renderEmailTemplate } from "./emailTemplate.server";
+import type {
+  BookingEmailData,
+  BundleBookingEmailData,
+  RescheduledEmailData,
+} from "./emailTemplate.server";
 
-export type BookingEmailData = {
-  productTitle: string;
-  customerName: string | null;
-  date: string;
-  slotStart: string;
-  slotEnd: string;
-  shopName: string;
-};
+export type {
+  BookingEmailData,
+  BundleBookingEmailData,
+  BundleSessionInfo,
+  RescheduledEmailData,
+} from "./emailTemplate.server";
 
-function greeting(customerName: string | null): string {
-  return customerName ? `Hi ${customerName},` : "Hi,";
+export async function confirmationEmail(
+  shop: string,
+  data: BookingEmailData,
+): Promise<{ subject: string; text: string; html: string }> {
+  return renderEmailTemplate(shop, "confirmation", data);
 }
 
-export function confirmationEmail(data: BookingEmailData): {
-  subject: string;
-  text: string;
-  html: string;
-} {
-  const subject = `Booking confirmed: ${data.productTitle} on ${data.date}`;
-  const text = [
-    greeting(data.customerName),
-    "",
-    `Your booking is confirmed:`,
-    `- ${data.productTitle}`,
-    `- ${data.date}, ${formatTimeRangeDisplay(data.slotStart, data.slotEnd)}`,
-    "",
-    `Thanks for booking with ${data.shopName}.`,
-  ].join("\n");
-
-  const html = `
-    <p>${greeting(data.customerName)}</p>
-    <p>Your booking is confirmed:</p>
-    <ul>
-      <li><strong>${escapeHtml(data.productTitle)}</strong></li>
-      <li>${escapeHtml(data.date)}, ${escapeHtml(formatTimeRangeDisplay(data.slotStart, data.slotEnd))}</li>
-    </ul>
-    <p>Thanks for booking with ${escapeHtml(data.shopName)}.</p>
-  `.trim();
-
-  return { subject, text, html };
+export async function bundleConfirmationEmail(
+  shop: string,
+  data: BundleBookingEmailData,
+): Promise<{ subject: string; text: string; html: string }> {
+  return renderEmailTemplate(shop, "bundleConfirmation", data);
 }
 
-export type BundleSessionInfo = { date: string; slotStart: string; slotEnd: string };
-
-export type BundleBookingEmailData = {
-  productTitle: string;
-  customerName: string | null;
-  sessions: BundleSessionInfo[];
-  shopName: string;
-};
-
-export function bundleConfirmationEmail(data: BundleBookingEmailData): {
-  subject: string;
-  text: string;
-  html: string;
-} {
-  const subject = `Booking confirmed: ${data.productTitle} (${data.sessions.length} sessions)`;
-  const sessionLines = data.sessions.map(
-    (s) => `- ${s.date}, ${formatTimeRangeDisplay(s.slotStart, s.slotEnd)}`,
-  );
-  const text = [
-    greeting(data.customerName),
-    "",
-    `Your booking is confirmed:`,
-    `- ${data.productTitle}`,
-    ...sessionLines,
-    "",
-    `Thanks for booking with ${data.shopName}.`,
-  ].join("\n");
-
-  const sessionListHtml = data.sessions
-    .map(
-      (s) =>
-        `<li>${escapeHtml(s.date)}, ${escapeHtml(formatTimeRangeDisplay(s.slotStart, s.slotEnd))}</li>`,
-    )
-    .join("");
-  const html = `
-    <p>${greeting(data.customerName)}</p>
-    <p>Your booking is confirmed:</p>
-    <p><strong>${escapeHtml(data.productTitle)}</strong></p>
-    <ul>${sessionListHtml}</ul>
-    <p>Thanks for booking with ${escapeHtml(data.shopName)}.</p>
-  `.trim();
-
-  return { subject, text, html };
+export async function reminderEmail(
+  shop: string,
+  data: BookingEmailData,
+): Promise<{ subject: string; text: string; html: string }> {
+  return renderEmailTemplate(shop, "reminder", data);
 }
 
-export function reminderEmail(data: BookingEmailData): {
-  subject: string;
-  text: string;
-  html: string;
-} {
-  const subject = `Reminder: ${data.productTitle} coming up on ${data.date}`;
-  const text = [
-    greeting(data.customerName),
-    "",
-    `This is a reminder for your upcoming booking:`,
-    `- ${data.productTitle}`,
-    `- ${data.date}, ${formatTimeRangeDisplay(data.slotStart, data.slotEnd)}`,
-    "",
-    `See you soon \u2014 ${data.shopName}.`,
-  ].join("\n");
-
-  const html = `
-    <p>${greeting(data.customerName)}</p>
-    <p>This is a reminder for your upcoming booking:</p>
-    <ul>
-      <li><strong>${escapeHtml(data.productTitle)}</strong></li>
-      <li>${escapeHtml(data.date)}, ${escapeHtml(formatTimeRangeDisplay(data.slotStart, data.slotEnd))}</li>
-    </ul>
-    <p>See you soon \u2014 ${escapeHtml(data.shopName)}.</p>
-  `.trim();
-
-  return { subject, text, html };
+export async function cancellationEmail(
+  shop: string,
+  data: BookingEmailData,
+): Promise<{ subject: string; text: string; html: string }> {
+  return renderEmailTemplate(shop, "cancellation", data);
 }
 
-export function cancellationEmail(data: BookingEmailData): {
-  subject: string;
-  text: string;
-  html: string;
-} {
-  const subject = `Booking cancelled: ${data.productTitle} on ${data.date}`;
-  const text = [
-    greeting(data.customerName),
-    "",
-    `Your booking has been cancelled:`,
-    `- ${data.productTitle}`,
-    `- ${data.date}, ${formatTimeRangeDisplay(data.slotStart, data.slotEnd)}`,
-    "",
-    `If this wasn't expected, feel free to reach out to ${data.shopName}.`,
-  ].join("\n");
-
-  const html = `
-    <p>${greeting(data.customerName)}</p>
-    <p>Your booking has been cancelled:</p>
-    <ul>
-      <li><strong>${escapeHtml(data.productTitle)}</strong></li>
-      <li>${escapeHtml(data.date)}, ${escapeHtml(formatTimeRangeDisplay(data.slotStart, data.slotEnd))}</li>
-    </ul>
-    <p>If this wasn't expected, feel free to reach out to ${escapeHtml(data.shopName)}.</p>
-  `.trim();
-
-  return { subject, text, html };
-}
-
-export type RescheduledEmailData = BookingEmailData & {
-  previousDate: string;
-  previousSlotStart: string;
-  previousSlotEnd: string;
-};
-
-export function rescheduledEmail(data: RescheduledEmailData): {
-  subject: string;
-  text: string;
-  html: string;
-} {
-  const subject = `Booking rescheduled: ${data.productTitle} now on ${data.date}`;
-  const text = [
-    greeting(data.customerName),
-    "",
-    `Your booking has been rescheduled:`,
-    `- ${data.productTitle}`,
-    `- Was: ${data.previousDate}, ${formatTimeRangeDisplay(data.previousSlotStart, data.previousSlotEnd)}`,
-    `- Now: ${data.date}, ${formatTimeRangeDisplay(data.slotStart, data.slotEnd)}`,
-    "",
-    `Thanks for your patience \u2014 ${data.shopName}.`,
-  ].join("\n");
-
-  const html = `
-    <p>${greeting(data.customerName)}</p>
-    <p>Your booking has been rescheduled:</p>
-    <ul>
-      <li><strong>${escapeHtml(data.productTitle)}</strong></li>
-      <li>Was: ${escapeHtml(data.previousDate)}, ${escapeHtml(formatTimeRangeDisplay(data.previousSlotStart, data.previousSlotEnd))}</li>
-      <li>Now: ${escapeHtml(data.date)}, ${escapeHtml(formatTimeRangeDisplay(data.slotStart, data.slotEnd))}</li>
-    </ul>
-    <p>Thanks for your patience \u2014 ${escapeHtml(data.shopName)}.</p>
-  `.trim();
-
-  return { subject, text, html };
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+export async function rescheduledEmail(
+  shop: string,
+  data: RescheduledEmailData,
+): Promise<{ subject: string; text: string; html: string }> {
+  return renderEmailTemplate(shop, "rescheduled", data);
 }

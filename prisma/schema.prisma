@@ -196,6 +196,18 @@ model SmtpSettings {
   updatedAt DateTime @updatedAt
 }
 
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  shop      String
+  type      String
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([shop, type])
+}
+
 model ShopSettings {
   id            String   @id @default(cuid())
   shop          String   @unique

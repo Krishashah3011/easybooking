@@ -280,7 +280,7 @@ async function sendBookingConfirmation(
   if (!booking.customerEmail) return;
 
   const { fromName } = await getShopEmailSettings(shop);
-  const { subject, text, html } = confirmationEmail({
+  const { subject, text, html } = await confirmationEmail(shop, {
     productTitle,
     customerName: booking.customerName,
     date: formatDateDisplay(booking.date),
@@ -315,7 +315,7 @@ async function sendBundleBookingConfirmation(
   if (!first.customerEmail) return;
 
   const { fromName } = await getShopEmailSettings(shop);
-  const { subject, text, html } = bundleConfirmationEmail({
+  const { subject, text, html } = await bundleConfirmationEmail(shop, {
     productTitle,
     customerName: first.customerName,
     sessions: bookings.map((b) => ({
@@ -350,7 +350,7 @@ async function sendBookingCancellation(
   if (!booking.customerEmail) return;
 
   const { fromName } = await getShopEmailSettings(shop);
-  const { subject, text, html } = cancellationEmail({
+  const { subject, text, html } = await cancellationEmail(shop, {
     productTitle,
     customerName: booking.customerName,
     date: formatDateDisplay(booking.date),
@@ -380,7 +380,7 @@ async function sendBookingRescheduled(
   if (!booking.customerEmail) return;
 
   const { fromName } = await getShopEmailSettings(shop);
-  const { subject, text, html } = rescheduledEmail({
+  const { subject, text, html } = await rescheduledEmail(shop, {
     productTitle,
     customerName: booking.customerName,
     date: formatDateDisplay(booking.date),
@@ -1332,7 +1332,7 @@ export async function sendDueReminders(
     }
 
     const { fromName } = await getShopEmailSettings(booking.shop);
-    const { subject, text, html } = reminderEmail({
+    const { subject, text, html } = await reminderEmail(booking.shop, {
       productTitle: booking.bookableProduct.productTitle,
       customerName: booking.customerName,
       date: formatDateDisplay(booking.date),
