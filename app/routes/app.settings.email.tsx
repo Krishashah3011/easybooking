@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import RichTextEditor, {
+  type RichTextEditorHandle,
+} from "../components/RichTextEditor";
+import { buildPreview } from "../utils/emailPreview";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -118,7 +122,8 @@ export default function EmailSettingsTab() {
   const [templateValues, setTemplateValues] = useState<EditableTemplateValues>(() =>
     toEditableValues(initialTemplates),
   );
-  const bodyRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+  const [previewOpen, setPreviewOpen] = useState<Record<string, boolean>>({});
+  const bodyRefs = useRef<Record<string, RichTextEditorHandle | null>>({});
 
   const smtpErrors: SmtpSettingsFieldErrors =
     saveFetcher.data && saveFetcher.data.kind === "save"
@@ -167,21 +172,19 @@ export default function EmailSettingsTab() {
   };
 
   const insertToken = (type: EmailTemplateType, token: string) => {
-    const textarea = bodyRefs.current[type];
-    const current = templateValues[type]?.body ?? "";
-    if (!textarea) {
+    const editorHandle = bodyRefs.current[type];
+    if (!editorHandle) {
+      const current = templateValues[type]?.body ?? "";
       setTemplateField(type, "body", `${current}${token}`);
       return;
     }
-    const start = textarea.selectionStart ?? current.length;
-    const end = textarea.selectionEnd ?? current.length;
-    const next = `${current.slice(0, start)}${token}${current.slice(end)}`;
-    setTemplateField(type, "body", next);
-    requestAnimationFrame(() => {
-      textarea.focus();
-      const caret = start + token.length;
-      textarea.setSelectionRange(caret, caret);
-    });
+    // Insert at the cursor position inside the rich text editor; the
+    // editor's own onChange keeps templateValues in sync afterward.
+    editorHandle.insertText(token);
+  };
+
+  const togglePreview = (type: EmailTemplateType) => {
+    setPreviewOpen((prev) => ({ ...prev, [type]: !prev[type] }));
   };
 
   const handleSave = () => {
@@ -337,14 +340,23 @@ export default function EmailSettingsTab() {
                       <div style={{ ...styles.label, fontSize: "15px" }}>{template.label}</div>
                       <div style={styles.subLabel}>{template.description}</div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleResetTemplate(template.type)}
-                      disabled={!template.isCustomized || isResetting}
-                      style={resetButtonStyle(!template.isCustomized || isResetting)}
-                    >
-                      Reset to default
-                    </button>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        type="button"
+                        onClick={() => togglePreview(template.type)}
+                        style={resetButtonStyle(false)}
+                      >
+                        {previewOpen[template.type] ? "Hide preview" : "Preview"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleResetTemplate(template.type)}
+                        disabled={!template.isCustomized || isResetting}
+                        style={resetButtonStyle(!template.isCustomized || isResetting)}
+                      >
+                        Reset to default
+                      </button>
+                    </div>
                   </div>
 
                   <div style={styles.clientFieldGroup}>
@@ -358,15 +370,13 @@ export default function EmailSettingsTab() {
                   </div>
 
                   <div style={styles.clientFieldGroup}>
-                    <div style={styles.clientFieldLabel}>Email Body (HTML)</div>
-                    <textarea
+                    <div style={styles.clientFieldLabel}>Email Body</div>
+                    <RichTextEditor
                       ref={(el) => {
                         bodyRefs.current[template.type] = el;
                       }}
-                      style={textareaStyle}
-                      rows={8}
                       value={editable.body}
-                      onChange={(e) => setTemplateField(template.type, "body", e.target.value)}
+                      onChange={(html) => setTemplateField(template.type, "body", html)}
                     />
                   </div>
 
@@ -383,6 +393,10 @@ export default function EmailSettingsTab() {
                       </button>
                     ))}
                   </div>
+
+                  {previewOpen[template.type] && (
+                    <EmailPreview type={template.type} subject={editable.subject} body={editable.body} />
+                  )}
                 </div>
               </div>
             );
@@ -393,16 +407,60 @@ export default function EmailSettingsTab() {
   );
 }
 
-const textareaStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px",
-  borderRadius: "4px",
+function EmailPreview({
+  type,
+  subject,
+  body,
+}: {
+  type: EmailTemplateType;
+  subject: string;
+  body: string;
+}) {
+  const preview = buildPreview(type, subject, body);
+  return (
+    <div style={previewWrapStyle}>
+      <div style={previewNoteStyle}>
+        Preview with sample data &mdash; this is what the customer will see.
+      </div>
+      <div style={previewSubjectStyle}>{preview.subject}</div>
+      <div
+        style={previewBodyStyle}
+        dangerouslySetInnerHTML={{ __html: preview.html }}
+      />
+    </div>
+  );
+}
+
+const previewWrapStyle: React.CSSProperties = {
   border: `1px solid ${BORDER}`,
-  fontFamily: "monospace",
-  fontSize: "13px",
+  borderRadius: "6px",
+  overflow: "hidden",
+  background: "#fff",
+};
+
+const previewNoteStyle: React.CSSProperties = {
+  padding: "6px 12px",
+  fontFamily: "Inter",
+  fontSize: "11px",
+  color: TEXT_MUTED,
+  background: "#F5F6F7",
+  borderBottom: `1px solid ${BORDER}`,
+};
+
+const previewSubjectStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  fontFamily: "Inter",
+  fontWeight: 600,
+  fontSize: "14px",
   color: TEXT_DARK,
-  boxSizing: "border-box",
-  resize: "vertical",
+  borderBottom: `1px solid ${BORDER}`,
+};
+
+const previewBodyStyle: React.CSSProperties = {
+  padding: "12px",
+  fontFamily: "Inter",
+  fontSize: "14px",
+  color: TEXT_DARK,
   lineHeight: 1.5,
 };
 
