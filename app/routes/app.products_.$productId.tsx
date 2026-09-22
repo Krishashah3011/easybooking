@@ -30,7 +30,7 @@ import {
   type BlackoutDateFieldErrors,
 } from "../models/blackoutDate.server";
 import { listEnabledLocations } from "../models/bookingLocation.server";
-import { COUNTRIES } from "../utils/countries";
+import { COUNTRIES, findCountryByTimezone } from "../utils/countries";
 import {
   BLUE,
   BORDER,
@@ -79,11 +79,20 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       listEnabledLocations(session.shop),
     ]);
 
+  const availableCountryCodes = Array.from(
+    new Set(
+      enabledLocations
+        .map((loc) => findCountryByTimezone(loc.timezone)?.code)
+        .filter((code): code is string => Boolean(code)),
+    ),
+  );
+
   return {
     productId,
     productTitle: product.title as string,
     values: toBookableProductFormValues(bookableProduct),
     hasLocations: enabledLocations.length > 0,
+    availableCountryCodes,
     shopDefaults: {
       workingDays: shopSettings.workingDays,
       dailyStartTime: shopSettings.dailyStartTime,
@@ -1204,6 +1213,7 @@ export default function BookableProductPage() {
     productTitle,
     values: initialValues,
     hasLocations,
+    availableCountryCodes,
     shopDefaults,
     blackoutDates,
   } = useLoaderData<typeof loader>();
@@ -1284,7 +1294,11 @@ export default function BookableProductPage() {
     });
   };
 
-  const filteredCountries = COUNTRIES.filter((country) =>
+  const availableCountries = COUNTRIES.filter((country) =>
+    availableCountryCodes.includes(country.code),
+  );
+
+  const filteredCountries = availableCountries.filter((country) =>
     country.name.toLowerCase().includes(countrySearch.trim().toLowerCase()),
   );
 
