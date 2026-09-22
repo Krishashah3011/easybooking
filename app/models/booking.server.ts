@@ -13,7 +13,7 @@ import {
   reminderEmail,
   cancellationEmail,
   rescheduledEmail,
-} from "./emailTemplates.server";
+} from "./emailTemplate.server";
 import { listCustomFields } from "./customBookingField.server";
 import { getLocationById } from "./bookingLocation.server";
 import { formatDateDisplay } from "../utils/format";
