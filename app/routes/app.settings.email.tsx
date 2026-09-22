@@ -337,7 +337,7 @@ export default function EmailSettingsTab() {
             <div style={styles.clientCardTitle}>Email Templates</div>
             <div style={styles.subLabel}>
               Customize the subject and content of the automated emails your customers
-              receive. Use the tokens below to insert booking details \u2014 they'll be
+              receive. Use the tokens below to insert booking details — they'll be
               filled in automatically when the email is sent.
             </div>
           </div>
@@ -363,7 +363,6 @@ export default function EmailSettingsTab() {
                     aria-expanded={isOpen}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <ChevronDownIcon open={isOpen} />
                       <div>
                         <div style={styles.label}>
                           {template.label}
@@ -374,33 +373,31 @@ export default function EmailSettingsTab() {
                         <div style={styles.subLabel}>{template.description}</div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePreview(template.type);
-                        }}
-                        style={resetButtonStyle(false)}
-                      >
-                        {previewOpen[template.type] ? "Hide preview" : "Preview"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleResetTemplate(template.type);
-                        }}
-                        disabled={!template.isCustomized || isResetting}
-                        style={resetButtonStyle(!template.isCustomized || isResetting)}
-                      >
-                        Reset to default
-                      </button>
+                    <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                      <ChevronDownIcon open={isOpen} />
                     </div>
                   </div>
 
                   {isOpen && (
                     <>
+                      <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          onClick={() => togglePreview(template.type)}
+                          style={resetButtonStyle(false)}
+                        >
+                          {previewOpen[template.type] ? "Hide preview" : "Preview"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResetTemplate(template.type)}
+                          disabled={!template.isCustomized || isResetting}
+                          style={resetButtonStyle(!template.isCustomized || isResetting)}
+                        >
+                          Reset to default
+                        </button>
+                      </div>
+
                       <div style={styles.clientFieldGroup}>
                         <div style={styles.clientFieldLabel}>Subject</div>
                         <input
@@ -435,11 +432,11 @@ export default function EmailSettingsTab() {
                           </button>
                         ))}
                       </div>
-                    </>
-                  )}
 
-                  {previewOpen[template.type] && (
-                    <EmailPreview type={template.type} subject={editable.subject} body={editable.body} />
+                      {previewOpen[template.type] && (
+                        <EmailPreview type={template.type} subject={editable.subject} body={editable.body} />
+                      )}
+                    </>
                   )}
                 </div>
               </div>
