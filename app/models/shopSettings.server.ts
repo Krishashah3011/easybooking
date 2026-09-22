@@ -64,13 +64,13 @@ export async function checkAppEmbedStatus(
 export async function getOrCreateShopSettings(
   shop: string,
 ): Promise<ShopSettings> {
-  let settings = await prisma.shopSettings.findUnique({ where: { shop } });
+  let settings = await prisma.shopSettings.upsert({
+    where: { shop },
+    create: { shop, serialKey: generateSerialKey() },
+    update: {},
+  });
 
-  if (!settings) {
-    settings = await prisma.shopSettings.create({
-      data: { shop, serialKey: generateSerialKey() },
-    });
-  } else if (!settings.serialKey) {
+  if (!settings.serialKey) {
     settings = await prisma.shopSettings.update({
       where: { shop },
       data: { serialKey: generateSerialKey() },

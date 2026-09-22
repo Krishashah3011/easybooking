@@ -13,7 +13,58 @@ import {
   getOrCreateShopSettings,
   setAppEnabled,
 } from "../models/shopSettings.server";
-import { styles } from "../components/SettingsUI";
+import { styles, BLUE } from "../components/SettingsUI";
+
+const GRAY_OFF = "#E4E4E4";
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onChange}
+      style={{
+        width: "46px",
+        height: "24px",
+        borderRadius: "110px",
+        border: "none",
+        padding: 0,
+        position: "relative",
+        background: checked ? BLUE : GRAY_OFF,
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.5 : 1,
+        transition: "background 0.15s ease",
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: "3.5px",
+          left: checked ? "25px" : "4px",
+          width: "17px",
+          height: "17px",
+          borderRadius: "50%",
+          background: "#fff",
+          transition: "left 0.15s ease",
+        }}
+      />
+    </button>
+  );
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
@@ -70,6 +121,15 @@ export default function GeneralSettingsTab() {
   return (
     <div style={styles.innerCard}>
       <div style={styles.licenseBox}>
+        <div style={styles.licenseTitle}>License</div>
+        <hr style={styles.divider} />
+
+        <div style={styles.rowBetween}>
+          <div style={styles.label}>Serial Key</div>
+          <div style={styles.serialPill}>{serialKey}</div>
+        </div>
+        <hr style={styles.divider} />
+
         <div style={styles.rowBetween}>
           <div>
             <div style={styles.label}>Booking App Status</div>
@@ -77,58 +137,12 @@ export default function GeneralSettingsTab() {
               Turn the whole booking app on or off across your storefront.
             </div>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={currentEnabled}
-            aria-label={currentEnabled ? "Disable booking app" : "Enable booking app"}
-            onClick={toggleApp}
+          <ToggleSwitch
+            checked={currentEnabled}
+            onChange={toggleApp}
             disabled={isSubmitting}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "46px",
-              height: "24px",
-              padding: 0,
-              border: "none",
-              background: "transparent",
-              cursor: isSubmitting ? "default" : "pointer",
-              opacity: isSubmitting ? 0.6 : 1,
-              flexShrink: 0,
-            }}
-          >
-            {currentEnabled ? (
-              <img src="/enable.svg" width={46} height={24} alt="" />
-            ) : (
-              <span
-                style={{
-                  position: "relative",
-                  display: "block",
-                  boxSizing: "border-box",
-                  width: "46px",
-                  height: "24px",
-                  borderRadius: "12px",
-                  background: "#E4E4E4",
-                  border: "1px solid #DBDBDB",
-                }}
-              >
-                <span
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "3px",
-                    transform: "translateY(-50%)",
-                    width: "17px",
-                    height: "17px",
-                    borderRadius: "50%",
-                    background: "#FFFFFF",
-                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.25)",
-                  }}
-                />
-              </span>
-            )}
-          </button>
+            label={currentEnabled ? "Disable booking app" : "Enable booking app"}
+          />
         </div>
       </div>
 
@@ -160,16 +174,6 @@ export default function GeneralSettingsTab() {
           </a>
         </s-banner>
       )}
-
-      <div style={styles.licenseBox}>
-        <div style={styles.licenseTitle}>License</div>
-        <hr style={styles.divider} />
-
-        <div style={styles.rowBetween}>
-          <div style={styles.label}>Serial Key</div>
-          <div style={styles.serialPill}>{serialKey}</div>
-        </div>
-      </div>
     </div>
   );
 }
