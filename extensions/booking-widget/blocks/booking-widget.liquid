@@ -28,37 +28,69 @@
         <button type="button" class="booking-widget__close" data-booking-close aria-label="Close">&times;</button>
       </div>
 
+      <div class="booking-widget__modal-banner" data-booking-modal-banner>
+        <img
+          class="booking-widget__modal-banner-image"
+          src="{{ 'storebanner.svg' | asset_url }}"
+          alt="Book your next appointment"
+          loading="lazy"
+        >
+      </div>
+
       <div class="booking-widget__modal-body" data-booking-modal-body>
         <div class="booking-widget__location-step" data-booking-location-step hidden>
-          <div class="booking-widget__location-header">
-            <label class="booking-widget__location-label" id="booking-widget-location-label">Select location</label>
-            <span class="booking-widget__timezone" data-booking-location-timezone></span>
-          </div>
+          <span class="booking-widget__timezone" data-booking-location-timezone></span>
           <div class="booking-widget__location-field">
-            <div
-              class="booking-widget__location-trigger"
-              data-booking-location-trigger
-              role="button"
-              tabindex="0"
-              aria-haspopup="listbox"
-              aria-expanded="false"
-              aria-controls="booking-widget-location-list-{{ product.id }}"
-            >
-              <svg class="booking-widget__location-pin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 21s-7-7.58-7-12a7 7 0 1 1 14 0c0 4.42-7 12-7 12z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
-                <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.6" />
+            <span class="booking-widget__location-icon" aria-hidden="true">
+              <svg viewBox="10 13 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M36.25 37.25C36.25 40.375 31.2125 42.25 25 42.25C18.7875 42.25 13.75 40.375 13.75 37.25C13.75 34.2425 18.7875 32.25 25 32.25C31.2125 32.25 36.25 34.125 36.25 37.25Z" fill="url(#booking-widget-loc-paint0)"/>
+                <path d="M25 16C22.5136 16 20.129 16.9877 18.3709 18.7459C16.6127 20.504 15.625 22.8886 15.625 25.375C15.625 27.79 16.955 30.125 18.46 32.02C19.985 33.9412 21.8075 35.5562 23.0288 36.5475C24.1863 37.485 25.8137 37.485 26.9712 36.5475C28.1925 35.5562 30.015 33.9412 31.54 32.02C33.045 30.1263 34.375 27.79 34.375 25.375C34.375 22.8886 33.3873 20.504 31.6291 18.7459C29.871 16.9877 27.4864 16 25 16Z" fill="url(#booking-widget-loc-paint1)"/>
+                <path d="M28.125 25.375C28.125 26.2038 27.7958 26.9987 27.2097 27.5847C26.6237 28.1708 25.8288 28.5 25 28.5C24.1712 28.5 23.3763 28.1708 22.7903 27.5847C22.2042 26.9987 21.875 26.2038 21.875 25.375C21.875 24.5462 22.2042 23.7513 22.7903 23.1653C23.3763 22.5792 24.1712 22.25 25 22.25C25.8288 22.25 26.6237 22.5792 27.2097 23.1653C27.7958 23.7513 28.125 24.5462 28.125 25.375Z" fill="url(#booking-widget-loc-paint2)"/>
+                <defs>
+                  <radialGradient id="booking-widget-loc-paint0" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(24.1964 35.5835) rotate(-10.678) scale(17.9901 7.97634)">
+                    <stop stop-color="#7B7BFF"/>
+                    <stop offset="0.502" stop-color="#A3A3FF"/>
+                    <stop offset="1" stop-color="#CEB0FF"/>
+                  </radialGradient>
+                  <linearGradient id="booking-widget-loc-paint1" x1="16" y1="16" x2="26.5025" y2="34.1863" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#789BC4"/>
+                    <stop offset="1" stop-color="#531B8A"/>
+                  </linearGradient>
+                  <linearGradient id="booking-widget-loc-paint2" x1="22.2375" y1="25.6512" x2="25.4925" y2="29.035" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#FDFDFD"/>
+                    <stop offset="1" stop-color="#FECBE6"/>
+                  </linearGradient>
+                </defs>
               </svg>
-              <span class="booking-widget__location-trigger-text" data-booking-location-trigger-text>Select location</span>
-              <span class="booking-widget__location-chevron" aria-hidden="true">&#9662;</span>
+            </span>
+            <label class="booking-widget__location-static-label" id="booking-widget-location-label">Add Location</label>
+            <div class="booking-widget__location-select-wrap">
+              <div
+                class="booking-widget__location-trigger"
+                data-booking-location-trigger
+                role="button"
+                tabindex="0"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="booking-widget-location-list-{{ product.id }}"
+                aria-labelledby="booking-widget-location-label"
+              >
+                <span class="booking-widget__location-trigger-text" data-booking-location-trigger-text>Select location</span>
+                <span class="booking-widget__location-chevron" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 8L9.3 12.2C9.61 12.51 9.77 12.66 9.95 12.69C10.06 12.71 10.19 12.71 10.3 12.69C10.48 12.66 10.64 12.51 10.95 12.2L15.25 8" stroke="#073E74" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </div>
+              <ul
+                class="booking-widget__location-list"
+                id="booking-widget-location-list-{{ product.id }}"
+                data-booking-location-list
+                role="listbox"
+                aria-labelledby="booking-widget-location-label"
+                hidden
+              ></ul>
             </div>
-            <ul
-              class="booking-widget__location-list"
-              id="booking-widget-location-list-{{ product.id }}"
-              data-booking-location-list
-              role="listbox"
-              aria-labelledby="booking-widget-location-label"
-              hidden
-            ></ul>
           </div>
           <p class="booking-widget__location-error" data-booking-location-error hidden></p>
 
