@@ -134,19 +134,17 @@
 }
 
 .booking-widget .booking-widget__trigger {
-  --color-button: 0, 96, 230;
+  --color-button: 20, 60, 100;
   --color-button-text: 255, 255, 255;
   --buttons-border-opacity: 0;
-  background: #0060e6;
-  background-color: #0060e6;
-  border: 1px solid #0060e6;
+  background: linear-gradient(90deg, #143c64 0%, #6b2786 100%);
+  border: 1px solid transparent;
   color: #ffffff;
 }
 
 .booking-widget .booking-widget__trigger:hover {
-  background: #0052c4;
-  background-color: #0052c4;
-  border-color: #0052c4;
+  background: linear-gradient(90deg, #0f2e4d 0%, #571f6c 100%);
+  border-color: transparent;
   color: #ffffff;
 }
 
@@ -249,7 +247,25 @@ body.booking-widget-lock-scroll {
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 740 / 141;
   border-radius: 8px;
+  background: linear-gradient(90deg, #eef4fb 25%, #f6f9fd 37%, #eef4fb 63%);
+  background-size: 400% 100%;
+  animation: booking-widget-banner-shimmer 1.4s ease infinite;
+}
+
+.booking-widget__modal-banner-image.is-loaded {
+  animation: none;
+  background: none;
+}
+
+@keyframes booking-widget-banner-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
 }
 
 .booking-widget__modal-body {
@@ -1322,9 +1338,11 @@ body.booking-widget-lock-scroll {
 .booking-widget__review-title {
   font-family: "Inter", sans-serif;
   font-weight: 700;
-  font-size: 1.3rem;
+  font-size: 20px;
+  line-height: 100%;
+  letter-spacing: 0%;
   margin: 0;
-  color: #000;
+  color: #000000;
 }
 
 .booking-widget__review-list {
