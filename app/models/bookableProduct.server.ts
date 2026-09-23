@@ -6,6 +6,13 @@ import type {
 import prisma from "../db.server";
 import { parseWorkingDays } from "../utils/workingDays";
 import { BOOKING_TYPES } from "./bookingTypes";
+import {
+  dayTimeMapFromLegacy,
+  dayTimesToWorkingDaysCsv,
+  parseDayTimesFormValue,
+  parseDayTimesJson,
+  type DayTimeMap,
+} from "../utils/dayTimes";
 
 export { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "./bookingTypes";
 
@@ -19,6 +26,7 @@ export type BookableProductFormValues = {
   workingDays: number[] | null;
   dailyStartTime: string | null;
   dailyEndTime: string | null;
+  dayTimes: DayTimeMap | null;
   slotDurationMinutes: number | null;
   bufferMinutes: number | null;
   minAdvanceHours: number | null;
@@ -43,6 +51,7 @@ export type EffectiveBookingSettings = {
   workingDays: number[];
   dailyStartTime: string;
   dailyEndTime: string;
+  dayTimes: DayTimeMap;
   slotDurationMinutes: number;
   bufferMinutes: number;
   minAdvanceHours: number;
@@ -109,6 +118,7 @@ export function toBookableProductFormValues(
       : null,
     dailyStartTime: product.dailyStartTime,
     dailyEndTime: product.dailyEndTime,
+    dayTimes: parseDayTimesJson(product.dayTimes),
     slotDurationMinutes: product.slotDurationMinutes,
     bufferMinutes: product.bufferMinutes,
     minAdvanceHours: product.minAdvanceHours,
@@ -192,6 +202,13 @@ export function parseBookableProductForm(formData: FormData): {
   ) {
     errors.dailyEndTime = "End time must be after start time.";
   }
+
+  const dayTimesRaw = String(formData.get("dayTimesJson") ?? "");
+  const dayTimesResult = parseDayTimesFormValue(dayTimesRaw);
+  if (dayTimesResult.error) {
+    errors.dayTimes = dayTimesResult.error;
+  }
+  const dayTimes = dayTimesResult.map;
 
   const slotDurationMinutesResult = parseOptionalInt(
     formData.get("slotDurationMinutes"),
@@ -320,6 +337,7 @@ export function parseBookableProductForm(formData: FormData): {
       workingDays,
       dailyStartTime,
       dailyEndTime,
+      dayTimes,
       slotDurationMinutes,
       bufferMinutes,
       minAdvanceHours,
@@ -399,9 +417,14 @@ export async function upsertBookableProductOverrides(
     productTitle,
     isEnabled: values.isEnabled,
     bookingType: values.bookingType,
-    workingDays: values.workingDays ? values.workingDays.join(",") : null,
-    dailyStartTime: values.dailyStartTime,
-    dailyEndTime: values.dailyEndTime,
+    workingDays: values.dayTimes
+      ? dayTimesToWorkingDaysCsv(values.dayTimes)
+      : values.workingDays
+        ? values.workingDays.join(",")
+        : null,
+    dailyStartTime: values.dayTimes ? null : values.dailyStartTime,
+    dailyEndTime: values.dayTimes ? null : values.dailyEndTime,
+    dayTimes: values.dayTimes,
     slotDurationMinutes: values.slotDurationMinutes,
     bufferMinutes: values.bufferMinutes,
     minAdvanceHours: values.minAdvanceHours,
@@ -454,11 +477,43 @@ export type LocationHoursOverride = {
   dailyEndTime: string | null;
 };
 
+/**
+ * Per-day time map for one level of the location > product > shop
+ * cascade. Prefers that level's own dayTimes JSON; falls back to its
+ * legacy uniform workingDays + dailyStartTime/dailyEndTime if set;
+ * returns null if this level configures nothing (so the caller falls
+ * through to the next level).
+ */
+function levelDayTimes(entity: {
+  workingDays: string | null;
+  dailyStartTime: string | null;
+  dailyEndTime: string | null;
+  dayTimes?: unknown;
+} | null): DayTimeMap | null {
+  if (!entity) return null;
+  const fromJson = "dayTimes" in entity ? parseDayTimesJson(entity.dayTimes) : null;
+  if (fromJson) return fromJson;
+  if (entity.workingDays && entity.dailyStartTime && entity.dailyEndTime) {
+    return dayTimeMapFromLegacy(
+      parseWorkingDays(entity.workingDays),
+      entity.dailyStartTime,
+      entity.dailyEndTime,
+    );
+  }
+  return null;
+}
+
 export function resolveEffectiveSettings(
   shopSettings: BookingSettings,
   product: BookableProduct | null,
   location?: LocationHoursOverride | null,
 ): EffectiveBookingSettings {
+  const dayTimes =
+    levelDayTimes(location ?? null) ??
+    levelDayTimes(product) ??
+    levelDayTimes(shopSettings) ??
+    {};
+
   return {
     workingDays: location?.workingDays
       ? parseWorkingDays(location.workingDays)
@@ -469,6 +524,7 @@ export function resolveEffectiveSettings(
       location?.dailyStartTime ?? product?.dailyStartTime ?? shopSettings.dailyStartTime,
     dailyEndTime:
       location?.dailyEndTime ?? product?.dailyEndTime ?? shopSettings.dailyEndTime,
+    dayTimes,
     slotDurationMinutes:
       product?.bookingType === "BUNDLE" && product.bundleSessionDurationMinutes
         ? product.bundleSessionDurationMinutes

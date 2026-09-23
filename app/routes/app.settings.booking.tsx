@@ -207,6 +207,47 @@ const styles: Record<string, React.CSSProperties> = {
     color: LABEL_GREY,
     margin: 0,
   },
+  dayTimeRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: "8px 16px",
+    width: "100%",
+    padding: "6px 0",
+  },
+  dayTimeInputs: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "8px",
+  },
+  smallInputBox: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: "4px 8px",
+    width: "84px",
+    height: "30px",
+    background: "#FFFFFF",
+    border: `1px solid ${INPUT_BORDER}`,
+    borderRadius: "4px",
+  },
+  smallTextInput: {
+    flex: "1 1 auto",
+    minWidth: 0,
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "14px",
+    lineHeight: "17px",
+    color: TEXT_BLACK,
+    padding: 0,
+  },
   selectBox: {
     boxSizing: "border-box",
     display: "flex",
@@ -444,33 +485,48 @@ export default function BookingSettingsPage() {
 
   const toggleWorkingDay = (day: number) => {
     setValues((prev) => {
-      const has = prev.workingDays.includes(day);
-      const workingDays = has
-        ? prev.workingDays.filter((d) => d !== day)
-        : [...prev.workingDays, day].sort((a, b) => a - b);
-      return { ...prev, workingDays };
+      const current = { ...(prev.dayTimes ?? {}) };
+      if (current[day]) {
+        delete current[day];
+      } else {
+        current[day] = { start: "09:00", end: "17:00" };
+      }
+      return { ...prev, dayTimes: current };
     });
   };
 
-  const allWeekdaysSelected = WEEKDAY_LABELS.every((day) =>
-    values.workingDays.includes(day.value),
+  const setDayTime = (day: number, field: "start" | "end", raw: string) => {
+    setValues((prev) => {
+      const existing = prev.dayTimes?.[day] ?? { start: "09:00", end: "17:00" };
+      return {
+        ...prev,
+        dayTimes: {
+          ...(prev.dayTimes ?? {}),
+          [day]: { ...existing, [field]: formatTimeInput(raw) },
+        },
+      };
+    });
+  };
+
+  const allWeekdaysSelected = WEEKDAY_LABELS.every(
+    (day) => values.dayTimes?.[day.value] != null,
   );
 
   const toggleSelectAllWorkingDays = () => {
-    setValues((prev) => ({
-      ...prev,
-      workingDays: allWeekdaysSelected
-        ? []
-        : WEEKDAY_LABELS.map((day) => day.value),
-    }));
+    setValues((prev) => {
+      if (allWeekdaysSelected) return { ...prev, dayTimes: {} };
+      const next = { ...(prev.dayTimes ?? {}) };
+      for (const day of WEEKDAY_LABELS) {
+        if (!next[day.value]) next[day.value] = { start: "09:00", end: "17:00" };
+      }
+      return { ...prev, dayTimes: next };
+    });
   };
 
   const handleSave = () => {
     fetcher.submit(
       {
-        workingDays: values.workingDays.join(","),
-        dailyStartTime: values.dailyStartTime,
-        dailyEndTime: values.dailyEndTime,
+        dayTimesJson: JSON.stringify(values.dayTimes ?? {}),
         slotDurationMinutes: String(values.slotDurationMinutes),
         bufferMinutes: String(values.bufferMinutes),
         minAdvanceHours: String(values.minAdvanceHours),
@@ -513,9 +569,10 @@ export default function BookingSettingsPage() {
 
       <div style={styles.card}>
         <div style={styles.headerLeft}>
-          <p style={styles.title}>Working Days</p>
+          <p style={styles.title}>Working Days & Hours</p>
           <p style={styles.descText}>
-            Choose which days of the week customers can book appointments on.
+            Choose which days customers can book, and set each day's own
+            booking window. A day with no hours set isn't bookable.
           </p>
         </div>
         <hr style={styles.divider} />
@@ -527,81 +584,56 @@ export default function BookingSettingsPage() {
               label="Select All"
             />
           </div>
-          <div style={styles.daysRow}>
-            {WEEKDAY_LABELS.map((day) => (
-              <Checkbox
-                key={day.value}
-                checked={values.workingDays.includes(day.value)}
-                onChange={() => toggleWorkingDay(day.value)}
-                label={day.label}
-              />
-            ))}
-          </div>
+          {WEEKDAY_LABELS.map((day) => {
+            const dayTime = values.dayTimes?.[day.value];
+            const isChecked = dayTime != null;
+            return (
+              <div key={day.value} style={styles.dayTimeRow}>
+                <Checkbox
+                  checked={isChecked}
+                  onChange={() => toggleWorkingDay(day.value)}
+                  label={day.label}
+                />
+                {isChecked && (
+                  <div style={styles.dayTimeInputs}>
+                    <div style={styles.smallInputBox}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        style={styles.smallTextInput}
+                        placeholder="09:00"
+                        value={dayTime.start}
+                        onChange={(e: FieldChangeEvent) =>
+                          setDayTime(day.value, "start", e.currentTarget.value)
+                        }
+                      />
+                    </div>
+                    <span style={styles.hintText}>to</span>
+                    <div style={styles.smallInputBox}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        style={styles.smallTextInput}
+                        placeholder="17:00"
+                        value={dayTime.end}
+                        onChange={(e: FieldChangeEvent) =>
+                          setDayTime(day.value, "end", e.currentTarget.value)
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-        {errors.workingDays && (
+        {errors.dayTimes && (
           <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-            {errors.workingDays}
+            {errors.dayTimes}
           </p>
         )}
-      </div>
-
-      <div style={{ ...styles.card, marginTop: "16px" }}>
-        <div style={styles.headerLeft}>
-          <p style={styles.title}>Daily Booking Window</p>
-        </div>
-        <hr style={styles.divider} />
-        <div style={styles.fieldsRow}>
-          <div style={styles.fieldGroupHalf}>
-            <p style={styles.fieldLabelGrey}>Start Time</p>
-            <div style={styles.inputBox}>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={5}
-                style={styles.textInput}
-                placeholder="09:00"
-                value={values.dailyStartTime}
-                onChange={(e: FieldChangeEvent) =>
-                  setField(
-                    "dailyStartTime",
-                    formatTimeInput(e.currentTarget.value),
-                  )
-                }
-              />
-            </div>
-            <p style={styles.hintText}>24-hour format, hh:mm</p>
-            {errors.dailyStartTime && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.dailyStartTime}
-              </p>
-            )}
-          </div>
-          <div style={styles.fieldGroupHalf}>
-            <p style={styles.fieldLabelGrey}>End Time</p>
-            <div style={styles.inputBox}>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={5}
-                style={styles.textInput}
-                placeholder="17:00"
-                value={values.dailyEndTime}
-                onChange={(e: FieldChangeEvent) =>
-                  setField(
-                    "dailyEndTime",
-                    formatTimeInput(e.currentTarget.value),
-                  )
-                }
-              />
-            </div>
-            <p style={styles.hintText}>24-hour format, hh:mm</p>
-            {errors.dailyEndTime && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.dailyEndTime}
-              </p>
-            )}
-          </div>
-        </div>
       </div>
 
       <div style={{ ...styles.card, marginTop: "16px" }}>

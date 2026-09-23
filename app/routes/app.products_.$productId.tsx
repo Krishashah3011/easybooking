@@ -349,6 +349,22 @@ const ui: Record<string, React.CSSProperties> = {
     gap: "8px 20px",
     width: "100%",
   },
+  dayTimeRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: "8px 16px",
+    width: "100%",
+    padding: "6px 0",
+  },
+  dayTimeInputs: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "8px",
+  },
   dayItem: {
     display: "flex",
     flexDirection: "row",
@@ -1106,6 +1122,90 @@ function TimeField({
   );
 }
 
+function InlineTimeField({
+  value,
+  placeholder,
+  onChange,
+}: {
+  value: string;
+  placeholder: string;
+  onChange: (next: string) => void;
+}) {
+  const [parts, setParts] = useState(() => to12HourParts(value));
+
+  useEffect(() => {
+    if (fromTwelveHourParts(parts) !== value) {
+      setParts(to12HourParts(value));
+    }
+  }, [value]);
+
+  const commit = (next: TwelveHourParts) => {
+    setParts(next);
+    const result = fromTwelveHourParts(next);
+    if (result) onChange(result);
+  };
+
+  const placeholderParts = to12HourParts(
+    /^\d{1,2}:\d{2}$/.test(placeholder) ? placeholder : null,
+  );
+
+  return (
+    <div
+      style={{
+        ...ui.inputBox,
+        gap: "6px",
+        width: "auto",
+        padding: "4px 8px",
+        height: "32px",
+      }}
+    >
+      <input
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        style={{ ...ui.timeInput, flex: "0 0 20px", textAlign: "right" }}
+        placeholder={placeholderParts.hour || "09"}
+        value={parts.hour}
+        onChange={(e: FieldChangeEvent) =>
+          commit({ ...parts, hour: sanitizeHourInput(e.currentTarget.value) })
+        }
+      />
+      <span style={{ color: TEXT_DARK }}>:</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        style={{ ...ui.timeInput, flex: "0 0 20px" }}
+        placeholder={placeholderParts.minute || "00"}
+        value={parts.minute}
+        onChange={(e: FieldChangeEvent) =>
+          commit({ ...parts, minute: sanitizeMinuteInput(e.currentTarget.value) })
+        }
+      />
+      <button
+        type="button"
+        onClick={() =>
+          commit({ ...parts, period: parts.period === "AM" ? "PM" : "AM" })
+        }
+        style={{
+          flex: "0 0 auto",
+          border: `1px solid ${INPUT_BORDER}`,
+          borderRadius: "4px",
+          background: "#fff",
+          color: TEXT_DARK,
+          fontFamily: "Inter",
+          fontWeight: 600,
+          fontSize: "11px",
+          padding: "2px 6px",
+          cursor: "pointer",
+        }}
+      >
+        {parts.period}
+      </button>
+    </div>
+  );
+}
+
 function NumberField({
   label,
   value,
@@ -1275,12 +1375,26 @@ export default function BookableProductPage() {
 
   const toggleWorkingDay = (day: number) => {
     setValues((prev) => {
-      const current = prev.workingDays ?? [];
-      const has = current.includes(day);
-      const workingDays = has
-        ? current.filter((d) => d !== day)
-        : [...current, day].sort((a, b) => a - b);
-      return { ...prev, workingDays };
+      const current = { ...(prev.dayTimes ?? {}) };
+      if (current[day]) {
+        delete current[day];
+      } else {
+        current[day] = { start: "09:00", end: "17:00" };
+      }
+      return { ...prev, dayTimes: Object.keys(current).length ? current : null };
+    });
+  };
+
+  const setDayTime = (day: number, field: "start" | "end", value: string) => {
+    setValues((prev) => {
+      const existing = prev.dayTimes?.[day] ?? { start: "09:00", end: "17:00" };
+      return {
+        ...prev,
+        dayTimes: {
+          ...(prev.dayTimes ?? {}),
+          [day]: { ...existing, [field]: value },
+        },
+      };
     });
   };
 
@@ -1302,17 +1416,19 @@ export default function BookableProductPage() {
     country.name.toLowerCase().includes(countrySearch.trim().toLowerCase()),
   );
 
-  const allWeekdaysSelected = WEEKDAY_LABELS.every((day) =>
-    (values.workingDays ?? []).includes(day.value),
+  const allWeekdaysSelected = WEEKDAY_LABELS.every(
+    (day) => values.dayTimes?.[day.value] != null,
   );
 
   const toggleSelectAllWorkingDays = () => {
-    setValues((prev) => ({
-      ...prev,
-      workingDays: allWeekdaysSelected
-        ? []
-        : WEEKDAY_LABELS.map((day) => day.value),
-    }));
+    setValues((prev) => {
+      if (allWeekdaysSelected) return { ...prev, dayTimes: null };
+      const next = { ...(prev.dayTimes ?? {}) };
+      for (const day of WEEKDAY_LABELS) {
+        if (!next[day.value]) next[day.value] = { start: "09:00", end: "17:00" };
+      }
+      return { ...prev, dayTimes: next };
+    });
   };
 
   const handleSave = () => {
@@ -1325,6 +1441,7 @@ export default function BookableProductPage() {
         workingDays: values.workingDays ? values.workingDays.join(",") : "",
         dailyStartTime: values.dailyStartTime ?? "",
         dailyEndTime: values.dailyEndTime ?? "",
+        dayTimesJson: values.dayTimes ? JSON.stringify(values.dayTimes) : "",
         slotDurationMinutes:
           values.slotDurationMinutes !== null
             ? String(values.slotDurationMinutes)
@@ -1580,8 +1697,8 @@ export default function BookableProductPage() {
               values.bookingType === "FULL_DAY" ||
               values.bookingType === "BUNDLE") && (
               <Card
-                title="Working Days"
-                description="Choose which days of the week customers can book appointments on (Leave blank to use the shop default)."
+                title="Working Days & Hours"
+                description="Choose which days this product can be booked on, and set each day's own hours. Leave a day unchecked to leave it unavailable, or clear the whole schedule to inherit the shop default."
               >
                 <div style={ui.daysGroup}>
                   <div style={ui.daysRow}>
@@ -1591,48 +1708,42 @@ export default function BookableProductPage() {
                       label="Select All"
                     />
                   </div>
-                  <div style={ui.daysRow}>
-                    {WEEKDAY_LABELS.map((day) => (
-                      <Checkbox
-                        key={day.value}
-                        checked={(values.workingDays ?? []).includes(
-                          day.value,
+                  {WEEKDAY_LABELS.map((day) => {
+                    const dayTime = values.dayTimes?.[day.value];
+                    const isChecked = dayTime != null;
+                    return (
+                      <div key={day.value} style={ui.dayTimeRow}>
+                        <Checkbox
+                          checked={isChecked}
+                          onChange={() => toggleWorkingDay(day.value)}
+                          label={day.label}
+                        />
+                        {isChecked && (
+                          <div style={ui.dayTimeInputs}>
+                            <InlineTimeField
+                              value={dayTime.start}
+                              placeholder={shopDefaults.dailyStartTime}
+                              onChange={(next) =>
+                                setDayTime(day.value, "start", next)
+                              }
+                            />
+                            <span style={ui.hintText}>to</span>
+                            <InlineTimeField
+                              value={dayTime.end}
+                              placeholder={shopDefaults.dailyEndTime}
+                              onChange={(next) =>
+                                setDayTime(day.value, "end", next)
+                              }
+                            />
+                          </div>
                         )}
-                        onChange={() => toggleWorkingDay(day.value)}
-                        label={day.label}
-                      />
-                    ))}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                {errors.workingDays && (
-                  <p style={ui.errorText}>{errors.workingDays}</p>
+                {errors.dayTimes && (
+                  <p style={ui.errorText}>{errors.dayTimes}</p>
                 )}
-              </Card>
-            )}
-
-            {(values.bookingType === "SLOT" ||
-              values.bookingType === "BUNDLE" ||
-              values.bookingType === "FULL_DAY") && (
-              <Card
-                title="Daily Booking Window"
-                description="The earliest and latest time a slot can start each working day (Leave blank to use the shop default)."
-              >
-                <div style={ui.fieldsRow}>
-                  <TimeField
-                    label="Start Time"
-                    value={values.dailyStartTime}
-                    placeholder={shopDefaults.dailyStartTime}
-                    error={errors.dailyStartTime}
-                    onChange={(next) => setField("dailyStartTime", next)}
-                  />
-                  <TimeField
-                    label="End Time"
-                    value={values.dailyEndTime}
-                    placeholder={shopDefaults.dailyEndTime}
-                    error={errors.dailyEndTime}
-                    onChange={(next) => setField("dailyEndTime", next)}
-                  />
-                </div>
               </Card>
             )}
 

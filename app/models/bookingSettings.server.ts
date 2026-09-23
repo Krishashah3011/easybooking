@@ -1,5 +1,11 @@
 import type { BookingSettings } from "@prisma/client";
 import prisma from "../db.server";
+import {
+  dayTimeMapFromLegacy,
+  parseDayTimesFormValue,
+  parseDayTimesJson,
+  type DayTimeMap,
+} from "../utils/dayTimes";
 
 export const DEFAULT_BOOKING_SETTINGS = {
   workingDays: "1,2,3,4,5",
@@ -19,6 +25,7 @@ export type BookingSettingsFormValues = {
   workingDays: number[];
   dailyStartTime: string;
   dailyEndTime: string;
+  dayTimes: DayTimeMap | null;
   slotDurationMinutes: number;
   bufferMinutes: number;
   minAdvanceHours: number;
@@ -52,10 +59,19 @@ export async function getBookingSettings(
 export function toFormValues(
   settings: BookingSettings,
 ): BookingSettingsFormValues {
+  const dayTimes =
+    parseDayTimesJson(settings.dayTimes) ??
+    dayTimeMapFromLegacy(
+      parseWorkingDays(settings.workingDays),
+      settings.dailyStartTime,
+      settings.dailyEndTime,
+    );
+
   return {
     workingDays: parseWorkingDays(settings.workingDays),
     dailyStartTime: settings.dailyStartTime,
     dailyEndTime: settings.dailyEndTime,
+    dayTimes,
     slotDurationMinutes: settings.slotDurationMinutes,
     bufferMinutes: settings.bufferMinutes,
     minAdvanceHours: settings.minAdvanceHours,
@@ -79,7 +95,6 @@ function toDateInputValue(date: Date | null): string | null {
   return date.toISOString().slice(0, 10);
 }
 
-const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const MAX_FROM_NAME_LENGTH = 60;
 
 export function parseBookingSettingsForm(formData: FormData): {
@@ -88,29 +103,27 @@ export function parseBookingSettingsForm(formData: FormData): {
 } {
   const errors: BookingSettingsFieldErrors = {};
 
-  const workingDays = String(formData.get("workingDays") ?? "")
-    .split(",")
-    .map((v) => Number(v.trim()))
-    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
-  if (workingDays.length === 0) {
-    errors.workingDays = "Select at least one working day.";
+  const dayTimesRaw = String(formData.get("dayTimesJson") ?? "");
+  const dayTimesResult = parseDayTimesFormValue(dayTimesRaw);
+  if (!dayTimesResult.map) {
+    errors.dayTimes =
+      dayTimesResult.error ?? "Select at least one working day and set its hours.";
   }
+  const dayTimes: DayTimeMap = dayTimesResult.map ?? {};
 
-  const dailyStartTime = String(formData.get("dailyStartTime") ?? "");
-  const dailyEndTime = String(formData.get("dailyEndTime") ?? "");
-  if (!TIME_RE.test(dailyStartTime)) {
-    errors.dailyStartTime = "Enter a valid start time (HH:mm).";
-  }
-  if (!TIME_RE.test(dailyEndTime)) {
-    errors.dailyEndTime = "Enter a valid end time (HH:mm).";
-  }
-  if (
-    !errors.dailyStartTime &&
-    !errors.dailyEndTime &&
-    dailyEndTime <= dailyStartTime
-  ) {
-    errors.dailyEndTime = "End time must be after start time.";
-  }
+  const workingDays = Object.keys(dayTimes)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  const dayEntries = Object.values(dayTimes) as { start: string; end: string }[];
+  const dailyStartTime =
+    dayEntries.length > 0
+      ? dayEntries.reduce((min, e) => (e.start < min ? e.start : min), dayEntries[0].start)
+      : "09:00";
+  const dailyEndTime =
+    dayEntries.length > 0
+      ? dayEntries.reduce((max, e) => (e.end > max ? e.end : max), dayEntries[0].end)
+      : "17:00";
 
   const slotDurationMinutes = Number(formData.get("slotDurationMinutes"));
   if (!Number.isInteger(slotDurationMinutes) || slotDurationMinutes < 5) {
@@ -156,6 +169,7 @@ export function parseBookingSettingsForm(formData: FormData): {
       workingDays,
       dailyStartTime,
       dailyEndTime,
+      dayTimes,
       slotDurationMinutes,
       bufferMinutes,
       minAdvanceHours,
@@ -177,6 +191,7 @@ export async function upsertBookingSettings(
     workingDays: values.workingDays.join(","),
     dailyStartTime: values.dailyStartTime,
     dailyEndTime: values.dailyEndTime,
+    dayTimes: values.dayTimes,
     slotDurationMinutes: values.slotDurationMinutes,
     bufferMinutes: values.bufferMinutes,
     minAdvanceHours: values.minAdvanceHours,

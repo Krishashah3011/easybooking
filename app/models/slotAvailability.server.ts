@@ -52,7 +52,8 @@ export function computeSlotsForDate(
   timeZone: string | null = null,
 ): TimeSlot[] {
   if (blackoutDates.has(dateStr)) return [];
-  if (!settings.workingDays.includes(dayOfWeek(dateStr))) return [];
+  const dayConfig = settings.dayTimes[dayOfWeek(dateStr)];
+  if (!dayConfig) return [];
   if (
     !isWithinDateWindow(
       dateStr,
@@ -70,8 +71,8 @@ export function computeSlotsForDate(
   const stepMinutes = settings.slotDurationMinutes + settings.bufferMinutes;
   if (stepMinutes <= 0) return [];
 
-  const dayStart = timeToMinutes(settings.dailyStartTime);
-  const dayEnd = timeToMinutes(settings.dailyEndTime);
+  const dayStart = timeToMinutes(dayConfig.start);
+  const dayEnd = timeToMinutes(dayConfig.end);
   const earliestBookableAt = new Date(
     now.getTime() + settings.minAdvanceHours * 60 * 60 * 1000,
   );

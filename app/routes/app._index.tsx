@@ -540,7 +540,7 @@ export default function Dashboard() {
     {
       done: smtpConfigured,
       label: "Configure SMTP so booking emails can send",
-      href: "/app/settings",
+      href: "/app/settings/email",
       cta: "Go to Settings",
     },
   ];
@@ -555,17 +555,6 @@ export default function Dashboard() {
       />
 
       <div style={analyticsStyles.outerCard}>
-      {!registered && (
-        <s-banner tone="info" heading="Register to unlock EasyBooking">
-          <s-paragraph>
-            Create your account with a name and email to unlock every page
-            of the app. Until then, this dashboard only shows the user
-            guide below.
-          </s-paragraph>
-          <s-link href="/app/account">Go to Account</s-link>
-        </s-banner>
-      )}
-
       {registered && (
         <>
           {stats.overbookedCount > 0 && (
