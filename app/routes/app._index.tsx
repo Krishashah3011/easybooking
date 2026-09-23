@@ -955,6 +955,7 @@ export default function Dashboard() {
                   <input
                     type="date"
                     value={dateFrom}
+                    max={dateTo || undefined}
                     onChange={(e) => setDateFrom(e.target.value)}
                     style={analyticsStyles.dateInput}
                     className="eb-date-input"
@@ -968,6 +969,7 @@ export default function Dashboard() {
                   <input
                     type="date"
                     value={dateTo}
+                    min={dateFrom || undefined}
                     onChange={(e) => setDateTo(e.target.value)}
                     style={analyticsStyles.dateInput}
                     className="eb-date-input"

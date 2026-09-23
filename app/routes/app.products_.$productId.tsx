@@ -1085,6 +1085,8 @@ function DateField({
   size = "half",
   error,
   onChange,
+  min,
+  max,
 }: {
   label: string;
   value: string;
@@ -1092,6 +1094,8 @@ function DateField({
   size?: FieldSize;
   error?: string;
   onChange: (next: string) => void;
+  min?: string;
+  max?: string;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const openPicker = () => {
@@ -1116,6 +1120,8 @@ function DateField({
           className="pc-date-input"
           style={ui.dateInput}
           value={value}
+          min={min}
+          max={max}
           onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
           onClick={(e) => e.stopPropagation()}
           aria-label={label}
@@ -1752,12 +1758,14 @@ export default function BookableProductPage() {
                   value={values.bookingStartDate ?? ""}
                   error={errors.bookingStartDate}
                   onChange={(next) => setField("bookingStartDate", next || null)}
+                  max={values.bookingEndDate ?? undefined}
                 />
                 <DateField
                   label="Booking End Date"
                   value={values.bookingEndDate ?? ""}
                   error={errors.bookingEndDate}
                   onChange={(next) => setField("bookingEndDate", next || null)}
+                  min={values.bookingStartDate ?? undefined}
                 />
               </div>
             </Card>

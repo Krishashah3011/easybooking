@@ -885,6 +885,7 @@ export default function BookingSettingsPage() {
                 className="booking-date-input"
                 style={styles.dateInput}
                 value={values.bookingStartDate ?? ""}
+                max={values.bookingEndDate ?? undefined}
                 onChange={(e: FieldChangeEvent) =>
                   setField("bookingStartDate", e.currentTarget.value || null)
                 }
@@ -911,6 +912,7 @@ export default function BookingSettingsPage() {
                 className="booking-date-input"
                 style={styles.dateInput}
                 value={values.bookingEndDate ?? ""}
+                min={values.bookingStartDate ?? undefined}
                 onChange={(e: FieldChangeEvent) =>
                   setField("bookingEndDate", e.currentTarget.value || null)
                 }

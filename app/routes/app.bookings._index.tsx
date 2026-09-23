@@ -1959,6 +1959,7 @@ function BookingsListPage({
                   type="date"
                   style={S.input}
                   value={dateFrom}
+                  max={dateTo || undefined}
                   onChange={(e) => setDateFrom(e.target.value)}
                 />
               </label>
@@ -1968,6 +1969,7 @@ function BookingsListPage({
                   type="date"
                   style={S.input}
                   value={dateTo}
+                  min={dateFrom || undefined}
                   onChange={(e) => setDateTo(e.target.value)}
                 />
               </label>
