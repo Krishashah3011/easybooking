@@ -42,6 +42,26 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     marginBottom: "16px",
     overflow: "auto",
   },
+  reportsRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "16px",
+    width: "100%",
+    alignItems: "stretch",
+  },
+  reportCard: {
+    flex: "1 1 0",
+    minWidth: 0,
+    height: "353px",
+    background: "#FFFFFF",
+    border: "1px solid #E5E5E5",
+    borderRadius: "8px",
+    padding: "16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    overflow: "visible",
+  },
   heading: {
     fontFamily: "Inter",
     fontWeight: 600,
@@ -206,54 +226,6 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     color: TEXT_BLACK,
     margin: 0,
   },
-  barRows: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-    width: "100%",
-  },
-  barRow: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    width: "100%",
-  },
-  barRowLabels: {
-    display: "flex",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  barRowLabel: {
-    fontFamily: "Inter",
-    fontWeight: 500,
-    fontSize: "14px",
-    color: TEXT_BLACK,
-    margin: 0,
-  },
-  barRowMeta: {
-    fontFamily: "Inter",
-    fontWeight: 500,
-    fontSize: "14px",
-    color: MUTED_GREY,
-    margin: 0,
-  },
-  barTrack: {
-    position: "relative",
-    height: "6px",
-    borderRadius: "100px",
-    background: TRACK_GREY,
-    width: "100%",
-    overflow: "hidden",
-  },
-  barFill: {
-    position: "absolute",
-    top: "1px",
-    left: 0,
-    height: "4px",
-    borderRadius: "100px",
-    background: ANALYTICS_ACCENT,
-  },
   emptyState: {
     fontFamily: "Inter",
     fontSize: "14px",
@@ -262,7 +234,65 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     padding: "8px 0",
     margin: 0,
   },
+  donutWrap: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "16px",
+    width: "100%",
+  },
+  donutSvgBox: {
+    position: "relative",
+    flex: "0 0 auto",
+  },
+  donutTooltip: {
+    position: "absolute",
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    background: "#FFFFFF",
+    border: "1px solid #E5E5E5",
+    borderRadius: "6px",
+    padding: "6px 10px",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.10)",
+    whiteSpace: "nowrap",
+    pointerEvents: "none",
+    zIndex: 2,
+  },
+  donutTooltipLine1: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "6px",
+  },
+  donutInfoSwatch: {
+    flex: "0 0 auto",
+    width: "8px",
+    height: "8px",
+    borderRadius: "2px",
+  },
+  donutInfoLabel: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "13px",
+    color: TEXT_BLACK,
+    margin: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    maxWidth: "90px",
+  },
+  donutInfoMeta: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "12px",
+    color: MUTED_GREY,
+    margin: 0,
+    whiteSpace: "nowrap",
+  },
 };
+
+const DONUT_PALETTE = ["#073E74", "#2E6DA4", "#5B94C4", "#9EC3E0", "#C9DFF0", "#898989"];
 
 function ChevronIcon() {
   return (
@@ -309,7 +339,7 @@ function StatTile({
   );
 }
 
-function BarRows({
+function DonutChart({
   rows,
   labelKey,
   countKey,
@@ -320,33 +350,185 @@ function BarRows({
   countKey: string;
   emptyLabel: string;
 }) {
-  const visibleRows = rows.filter((r) => Number(r[countKey]) > 0).slice(0, 5);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   const total = rows.reduce((sum, r) => sum + Number(r[countKey]), 0);
+  const sorted = rows
+    .filter((r) => Number(r[countKey]) > 0)
+    .sort((a, b) => Number(b[countKey]) - Number(a[countKey]));
+
+  const top = sorted.slice(0, 5);
+  const otherCount = sorted.slice(5).reduce((sum, r) => sum + Number(r[countKey]), 0);
+  const segments = [
+    ...top.map((r) => ({ label: String(r[labelKey]), count: Number(r[countKey]) })),
+    ...(otherCount > 0 ? [{ label: "Other", count: otherCount }] : []),
+  ];
+
+  if (segments.length === 0) {
+    return <p style={analyticsStyles.emptyState}>{emptyLabel}</p>;
+  }
+
+  const size = 148;
+  const strokeWidth = 20;
+  const r = (size - strokeWidth) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const circumference = 2 * Math.PI * r;
+
+  // Pre-compute each segment's arc + the angle of its midpoint so the
+  // tooltip can be placed just outside the ring, on the same side as
+  // whichever segment is active (hovered, or the default segment).
+  let cumulativePercent = 0;
+  const segMeta = segments.map((seg) => {
+    const percent = total ? (seg.count / total) * 100 : 0;
+    const startAngleDeg = (cumulativePercent / 100) * 360 - 90;
+    const midAngleDeg = startAngleDeg + percent * 1.8; // half of percent's 3.6deg-per-percent sweep
+    cumulativePercent += percent;
+    return { ...seg, percent, startAngleDeg, midAngleDeg };
+  });
+
+  const activeIndex = hoveredIndex ?? 0;
+  const active = segMeta[activeIndex];
+  const activePercent = Math.round(active.percent);
+
+  const tooltipRadius = r + strokeWidth / 2 + 20;
+  const angleRad = (active.midAngleDeg * Math.PI) / 180;
+  const dx = Math.cos(angleRad);
+  const dy = Math.sin(angleRad);
+  const tooltipLeft = cx + tooltipRadius * dx;
+  const tooltipTop = cy + tooltipRadius * dy;
+
+  // Anchor the tooltip box by whichever edge faces the donut, so it's
+  // pushed fully outside the ring instead of straddling it.
+  const translateX = dx > 0.3 ? "0%" : dx < -0.3 ? "-100%" : "-50%";
+  const translateY = dy > 0.3 ? "0%" : dy < -0.3 ? "-100%" : "-50%";
+
+  return (
+    <div className="eb-donut-wrap" style={analyticsStyles.donutWrap}>
+      <div
+        style={{ ...analyticsStyles.donutSvgBox, width: size, height: size }}
+        onMouseLeave={() => setHoveredIndex(null)}
+      >
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={TRACK_GREY} strokeWidth={strokeWidth} />
+          {segMeta.map((seg, i) => {
+            const dash = (seg.percent / 100) * circumference;
+            return (
+              <circle
+                key={seg.label}
+                cx={cx}
+                cy={cy}
+                r={r}
+                fill="none"
+                stroke={DONUT_PALETTE[i % DONUT_PALETTE.length]}
+                strokeWidth={strokeWidth}
+                strokeDasharray={`${dash} ${circumference - dash}`}
+                transform={`rotate(${seg.startAngleDeg} ${cx} ${cy})`}
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setHoveredIndex(i)}
+              />
+            );
+          })}
+        </svg>
+        <div
+          style={{
+            ...analyticsStyles.donutTooltip,
+            left: `${tooltipLeft}px`,
+            top: `${tooltipTop}px`,
+            transform: `translate(${translateX}, ${translateY})`,
+          }}
+        >
+          <span style={analyticsStyles.donutTooltipLine1}>
+            <span
+              style={{ ...analyticsStyles.donutInfoSwatch, background: DONUT_PALETTE[activeIndex % DONUT_PALETTE.length] }}
+            />
+            <span style={analyticsStyles.donutInfoLabel}>{active.label}</span>
+          </span>
+          <span style={analyticsStyles.donutInfoMeta}>
+            {active.count} {active.count === 1 ? "Booking" : "Bookings"} ({activePercent}%)
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function truncateLabel(label: string, max = 10): string {
+  return label.length > max ? `${label.slice(0, max - 1)}…` : label;
+}
+
+function ProductBarChart({
+  rows,
+  labelKey,
+  countKey,
+  emptyLabel,
+}: {
+  rows: Record<string, string | number>[];
+  labelKey: string;
+  countKey: string;
+  emptyLabel: string;
+}) {
+  const total = rows.reduce((sum, r) => sum + Number(r[countKey]), 0);
+  const visibleRows = rows
+    .filter((r) => Number(r[countKey]) > 0)
+    .sort((a, b) => Number(b[countKey]) - Number(a[countKey]))
+    .slice(0, 6);
 
   if (visibleRows.length === 0) {
     return <p style={analyticsStyles.emptyState}>{emptyLabel}</p>;
   }
 
+  const maxCount = Math.max(...visibleRows.map((r) => Number(r[countKey])));
+  const slotWidth = 72;
+  const barWidth = 34;
+  const barAreaHeight = 130;
+  const baselineY = 150;
+  const chartHeight = 190;
+  const viewBoxWidth = visibleRows.length * slotWidth;
+
   return (
-    <div style={analyticsStyles.barRows}>
-      {visibleRows.map((row) => {
+    <svg width="100%" height={chartHeight} viewBox={`0 0 ${viewBoxWidth} ${chartHeight}`} preserveAspectRatio="xMidYMid meet">
+      <line x1={0} y1={baselineY} x2={viewBoxWidth} y2={baselineY} stroke={TRACK_GREY} strokeWidth={1} />
+      {visibleRows.map((row, i) => {
         const count = Number(row[countKey]);
-        const percentOfTotal = total ? Math.round((count / total) * 100) : 0;
+        const percent = total ? Math.round((count / total) * 100) : 0;
+        const label = String(row[labelKey]);
+        const barHeight = maxCount ? Math.max((count / maxCount) * barAreaHeight, 4) : 0;
+        const x = i * slotWidth + (slotWidth - barWidth) / 2;
+        const y = baselineY - barHeight;
+        const color = DONUT_PALETTE[i % DONUT_PALETTE.length];
         return (
-          <div key={String(row[labelKey])} style={analyticsStyles.barRow}>
-            <div style={analyticsStyles.barRowLabels}>
-              <p style={analyticsStyles.barRowLabel}>{row[labelKey]}</p>
-              <p style={analyticsStyles.barRowMeta}>
-                {count} {count === 1 ? "Booking" : "Bookings"} - {percentOfTotal}%
-              </p>
-            </div>
-            <div style={analyticsStyles.barTrack}>
-              <div style={{ ...analyticsStyles.barFill, width: `${Math.max(percentOfTotal, 2)}%` }} />
-            </div>
-          </div>
+          <g key={label}>
+            <title>
+              {label}: {count} {count === 1 ? "Booking" : "Bookings"} - {percent}%
+            </title>
+            <rect x={x} y={y} width={barWidth} height={barHeight} rx={4} fill={color} />
+            <text
+              x={x + barWidth / 2}
+              y={y - 8}
+              textAnchor="middle"
+              fontSize="12"
+              fontFamily="Inter"
+              fontWeight={600}
+              fill={TEXT_BLACK}
+            >
+              {count}
+            </text>
+            <text
+              x={x + barWidth / 2}
+              y={baselineY + 18}
+              textAnchor="middle"
+              fontSize="10"
+              fontFamily="Inter"
+              fontWeight={500}
+              fill={MUTED_GREY}
+            >
+              {truncateLabel(label)}
+            </text>
+          </g>
         );
       })}
-    </div>
+    </svg>
   );
 }
 
@@ -608,6 +790,13 @@ export default function Dashboard() {
               .eb-analytics-card {
                 height: auto !important;
               }
+              .eb-reports-row {
+                flex-direction: column !important;
+              }
+              .eb-report-card {
+                height: auto !important;
+                width: 100% !important;
+              }
               .eb-analytics-filter-row {
                 flex-wrap: wrap !important;
                 height: auto !important;
@@ -713,34 +902,36 @@ export default function Dashboard() {
             </div>
           </div>
 
+          <div className="eb-reports-row" style={analyticsStyles.reportsRow}>
+            <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
+              <h2 style={analyticsStyles.heading}>Peak Hours</h2>
+              <hr style={analyticsStyles.divider} />
+              <DonutChart
+                rows={report.bookingsByHour}
+                labelKey="hour"
+                countKey="count"
+                emptyLabel="No bookings yet for this range."
+              />
+            </div>
+
+            <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
+              <h2 style={analyticsStyles.heading}>Popular Days</h2>
+              <hr style={analyticsStyles.divider} />
+              <DonutChart
+                rows={report.bookingsByDayOfWeek}
+                labelKey="day"
+                countKey="count"
+                emptyLabel="No bookings yet for this range."
+              />
+            </div>
+          </div>
+
           <div className="eb-analytics-card" style={analyticsStyles.card}>
             <h2 style={analyticsStyles.heading}>Bookings by Product</h2>
             <hr style={analyticsStyles.divider} />
-            <BarRows
+            <ProductBarChart
               rows={report.bookingsByProduct}
               labelKey="productTitle"
-              countKey="count"
-              emptyLabel="No bookings yet for this range."
-            />
-          </div>
-
-          <div className="eb-analytics-card" style={analyticsStyles.card}>
-            <h2 style={analyticsStyles.heading}>Peak Hours</h2>
-            <hr style={analyticsStyles.divider} />
-            <BarRows
-              rows={report.bookingsByHour}
-              labelKey="hour"
-              countKey="count"
-              emptyLabel="No bookings yet for this range."
-            />
-          </div>
-
-          <div className="eb-analytics-card" style={analyticsStyles.card}>
-            <h2 style={analyticsStyles.heading}>Popular Days</h2>
-            <hr style={analyticsStyles.divider} />
-            <BarRows
-              rows={report.bookingsByDayOfWeek}
-              labelKey="day"
               countKey="count"
               emptyLabel="No bookings yet for this range."
             />
