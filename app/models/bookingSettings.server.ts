@@ -94,7 +94,6 @@ function toDateInputValue(date: Date | null): string | null {
 
 export const MAX_FROM_NAME_LENGTH = 60;
 
-/** Parses just the sender-name field, shared by the email settings form. */
 export function parseEmailFromName(formData: FormData): {
   value: string | null;
   error?: string;
@@ -106,7 +105,6 @@ export function parseEmailFromName(formData: FormData): {
   return { value: raw || null };
 }
 
-/** Updates only the sender-name field, without touching the rest of booking settings. */
 export async function updateEmailFromName(
   shop: string,
   emailFromName: string | null,

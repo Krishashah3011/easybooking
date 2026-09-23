@@ -424,10 +424,6 @@ function DonutChart({
   const active = segMeta[activeIndex];
   const activePercent = Math.round(active.percent);
 
-  // The ring's outer edge is a circle of radius size/2 - i.e. it's already
-  // inscribed touching the svg box on all four sides. So a constant gap
-  // here (unlike clamping to the box) stays even on every side, instead of
-  // collapsing to zero right where the ring meets the box edge.
   const tooltipGap = 16;
   const tooltipRadius = size / 2 + tooltipGap;
   const angleRad = (active.midAngleDeg * Math.PI) / 180;
