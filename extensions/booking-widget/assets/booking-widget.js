@@ -363,6 +363,7 @@
 
     var pendingDate = null;
     var pendingSlot = null;
+    var quantityLocked = true;
     var pendingQuantity = 1;
     var pendingNote = "";
     var atReviewStep = false;
@@ -713,7 +714,6 @@
     }
 
     if (locationTimezoneEl) locationTimezoneEl.textContent = timezoneLabel();
-    loadCustomFields();
     loadLocations();
 
     function setStatus(container, message, onRetry) {
@@ -971,6 +971,7 @@
     }
 
     function renderCustomFields() {
+      if (!customFieldsEl) return;
       customFieldsEl.innerHTML = "";
 
       if (customFields.length === 0) {
@@ -1753,9 +1754,16 @@
       if (!Number.isFinite(next) || next < 1) next = 1;
       if (next > max) next = max;
       pendingQuantity = next;
-      if (quantityInputEl) quantityInputEl.value = String(pendingQuantity);
-      if (quantityDecreaseBtn) quantityDecreaseBtn.disabled = pendingQuantity <= 1;
-      if (quantityIncreaseBtn) quantityIncreaseBtn.disabled = pendingQuantity >= max;
+      if (quantityInputEl) {
+        quantityInputEl.value = String(pendingQuantity);
+        quantityInputEl.disabled = quantityLocked;
+      }
+      if (quantityDecreaseBtn) {
+        quantityDecreaseBtn.disabled = quantityLocked || pendingQuantity <= 1;
+      }
+      if (quantityIncreaseBtn) {
+        quantityIncreaseBtn.disabled = quantityLocked || pendingQuantity >= max;
+      }
       if (quantityNoteEl) {
         var showsCapacityAlways =
           isDateOnlyType(productBookingType) &&
@@ -1782,12 +1790,14 @@
     function refreshQuantityForSelection() {
       var isBundleFollowupSession =
         productBookingType === "BUNDLE" && bundleSessions.length > 0;
+      quantityLocked = !pendingSlot || isBundleFollowupSession;
       if (quantityWrapEl) {
-        quantityWrapEl.hidden = !pendingSlot || isBundleFollowupSession;
+        quantityWrapEl.classList.toggle("is-locked", quantityLocked);
       }
       if (noteWrapEl) {
-        noteWrapEl.hidden = !pendingSlot || isBundleFollowupSession;
+        noteWrapEl.classList.toggle("is-locked", quantityLocked);
       }
+      if (noteInputEl) noteInputEl.disabled = quantityLocked;
       setPendingQuantity(
         pendingSlot && !isBundleFollowupSession ? pendingQuantity : 1,
       );
