@@ -18,7 +18,6 @@ export const DEFAULT_BOOKING_SETTINGS = {
   maxBookingsPerSlot: 1,
   bookingStartDate: null as Date | null,
   bookingEndDate: null as Date | null,
-  emailFromName: null as string | null,
 };
 
 export type BookingSettingsFormValues = {
@@ -33,7 +32,6 @@ export type BookingSettingsFormValues = {
   maxBookingsPerSlot: number;
   bookingStartDate: string | null;
   bookingEndDate: string | null;
-  emailFromName: string | null;
 };
 
 export type BookingSettingsFieldErrors = Partial<
@@ -79,7 +77,6 @@ export function toFormValues(
     maxBookingsPerSlot: settings.maxBookingsPerSlot,
     bookingStartDate: toDateInputValue(settings.bookingStartDate),
     bookingEndDate: toDateInputValue(settings.bookingEndDate),
-    emailFromName: settings.emailFromName,
   };
 }
 
@@ -95,7 +92,31 @@ function toDateInputValue(date: Date | null): string | null {
   return date.toISOString().slice(0, 10);
 }
 
-const MAX_FROM_NAME_LENGTH = 60;
+export const MAX_FROM_NAME_LENGTH = 60;
+
+/** Parses just the sender-name field, shared by the email settings form. */
+export function parseEmailFromName(formData: FormData): {
+  value: string | null;
+  error?: string;
+} {
+  const raw = String(formData.get("emailFromName") ?? "").trim();
+  if (raw.length > MAX_FROM_NAME_LENGTH) {
+    return { value: raw, error: `Keep it under ${MAX_FROM_NAME_LENGTH} characters.` };
+  }
+  return { value: raw || null };
+}
+
+/** Updates only the sender-name field, without touching the rest of booking settings. */
+export async function updateEmailFromName(
+  shop: string,
+  emailFromName: string | null,
+): Promise<void> {
+  await prisma.bookingSettings.upsert({
+    where: { shop },
+    create: { shop, ...DEFAULT_BOOKING_SETTINGS, emailFromName },
+    update: { emailFromName },
+  });
+}
 
 export function parseBookingSettingsForm(formData: FormData): {
   values: BookingSettingsFormValues;
@@ -158,12 +179,6 @@ export function parseBookingSettingsForm(formData: FormData): {
     errors.bookingEndDate = "End date must be after start date.";
   }
 
-  const emailFromNameRaw = String(formData.get("emailFromName") ?? "").trim();
-  if (emailFromNameRaw.length > MAX_FROM_NAME_LENGTH) {
-    errors.emailFromName = `Keep it under ${MAX_FROM_NAME_LENGTH} characters.`;
-  }
-  const emailFromName = emailFromNameRaw || null;
-
   return {
     values: {
       workingDays,
@@ -177,7 +192,6 @@ export function parseBookingSettingsForm(formData: FormData): {
       maxBookingsPerSlot,
       bookingStartDate,
       bookingEndDate,
-      emailFromName,
     },
     errors,
   };
@@ -203,7 +217,6 @@ export async function upsertBookingSettings(
     bookingEndDate: values.bookingEndDate
       ? new Date(values.bookingEndDate)
       : null,
-    emailFromName: values.emailFromName,
   };
 
   return prisma.bookingSettings.upsert({

@@ -534,7 +534,6 @@ export default function BookingSettingsPage() {
         maxBookingsPerSlot: String(values.maxBookingsPerSlot),
         bookingStartDate: values.bookingStartDate ?? "",
         bookingEndDate: values.bookingEndDate ?? "",
-        emailFromName: values.emailFromName ?? "",
       },
       { method: "POST" }, 
     );
@@ -885,7 +884,6 @@ export default function BookingSettingsPage() {
                 className="booking-date-input"
                 style={styles.dateInput}
                 value={values.bookingStartDate ?? ""}
-                max={values.bookingEndDate ?? undefined}
                 onChange={(e: FieldChangeEvent) =>
                   setField("bookingStartDate", e.currentTarget.value || null)
                 }
@@ -912,7 +910,6 @@ export default function BookingSettingsPage() {
                 className="booking-date-input"
                 style={styles.dateInput}
                 value={values.bookingEndDate ?? ""}
-                min={values.bookingStartDate ?? undefined}
                 onChange={(e: FieldChangeEvent) =>
                   setField("bookingEndDate", e.currentTarget.value || null)
                 }
@@ -923,42 +920,6 @@ export default function BookingSettingsPage() {
             {errors.bookingEndDate && (
               <p style={{ ...styles.hintText, color: "#D82C0D" }}>
                 {errors.bookingEndDate}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ ...styles.card, marginTop: "16px" }}>
-        <div style={styles.headerLeft}>
-          <p style={styles.title}>Email Notifications</p>
-          <p style={styles.descText}>
-            The display name customers see as the sender on booking
-            confirmation, reminder, and cancellation emails.
-          </p>
-        </div>
-        <hr style={styles.divider} />
-        <div style={styles.fieldsRow}>
-          <div style={styles.fieldGroupFull}>
-            <p style={styles.fieldLabelGrey}>Sender Name</p>
-            <div style={styles.inputBox}>
-              <input
-                type="text"
-                style={styles.textInput}
-                placeholder="Bookings"
-                value={values.emailFromName ?? ""}
-                onChange={(e: FieldChangeEvent) =>
-                  setField("emailFromName", e.currentTarget.value || null)
-                }
-              />
-            </div>
-            <p style={styles.hintText}>
-              Example &quot;Milople Bookings
-              &lt;bookings@yourdomain.com&gt;&quot;
-            </p>
-            {errors.emailFromName && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.emailFromName}
               </p>
             )}
           </div>

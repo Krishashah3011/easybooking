@@ -13,6 +13,11 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
+  getBookingSettings,
+  parseEmailFromName,
+  updateEmailFromName,
+} from "../models/bookingSettings.server";
+import {
   getSmtpSettings,
   parseSmtpSettingsForm,
   toFormValues,
@@ -45,11 +50,16 @@ type TemplateRow = Awaited<ReturnType<typeof listEmailTemplates>>[number];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  const [smtpSettings, templates] = await Promise.all([
+  const [smtpSettings, templates, bookingSettings] = await Promise.all([
     getSmtpSettings(session.shop),
     listEmailTemplates(session.shop),
+    getBookingSettings(session.shop),
   ]);
-  return { smtp: toFormValues(smtpSettings), templates };
+  return {
+    smtp: toFormValues(smtpSettings),
+    templates,
+    emailFromName: bookingSettings.emailFromName,
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -71,12 +81,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return { ok: true as const, kind: "reset" as const, templates };
   }
 
-  const { values, errors } = parseSmtpSettingsForm(formData);
+  const { values, errors: smtpErrors } = parseSmtpSettingsForm(formData);
+  const emailFromName = parseEmailFromName(formData);
+  const errors: SmtpSettingsFieldErrors & { emailFromName?: string } = {
+    ...smtpErrors,
+    ...(emailFromName.error ? { emailFromName: emailFromName.error } : {}),
+  };
   if (Object.keys(errors).length > 0) {
-    return { ok: false as const, kind: "save" as const, errors, values };
+    return {
+      ok: false as const,
+      kind: "save" as const,
+      errors,
+      values,
+      emailFromName: emailFromName.value,
+    };
   }
 
   const savedSmtp = await upsertSmtpSettings(session.shop, values);
+  await updateEmailFromName(session.shop, emailFromName.value);
 
   let parsedTemplates: { type: string; subject: string; body: string }[] = [];
   try {
@@ -101,9 +123,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return {
     ok: true as const,
     kind: "save" as const,
-    errors: {} as SmtpSettingsFieldErrors,
+    errors: {} as SmtpSettingsFieldErrors & { emailFromName?: string },
     values: toFormValues(savedSmtp),
     templates,
+    emailFromName: emailFromName.value,
   };
 };
 
@@ -121,14 +144,18 @@ function toEditableValues(templates: TemplateRow[]): EditableTemplateValues {
 }
 
 export default function EmailSettingsTab() {
-  const { smtp: initialSmtp, templates: initialTemplates } =
-    useLoaderData<typeof loader>();
+  const {
+    smtp: initialSmtp,
+    templates: initialTemplates,
+    emailFromName: initialEmailFromName,
+  } = useLoaderData<typeof loader>();
   const saveFetcher = useFetcher<typeof action>();
   const resetFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
   const { registerSave } = useOutletContext<{ registerSave: RegisterSave }>();
 
   const [smtpValues, setSmtpValues] = useState<SmtpSettingsFormValues>(initialSmtp);
+  const [emailFromName, setEmailFromName] = useState<string>(initialEmailFromName ?? "");
   const [showPass, setShowPass] = useState(false);
 
   const [templates, setTemplates] = useState<TemplateRow[]>(initialTemplates);
@@ -139,7 +166,7 @@ export default function EmailSettingsTab() {
   const [openTemplates, setOpenTemplates] = useState<Record<string, boolean>>({});
   const bodyRefs = useRef<Record<string, RichTextEditorHandle | null>>({});
 
-  const smtpErrors: SmtpSettingsFieldErrors =
+  const smtpErrors: SmtpSettingsFieldErrors & { emailFromName?: string } =
     saveFetcher.data && saveFetcher.data.kind === "save"
       ? saveFetcher.data.errors
       : {};
@@ -151,6 +178,7 @@ export default function EmailSettingsTab() {
     if (saveFetcher.data.kind !== "save") return;
     if (saveFetcher.data.ok) {
       setSmtpValues(saveFetcher.data.values);
+      setEmailFromName(saveFetcher.data.emailFromName ?? "");
       setTemplates(saveFetcher.data.templates);
       setTemplateValues(toEditableValues(saveFetcher.data.templates));
       shopify.toast.show("Settings saved");
@@ -217,6 +245,7 @@ export default function EmailSettingsTab() {
         username: smtpValues.username,
         password: smtpValues.password,
         fromEmail: smtpValues.fromEmail,
+        emailFromName,
         templates: JSON.stringify(templatesPayload),
       },
       { method: "POST" },
@@ -230,7 +259,7 @@ export default function EmailSettingsTab() {
   useEffect(() => {
     registerSave(handleSave, isSaving);
     return () => registerSave(null, false);
-  }, [registerSave, smtpValues, templateValues, isSaving]);
+  }, [registerSave, smtpValues, emailFromName, templateValues, isSaving]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -328,6 +357,27 @@ export default function EmailSettingsTab() {
             />
             {smtpErrors.fromEmail && (
               <p style={styles.errorText}>{smtpErrors.fromEmail}</p>
+            )}
+          </div>
+
+          <div style={styles.clientDivider} />
+
+          <div style={styles.clientFieldGroup}>
+            <div style={styles.clientFieldLabel}>Sender Name</div>
+            <input
+              type="text"
+              style={styles.clientInput}
+              value={emailFromName}
+              onChange={(e) => setEmailFromName(e.target.value)}
+              placeholder="Bookings"
+            />
+            <div style={styles.subLabel}>
+              The display name customers see on booking confirmation,
+              reminder, and cancellation emails — e.g. &quot;Milople Bookings
+              &lt;bookings@yourdomain.com&gt;&quot;.
+            </div>
+            {smtpErrors.emailFromName && (
+              <p style={styles.errorText}>{smtpErrors.emailFromName}</p>
             )}
           </div>
         </div>
