@@ -9,7 +9,7 @@ import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from 
 import { getOrCreateShopSettings } from "../models/shopSettings.server";
 import { getBookingReportData, type BookingReportData } from "../models/bookingReports.server";
 import GetStartedGuide, { type GuideStep } from "../components/GetStartedGuide";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const DIVIDER = "#DBDBDB";
 const TEXT_BLACK = "#000000";
@@ -61,6 +61,15 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: "16px",
     overflow: "visible",
+  },
+  reportCardBody: {
+    flex: "1 1 auto",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    minHeight: 0,
   },
   heading: {
     fontFamily: "Inter",
@@ -290,6 +299,29 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     margin: 0,
     whiteSpace: "nowrap",
   },
+  lineChartWrap: {
+    position: "relative",
+    width: "100%",
+  },
+  productTooltip: {
+    maxWidth: "220px",
+    whiteSpace: "normal",
+  },
+  productTooltipLabel: {
+    maxWidth: "none",
+    whiteSpace: "normal",
+    overflow: "visible",
+    textOverflow: "clip",
+    lineHeight: "1.3",
+  },
+  productCardBody: {
+    flex: "1 1 auto",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    width: "100%",
+    minHeight: 0,
+  },
 };
 
 const DONUT_PALETTE = ["#073E74", "#2E6DA4", "#5B94C4", "#9EC3E0", "#C9DFF0", "#898989"];
@@ -453,11 +485,7 @@ function DonutChart({
   );
 }
 
-function truncateLabel(label: string, max = 10): string {
-  return label.length > max ? `${label.slice(0, max - 1)}…` : label;
-}
-
-function ProductBarChart({
+function ProductLineChart({
   rows,
   labelKey,
   countKey,
@@ -468,6 +496,22 @@ function ProductBarChart({
   countKey: string;
   emptyLabel: string;
 }) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // Measure the wrapper so the plot always spans the full card width.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setContainerWidth(width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const total = rows.reduce((sum, r) => sum + Number(r[countKey]), 0);
   const visibleRows = rows
     .filter((r) => Number(r[countKey]) > 0)
@@ -479,56 +523,124 @@ function ProductBarChart({
   }
 
   const maxCount = Math.max(...visibleRows.map((r) => Number(r[countKey])));
-  const slotWidth = 72;
-  const barWidth = 34;
-  const barAreaHeight = 130;
-  const baselineY = 150;
-  const chartHeight = 190;
-  const viewBoxWidth = visibleRows.length * slotWidth;
+  const plotAreaHeight = 130;
+  const topPadding = 28;
+  const baselineY = topPadding + plotAreaHeight;
+  const chartHeight = baselineY + 40;
+  const sidePadding = 24;
+  const lineColor = ANALYTICS_ACCENT;
+
+  const viewBoxWidth = Math.max(containerWidth, 240);
+  const usablePlotWidth = Math.max(viewBoxWidth - sidePadding * 2, 0);
+  const step = visibleRows.length > 1 ? usablePlotWidth / (visibleRows.length - 1) : 0;
+
+  const points = visibleRows.map((row, i) => {
+    const count = Number(row[countKey]);
+    const label = String(row[labelKey]);
+    const x = visibleRows.length > 1 ? sidePadding + i * step : viewBoxWidth / 2;
+    const y = maxCount ? baselineY - (count / maxCount) * plotAreaHeight : baselineY;
+    return { x, y, count, label };
+  });
+
+  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${baselineY} L ${points[0].x} ${baselineY} Z`;
+
+  const activeIndex = hoveredIndex;
+  const active = activeIndex !== null ? points[activeIndex] : null;
+  const activePercent = active && total ? Math.round((active.count / total) * 100) : 0;
+  const hitWidth = step > 0 ? step : viewBoxWidth;
+
+  // Anchor the tooltip so it doesn't run off either edge of the chart.
+  const tooltipTranslateX = active
+    ? active.x < viewBoxWidth * 0.2
+      ? "0%"
+      : active.x > viewBoxWidth * 0.8
+        ? "-100%"
+        : "-50%"
+    : "-50%";
 
   return (
-    <svg width="100%" height={chartHeight} viewBox={`0 0 ${viewBoxWidth} ${chartHeight}`} preserveAspectRatio="xMidYMid meet">
-      <line x1={0} y1={baselineY} x2={viewBoxWidth} y2={baselineY} stroke={TRACK_GREY} strokeWidth={1} />
-      {visibleRows.map((row, i) => {
-        const count = Number(row[countKey]);
-        const percent = total ? Math.round((count / total) * 100) : 0;
-        const label = String(row[labelKey]);
-        const barHeight = maxCount ? Math.max((count / maxCount) * barAreaHeight, 4) : 0;
-        const x = i * slotWidth + (slotWidth - barWidth) / 2;
-        const y = baselineY - barHeight;
-        const color = DONUT_PALETTE[i % DONUT_PALETTE.length];
-        return (
-          <g key={label}>
-            <title>
-              {label}: {count} {count === 1 ? "Booking" : "Bookings"} - {percent}%
-            </title>
-            <rect x={x} y={y} width={barWidth} height={barHeight} rx={4} fill={color} />
-            <text
-              x={x + barWidth / 2}
-              y={y - 8}
-              textAnchor="middle"
-              fontSize="12"
-              fontFamily="Inter"
-              fontWeight={600}
-              fill={TEXT_BLACK}
-            >
-              {count}
-            </text>
-            <text
-              x={x + barWidth / 2}
-              y={baselineY + 18}
-              textAnchor="middle"
-              fontSize="10"
-              fontFamily="Inter"
-              fontWeight={500}
-              fill={MUTED_GREY}
-            >
-              {truncateLabel(label)}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
+    <div ref={containerRef} style={analyticsStyles.lineChartWrap} onMouseLeave={() => setHoveredIndex(null)}>
+      {containerWidth > 0 && (
+        <svg width={viewBoxWidth} height={chartHeight} viewBox={`0 0 ${viewBoxWidth} ${chartHeight}`}>
+          <defs>
+            <linearGradient id="productLineFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={lineColor} stopOpacity="0.16" />
+              <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <line x1={0} y1={baselineY} x2={viewBoxWidth} y2={baselineY} stroke={TRACK_GREY} strokeWidth={1} />
+          <path d={areaPath} fill="url(#productLineFill)" stroke="none" />
+          <path d={linePath} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          {points.map((p, i) => (
+            <g key={p.label}>
+              {/* Wider invisible hit-area so hovering near a point is forgiving. */}
+              <rect
+                x={p.x - hitWidth / 2}
+                y={0}
+                width={hitWidth}
+                height={chartHeight}
+                fill="transparent"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setHoveredIndex(i)}
+              />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={activeIndex === i ? 6 : 4}
+                fill="#FFFFFF"
+                stroke={lineColor}
+                strokeWidth={2}
+                style={{ pointerEvents: "none" }}
+              />
+              {/* A plain rank number stands in for the full product name -
+                  the name only needs to show on hover, in the tooltip. */}
+              <circle
+                cx={p.x}
+                cy={baselineY + 22}
+                r={9}
+                fill={activeIndex === i ? lineColor : "#F1F3F5"}
+                style={{ pointerEvents: "none" }}
+              />
+              <text
+                x={p.x}
+                y={baselineY + 22}
+                dy="0.35em"
+                textAnchor="middle"
+                fontSize="10"
+                fontFamily="Inter"
+                fontWeight={600}
+                fill={activeIndex === i ? "#FFFFFF" : MUTED_GREY}
+                style={{ pointerEvents: "none" }}
+              >
+                {i + 1}
+              </text>
+            </g>
+          ))}
+        </svg>
+      )}
+      {active && (
+        <div
+          style={{
+            ...analyticsStyles.donutTooltip,
+            ...analyticsStyles.productTooltip,
+            left: `${active.x}px`,
+            top: `${active.y}px`,
+            transform: `translate(${tooltipTranslateX}, calc(-100% - 12px))`,
+          }}
+        >
+          <span style={analyticsStyles.donutTooltipLine1}>
+            <span style={{ ...analyticsStyles.donutInfoSwatch, background: lineColor }} />
+            <span style={{ ...analyticsStyles.donutInfoLabel, ...analyticsStyles.productTooltipLabel }}>
+              {active.label}
+            </span>
+          </span>
+          <span style={analyticsStyles.donutInfoMeta}>
+            {active.count} {active.count === 1 ? "Booking" : "Bookings"} ({activePercent}%)
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -906,35 +1018,41 @@ export default function Dashboard() {
             <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
               <h2 style={analyticsStyles.heading}>Peak Hours</h2>
               <hr style={analyticsStyles.divider} />
-              <DonutChart
-                rows={report.bookingsByHour}
-                labelKey="hour"
-                countKey="count"
-                emptyLabel="No bookings yet for this range."
-              />
+              <div style={analyticsStyles.reportCardBody}>
+                <DonutChart
+                  rows={report.bookingsByHour}
+                  labelKey="hour"
+                  countKey="count"
+                  emptyLabel="No bookings yet for this range."
+                />
+              </div>
             </div>
 
             <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
               <h2 style={analyticsStyles.heading}>Popular Days</h2>
               <hr style={analyticsStyles.divider} />
-              <DonutChart
-                rows={report.bookingsByDayOfWeek}
-                labelKey="day"
-                countKey="count"
-                emptyLabel="No bookings yet for this range."
-              />
+              <div style={analyticsStyles.reportCardBody}>
+                <DonutChart
+                  rows={report.bookingsByDayOfWeek}
+                  labelKey="day"
+                  countKey="count"
+                  emptyLabel="No bookings yet for this range."
+                />
+              </div>
             </div>
           </div>
 
           <div className="eb-analytics-card" style={analyticsStyles.card}>
             <h2 style={analyticsStyles.heading}>Bookings by Product</h2>
             <hr style={analyticsStyles.divider} />
-            <ProductBarChart
-              rows={report.bookingsByProduct}
-              labelKey="productTitle"
-              countKey="count"
-              emptyLabel="No bookings yet for this range."
-            />
+            <div style={analyticsStyles.productCardBody}>
+              <ProductLineChart
+                rows={report.bookingsByProduct}
+                labelKey="productTitle"
+                countKey="count"
+                emptyLabel="No bookings yet for this range."
+              />
+            </div>
           </div>
         </>
       )}
