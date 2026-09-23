@@ -255,7 +255,11 @@ export async function listEmailTemplates(
       placeholders: EMAIL_TEMPLATE_PLACEHOLDERS[type],
       subject: row?.subject ?? fallback.subject,
       body: row?.body ?? fallback.body,
-      isCustomized: Boolean(row),
+      isCustomized: Boolean(
+        row &&
+          (row.subject.trim() !== fallback.subject.trim() ||
+            row.body.trim() !== fallback.body.trim()),
+      ),
     };
   });
 }

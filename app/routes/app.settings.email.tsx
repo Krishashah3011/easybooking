@@ -24,6 +24,7 @@ import {
   listEmailTemplates,
   resetEmailTemplate,
   upsertEmailTemplate,
+  DEFAULT_EMAIL_TEMPLATES,
 } from "../models/emailTemplate.server";
 import {
   EMAIL_TEMPLATE_TYPES,
@@ -85,10 +86,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
   for (const item of parsedTemplates) {
     if (!EMAIL_TEMPLATE_TYPES.includes(item.type as EmailTemplateType)) continue;
+    const type = item.type as EmailTemplateType;
     const subject = item.subject.trim();
     const body = item.body.trim();
     if (!subject || !body) continue;
-    await upsertEmailTemplate(session.shop, item.type as EmailTemplateType, subject, body);
+    const fallback = DEFAULT_EMAIL_TEMPLATES[type];
+    if (subject === fallback.subject.trim() && body === fallback.body.trim()) {
+      continue;
+    }
+    await upsertEmailTemplate(session.shop, type, subject, body);
   }
 
   const templates = await listEmailTemplates(session.shop);
