@@ -5,7 +5,7 @@ export function formatDateDisplay(dateStr: string): string {
   return `${day}-${month}-${year}`;
 }
 
-function to12Hour(time: string): string {
+export function to12Hour(time: string): string {
   const match = /^(\d{1,2}):(\d{2})$/.exec(time);
   if (!match) return time;
   let hour = Number(match[1]);

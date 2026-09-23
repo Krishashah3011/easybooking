@@ -9,6 +9,7 @@ import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from 
 import { getOrCreateShopSettings } from "../models/shopSettings.server";
 import { getBookingReportData, type BookingReportData } from "../models/bookingReports.server";
 import GetStartedGuide, { type GuideStep } from "../components/GetStartedGuide";
+import { to12Hour } from "../utils/format";
 import { useState, useRef, useEffect } from "react";
 
 const DIVIDER = "#DBDBDB";
@@ -52,7 +53,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
   reportCard: {
     flex: "1 1 0",
     minWidth: 0,
-    height: "353px",
+    height: "420px",
     background: "#FFFFFF",
     border: "1px solid #E5E5E5",
     borderRadius: "8px",
@@ -400,8 +401,8 @@ function DonutChart({
     return <p style={analyticsStyles.emptyState}>{emptyLabel}</p>;
   }
 
-  const size = 148;
-  const strokeWidth = 20;
+  const size = 188;
+  const strokeWidth = 26;
   const r = (size - strokeWidth) / 2;
   const cx = size / 2;
   const cy = size / 2;
@@ -423,7 +424,12 @@ function DonutChart({
   const active = segMeta[activeIndex];
   const activePercent = Math.round(active.percent);
 
-  const tooltipRadius = r + strokeWidth / 2 + 20;
+  // The ring's outer edge is a circle of radius size/2 - i.e. it's already
+  // inscribed touching the svg box on all four sides. So a constant gap
+  // here (unlike clamping to the box) stays even on every side, instead of
+  // collapsing to zero right where the ring meets the box edge.
+  const tooltipGap = 16;
+  const tooltipRadius = size / 2 + tooltipGap;
   const angleRad = (active.midAngleDeg * Math.PI) / 180;
   const dx = Math.cos(angleRad);
   const dy = Math.sin(angleRad);
@@ -955,7 +961,6 @@ export default function Dashboard() {
                   <input
                     type="date"
                     value={dateFrom}
-                    max={dateTo || undefined}
                     onChange={(e) => setDateFrom(e.target.value)}
                     style={analyticsStyles.dateInput}
                     className="eb-date-input"
@@ -969,7 +974,6 @@ export default function Dashboard() {
                   <input
                     type="date"
                     value={dateTo}
-                    min={dateFrom || undefined}
                     onChange={(e) => setDateTo(e.target.value)}
                     style={analyticsStyles.dateInput}
                     className="eb-date-input"
@@ -1022,7 +1026,7 @@ export default function Dashboard() {
               <hr style={analyticsStyles.divider} />
               <div style={analyticsStyles.reportCardBody}>
                 <DonutChart
-                  rows={report.bookingsByHour}
+                  rows={report.bookingsByHour.map((r) => ({ ...r, hour: to12Hour(r.hour) }))}
                   labelKey="hour"
                   countKey="count"
                   emptyLabel="No bookings yet for this range."
