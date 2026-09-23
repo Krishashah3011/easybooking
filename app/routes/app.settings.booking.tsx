@@ -10,6 +10,12 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
 import {
+  to12HourParts,
+  fromTwelveHourParts,
+  sanitizeHourInput,
+  sanitizeMinuteInput,
+} from "../utils/time12h";
+import {
   getBookingSettings,
   parseBookingSettingsForm,
   toFormValues,
@@ -404,6 +410,82 @@ function Checkbox({
   );
 }
 
+/**
+ * A 12-hour hh:mm AM/PM time field. Hour is clamped to 1-12 and minute to
+ * 0-59 as the user types, so it's impossible to enter an out-of-range time
+ * like "50:00" the way the old raw 24-hour text field allowed.
+ */
+function DayTimeField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const [parts, setParts] = useState(() => to12HourParts(value));
+
+  useEffect(() => {
+    if (fromTwelveHourParts(parts) !== value) {
+      setParts(to12HourParts(value));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const commit = (next: typeof parts) => {
+    setParts(next);
+    const result = fromTwelveHourParts(next);
+    if (result) onChange(result);
+  };
+
+  return (
+    <div style={{ ...styles.smallInputBox, width: "128px", gap: "4px" }}>
+      <input
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        style={{ ...styles.smallTextInput, flex: "0 0 18px", textAlign: "right" }}
+        placeholder="09"
+        value={parts.hour}
+        onChange={(e: FieldChangeEvent) =>
+          commit({ ...parts, hour: sanitizeHourInput(e.currentTarget.value) })
+        }
+      />
+      <span style={{ color: TEXT_BLACK }}>:</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        style={{ ...styles.smallTextInput, flex: "0 0 18px" }}
+        placeholder="00"
+        value={parts.minute}
+        onChange={(e: FieldChangeEvent) =>
+          commit({ ...parts, minute: sanitizeMinuteInput(e.currentTarget.value) })
+        }
+      />
+      <button
+        type="button"
+        onClick={() =>
+          commit({ ...parts, period: parts.period === "AM" ? "PM" : "AM" })
+        }
+        style={{
+          marginLeft: "auto",
+          flex: "0 0 auto",
+          border: "none",
+          background: "transparent",
+          color: TEXT_BLACK,
+          fontFamily: "Inter",
+          fontWeight: 600,
+          fontSize: "12px",
+          padding: 0,
+          cursor: "pointer",
+        }}
+      >
+        {parts.period}
+      </button>
+    </div>
+  );
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const settings = await getBookingSettings(session.shop);
@@ -465,12 +547,6 @@ export default function BookingSettingsPage() {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  const formatTimeInput = (raw: string) => {
-    const digits = raw.replace(/\D/g, "").slice(0, 4);
-    if (digits.length <= 2) return digits;
-    return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-  };
-
   const handleNumericChange = <K extends keyof BookingSettingsFormValues>(
     key: K,
     raw: string,
@@ -495,14 +571,19 @@ export default function BookingSettingsPage() {
     });
   };
 
-  const setDayTime = (day: number, field: "start" | "end", raw: string) => {
+  const setDayTime = (
+    day: number,
+    field: "start" | "end",
+    next: string | null,
+  ) => {
+    if (!next) return;
     setValues((prev) => {
       const existing = prev.dayTimes?.[day] ?? { start: "09:00", end: "17:00" };
       return {
         ...prev,
         dayTimes: {
           ...(prev.dayTimes ?? {}),
-          [day]: { ...existing, [field]: formatTimeInput(raw) },
+          [day]: { ...existing, [field]: next },
         },
       };
     });
@@ -587,6 +668,10 @@ export default function BookingSettingsPage() {
           {WEEKDAY_LABELS.map((day) => {
             const dayTime = values.dayTimes?.[day.value];
             const isChecked = dayTime != null;
+            const isOutOfOrder =
+              isChecked && dayTime.start != null && dayTime.end != null
+                ? dayTime.end <= dayTime.start
+                : false;
             return (
               <div key={day.value} style={styles.dayTimeRow}>
                 <Checkbox
@@ -595,34 +680,30 @@ export default function BookingSettingsPage() {
                   label={day.label}
                 />
                 {isChecked && (
-                  <div style={styles.dayTimeInputs}>
-                    <div style={styles.smallInputBox}>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={5}
-                        style={styles.smallTextInput}
-                        placeholder="09:00"
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: "4px",
+                    }}
+                  >
+                    <div style={styles.dayTimeInputs}>
+                      <DayTimeField
                         value={dayTime.start}
-                        onChange={(e: FieldChangeEvent) =>
-                          setDayTime(day.value, "start", e.currentTarget.value)
-                        }
+                        onChange={(next) => setDayTime(day.value, "start", next)}
                       />
-                    </div>
-                    <span style={styles.hintText}>to</span>
-                    <div style={styles.smallInputBox}>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={5}
-                        style={styles.smallTextInput}
-                        placeholder="17:00"
+                      <span style={styles.hintText}>to</span>
+                      <DayTimeField
                         value={dayTime.end}
-                        onChange={(e: FieldChangeEvent) =>
-                          setDayTime(day.value, "end", e.currentTarget.value)
-                        }
+                        onChange={(next) => setDayTime(day.value, "end", next)}
                       />
                     </div>
+                    {isOutOfOrder && (
+                      <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                        End time must be after start time
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
