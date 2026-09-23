@@ -328,6 +328,8 @@
       "[data-booking-quantity-increase]",
     );
     var quantityNoteEl = root.querySelector("[data-booking-quantity-note]");
+    var noteWrapEl = root.querySelector("[data-booking-note]");
+    var noteInputEl = root.querySelector("[data-booking-note-input]");
     var reviewBodyEl = root.querySelector("[data-booking-review-body]");
     var reviewStepEl = root.querySelector("[data-booking-review-step]");
     var reviewListEl = root.querySelector("[data-booking-review-list]");
@@ -362,6 +364,7 @@
     var pendingDate = null;
     var pendingSlot = null;
     var pendingQuantity = 1;
+    var pendingNote = "";
     var atReviewStep = false;
     var confirmedSlots = [];
     var numericProductId = (productId || "").split("/").pop();
@@ -549,6 +552,19 @@
       }
       quantityInput.value = String(entry.quantity || 1);
 
+      if (entry.note) {
+        var noteInput = form.querySelector(
+          'input[name="properties[Note]"]',
+        );
+        if (!noteInput) {
+          noteInput = document.createElement("input");
+          noteInput.type = "hidden";
+          noteInput.name = "properties[Note]";
+          form.appendChild(noteInput);
+        }
+        noteInput.value = entry.note;
+      }
+
       customFields.forEach(function (field) {
         var value = customFieldValues[field.fieldKey];
         if (!value) return;
@@ -586,6 +602,9 @@
       }
       if (entry.locationId) {
         fd.set("properties[_Location Id]", entry.locationId);
+      }
+      if (entry.note) {
+        fd.set("properties[Note]", entry.note);
       }
       customFields.forEach(function (field) {
         var value = customFieldValues[field.fieldKey];
@@ -1023,6 +1042,8 @@
       pendingSlot = null;
       pendingEndDate = null;
       pendingQuantity = 1;
+      pendingNote = "";
+      if (noteInputEl) noteInputEl.value = "";
       bundleSessions = [];
       bundleQuantity = 1;
       customFieldValues = {};
@@ -1764,9 +1785,18 @@
       if (quantityWrapEl) {
         quantityWrapEl.hidden = !pendingSlot || isBundleFollowupSession;
       }
+      if (noteWrapEl) {
+        noteWrapEl.hidden = !pendingSlot || isBundleFollowupSession;
+      }
       setPendingQuantity(
         pendingSlot && !isBundleFollowupSession ? pendingQuantity : 1,
       );
+    }
+
+    if (noteInputEl) {
+      noteInputEl.addEventListener("input", function () {
+        pendingNote = noteInputEl.value;
+      });
     }
 
     if (quantityDecreaseBtn) {
@@ -1972,6 +2002,7 @@
       buildReviewSummary();
       modalBodyEl.hidden = true;
       if (quantityWrapEl) quantityWrapEl.hidden = true;
+      if (noteWrapEl) noteWrapEl.hidden = true;
       if (reviewStepEl) reviewStepEl.hidden = false;
       if (reviewBodyEl) reviewBodyEl.hidden = false;
       if (subheaderEl) subheaderEl.hidden = true;
@@ -2233,6 +2264,7 @@
           location: pendingLocation ? pendingLocation.name : null,
           locationId: pendingLocation ? pendingLocation.id : null,
           quantity: bundleQuantity,
+          note: pendingNote,
         });
         updateSelectionDisplay();
         bundleSessions = [];
@@ -2261,6 +2293,7 @@
         location: pendingLocation ? pendingLocation.name : null,
         locationId: pendingLocation ? pendingLocation.id : null,
         quantity: quantity,
+        note: pendingNote,
       });
       updateSelectionDisplay();
       refreshQuantityForSelection();

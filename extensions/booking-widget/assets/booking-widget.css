@@ -1094,81 +1094,114 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__quantity {
+  box-sizing: border-box;
   margin: 0;
-  padding: 0;
-  border-top: none;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 5px 10px;
+  gap: 8px;
+  min-height: 57px;
+  flex: 1 1 240px;
+  background: #f2f9ff;
+  border: 1px solid #88b5e1;
+  border-radius: 8px;
+}
+
+.booking-widget__quantity-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  line-height: 0;
+}
+
+.booking-widget__quantity-icon svg {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+
+.booking-widget__quantity-label {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 24px;
+  color: #000;
+  white-space: nowrap;
 }
 
 .booking-widget__quantity-control {
-  display: inline-flex;
-  align-items: stretch;
-  width: max-content !important;
-  height: 2.75rem;
-  border: 1.5px solid #0060e6;
-  border-radius: 8px;
-  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  gap: 14px;
+  width: 110px;
+  height: 34px;
   background: #fff;
+  border: 1px solid #e9e9ea;
+  border-radius: 4px;
 }
 
 .booking-widget__quantity-btn {
-  width: 2.75rem !important;
+  width: 20px !important;
+  height: 20px;
   min-width: 0 !important;
   max-width: none !important;
-  padding: 0 0 2px !important;
+  padding: 0 !important;
   margin: 0 !important;
-  flex: 0 0 2.75rem;
+  flex: 0 0 20px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  background: #fff;
+  background: transparent;
   font-family: "Inter";
-  font-size: 1.3rem;
+  font-size: 1rem;
   font-weight: 700;
   font-style: normal;
   line-height: 1;
-  color: #0060e6;
+  color: #073e74;
   cursor: pointer;
-  transition: background-color 0.12s ease;
+  transition: opacity 0.12s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .booking-widget__quantity-btn:hover {
-  background: rgba(0, 96, 230, 0.08);
+  opacity: 0.7;
 }
 
 .booking-widget__quantity-btn:active {
-  background: rgba(0, 96, 230, 0.14);
+  opacity: 0.5;
 }
 
 .booking-widget__quantity-btn:disabled {
-  color: rgba(0, 96, 230, 0.3);
+  color: rgba(7, 62, 116, 0.3);
   cursor: not-allowed;
-  background: #fff;
 }
 
 .booking-widget__quantity-input {
-  width: 3rem;
-  flex-shrink: 0;
+  width: auto;
+  min-width: 14px;
+  max-width: 2.5rem;
+  flex: none;
   border: none;
-  border-left: 1.5px solid #0060e6;
-  border-right: 1.5px solid #0060e6;
   text-align: center;
-  font-family: inherit;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111;
-  background: #fff;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #898989;
+  background: transparent;
   -moz-appearance: textfield;
 }
 
 .booking-widget__quantity-input:focus {
   outline: none;
-  background: rgba(0, 96, 230, 0.05);
 }
 
 .booking-widget__quantity-input::-webkit-outer-spin-button,
@@ -1178,11 +1211,72 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__quantity-note {
+  flex-basis: 100%;
   margin: 0;
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: #4a4a4a;
+}
+
+.booking-widget__note {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  gap: 8px;
+  min-height: 57px;
+  flex: 1 1 240px;
+  background: #f2f9ff;
+  border: 1px solid #88b5e1;
+  border-radius: 8px;
+}
+
+.booking-widget__note-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  line-height: 0;
+}
+
+.booking-widget__note-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.booking-widget__note-label {
+  flex: none;
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 24px;
+  color: #000;
   white-space: nowrap;
+}
+
+.booking-widget__note-input {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 5px 10px;
+  background: #fff;
+  border: 1px solid #e9e9ea;
+  border-radius: 4px;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #1a1a1a;
+}
+
+.booking-widget__note-input::placeholder {
+  color: #949494;
+}
+
+.booking-widget__note-input:focus {
+  outline: none;
+  border-color: #88b5e1;
 }
 
 .booking-widget__review-body {
