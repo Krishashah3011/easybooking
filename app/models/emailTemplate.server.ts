@@ -307,9 +307,6 @@ export async function renderEmailTemplate(
   return { subject, html, text };
 }
 
-// Thin per-type wrappers around renderEmailTemplate, merged in from the
-// former emailTemplates.server.ts so booking.server.ts has one place to
-// import from for both template management and rendering.
 export async function confirmationEmail(
   shop: string,
   data: BookingEmailData,

@@ -432,12 +432,6 @@ export async function upsertBookableProductOverrides(
   });
 }
 
-/**
- * Whether a bookable product should be shown to a visitor from the given
- * country. `countryCode` is an ISO 3166-1 alpha-2 code (e.g. "IN", "CN").
- * When it's null/unknown (country couldn't be detected), the product is
- * treated as available — we only ever gate on a country we're sure of.
- */
 export function isProductAvailableForCountry(
   product: Pick<BookableProduct, "countryMode" | "countryCodes">,
   countryCode: string | null,

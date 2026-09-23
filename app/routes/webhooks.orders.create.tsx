@@ -6,7 +6,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, topic, payload } = await authenticate.webhook(request);
 
   console.log(`Received ${topic} webhook for ${shop}`);
-  console.log("Line items:", JSON.stringify((payload as any).line_items, null, 2));
 
   const order = payload as unknown as OrderPayload;
   const created = await createBookingsFromOrder(shop, order);

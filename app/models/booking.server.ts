@@ -414,10 +414,6 @@ export async function createBookingsFromOrder(
   for (const lineItem of order.line_items ?? []) {
     const selection = extractBookingSelection(lineItem);
     if (!selection || lineItem.product_id == null) {
-      console.log(
-        `Skipping line item ${lineItem.id}: no booking selection or product_id`,
-        { selection, product_id: lineItem.product_id },
-      );
       continue;
     }
 
@@ -429,19 +425,12 @@ export async function createBookingsFromOrder(
       },
     });
     if (existing) {
-      console.log(
-        `Skipping line item ${lineItem.id}: booking already exists (order ${order.id})`,
-      );
       continue;
     }
 
     const productGid = toProductGid(lineItem.product_id);
     const bookableProduct = await getBookableProduct(shop, productGid);
     if (!bookableProduct || !bookableProduct.isEnabled) {
-      console.log(
-        `Skipping line item ${lineItem.id}: product ${productGid} not bookable/enabled`,
-        bookableProduct,
-      );
       continue;
     }
 
@@ -471,9 +460,6 @@ export async function createBookingsFromOrder(
       const sessionCount = bookableProduct.bundleSessionCount ?? 1;
       const sessions = extractBundleSessions(lineItem, sessionCount);
       if (sessions.length === 0) {
-        console.log(
-          `Skipping line item ${lineItem.id}: no bundle sessions found`,
-        );
         continue;
       }
 
