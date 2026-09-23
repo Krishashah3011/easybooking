@@ -147,15 +147,12 @@ export default function GeneralSettingsTab() {
       </div>
 
       {embedStatus !== "enabled" && (
-        <s-banner
-          tone={embedStatus === "disabled" ? "warning" : "info"}
-          heading="Enable the booking widget in your theme"
-        >
-          <s-paragraph>
-            {embedStatus === "disabled"
-              ? "The booking widget app embed is turned off, so booking won't show on your storefront. Turn it on in the theme editor."
-              : "We couldn't confirm the booking widget's status. Check your theme editor to make sure the app embed is turned on."}
-          </s-paragraph>
+        <div>
+          <div style={styles.subLabel}>
+            {
+              "Check your theme editor to make sure the app embed is turned on. If it's off, the booking widget won't show up on your storefront."
+            }
+          </div>
           <a
             href={themeEditorUrl}
             target="_blank"
@@ -172,7 +169,7 @@ export default function GeneralSettingsTab() {
           >
             Open theme editor
           </a>
-        </s-banner>
+        </div>
       )}
     </div>
   );

@@ -30,6 +30,7 @@
   var ENGLISH_STRINGS = {
     loadingAvailability: "Loading availability…",
     availabilityError: "Unable to load availability right now.",
+    bookingUnavailable: "Booking is temporarily unavailable. Please check back later.",
     noAvailability: "No availability this month.",
     loadingTimes: "Loading times…",
     timesError: "Unable to load times right now.",
@@ -1088,6 +1089,15 @@
         url += "&locationId=" + encodeURIComponent(pendingLocation.id);
       }
       return fetch(url).then(function (res) {
+        if (res.status === 403) {
+          return res.json().catch(function () {
+            return {};
+          }).then(function (body) {
+            var err = new Error((body && body.error) || "Booking unavailable");
+            err.code = "APP_DISABLED";
+            throw err;
+          });
+        }
         return res.json();
       });
     }
@@ -1188,8 +1198,12 @@
           renderCalendar();
           if (!pendingEndDate) updateRangeSummary();
         })
-        .catch(function () {
+        .catch(function (err) {
           if (requestId !== monthRequestId) return;
+          if (err && err.code === "APP_DISABLED") {
+            setStatus(calendarEl, strings.bookingUnavailable);
+            return;
+          }
           setStatus(calendarEl, strings.availabilityError, loadMonth);
         });
     }
@@ -1599,13 +1613,26 @@
 
       fetch(url)
         .then(function (res) {
+          if (res.status === 403) {
+            return res.json().catch(function () {
+              return {};
+            }).then(function (body) {
+              var err = new Error((body && body.error) || "Booking unavailable");
+              err.code = "APP_DISABLED";
+              throw err;
+            });
+          }
           return res.json();
         })
         .then(function (data) {
           currentSlots = data.slots || [];
           renderSlots();
         })
-        .catch(function () {
+        .catch(function (err) {
+          if (err && err.code === "APP_DISABLED") {
+            setStatus(slotListEl, strings.bookingUnavailable);
+            return;
+          }
           setStatus(slotListEl, strings.timesError, function () {
             loadSlots(dateStr);
           });
