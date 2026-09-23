@@ -8,12 +8,6 @@ import {
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-// Renders a 24-hour "HH:MM" (or null) value as three controls — hour,
-// minute, and an AM/PM toggle — and reports changes back as the same
-// 24-hour "HH:MM" string, so nothing downstream (validation, storage,
-// slot math) needs to know this exists. Hour is clamped to 1-12 and
-// minute to 0-59 as you type, so an out-of-range value like "50:00"
-// can't be entered here the way a raw digit-grouping text field allowed.
 export function TimeField12h({
   value,
   placeholder,
@@ -31,7 +25,6 @@ export function TimeField12h({
   inputStyle: CSSProperties;
   borderColor?: string;
   textColor?: string;
-  /** Optional overrides for the AM/PM toggle button (e.g. a tighter size for compact rows). */
   periodButtonStyle?: CSSProperties;
 }) {
   const [parts, setParts] = useState(() => to12HourParts(value));
@@ -40,11 +33,6 @@ export function TimeField12h({
     if (fromTwelveHourParts(parts) !== (value ?? null)) {
       setParts(to12HourParts(value));
     }
-    // Only resync from the parent when its value no longer matches what
-    // these parts would produce (e.g. an external reset/load) — not on
-    // every keystroke, so typing across the hour/minute fields isn't
-    // clobbered mid-entry.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const commit = (next: typeof parts) => {

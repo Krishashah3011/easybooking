@@ -408,14 +408,11 @@ function DonutChart({
   const cy = size / 2;
   const circumference = 2 * Math.PI * r;
 
-  // Pre-compute each segment's arc + the angle of its midpoint so the
-  // tooltip can be placed just outside the ring, on the same side as
-  // whichever segment is active (hovered, or the default segment).
   let cumulativePercent = 0;
   const segMeta = segments.map((seg) => {
     const percent = total ? (seg.count / total) * 100 : 0;
     const startAngleDeg = (cumulativePercent / 100) * 360 - 90;
-    const midAngleDeg = startAngleDeg + percent * 1.8; // half of percent's 3.6deg-per-percent sweep
+    const midAngleDeg = startAngleDeg + percent * 1.8;
     cumulativePercent += percent;
     return { ...seg, percent, startAngleDeg, midAngleDeg };
   });
@@ -432,8 +429,6 @@ function DonutChart({
   const tooltipLeft = cx + tooltipRadius * dx;
   const tooltipTop = cy + tooltipRadius * dy;
 
-  // Anchor the tooltip box by whichever edge faces the donut, so it's
-  // pushed fully outside the ring instead of straddling it.
   const translateX = dx > 0.3 ? "0%" : dx < -0.3 ? "-100%" : "-50%";
   const translateY = dy > 0.3 ? "0%" : dy < -0.3 ? "-100%" : "-50%";
 
@@ -502,7 +497,6 @@ function ProductLineChart({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Measure the wrapper so the plot always spans the full card width.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -552,7 +546,6 @@ function ProductLineChart({
   const activePercent = active && total ? Math.round((active.count / total) * 100) : 0;
   const hitWidth = step > 0 ? step : viewBoxWidth;
 
-  // Anchor the tooltip so it doesn't run off either edge of the chart.
   const tooltipTranslateX = active
     ? active.x < viewBoxWidth * 0.2
       ? "0%"
@@ -576,7 +569,7 @@ function ProductLineChart({
           <path d={linePath} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
           {points.map((p, i) => (
             <g key={p.label}>
-              {/* Wider invisible hit-area so hovering near a point is forgiving. */}
+              {}
               <rect
                 x={p.x - hitWidth / 2}
                 y={0}
@@ -595,8 +588,7 @@ function ProductLineChart({
                 strokeWidth={2}
                 style={{ pointerEvents: "none" }}
               />
-              {/* A plain rank number stands in for the full product name -
-                  the name only needs to show on hover, in the tooltip. */}
+              {}
               <circle
                 cx={p.x}
                 cy={baselineY + 22}
