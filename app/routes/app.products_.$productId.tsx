@@ -9,13 +9,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
-import {
-  type TwelveHourParts,
-  to12HourParts,
-  fromTwelveHourParts,
-  sanitizeHourInput,
-  sanitizeMinuteInput,
-} from "../utils/time12h";
+import { TimeField12h } from "../components/TimeField12h";
 import { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "../models/bookingTypes";
 import { getBookingSettings } from "../models/bookingSettings.server";
 import {
@@ -1000,169 +994,33 @@ function Card({
   );
 }
 
-function TimeField({
-  label,
-  value,
-  placeholder,
-  error,
-  onChange,
-}: {
-  label: string;
-  value: string | null;
-  placeholder: string;
-  error?: string;
-  onChange: (next: string | null) => void;
-}) {
-  const [parts, setParts] = useState(() => to12HourParts(value));
-
-  useEffect(() => {
-    if (fromTwelveHourParts(parts) !== value) {
-      setParts(to12HourParts(value));
-    }
-  }, [value]);
-
-  const commit = (next: TwelveHourParts) => {
-    setParts(next);
-    onChange(fromTwelveHourParts(next));
-  };
-
-  const placeholderParts = to12HourParts(
-    /^\d{1,2}:\d{2}$/.test(placeholder) ? placeholder : null,
-  );
-
-  return (
-    <FieldGroup label={label} grey hint="12-hour format, hh:mm AM/PM" error={error}>
-      <div style={{ ...ui.inputBox, gap: "6px" }}>
-        <input
-          type="text"
-          inputMode="numeric"
-          maxLength={2}
-          style={{ ...ui.timeInput, flex: "0 0 22px", textAlign: "right" }}
-          placeholder={placeholderParts.hour || "09"}
-          value={parts.hour}
-          onChange={(e: FieldChangeEvent) =>
-            commit({ ...parts, hour: sanitizeHourInput(e.currentTarget.value) })
-          }
-        />
-        <span style={{ color: TEXT_DARK }}>:</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          maxLength={2}
-          style={{ ...ui.timeInput, flex: "0 0 22px" }}
-          placeholder={placeholderParts.minute || "00"}
-          value={parts.minute}
-          onChange={(e: FieldChangeEvent) =>
-            commit({ ...parts, minute: sanitizeMinuteInput(e.currentTarget.value) })
-          }
-        />
-        <button
-          type="button"
-          onClick={() =>
-            commit({ ...parts, period: parts.period === "AM" ? "PM" : "AM" })
-          }
-          style={{
-            marginLeft: "auto",
-            flex: "0 0 auto",
-            border: `1px solid ${INPUT_BORDER}`,
-            borderRadius: "4px",
-            background: "#fff",
-            color: TEXT_DARK,
-            fontFamily: "Inter",
-            fontWeight: 600,
-            fontSize: "12px",
-            padding: "3px 8px",
-            cursor: "pointer",
-          }}
-        >
-          {parts.period}
-        </button>
-      </div>
-    </FieldGroup>
-  );
-}
-
 function InlineTimeField({
   value,
   placeholder,
   onChange,
 }: {
   value: string;
-  placeholder: string;
+  placeholder?: string;
   onChange: (next: string) => void;
 }) {
-  const [parts, setParts] = useState(() => to12HourParts(value));
-
-  useEffect(() => {
-    if (fromTwelveHourParts(parts) !== value) {
-      setParts(to12HourParts(value));
-    }
-  }, [value]);
-
-  const commit = (next: TwelveHourParts) => {
-    setParts(next);
-    const result = fromTwelveHourParts(next);
-    if (result) onChange(result);
-  };
-
-  const placeholderParts = to12HourParts(
-    /^\d{1,2}:\d{2}$/.test(placeholder) ? placeholder : null,
-  );
-
   return (
-    <div
-      style={{
+    <TimeField12h
+      value={value}
+      placeholder={placeholder}
+      onChange={(next) => {
+        if (next) onChange(next);
+      }}
+      inputBoxStyle={{
         ...ui.inputBox,
-        gap: "6px",
         width: "auto",
         padding: "4px 8px",
         height: "32px",
       }}
-    >
-      <input
-        type="text"
-        inputMode="numeric"
-        maxLength={2}
-        style={{ ...ui.timeInput, flex: "0 0 20px", textAlign: "right" }}
-        placeholder={placeholderParts.hour || "09"}
-        value={parts.hour}
-        onChange={(e: FieldChangeEvent) =>
-          commit({ ...parts, hour: sanitizeHourInput(e.currentTarget.value) })
-        }
-      />
-      <span style={{ color: TEXT_DARK }}>:</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        maxLength={2}
-        style={{ ...ui.timeInput, flex: "0 0 20px" }}
-        placeholder={placeholderParts.minute || "00"}
-        value={parts.minute}
-        onChange={(e: FieldChangeEvent) =>
-          commit({ ...parts, minute: sanitizeMinuteInput(e.currentTarget.value) })
-        }
-      />
-      <button
-        type="button"
-        onClick={() =>
-          commit({ ...parts, period: parts.period === "AM" ? "PM" : "AM" })
-        }
-        style={{
-          flex: "0 0 auto",
-          border: `1px solid ${INPUT_BORDER}`,
-          borderRadius: "4px",
-          background: "#fff",
-          color: TEXT_DARK,
-          fontFamily: "Inter",
-          fontWeight: 600,
-          fontSize: "11px",
-          padding: "2px 6px",
-          cursor: "pointer",
-        }}
-      >
-        {parts.period}
-      </button>
-    </div>
+      inputStyle={{ ...ui.timeInput, flex: "0 0 20px" }}
+      borderColor={INPUT_BORDER}
+      textColor={TEXT_DARK}
+      periodButtonStyle={{ fontSize: "11px", padding: "2px 6px" }}
+    />
   );
 }
 

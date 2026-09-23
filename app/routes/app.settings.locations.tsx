@@ -21,6 +21,7 @@ import {
 import { timezoneOffsetLabel } from "../utils/timezones";
 import { COUNTRIES, findCountryByTimezone, type Country } from "../utils/countries";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
+import { TimeField12h } from "../components/TimeField12h";
 import { parseWorkingDays } from "../utils/workingDays";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
@@ -845,30 +846,17 @@ function LocationEditor({
             <div style={styles.fieldsRow}>
               <div style={styles.fieldGroupHalf}>
                 <p style={styles.fieldLabel}>Start time</p>
-                <div style={styles.inputBox}>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={5}
-                    style={styles.textInput}
-                    placeholder="Shop default"
-                    value={values.dailyStartTime ?? ""}
-                    onChange={(e: FieldChangeEvent) => {
-                      const digits = e.currentTarget.value
-                        .replace(/\D/g, "")
-                        .slice(0, 4);
-                      const formatted =
-                        digits.length <= 2
-                          ? digits
-                          : `${digits.slice(0, 2)}:${digits.slice(2)}`;
-                      setValues((prev) => ({
-                        ...prev,
-                        dailyStartTime: formatted || null,
-                      }));
-                    }}
-                  />
-                </div>
-                <p style={styles.hintText}>24-hour format, hh:mm</p>
+                <TimeField12h
+                  value={values.dailyStartTime}
+                  onChange={(next) =>
+                    setValues((prev) => ({ ...prev, dailyStartTime: next }))
+                  }
+                  inputBoxStyle={styles.inputBox}
+                  inputStyle={styles.textInput}
+                  borderColor={INPUT_BORDER}
+                  textColor={TEXT_BLACK}
+                />
+                <p style={styles.hintText}>12-hour format, hh:mm AM/PM</p>
                 {errors.dailyStartTime && (
                   <p style={{ ...styles.hintText, color: "#D82C0D" }}>
                     {errors.dailyStartTime}
@@ -877,30 +865,17 @@ function LocationEditor({
               </div>
               <div style={styles.fieldGroupHalf}>
                 <p style={styles.fieldLabel}>End time</p>
-                <div style={styles.inputBox}>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={5}
-                    style={styles.textInput}
-                    placeholder="Shop default"
-                    value={values.dailyEndTime ?? ""}
-                    onChange={(e: FieldChangeEvent) => {
-                      const digits = e.currentTarget.value
-                        .replace(/\D/g, "")
-                        .slice(0, 4);
-                      const formatted =
-                        digits.length <= 2
-                          ? digits
-                          : `${digits.slice(0, 2)}:${digits.slice(2)}`;
-                      setValues((prev) => ({
-                        ...prev,
-                        dailyEndTime: formatted || null,
-                      }));
-                    }}
-                  />
-                </div>
-                <p style={styles.hintText}>24-hour format, hh:mm</p>
+                <TimeField12h
+                  value={values.dailyEndTime}
+                  onChange={(next) =>
+                    setValues((prev) => ({ ...prev, dailyEndTime: next }))
+                  }
+                  inputBoxStyle={styles.inputBox}
+                  inputStyle={styles.textInput}
+                  borderColor={INPUT_BORDER}
+                  textColor={TEXT_BLACK}
+                />
+                <p style={styles.hintText}>12-hour format, hh:mm AM/PM</p>
                 {errors.dailyEndTime && (
                   <p style={{ ...styles.hintText, color: "#D82C0D" }}>
                     {errors.dailyEndTime}

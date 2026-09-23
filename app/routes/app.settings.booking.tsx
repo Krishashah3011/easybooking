@@ -9,12 +9,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { WEEKDAY_LABELS } from "../models/weekday-labels";
-import {
-  to12HourParts,
-  fromTwelveHourParts,
-  sanitizeHourInput,
-  sanitizeMinuteInput,
-} from "../utils/time12h";
+import { TimeField12h } from "../components/TimeField12h";
 import {
   getBookingSettings,
   parseBookingSettingsForm,
@@ -410,82 +405,6 @@ function Checkbox({
   );
 }
 
-/**
- * A 12-hour hh:mm AM/PM time field. Hour is clamped to 1-12 and minute to
- * 0-59 as the user types, so it's impossible to enter an out-of-range time
- * like "50:00" the way the old raw 24-hour text field allowed.
- */
-function DayTimeField({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (next: string) => void;
-}) {
-  const [parts, setParts] = useState(() => to12HourParts(value));
-
-  useEffect(() => {
-    if (fromTwelveHourParts(parts) !== value) {
-      setParts(to12HourParts(value));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
-
-  const commit = (next: typeof parts) => {
-    setParts(next);
-    const result = fromTwelveHourParts(next);
-    if (result) onChange(result);
-  };
-
-  return (
-    <div style={{ ...styles.smallInputBox, width: "128px", gap: "4px" }}>
-      <input
-        type="text"
-        inputMode="numeric"
-        maxLength={2}
-        style={{ ...styles.smallTextInput, flex: "0 0 18px", textAlign: "right" }}
-        placeholder="09"
-        value={parts.hour}
-        onChange={(e: FieldChangeEvent) =>
-          commit({ ...parts, hour: sanitizeHourInput(e.currentTarget.value) })
-        }
-      />
-      <span style={{ color: TEXT_BLACK }}>:</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        maxLength={2}
-        style={{ ...styles.smallTextInput, flex: "0 0 18px" }}
-        placeholder="00"
-        value={parts.minute}
-        onChange={(e: FieldChangeEvent) =>
-          commit({ ...parts, minute: sanitizeMinuteInput(e.currentTarget.value) })
-        }
-      />
-      <button
-        type="button"
-        onClick={() =>
-          commit({ ...parts, period: parts.period === "AM" ? "PM" : "AM" })
-        }
-        style={{
-          marginLeft: "auto",
-          flex: "0 0 auto",
-          border: "none",
-          background: "transparent",
-          color: TEXT_BLACK,
-          fontFamily: "Inter",
-          fontWeight: 600,
-          fontSize: "12px",
-          padding: 0,
-          cursor: "pointer",
-        }}
-      >
-        {parts.period}
-      </button>
-    </div>
-  );
-}
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const settings = await getBookingSettings(session.shop);
@@ -689,14 +608,22 @@ export default function BookingSettingsPage() {
                     }}
                   >
                     <div style={styles.dayTimeInputs}>
-                      <DayTimeField
+                      <TimeField12h
                         value={dayTime.start}
                         onChange={(next) => setDayTime(day.value, "start", next)}
+                        inputBoxStyle={{ ...styles.smallInputBox, width: "128px" }}
+                        inputStyle={styles.smallTextInput}
+                        borderColor={INPUT_BORDER}
+                        textColor={TEXT_BLACK}
                       />
                       <span style={styles.hintText}>to</span>
-                      <DayTimeField
+                      <TimeField12h
                         value={dayTime.end}
                         onChange={(next) => setDayTime(day.value, "end", next)}
+                        inputBoxStyle={{ ...styles.smallInputBox, width: "128px" }}
+                        inputStyle={styles.smallTextInput}
+                        borderColor={INPUT_BORDER}
+                        textColor={TEXT_BLACK}
                       />
                     </div>
                     {isOutOfOrder && (
