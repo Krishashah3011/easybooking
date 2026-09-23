@@ -292,6 +292,7 @@
       "[data-booking-location-empty-state]",
     );
     var calendarEl = root.querySelector("[data-booking-calendar]");
+    var calendarPaneEl = root.querySelector("[data-booking-calendar-pane]");
     var datetimeCardEl = root.querySelector("[data-booking-datetime-card]");
     var durationEl = root.querySelector("[data-booking-duration]");
     var rangeSummaryEl = root.querySelector("[data-booking-range-summary]");
@@ -345,7 +346,6 @@
     var slotsPaneEl = root.querySelector("[data-booking-slots]");
     var availableDatesByDay = {};
     var remainingCapacityByDate = {};
-    var secondMonthAvailableDates = null;
     var multiDayMinNights = null;
     var multiDayMaxNights = null;
     var pendingEndDate = null;
@@ -876,11 +876,25 @@
         bundleQuantity = 1;
         refreshQuantityForSelection();
         updateRangeSummary();
-        if (datetimeStepEl && !datetimeStepEl.hidden) {
-          updateTimezoneDisplay();
-          loadMonth();
-        }
+        updateTimezoneDisplay();
+        loadMonth();
       }
+    }
+
+    function locationRequired() {
+      return locations.length > 0;
+    }
+
+    function isLocationSelected() {
+      return !locationRequired() || !!pendingLocation;
+    }
+
+    function updateCalendarLockState() {
+      if (!calendarPaneEl) return;
+      calendarPaneEl.classList.toggle(
+        "booking-widget__calendar-pane--locked",
+        !isLocationSelected(),
+      );
     }
 
     function updateTimezoneDisplay() {
@@ -893,8 +907,7 @@
       if (locationTimezoneEl) locationTimezoneEl.textContent = label;
     }
 
-    function showLocationStep() {
-      if (!locationStepEl) return;
+    function showBookingStep() {
       exitReviewStep();
       closeLocationList();
       selectedLocationRecord = pendingLocation;
@@ -911,10 +924,16 @@
           );
         }
       }
-      populateLocationList();
-      locationStepEl.hidden = false;
-      datetimeStepEl.hidden = true;
-      if (locationEmptyStateEl) locationEmptyStateEl.hidden = false;
+      if (locationStepEl) {
+        if (locationRequired()) {
+          populateLocationList();
+          locationStepEl.hidden = false;
+        } else {
+          locationStepEl.hidden = true;
+        }
+      }
+      if (locationEmptyStateEl) locationEmptyStateEl.hidden = true;
+      datetimeStepEl.hidden = false;
       if (locationErrorEl) {
         locationErrorEl.hidden = true;
         locationErrorEl.textContent = "";
@@ -925,28 +944,10 @@
         );
       }
       confirmBtn.hidden = false;
-      if (subheaderEl) subheaderEl.hidden = true;
-      updateConfirmButton();
-      updateTimezoneDisplay();
-    }
-
-    function showDatetimeStep() {
-      exitReviewStep();
-      if (locationStepEl) locationStepEl.hidden = true;
-      datetimeStepEl.hidden = false;
-      confirmBtn.hidden = false;
       if (subheaderEl) subheaderEl.hidden = false;
-      updateTimezoneDisplay();
+      updateCalendarLockState();
       updateConfirmButton();
-    }
-
-    function revealDatetimeStep() {
-      datetimeStepEl.hidden = false;
-      if (locationEmptyStateEl) locationEmptyStateEl.hidden = true;
-      confirmBtn.hidden = false;
-      if (subheaderEl) subheaderEl.hidden = false;
       updateTimezoneDisplay();
-      updateConfirmButton();
       loadMonth();
     }
 
@@ -1045,15 +1046,7 @@
       updateRangeSummary();
       updateBundleProgress();
 
-      if (locationStepEl && locations.length > 0) {
-        showLocationStep();
-        if (pendingLocation) {
-          revealDatetimeStep();
-        }
-      } else {
-        showDatetimeStep();
-        loadMonth();
-      }
+      showBookingStep();
     }
 
     function closeModal() {
@@ -1069,11 +1062,6 @@
       currentSlots = [];
       if (durationEl) durationEl.hidden = true;
       if (slotListEl) setStatus(slotListEl, strings.selectDateHint);
-    }
-
-    function addMonths(year, month, delta) {
-      var d = new Date(Date.UTC(year, month - 1 + delta, 1));
-      return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
     }
 
     function fetchAvailability(year, month) {
@@ -1182,17 +1170,12 @@
 
     function loadMonth() {
       var requestId = ++monthRequestId;
-      var second = addMonths(viewYear, viewMonth, 1);
       setStatus(calendarEl, strings.loadingAvailability);
 
-      Promise.all([
-        fetchAvailability(viewYear, viewMonth),
-        fetchAvailability(second.year, second.month),
-      ])
+      Promise.all([fetchAvailability(viewYear, viewMonth)])
         .then(function (results) {
           if (requestId !== monthRequestId) return;
           availableDates = applyAvailabilityData(results[0]);
-          secondMonthAvailableDates = applyAvailabilityData(results[1]);
           updateBundleProgress();
           applyLayoutForType();
           renderCalendar();
@@ -1287,7 +1270,8 @@
         (dateStr >= windowStart && dateStr <= windowEnd);
       var isClickable =
         (availableDatesByDay[dateStr] || isCheckoutCandidate) &&
-        withinBundleValidity;
+        withinBundleValidity &&
+        isLocationSelected();
 
       if (isClickable) {
         btn.classList.add("booking-widget__day--available");
@@ -1446,13 +1430,8 @@
     function renderCalendar() {
       var choosingMultiDayCheckout =
         productBookingType === "MULTI_DAY" && pendingDate && !pendingEndDate;
-      var second = addMonths(viewYear, viewMonth, 1);
 
       var pane1NoAvail = availableDates.length === 0 && !choosingMultiDayCheckout;
-      var pane2NoAvail =
-        secondMonthAvailableDates !== null &&
-        secondMonthAvailableDates.length === 0 &&
-        !choosingMultiDayCheckout;
 
       calendarEl.innerHTML = "";
       calendarEl.appendChild(
@@ -1464,15 +1443,7 @@
           0,
         ),
       );
-      calendarEl.appendChild(
-        buildMonthPane(
-          second.year,
-          second.month,
-          choosingMultiDayCheckout,
-          pane2NoAvail,
-          1,
-        ),
-      );
+      updateCalendarLockState();
     }
 
     function multiDayRangeInfoText() {
@@ -1815,18 +1786,9 @@
     }
     setPendingQuantity(1);
 
-    function isAtLocationStep() {
-      return !!(
-        locationStepEl &&
-        !locationStepEl.hidden &&
-        datetimeStepEl &&
-        datetimeStepEl.hidden
-      );
-    }
-
     function updateConfirmButton() {
-      if (isAtLocationStep()) {
-        confirmBtn.disabled = !pendingLocation;
+      if (locationRequired() && !pendingLocation) {
+        confirmBtn.disabled = true;
         confirmBtn.textContent = strings.next;
         if (reviewBackBtn) reviewBackBtn.hidden = true;
         if (nextSlotBtn) nextSlotBtn.hidden = true;
@@ -2228,20 +2190,16 @@
       });
     }
     confirmBtn.addEventListener("click", function () {
-      if (isAtLocationStep()) {
-        if (!pendingLocation) {
-          if (locationErrorEl) {
-            locationErrorEl.hidden = false;
-            locationErrorEl.textContent = strings.locationRequired;
-          }
-          if (locationTriggerEl) {
-            locationTriggerEl.classList.add(
-              "booking-widget__location-trigger--error",
-            );
-          }
-          return;
+      if (locationRequired() && !pendingLocation) {
+        if (locationErrorEl) {
+          locationErrorEl.hidden = false;
+          locationErrorEl.textContent = strings.locationRequired;
         }
-        revealDatetimeStep();
+        if (locationTriggerEl) {
+          locationTriggerEl.classList.add(
+            "booking-widget__location-trigger--error",
+          );
+        }
         return;
       }
 
