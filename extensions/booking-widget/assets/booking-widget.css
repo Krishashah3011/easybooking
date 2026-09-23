@@ -1098,12 +1098,11 @@ body.booking-widget-lock-scroll {
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   gap: 0.75rem;
-  padding: 10px 14px;
-  background: #f2f9ff;
-  border: 1px solid #88b5e1;
-  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 .booking-widget__quantity {
@@ -1112,12 +1111,12 @@ body.booking-widget-lock-scroll {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  padding: 5px 10px;
+  padding: 10px 14px;
   gap: 8px;
   min-height: 57px;
   flex: 1 1 240px;
-  background: transparent;
-  border: none;
+  background: #f2f9ff;
+  border: 1px solid #88b5e1;
   border-radius: 8px;
   transition: opacity 0.15s ease;
 }
@@ -1242,12 +1241,12 @@ body.booking-widget-lock-scroll {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  padding: 5px 10px;
+  padding: 10px 14px;
   gap: 8px;
   min-height: 57px;
   flex: 1 1 240px;
-  background: transparent;
-  border: none;
+  background: #f2f9ff;
+  border: 1px solid #88b5e1;
   border-radius: 8px;
   transition: opacity 0.15s ease;
 }
@@ -1321,21 +1320,23 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__review-title {
-  font-weight: 800;
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
   font-size: 1.3rem;
   margin: 0;
-  color: #0060e6;
+  color: #000;
 }
 
 .booking-widget__review-list {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 8px;
   margin: 0;
-  background: #fff;
-  border: 2px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  padding: 0 1.1rem;
+  background: #f2f9ff;
+  border: 1px solid #88b5e1;
+  border-radius: 8px;
+  padding: 10px;
 }
 
 .booking-widget__review-list dt {
@@ -1350,70 +1351,50 @@ body.booking-widget-lock-scroll {
 .booking-widget__review-row {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.95rem 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #88b5e1;
   margin: 0;
 }
 
 .booking-widget__review-row:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .booking-widget__review-label {
   flex: 1;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.8);
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 19px;
+  color: #000;
 }
 
 .booking-widget__review-value {
-  font-size: 1.08rem;
-  font-weight: 700;
-  color: #111;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 19px;
+  color: #000;
   text-align: right;
 }
 
-.booking-widget__review-icon {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  border-radius: 50%;
-  background: rgba(0, 96, 230, 0.08);
-  color: #0060e6;
-}
-
-.booking-widget__review-icon svg {
-  width: 1.1rem;
-  height: 1.1rem;
-}
-
 .booking-widget__review-row--total {
-  margin-top: 0.5rem;
-  border-top: 2px solid rgba(0, 0, 0, 0.1);
-  border-bottom: none;
-  padding: 0.95rem 0 0.85rem;
-  justify-content: space-between;
+  margin-top: 0;
+  border-top: none;
+  padding: 0 0 8px;
 }
 
-.booking-widget__review-total-label {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.8);
-}
-
-.booking-widget__review-total-value {
-  font-size: 1.45rem;
-  font-weight: 700;
-  color: #0060e6;
+.booking-widget__review-row--total:last-child {
+  padding-bottom: 0;
 }
 
 .booking-widget__modal-footer {
-  padding: 1.1rem 1.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1.5rem 1.25rem;
+  border-top: none;
+  background: transparent;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -1428,15 +1409,25 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__btn--confirm {
+  box-sizing: border-box;
   width: auto;
-  padding: 0.85rem 2.5rem;
+  min-width: 94px;
+  height: 40px;
+  padding: 7px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: "Inter", sans-serif;
-  font-size: 1rem;
+  font-style: normal;
   font-weight: 600;
+  font-size: 16px;
+  line-height: 19px;
   border-radius: 8px;
+  border: 2px solid transparent;
   cursor: pointer;
-  border: none;
-  background: linear-gradient(99.02deg, #88b5e1 7.36%, #531b8a 85.94%);
+  background:
+    linear-gradient(279.05deg, #93bce5 4.2%, #531b8a 54.41%) padding-box,
+    linear-gradient(99.02deg, #88b5e1 7.36%, #531b8a 85.94%) border-box;
   color: #fff;
   transition: filter 0.15s ease;
 }

@@ -1962,17 +1962,12 @@
 
         var dd = document.createElement("dd");
         dd.className = "booking-widget__review-row";
-        var iconWrap = document.createElement("span");
-        iconWrap.className = "booking-widget__review-icon";
-        iconWrap.innerHTML = REVIEW_ICONS[row.icon] || "";
-        iconWrap.setAttribute("aria-hidden", "true");
         var labelSpan = document.createElement("span");
         labelSpan.className = "booking-widget__review-label";
         labelSpan.textContent = row.label;
         var valueSpan = document.createElement("span");
         valueSpan.className = "booking-widget__review-value";
         valueSpan.textContent = row.value;
-        dd.appendChild(iconWrap);
         dd.appendChild(labelSpan);
         dd.appendChild(valueSpan);
 
@@ -1991,13 +1986,10 @@
         totalDd.className =
           "booking-widget__review-row booking-widget__review-row--total";
         var totalLabel = document.createElement("span");
-        totalLabel.className = "booking-widget__review-total-label";
-        totalLabel.textContent =
-          reviewQuantity > 1
-            ? formatMoney(unitPrice) + " \u00d7 " + reviewQuantity
-            : "Total";
+        totalLabel.className = "booking-widget__review-label";
+        totalLabel.textContent = "Total";
         var totalValue = document.createElement("span");
-        totalValue.className = "booking-widget__review-total-value";
+        totalValue.className = "booking-widget__review-value";
         totalValue.textContent = formatMoney(total);
         totalDd.appendChild(totalLabel);
         totalDd.appendChild(totalValue);
