@@ -893,6 +893,10 @@
         pendingEndDate = null;
         bundleSessions = [];
         bundleQuantity = 1;
+        availableDates = [];
+        availableDatesByDay = {};
+        remainingCapacityByDate = {};
+        slotRequestId++;
         refreshQuantityForSelection();
         updateRangeSummary();
         updateTimezoneDisplay();
@@ -1050,6 +1054,10 @@
       customFieldValues = {};
       atReviewStep = false;
       currentSlots = [];
+      availableDates = [];
+      availableDatesByDay = {};
+      remainingCapacityByDate = {};
+      slotRequestId++;
       if (slotListEl) slotListEl.innerHTML = "";
       if (durationEl) durationEl.hidden = true;
       if (slotsPaneEl) slotsPaneEl.hidden = true;
@@ -1058,6 +1066,8 @@
       viewMonth = freshToday.getUTCMonth() + 1;
       if (reviewStepEl) reviewStepEl.hidden = true;
       if (reviewBodyEl) reviewBodyEl.hidden = true;
+      if (quantityWrapEl) quantityWrapEl.hidden = false;
+      if (noteWrapEl) noteWrapEl.hidden = false;
       refreshQuantityForSelection();
       modalBodyEl.hidden = false;
       modalFooterEl.hidden = false;
@@ -1072,6 +1082,9 @@
     }
 
     function closeModal() {
+      monthRequestId++;
+      slotRequestId++;
+      if (atReviewStep) exitReviewStep();
       overlayEl.hidden = true;
       document.body.classList.remove("booking-widget-lock-scroll");
     }
@@ -1081,6 +1094,7 @@
     }
 
     function showSelectDateHint() {
+      slotRequestId++;
       currentSlots = [];
       if (durationEl) durationEl.hidden = true;
       if (slotListEl) setStatus(slotListEl, strings.selectDateHint);
@@ -1590,7 +1604,10 @@
       }
     }
 
+    var slotRequestId = 0;
+
     function loadSlots(dateStr) {
+      var requestId = ++slotRequestId;
       durationEl.hidden = true;
       setStatus(slotListEl, strings.loadingTimes);
 
@@ -1618,10 +1635,12 @@
           return res.json();
         })
         .then(function (data) {
+          if (requestId !== slotRequestId) return;
           currentSlots = data.slots || [];
           renderSlots();
         })
         .catch(function (err) {
+          if (requestId !== slotRequestId) return;
           if (err && err.code === "APP_DISABLED") {
             setStatus(slotListEl, strings.bookingUnavailable);
             return;
@@ -2003,8 +2022,6 @@
       atReviewStep = true;
       buildReviewSummary();
       modalBodyEl.hidden = true;
-      if (quantityWrapEl) quantityWrapEl.hidden = true;
-      if (noteWrapEl) noteWrapEl.hidden = true;
       if (reviewStepEl) reviewStepEl.hidden = false;
       if (reviewBodyEl) reviewBodyEl.hidden = false;
       if (subheaderEl) subheaderEl.hidden = true;
@@ -2017,6 +2034,8 @@
       if (reviewStepEl) reviewStepEl.hidden = true;
       if (reviewBodyEl) reviewBodyEl.hidden = true;
       modalBodyEl.hidden = false;
+      if (quantityWrapEl) quantityWrapEl.hidden = false;
+      if (noteWrapEl) noteWrapEl.hidden = false;
       renderCustomFields();
     }
 
@@ -2194,8 +2213,14 @@
     }
 
     closeBtn.addEventListener("click", closeModal);
+    var pressStartedInsideModal = false;
+    overlayEl.addEventListener("pointerdown", function (event) {
+      pressStartedInsideModal = event.target !== overlayEl;
+    });
     overlayEl.addEventListener("click", function (event) {
-      if (event.target === overlayEl) closeModal();
+      var startedInside = pressStartedInsideModal;
+      pressStartedInsideModal = false;
+      if (event.target === overlayEl && !startedInside) closeModal();
     });
     if (nextSlotBtn) {
       nextSlotBtn.addEventListener("click", function () {

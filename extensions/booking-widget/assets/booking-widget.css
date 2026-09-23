@@ -408,9 +408,12 @@ body.booking-widget-lock-scroll {
   line-height: 0;
 }
 
-.booking-widget__location-icon svg {
+.booking-widget__location-icon svg,
+.booking-widget__location-icon img {
   width: 30px;
   height: 30px;
+  max-width: none;
+  object-fit: contain;
   display: block;
 }
 
@@ -867,9 +870,12 @@ body.booking-widget-lock-scroll {
   line-height: 0;
 }
 
-.booking-widget__slots-heading-icon svg {
+.booking-widget__slots-heading-icon svg,
+.booking-widget__slots-heading-icon img {
   width: 30px;
   height: 30px;
+  max-width: none;
+  object-fit: contain;
   display: block;
 }
 
@@ -1150,9 +1156,12 @@ body.booking-widget-lock-scroll {
   line-height: 0;
 }
 
-.booking-widget__quantity-icon svg {
+.booking-widget__quantity-icon svg,
+.booking-widget__quantity-icon img {
   width: 30px;
   height: 30px;
+  max-width: none;
+  object-fit: contain;
   display: block;
 }
 
@@ -1274,9 +1283,12 @@ body.booking-widget-lock-scroll {
   line-height: 0;
 }
 
-.booking-widget__note-icon svg {
+.booking-widget__note-icon svg,
+.booking-widget__note-icon img {
   width: 28px;
   height: 28px;
+  max-width: none;
+  object-fit: contain;
   display: block;
 }
 

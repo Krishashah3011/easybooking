@@ -45,26 +45,7 @@
         <div class="booking-widget__location-step" data-booking-location-step hidden>
           <div class="booking-widget__location-field">
             <span class="booking-widget__location-icon" aria-hidden="true">
-              <svg viewBox="10 13 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M36.25 37.25C36.25 40.375 31.2125 42.25 25 42.25C18.7875 42.25 13.75 40.375 13.75 37.25C13.75 34.2425 18.7875 32.25 25 32.25C31.2125 32.25 36.25 34.125 36.25 37.25Z" fill="url(#booking-widget-loc-paint0)"/>
-                <path d="M25 16C22.5136 16 20.129 16.9877 18.3709 18.7459C16.6127 20.504 15.625 22.8886 15.625 25.375C15.625 27.79 16.955 30.125 18.46 32.02C19.985 33.9412 21.8075 35.5562 23.0288 36.5475C24.1863 37.485 25.8137 37.485 26.9712 36.5475C28.1925 35.5562 30.015 33.9412 31.54 32.02C33.045 30.1263 34.375 27.79 34.375 25.375C34.375 22.8886 33.3873 20.504 31.6291 18.7459C29.871 16.9877 27.4864 16 25 16Z" fill="url(#booking-widget-loc-paint1)"/>
-                <path d="M28.125 25.375C28.125 26.2038 27.7958 26.9987 27.2097 27.5847C26.6237 28.1708 25.8288 28.5 25 28.5C24.1712 28.5 23.3763 28.1708 22.7903 27.5847C22.2042 26.9987 21.875 26.2038 21.875 25.375C21.875 24.5462 22.2042 23.7513 22.7903 23.1653C23.3763 22.5792 24.1712 22.25 25 22.25C25.8288 22.25 26.6237 22.5792 27.2097 23.1653C27.7958 23.7513 28.125 24.5462 28.125 25.375Z" fill="url(#booking-widget-loc-paint2)"/>
-                <defs>
-                  <radialGradient id="booking-widget-loc-paint0" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(24.1964 35.5835) rotate(-10.678) scale(17.9901 7.97634)">
-                    <stop stop-color="#7B7BFF"/>
-                    <stop offset="0.502" stop-color="#A3A3FF"/>
-                    <stop offset="1" stop-color="#CEB0FF"/>
-                  </radialGradient>
-                  <linearGradient id="booking-widget-loc-paint1" x1="16" y1="16" x2="26.5025" y2="34.1863" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#789BC4"/>
-                    <stop offset="1" stop-color="#531B8A"/>
-                  </linearGradient>
-                  <linearGradient id="booking-widget-loc-paint2" x1="22.2375" y1="25.6512" x2="25.4925" y2="29.035" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#FDFDFD"/>
-                    <stop offset="1" stop-color="#FECBE6"/>
-                  </linearGradient>
-                </defs>
-              </svg>
+              <img src="{{ 'location.svg' | asset_url }}" alt="" width="30" height="30" decoding="async">
             </span>
             <label class="booking-widget__location-static-label" id="booking-widget-location-label">Add Location</label>
             <div class="booking-widget__location-select-wrap">
@@ -131,23 +112,8 @@
               <div class="booking-widget__slots" data-booking-slots>
                 <div class="booking-widget__slots-heading">
                   <span class="booking-widget__slots-heading-icon" aria-hidden="true">
-                    <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="15" cy="16" r="11" fill="url(#booking-widget-clock-paint0)"/>
-                      <circle cx="15" cy="16" r="8" fill="url(#booking-widget-clock-paint1)"/>
-                      <path d="M15 11v5.5l4 2" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M11 5.5h8M15 5.5V8" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round"/>
-                      <defs>
-                        <linearGradient id="booking-widget-clock-paint0" x1="5.6" y1="6.1" x2="24.4" y2="25.9" gradientUnits="userSpaceOnUse">
-                          <stop stop-color="#3C6AAF"/>
-                          <stop offset="1" stop-color="#692785"/>
-                        </linearGradient>
-                        <linearGradient id="booking-widget-clock-paint1" x1="8.4" y1="8.9" x2="21.6" y2="23.1" gradientUnits="userSpaceOnUse">
-                          <stop stop-color="#FDFDFD"/>
-                          <stop offset="1" stop-color="#DEDEFF"/>
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </span>
+              <img src="{{ 'clock.svg' | asset_url }}" alt="" width="30" height="30" decoding="async">
+            </span>
                   <p class="booking-widget__slots-label">Select Time Slot</p>
                 </div>
                 <div class="booking-widget__slot-list" data-booking-slot-list>
@@ -160,21 +126,8 @@
           <div class="booking-widget__datetime-extras" data-booking-datetime-extras>
             <div class="booking-widget__quantity" data-booking-quantity>
               <span class="booking-widget__quantity-icon" aria-hidden="true">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3.5" y="9.5" width="13" height="11" rx="2.25" fill="url(#booking-widget-quantity-icon-grad2)" stroke="#fff" stroke-width="1.1"/>
-                  <rect x="7.5" y="3.5" width="13" height="11" rx="2.25" fill="url(#booking-widget-quantity-icon-grad1)" stroke="#fff" stroke-width="1.1"/>
-                  <defs>
-                    <linearGradient id="booking-widget-quantity-icon-grad1" x1="7.5" y1="3.5" x2="20.5" y2="14.5" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#81A4DC"/>
-                      <stop offset="1" stop-color="#531B8A"/>
-                    </linearGradient>
-                    <linearGradient id="booking-widget-quantity-icon-grad2" x1="3.5" y1="9.5" x2="16.5" y2="20.5" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#7789CB"/>
-                      <stop offset="1" stop-color="#531B8A"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </span>
+              <img src="{{ 'quantity.svg' | asset_url }}" alt="" width="30" height="29" decoding="async">
+            </span>
               <p class="booking-widget__quantity-label">Quantity</p>
               <div class="booking-widget__quantity-control">
                 <button
@@ -208,21 +161,8 @@
 
             <div class="booking-widget__note" data-booking-note>
               <span class="booking-widget__note-icon" aria-hidden="true">
-                <svg width="28" height="28" viewBox="13 18 22 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path fill-rule="evenodd" clip-rule="evenodd" d="M25.1667 18C25.3214 18 25.4698 18.0615 25.5792 18.1709C25.6886 18.2803 25.75 18.4286 25.75 18.5833V20.3333C25.75 20.488 25.8115 20.6364 25.9209 20.7458C26.0303 20.8552 26.1787 20.9167 26.3334 20.9167C26.4881 20.9167 26.6365 20.8552 26.7459 20.7458C26.8553 20.6364 26.9167 20.488 26.9167 20.3333V19.1667H27.5C27.9642 19.1667 28.4093 19.351 28.7375 19.6792C29.0657 20.0074 29.25 20.4525 29.25 20.9167V34.9167C29.25 35.3808 29.0657 35.8259 28.7375 36.1541C28.4093 36.4823 27.9642 36.6667 27.5 36.6667H17.5834C17.1192 36.6667 16.6741 36.4823 16.3459 36.1541C16.0177 35.8259 15.8334 35.3808 15.8334 34.9167V20.9167C15.8334 20.4525 16.0177 20.0074 16.3459 19.6792C16.6741 19.351 17.1192 19.1667 17.5834 19.1667H18.75V18.5833C18.75 18.4286 18.8115 18.2803 18.9209 18.1709C19.0303 18.0615 19.1787 18 19.3334 18C19.4881 18 19.6365 18.0615 19.7459 18.1709C19.8552 18.2803 19.9167 18.4286 19.9167 18.5833V20.3333C19.9167 20.488 19.9782 20.6364 20.0876 20.7458C20.197 20.8552 20.3453 20.9167 20.5 20.9167C20.6548 20.9167 20.8031 20.8552 20.9125 20.7458C21.0219 20.6364 21.0834 20.488 21.0834 20.3333V19.1667H24.5834V18.5833C24.5834 18.4286 24.6448 18.2803 24.7542 18.1709C24.8636 18.0615 25.012 18 25.1667 18ZM18.75 25C18.5953 25 18.447 25.0615 18.3376 25.1709C18.2282 25.2803 18.1667 25.4286 18.1667 25.5833C18.1667 25.738 18.2282 25.8864 18.3376 25.9958C18.447 26.1052 18.5953 26.1667 18.75 26.1667H26.3334C26.4881 26.1667 26.6365 26.1052 26.7459 25.9958C26.8553 25.8864 26.9167 25.738 26.9167 25.5833C26.9167 25.4286 26.8553 25.2803 26.7459 25.1709C26.6365 25.0615 26.4881 25 26.3334 25H18.75ZM18.1667 28.5C18.1667 28.3453 18.2282 28.1969 18.3376 28.0875C18.447 27.9781 18.5953 27.9167 18.75 27.9167H22.8334C22.9881 27.9167 23.1365 27.9781 23.2459 28.0875C23.3553 28.1969 23.4167 28.3453 23.4167 28.5C23.4167 28.6547 23.3553 28.8031 23.2459 28.9125C23.1365 29.0219 22.9881 29.0833 22.8334 29.0833H18.75C18.5953 29.0833 18.447 29.0219 18.3376 28.9125C18.2282 28.8031 18.1667 28.6547 18.1667 28.5ZM18.75 30.8333C18.5953 30.8333 18.447 30.8948 18.3376 31.0042C18.2282 31.1136 18.1667 31.262 18.1667 31.4167C18.1667 31.5714 18.2282 31.7197 18.3376 31.8291C18.447 31.9385 18.5953 32 18.75 32H25.1667C25.3214 32 25.4698 31.9385 25.5792 31.8291C25.6886 31.7197 25.75 31.5714 25.75 31.4167C25.75 31.262 25.6886 31.1136 25.5792 31.0042C25.4698 30.8948 25.3214 30.8333 25.1667 30.8333H18.75Z" fill="url(#booking-widget-note-icon-grad1)"/>
-                  <path d="M17.5833 38.9999C16.5004 38.9999 15.4618 38.5697 14.696 37.8039C13.9302 37.0382 13.5 35.9996 13.5 34.9166V20.3333H14.6667V34.9166C14.6667 35.6901 14.974 36.432 15.5209 36.979C16.0679 37.526 16.8098 37.8333 17.5833 37.8333H27.5V38.9999H17.5833ZM31 22.0833C31 21.6191 31.1844 21.174 31.5126 20.8458C31.8408 20.5176 32.2859 20.3333 32.75 20.3333C33.2141 20.3333 33.6592 20.5176 33.9874 20.8458C34.3156 21.174 34.5 21.6191 34.5 22.0833V23.8333H31V22.0833ZM31 33.7499V24.9999H34.5V33.7499L32.75 36.0833L31 33.7499Z" fill="url(#booking-widget-note-icon-grad2)"/>
-                  <defs>
-                    <linearGradient id="booking-widget-note-icon-grad1" x1="16.1528" y1="18.8889" x2="29.3765" y2="31.0153" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#7789CB"/>
-                      <stop offset="0.711569" stop-color="#531B8A"/>
-                    </linearGradient>
-                    <linearGradient id="booking-widget-note-icon-grad2" x1="14" y1="21.2221" x2="26.4512" y2="39.094" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#7789CB"/>
-                      <stop offset="0.711569" stop-color="#531B8A"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </span>
+              <img src="{{ 'note.svg' | asset_url }}" alt="" width="28" height="28" decoding="async">
+            </span>
               <p class="booking-widget__note-label">Note</p>
               <input
                 type="text"
