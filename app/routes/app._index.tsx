@@ -1,5 +1,5 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData, useNavigate } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { listBookableProducts } from "../models/bookableProduct.server";
@@ -355,9 +355,10 @@ function StatTile({
   width?: string;
 }) {
   return (
-    <a
+    <Link
       className="eb-stat-tile"
-      href={href}
+      to={href}
+      prefetch="intent"
       style={width ? { ...analyticsStyles.statTile, width } : analyticsStyles.statTile}
     >
       <div style={analyticsStyles.statTileHeader}>
@@ -368,7 +369,7 @@ function StatTile({
         <p style={analyticsStyles.statTileValue}>{value}</p>
         <ChevronIcon />
       </div>
-    </a>
+    </Link>
   );
 }
 
@@ -799,6 +800,7 @@ export default function Dashboard() {
     reportFilters,
   } = useLoaderData<typeof loader>();
   const guideSteps = buildGuideSteps(shop, apiKey, registered);
+  const navigate = useNavigate();
 
   const [productId, setProductId] = useState(reportFilters.bookableProductId);
   const [dateFrom, setDateFrom] = useState(reportFilters.dateFrom);
@@ -809,7 +811,7 @@ export default function Dashboard() {
     if (productId) params.set("productId", productId);
     if (dateFrom) params.set("dateFrom", dateFrom);
     if (dateTo) params.set("dateTo", dateTo);
-    window.location.search = params.toString();
+    navigate({ search: params.toString() });
   };
 
   const setupSteps = [

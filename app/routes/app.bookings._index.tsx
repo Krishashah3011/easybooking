@@ -3,7 +3,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { Link, useFetcher, useLoaderData, useRevalidator } from "react-router";
+import { Link, useFetcher, useLoaderData, useNavigate, useRevalidator } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import type { BookingType } from "@prisma/client";
@@ -1802,13 +1802,14 @@ function BookingsListPage({
     "No bookings yet — they'll show up here once customers start booking.";
   const showProductFilter = true;
 
-  const bookingsFetcher = useFetcher<{ bookings: BookingWithProductTitle[] }>();
+  const navigate = useNavigate();
+  const listRevalidator = useRevalidator();
 
-  const bookings = bookingsFetcher.data?.bookings ?? initialBookings;
-  const isRefreshingBookings = bookingsFetcher.state !== "idle";
+  const bookings = initialBookings;
+  const isRefreshingBookings = listRevalidator.state !== "idle";
 
   const refreshBookings = () => {
-    bookingsFetcher.load(window.location.pathname + window.location.search);
+    listRevalidator.revalidate();
   };
 
   const [query, setQuery] = useState(filters.search);
@@ -1832,11 +1833,11 @@ function BookingsListPage({
     if (productId) params.set("productId", productId);
     if (dateFrom) params.set("dateFrom", dateFrom);
     if (dateTo) params.set("dateTo", dateTo);
-    window.location.search = params.toString();
+    navigate({ search: params.toString() });
   };
 
   const clearFilters = () => {
-    window.location.search = "";
+    navigate({ search: "" });
   };
 
   const visibleBookings = useMemo(() => {

@@ -1409,6 +1409,9 @@ body.booking-widget-lock-scroll {
   line-height: 19px;
   color: #000;
   text-align: right;
+  min-width: 0;
+  max-width: 65%;
+  overflow-wrap: anywhere;
 }
 
 .booking-widget__review-row--total {

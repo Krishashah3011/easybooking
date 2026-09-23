@@ -330,6 +330,7 @@
     var quantityNoteEl = root.querySelector("[data-booking-quantity-note]");
     var noteWrapEl = root.querySelector("[data-booking-note]");
     var noteInputEl = root.querySelector("[data-booking-note-input]");
+    var noteLabelEl = root.querySelector("[data-booking-note-label]");
     var reviewBodyEl = root.querySelector("[data-booking-review-body]");
     var reviewStepEl = root.querySelector("[data-booking-review-step]");
     var reviewListEl = root.querySelector("[data-booking-review-list]");
@@ -405,6 +406,30 @@
 
     var customFields = [];
     var customFieldValues = {};
+
+    // The merchant's first custom-field question is asked in the Note box
+    // (label + answer). Its answer is sent under the question's label, which
+    // is how the backend matches it to the custom field.
+    function getNoteField() {
+      return customFields.length > 0 ? customFields[0] : null;
+    }
+
+    function getNoteKey() {
+      var field = getNoteField();
+      return field ? field.label : "Note";
+    }
+
+    function applyNoteQuestion() {
+      var field = getNoteField();
+      var text = field ? field.label : "Note";
+      if (noteLabelEl) noteLabelEl.textContent = text;
+      if (noteInputEl) {
+        noteInputEl.setAttribute("aria-label", text);
+        noteInputEl.placeholder = field
+          ? "Type your answer here"
+          : "Enter Your Request";
+      }
+    }
 
     var widgetSection = root.closest(".shopify-section");
 
@@ -554,19 +579,21 @@
       quantityInput.value = String(entry.quantity || 1);
 
       if (entry.note) {
+        var noteInputName = "properties[" + getNoteKey() + "]";
         var noteInput = form.querySelector(
-          'input[name="properties[Note]"]',
+          'input[name="' + cssEscape(noteInputName) + '"]',
         );
         if (!noteInput) {
           noteInput = document.createElement("input");
           noteInput.type = "hidden";
-          noteInput.name = "properties[Note]";
+          noteInput.name = noteInputName;
           form.appendChild(noteInput);
         }
         noteInput.value = entry.note;
       }
 
       customFields.forEach(function (field) {
+        if (field === getNoteField()) return;
         var value = customFieldValues[field.fieldKey];
         if (!value) return;
         var inputName = "properties[" + field.label + "]";
@@ -605,9 +632,10 @@
         fd.set("properties[_Location Id]", entry.locationId);
       }
       if (entry.note) {
-        fd.set("properties[Note]", entry.note);
+        fd.set("properties[" + getNoteKey() + "]", entry.note);
       }
       customFields.forEach(function (field) {
+        if (field === getNoteField()) return;
         var value = customFieldValues[field.fieldKey];
         if (!value) return;
         fd.set("properties[" + field.label + "]", value);
@@ -739,10 +767,12 @@
         })
         .then(function (data) {
           customFields = data.fields || [];
+          applyNoteQuestion();
           renderCustomFields();
         })
         .catch(function () {
           customFields = [];
+          applyNoteQuestion();
         });
     }
 
@@ -984,6 +1014,7 @@
       }
 
       customFields.forEach(function (field) {
+        if (field === getNoteField()) return;
         var wrapper = document.createElement("div");
         wrapper.className = "booking-widget__field";
 
@@ -1973,6 +2004,13 @@
           },
         ];
       }
+
+      var requestText = (pendingNote || "").trim();
+      rows.push({
+        label: getNoteField() ? getNoteField().label : "Request (optional)",
+        value: requestText || "-",
+        icon: "note",
+      });
 
       rows.forEach(function (row) {
         if (!row) return;
