@@ -128,7 +128,6 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: "19px",
     color: TEXT_MUTED,
     margin: "0 0 14px",
-    maxWidth: "620px",
   },
   stepButton: {
     display: "inline-flex",
