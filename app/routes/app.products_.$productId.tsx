@@ -352,7 +352,7 @@ const ui: Record<string, React.CSSProperties> = {
   },
   dayGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(min(320px, 100%), 1fr))",
     gap: "12px",
     width: "100%",
   },
@@ -446,6 +446,7 @@ const ui: Record<string, React.CSSProperties> = {
     alignItems: "flex-start",
     gap: "4px",
     width: "200px",
+    maxWidth: "100%",
     flex: "none",
   },
   fieldGrow: {
@@ -667,7 +668,7 @@ const ui: Record<string, React.CSSProperties> = {
     alignItems: "center",
     padding: "10px 16px",
     gap: "4px",
-    minWidth: "188px",
+    minWidth: "min(188px, 100%)",
     height: "42px",
     background: BLUE,
     borderRadius: "10px",
@@ -1828,6 +1829,7 @@ export default function BookableProductPage() {
 
               <button
                 type="button"
+                className="eb-add-btn"
                 style={{
                   ...ui.addButton,
                   ...(isAddingBlackout

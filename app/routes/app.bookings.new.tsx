@@ -316,7 +316,7 @@ const S = {
     display: "flex",
     flexDirection: "column",
     flex: "1 1 250px",
-    minWidth: "250px",
+    minWidth: "min(250px, 100%)",
   } as React.CSSProperties,
   monthHeader: {
     boxSizing: "border-box",
@@ -1514,7 +1514,11 @@ export default function NewBookingPage() {
   ) => {
     const paneLabel = `${MONTH_SHORT[month - 1]} ${year}`;
     return (
-      <div key={`pane-${year}-${month}`} style={S.monthPane}>
+      <div
+        key={`pane-${year}-${month}`}
+        className="nb-month-pane"
+        style={S.monthPane}
+      >
         <div style={S.monthHeader}>
           <button
             type="button"
@@ -1633,7 +1637,7 @@ export default function NewBookingPage() {
         </div>
 
         <div style={S.innerCard}>
-          <div style={S.fieldsRow}>
+          <div className="eb-touch" style={S.fieldsRow}>
             <div style={S.fieldBlock}>
               <label htmlFor="nb-product" style={S.fieldLabel}>
                 Select Product
@@ -1821,6 +1825,7 @@ export default function NewBookingPage() {
             {(selectedBookingType === "SLOT" ||
               selectedBookingType === "BUNDLE") && (
               <div
+                className="nb-slots-col"
                 style={S.slotsColumn}
                 role="group"
                 aria-label={
@@ -1945,7 +1950,7 @@ export default function NewBookingPage() {
           <>
             <div style={S.innerCard}>
               <div style={S.qtyNoteRow}>
-                <div style={S.qtyBlock}>
+                <div className="nb-qty-block" style={S.qtyBlock}>
                   <div style={S.qtyNoteLabelRow}>
                     <span style={S.qtyNoteLabel}>Quantity</span>
                     {selectedSlot && !quantityLocked && maxQuantity <= 5 && (
@@ -2031,7 +2036,7 @@ export default function NewBookingPage() {
             </div>
 
             <div style={S.innerCard}>
-              <div style={S.fieldsRow}>
+              <div className="eb-touch" style={S.fieldsRow}>
                 <div style={S.fieldBlock}>
                   <label htmlFor="nb-customer-name" style={S.fieldLabel}>
                     Customer Name
@@ -2124,7 +2129,10 @@ export default function NewBookingPage() {
               )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
+            <div
+              className="nb-save-row"
+              style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}
+            >
               <div style={{ ...saveWrapperStyle(), width: "auto", minWidth: "143px" }}>
                 <button
                   type="button"

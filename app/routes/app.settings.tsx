@@ -59,7 +59,7 @@ export default function SettingsLayout() {
               Configure your store's booking rules and preferences.
             </p>
           </div>
-          <div style={saveWrapperStyle()}>
+          <div className="eb-settings-save" style={saveWrapperStyle()}>
             <button
               style={saveButtonStyle(isSaving)}
               disabled={!saveHandler || isSaving}
@@ -70,7 +70,7 @@ export default function SettingsLayout() {
           </div>
         </div>
 
-        <div style={styles.tabBar}>
+        <div className="eb-tab-bar" style={styles.tabBar}>
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}

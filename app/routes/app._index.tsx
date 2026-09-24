@@ -933,30 +933,58 @@ export default function Dashboard() {
             .eb-date-input {
               position: relative;
             }
-            @media (max-width: 700px) {
+            @media (max-width: 950px) {
               .eb-analytics-card {
                 height: auto !important;
               }
+              .eb-report-card {
+                min-height: 420px;
+              }
+              .eb-analytics-filter-row {
+                flex-wrap: wrap !important;
+                height: auto !important;
+                max-width: none !important;
+              }
+              .eb-analytics-filter-row > div {
+                flex: 1 1 180px !important;
+                height: auto !important;
+              }
+              .eb-analytics-filter-row > div:first-child {
+                flex-basis: 100% !important;
+              }
+              .eb-analytics-filter-row > div:last-child {
+                flex: 0 0 auto !important;
+              }
+              .eb-stat-tile {
+                height: auto !important;
+                min-height: 88px;
+              }
+            }
+            @media (max-width: 700px) {
               .eb-reports-row {
                 flex-direction: column !important;
               }
               .eb-report-card {
                 height: auto !important;
+                min-height: 0;
                 width: 100% !important;
               }
-              .eb-analytics-filter-row {
-                flex-wrap: wrap !important;
-                height: auto !important;
-              }
-              .eb-analytics-filter-row > div {
-                flex: 1 1 100% !important;
-                height: auto !important;
+              .eb-analytics-filter-row > div:not(:first-child):not(:last-child) {
+                flex: 1 1 calc(50% - 8px) !important;
               }
               .eb-analytics-stats-row {
                 flex-wrap: wrap !important;
               }
               .eb-stat-tile {
                 flex: 1 1 calc(50% - 9px) !important;
+              }
+            }
+            @media (max-width: 480px) {
+              .eb-analytics-filter-row > div:not(:first-child):not(:last-child) {
+                flex: 1 1 100% !important;
+              }
+              .eb-report-card-header {
+                flex-wrap: wrap !important;
               }
             }
             @media (max-width: 420px) {
@@ -1051,7 +1079,7 @@ export default function Dashboard() {
 
           <div className="eb-reports-row" style={analyticsStyles.reportsRow}>
             <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
-              <div style={analyticsStyles.reportCardHeader}>
+              <div className="eb-report-card-header" style={analyticsStyles.reportCardHeader}>
                 <h2 style={analyticsStyles.heading}>
                   {donutView === "hours"
                     ? "Peak Hours"

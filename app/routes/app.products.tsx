@@ -494,7 +494,7 @@ export default function BookingProductsPage() {
             </p>
           ) : (
             <div style={styles.tableWrap}>
-              <table style={styles.table}>
+              <table className="eb-table" style={styles.table}>
                 <thead>
                   <tr>
                     <th style={styles.th}>Product</th>
@@ -517,9 +517,14 @@ export default function BookingProductsPage() {
                       isPending || (!hasLocations && !product.isEnabled);
 
                     return (
-                      <tr key={product.id}>
-                        <td style={styles.td}>{product.title}</td>
-                        <td style={{ ...styles.td, ...styles.tdCenter }}>
+                      <tr key={product.id} className="eb-row">
+                        <td className="eb-cell-primary" style={styles.td}>
+                          {product.title}
+                        </td>
+                        <td
+                          data-label="Status"
+                          style={{ ...styles.td, ...styles.tdCenter }}
+                        >
                           <span
                             style={{
                               ...styles.statusBadge,
@@ -530,7 +535,10 @@ export default function BookingProductsPage() {
                             {product.status}
                           </span>
                         </td>
-                        <td style={{ ...styles.td, ...styles.tdCenter }}>
+                        <td
+                          data-label="Booking enabled"
+                          style={{ ...styles.td, ...styles.tdCenter }}
+                        >
                           <button
                             type="button"
                             role="switch"
@@ -561,7 +569,10 @@ export default function BookingProductsPage() {
                             )}
                           </button>
                         </td>
-                        <td style={{ ...styles.td, ...styles.tdAction }}>
+                        <td
+                          className="eb-cell-action"
+                          style={{ ...styles.td, ...styles.tdAction }}
+                        >
                           <Link
                             to={`/app/products/${product.id.split("/").pop()}`}
                             style={styles.iconButton}

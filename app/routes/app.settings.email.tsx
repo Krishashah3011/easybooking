@@ -461,8 +461,8 @@ export default function EmailSettingsTab() {
                         </div>
                       </div>
 
-                      <div style={editorPreviewRowStyle}>
-                        <div style={editorColumnStyle}>
+                      <div className="eb-email-row" style={editorPreviewRowStyle}>
+                        <div className="eb-email-col" style={editorColumnStyle}>
                           <div style={editorFieldGroupStyle}>
                             <div style={styles.clientFieldLabel}>Email Body</div>
                             <RichTextEditor
@@ -487,7 +487,7 @@ export default function EmailSettingsTab() {
                         </div>
 
                         {previewOpen[template.type] && (
-                          <div style={previewColumnStyle}>
+                          <div className="eb-email-col eb-email-preview" style={previewColumnStyle}>
                             <div style={hiddenLabelSpacerStyle} aria-hidden="true">
                               Email Body
                             </div>
@@ -533,13 +533,14 @@ function EmailPreview({
 
 const subjectRowStyle: React.CSSProperties = {
   display: "flex",
+  flexWrap: "wrap",
   alignItems: "flex-end",
-  gap: "16px",
+  gap: "12px 16px",
 };
 
 const subjectFieldGroupStyle: React.CSSProperties = {
   ...styles.clientFieldGroup,
-  flex: "1 1 50%",
+  flex: "1 1 260px",
   minWidth: 0,
 };
 

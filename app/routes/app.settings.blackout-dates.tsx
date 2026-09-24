@@ -163,6 +163,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "5px 10px",
     gap: "10px",
     width: "200px",
+    maxWidth: "100%",
     height: "34px",
     background: "#FFFFFF",
     border: `1px solid ${INPUT_BORDER}`,
@@ -220,7 +221,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "10px 16px",
     gap: "4px",
     width: "auto",
-    minWidth: "188px",
+    minWidth: "min(188px, 100%)",
     height: "42px",
     background: ACCENT,
     borderRadius: "10px",
@@ -530,6 +531,7 @@ export default function BlackoutDatesPage() {
 
               <button
                 type="button"
+                className="eb-add-btn"
                 style={{
                   ...styles.addButton,
                   ...(isAdding ? styles.addButtonDisabled : {}),

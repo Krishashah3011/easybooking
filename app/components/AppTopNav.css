@@ -43,3 +43,178 @@
   outline: 2px solid #005bd3;
   outline-offset: 2px;
 }
+
+.eb-cell-value {
+  display: contents;
+}
+
+@media (max-width: 640px) {
+  .eb-table {
+    display: block;
+    min-width: 0 !important;
+    table-layout: auto !important;
+  }
+  .eb-table colgroup,
+  .eb-table thead {
+    display: none !important;
+  }
+  .eb-table tbody,
+  .eb-table tr {
+    display: block;
+    width: 100%;
+  }
+  .eb-table tr.eb-row {
+    padding: 10px 0;
+    border-top: 1px solid #dbdbdb;
+  }
+  .eb-table tbody > tr.eb-row:first-child {
+    border-top: none;
+  }
+  .eb-table tr.eb-row > td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0 !important;
+    border-top: none !important;
+    text-align: right !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere;
+  }
+  .eb-table tr.eb-row > td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-weight: 600;
+    text-align: left;
+    color: #373737;
+  }
+  .eb-table tr.eb-row > td.eb-cell-primary {
+    justify-content: flex-start;
+    text-align: left !important;
+    font-weight: 600;
+  }
+  .eb-table tr.eb-row > td.eb-cell-action {
+    justify-content: flex-end;
+  }
+  .eb-table tr.eb-expanded-row > td {
+    display: block;
+    padding: 0 0 12px !important;
+    border-top: none !important;
+  }
+  .eb-cell-value {
+    display: block;
+    min-width: 0;
+    text-align: right;
+  }
+}
+
+@media (max-width: 720px) {
+  .eb-slot-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .eb-slot-row > div {
+    min-width: 0 !important;
+  }
+  .eb-reschedule-row > select,
+  .eb-reschedule-row > input {
+    width: auto !important;
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+}
+@media (max-width: 480px) {
+  .eb-chip-group {
+    gap: 8px 12px !important;
+  }
+  .eb-slot-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .eb-reschedule-row > select,
+  .eb-reschedule-row > input {
+    flex-basis: 100%;
+  }
+  .eb-reschedule-row > button {
+    flex: 1 1 calc(50% - 4px);
+  }
+}
+
+@media (max-width: 720px) {
+  .nb-slots-col {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-height: 260px !important;
+  }
+  .nb-month-pane {
+    min-width: 0 !important;
+  }
+}
+@media (max-width: 480px) {
+  .nb-day {
+    font-size: 14px !important;
+  }
+  .nb-qty-block {
+    flex: 1 1 100% !important;
+  }
+  .nb-save-row > div,
+  .nb-save-row button {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .eb-add-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    align-self: stretch !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .eb-email-row {
+    flex-direction: column !important;
+  }
+  .eb-email-col {
+    flex: 0 0 auto !important;
+    max-width: 100% !important;
+    width: 100%;
+  }
+  .eb-email-preview > [aria-hidden="true"] {
+    display: none;
+  }
+}
+@media (max-width: 720px) {
+  .eb-tab-bar {
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    background:
+      linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)) left center / 40px 100% no-repeat local,
+      linear-gradient(to left, #fff 30%, rgba(255, 255, 255, 0)) right center / 40px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0)) left center / 12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0)) right center / 12px 100% no-repeat scroll,
+      #fff !important;
+  }
+}
+@media (max-width: 480px) {
+  .eb-settings-save,
+  .eb-settings-save > button {
+    width: 100% !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .eb-touch select,
+  .eb-touch button,
+  .eb-touch input[type="date"],
+  .eb-touch input[type="text"],
+  .eb-touch input[type="email"],
+  .eb-touch input[type="tel"] {
+    min-height: 44px;
+  }
+  .eb-tap {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

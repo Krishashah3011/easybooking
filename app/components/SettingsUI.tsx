@@ -14,8 +14,10 @@ export const styles: Record<string, React.CSSProperties> = {
   },
   headerRow: {
     display: "flex",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "12px",
     marginBottom: "16px",
   },
   heading: {

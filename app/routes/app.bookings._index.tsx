@@ -908,6 +908,7 @@ function EyeButton({
   return (
     <button
       type="button"
+      className="eb-tap"
       style={{
         ...S.iconButton,
         ...(expanded ? { background: "#EAF1F8" } : {}),
@@ -1057,12 +1058,12 @@ function BookingDetails({
     <div style={S.detailsCard}>
       <DetailsResponsiveStyles />
       <div style={S.detailsHeaderRow}>
-        <div style={S.detailsHeaderLeft}>
+        <div className="eb-chip-group" style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
           <span style={S.customerChip}>{booking.customerName ?? "—"}</span>
         </div>
 
-        <div style={S.dateTimeChipsRow}>
+        <div className="eb-chip-group" style={S.dateTimeChipsRow}>
           <span style={S.dateTimeChip}>{dateLabel}</span>
           {timeLabel && <span style={S.dateTimeChip}>{timeLabel}</span>}
         </div>
@@ -1082,6 +1083,7 @@ function BookingDetails({
           {onToggle && (
             <button
               type="button"
+              className="eb-tap"
               style={S.chevronToggle}
               onClick={onToggle}
               aria-label="Collapse booking details"
@@ -1111,6 +1113,7 @@ function BookingDetails({
 
       {isRescheduling ? (
         <div
+          className="eb-reschedule-row eb-touch"
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -1222,7 +1225,7 @@ function BookingDetails({
         </FieldBlock>
 
         {!isCancelled && !isCompleted ? (
-          <div className="eb-action-buttons" style={S.cancelBookingWrap}>
+          <div className="eb-action-buttons eb-touch" style={S.cancelBookingWrap}>
             {!isRescheduling && (
               <button
                 type="button"
@@ -1385,12 +1388,12 @@ function BundleGroupDetails({
     <div style={S.detailsCard}>
       <DetailsResponsiveStyles />
       <div style={S.detailsHeaderRow}>
-        <div style={S.detailsHeaderLeft}>
+        <div className="eb-chip-group" style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
           <span style={S.customerChip}>{first.customerName ?? "—"}</span>
         </div>
 
-        <div style={S.dateTimeChipsRow}>
+        <div className="eb-chip-group" style={S.dateTimeChipsRow}>
           <span style={S.dateTimeChip}>{when.date}</span>
           {when.sub && <span style={S.dateTimeChip}>{when.sub}</span>}
         </div>
@@ -1410,6 +1413,7 @@ function BundleGroupDetails({
           {onToggle && (
             <button
               type="button"
+              className="eb-tap"
               style={S.chevronToggle}
               onClick={onToggle}
               aria-label="Collapse booking details"
@@ -1450,7 +1454,7 @@ function BundleGroupDetails({
         { length: Math.ceil(Math.min(group.bookings.length, SLOT_LABELS.length) / 3) },
         (_, rowIndex) => (
           <Fragment key={rowIndex}>
-            <div style={S.fieldsRow}>
+            <div className="eb-slot-row" style={S.fieldsRow}>
               {group.bookings.slice(rowIndex * 3, rowIndex * 3 + 3).map((booking, i) => (
                 <FieldBlock
                   key={booking.id}
@@ -1468,6 +1472,7 @@ function BundleGroupDetails({
       {isRescheduling && rescheduleTarget && (
         <>
           <div
+            className="eb-reschedule-row eb-touch"
             style={{
               display: "flex",
               flexWrap: "wrap",
@@ -1563,7 +1568,7 @@ function BundleGroupDetails({
         </FieldBlock>
 
         {!isCancelled && !isCompleted ? (
-          <div className="eb-action-buttons" style={S.cancelBookingWrap}>
+          <div className="eb-action-buttons eb-touch" style={S.cancelBookingWrap}>
             {!isRescheduling && (
               <button
                 type="button"
@@ -1605,45 +1610,51 @@ function SingleRow({
 
   return (
     <Fragment>
-      <tr>
-        <td style={S.td} title={booking.customerName ?? undefined}>
+      <tr className="eb-row">
+        <td
+          className="eb-cell-primary"
+          style={S.td}
+          title={booking.customerName ?? undefined}
+        >
           {booking.customerName ?? "—"}
         </td>
-        <td style={S.td} title={booking.productTitle}>
+        <td data-label="Product" style={S.td} title={booking.productTitle}>
           {booking.productTitle}
         </td>
-        <td style={{ ...S.td, ...S.tdCenter }}>
+        <td data-label="Status" style={{ ...S.td, ...S.tdCenter }}>
           <StatusPill status={booking.displayStatus} />
         </td>
-        <td style={{ ...S.td, ...S.tdCenter }}>
+        <td data-label="Type" style={{ ...S.td, ...S.tdCenter }}>
           {TYPE_SHORT_LABELS[booking.bookingType]}
         </td>
-        <td style={{ ...S.td, ...S.tdCenter }}>
-          {booking.bookingType === "MULTI_DAY" ? (
-            <>
-              <div>{formatDateDisplay(booking.date)}</div>
-              <div
-                aria-hidden="true"
-                style={{
-                  fontSize: "12px",
-                  lineHeight: "12px",
-                  color: TEXT_MUTED,
-                }}
-              >
-                ↓
-              </div>
-              <div>
-                {booking.endDate ? formatDateDisplay(booking.endDate) : "—"}
-              </div>
-            </>
-          ) : (
-            <>
-              {when.date}
-              {when.sub && <span style={S.subLine}>{when.sub}</span>}
-            </>
-          )}
+        <td data-label="Date" style={{ ...S.td, ...S.tdCenter }}>
+          <div className="eb-cell-value">
+            {booking.bookingType === "MULTI_DAY" ? (
+              <>
+                <div>{formatDateDisplay(booking.date)}</div>
+                <div
+                  aria-hidden="true"
+                  style={{
+                    fontSize: "12px",
+                    lineHeight: "12px",
+                    color: TEXT_MUTED,
+                  }}
+                >
+                  ↓
+                </div>
+                <div>
+                  {booking.endDate ? formatDateDisplay(booking.endDate) : "—"}
+                </div>
+              </>
+            ) : (
+              <>
+                {when.date}
+                {when.sub && <span style={S.subLine}>{when.sub}</span>}
+              </>
+            )}
+          </div>
         </td>
-        <td style={{ ...S.td, ...S.tdAction }}>
+        <td className="eb-cell-action" style={{ ...S.td, ...S.tdAction }}>
           <EyeButton
             expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -1654,7 +1665,7 @@ function SingleRow({
         </td>
       </tr>
       {open && (
-        <tr>
+        <tr className="eb-expanded-row">
           <td colSpan={COLUMN_COUNT} style={{ ...S.td, ...S.tdExpanded }}>
             <BookingDetails
               booking={booking}
@@ -1751,21 +1762,27 @@ function GroupRow({
 
   return (
     <Fragment>
-      <tr>
-        <td style={S.td} title={first.customerName ?? undefined}>
+      <tr className="eb-row">
+        <td
+          className="eb-cell-primary"
+          style={S.td}
+          title={first.customerName ?? undefined}
+        >
           {first.customerName ?? "—"}
         </td>
-        <td style={S.td} title={productLabel}>
+        <td data-label="Product" style={S.td} title={productLabel}>
           {productLabel}
         </td>
-        <td style={{ ...S.td, ...S.tdCenter }}>
+        <td data-label="Status" style={{ ...S.td, ...S.tdCenter }}>
           <StatusPill status={groupStatus} />
         </td>
-        <td style={{ ...S.td, ...S.tdCenter }}>
+        <td data-label="Type" style={{ ...S.td, ...S.tdCenter }}>
           {TYPE_SHORT_LABELS[first.bookingType]}
         </td>
-        <td style={{ ...S.td, ...S.tdCenter }}>{group.bookings.length} slots</td>
-        <td style={{ ...S.td, ...S.tdAction }}>
+        <td data-label="Date" style={{ ...S.td, ...S.tdCenter }}>
+          {group.bookings.length} slots
+        </td>
+        <td className="eb-cell-action" style={{ ...S.td, ...S.tdAction }}>
           <EyeButton
             expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -1776,7 +1793,7 @@ function GroupRow({
         </td>
       </tr>
       {open && (
-        <tr>
+        <tr className="eb-expanded-row">
           <td colSpan={COLUMN_COUNT} style={{ ...S.td, ...S.tdExpanded }}>
             {first.bookingType === "BUNDLE" ? (
               <BundleGroupDetails
@@ -1941,6 +1958,7 @@ function BookingsListPage({
               </div>
               <button
                 type="button"
+                className="eb-tap"
                 style={{
                   ...S.squareIconButton,
                   ...(filtersOpen || hasActiveFilters
@@ -1956,6 +1974,7 @@ function BookingsListPage({
               </button>
               <button
                 type="button"
+                className="eb-tap"
                 style={{
                   ...S.squareIconButton,
                   ...(isRefreshingBookings ? { opacity: 0.5 } : {}),
@@ -1971,7 +1990,7 @@ function BookingsListPage({
           </div>
 
           {filtersOpen && (
-            <div style={S.filterPanel}>
+            <div className="eb-touch" style={S.filterPanel}>
               <label style={S.filterField}>
                 <span style={S.fieldLabel}>Status</span>
                 <select
@@ -2054,7 +2073,7 @@ function BookingsListPage({
                 ...(isRefreshingBookings ? { opacity: 0.6 } : {}),
               }}
             >
-              <table style={S.table}>
+              <table className="eb-table" style={S.table}>
                 <colgroup>
                   <col style={{ width: "170px" }} />
                   <col style={{ width: "180px" }} />
