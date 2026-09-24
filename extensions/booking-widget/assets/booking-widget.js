@@ -65,6 +65,7 @@
     selectDateHint: "Select a date to see available times.",
     selectMonth: "Select month, currently {month}",
     alreadyBooked: "This slots are added to Cart for this product:",
+    addedToCartSuccess: "Yay, Slot is successfully added to cart.",
     removeSlot: "Remove this slot",
     addAnotherSlotLink: "+ Add another slot",
     multiAddError:
@@ -267,12 +268,6 @@
     var unavailableEl = root.querySelector("[data-booking-unavailable]");
     var multiAddStatusEl = root.querySelector("[data-booking-multi-add-status]");
     var cartReminderEl = root.querySelector("[data-booking-cart-reminder]");
-    var cartReminderTitleEl = root.querySelector(
-      "[data-booking-cart-reminder-title]",
-    );
-    var cartReminderListEl = root.querySelector(
-      "[data-booking-cart-reminder-list]",
-    );
 
     var overlayEl = root.querySelector("[data-booking-overlay]");
     var closeBtn = root.querySelector("[data-booking-close]");
@@ -820,7 +815,9 @@
     function updateAvailability() {
       if (!locationsLoaded) return;
       var hasLocations = locations.length > 0 && productBookingEnabled;
-      if (triggerBtn) triggerBtn.hidden = !hasLocations;
+      if (triggerBtn) {
+        triggerBtn.hidden = !hasLocations || confirmedSlots.length > 0;
+      }
       if (unavailableEl) {
         unavailableEl.hidden = hasLocations;
         if (!hasLocations) {
@@ -2121,6 +2118,70 @@
       });
     }
 
+    var SELECTION_CALENDAR_ICON_SVG =
+      '<svg viewBox="11 11 21 21" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">' +
+      '<path d="M12.5 29V17H31.5V29C31.5 30.1 30.6 31 29.5 31H14.5C13.4 31 12.5 30.1 12.5 29Z" fill="#CFD8DC"/>' +
+      '<path d="M31.5 15V18H12.5V15C12.5 13.9 13.4 13 14.5 13H29.5C30.6 13 31.5 13.9 31.5 15Z" fill="#F44336"/>' +
+      '<path d="M26.5 16.5C27.3284 16.5 28 15.8284 28 15C28 14.1716 27.3284 13.5 26.5 13.5C25.6716 13.5 25 14.1716 25 15C25 15.8284 25.6716 16.5 26.5 16.5Z" fill="#B71C1C"/>' +
+      '<path d="M17.5 16.5C18.3284 16.5 19 15.8284 19 15C19 14.1716 18.3284 13.5 17.5 13.5C16.6716 13.5 16 14.1716 16 15C16 15.8284 16.6716 16.5 17.5 16.5Z" fill="#B71C1C"/>' +
+      '<path d="M26.5 11.5C25.95 11.5 25.5 11.95 25.5 12.5V15C25.5 15.55 25.95 16 26.5 16C27.05 16 27.5 15.55 27.5 15V12.5C27.5 11.95 27.05 11.5 26.5 11.5ZM17.5 11.5C16.95 11.5 16.5 11.95 16.5 12.5V15C16.5 15.55 16.95 16 17.5 16C18.05 16 18.5 15.55 18.5 15V12.5C18.5 11.95 18.05 11.5 17.5 11.5Z" fill="#B0BEC5"/>' +
+      '<path d="M16.5 20H18.5V22H16.5V20ZM19.5 20H21.5V22H19.5V20ZM22.5 20H24.5V22H22.5V20ZM25.5 20H27.5V22H25.5V20ZM16.5 23H18.5V25H16.5V23ZM19.5 23H21.5V25H19.5V23ZM22.5 23H24.5V25H22.5V23ZM25.5 23H27.5V25H25.5V23ZM16.5 26H18.5V28H16.5V26ZM19.5 26H21.5V28H19.5V26ZM22.5 26H24.5V28H22.5V26ZM25.5 26H27.5V28H25.5V26Z" fill="#90A4AE"/>' +
+      "</svg>";
+
+    var SUCCESS_CHECK_ICON_SVG =
+      '<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">' +
+      '<circle cx="10" cy="10" r="10" fill="#22C55E"/>' +
+      '<path d="M6 10.2L8.6 12.8L14 7.3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+      "</svg>";
+
+    function createSelectionRow(text, onRemove) {
+      var row = document.createElement("div");
+      row.className = "booking-widget__selection-row";
+
+      var icon = document.createElement("span");
+      icon.className = "booking-widget__selection-row-icon";
+      icon.innerHTML = SELECTION_CALENDAR_ICON_SVG;
+      row.appendChild(icon);
+
+      var label = document.createElement("span");
+      label.className = "booking-widget__selection-row-text";
+      label.textContent = text;
+      row.appendChild(label);
+
+      if (onRemove) {
+        var removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "booking-widget__selection-row-remove";
+        removeBtn.setAttribute("aria-label", strings.removeSlot);
+        removeBtn.textContent = "\u00d7";
+        removeBtn.addEventListener("click", onRemove);
+        row.appendChild(removeBtn);
+      }
+
+      return row;
+    }
+
+    function buildSelectionCard(rows) {
+      var card = document.createElement("div");
+      card.className = "booking-widget__selection-card";
+
+      rows.forEach(function (row, i) {
+        card.appendChild(row);
+        if (i < rows.length - 1) {
+          var divider = document.createElement("hr");
+          divider.className = "booking-widget__selection-divider";
+          card.appendChild(divider);
+        }
+      });
+
+      return card;
+    }
+
+    // Right after "Confirm" the pending slot(s) are shown in this card so
+    // the shopper can see what they've picked before actually adding it to
+    // cart. There's no "add another slot" link here anymore — that
+    // duplicated the trigger button, and adding a second, separate booking
+    // pre-cart isn't supported from this card.
     function updateSelectionDisplay() {
       saveConfirmedSlots();
       selectionEl.innerHTML = "";
@@ -2128,75 +2189,54 @@
       if (confirmedSlots.length === 0) {
         selectionEl.hidden = true;
         if (triggerBtn) {
+          triggerBtn.textContent = strings.triggerBook;
           triggerBtn.hidden = !(locationsLoaded && locations.length > 0);
         }
         return;
       }
 
-      triggerBtn.hidden = true;
+      if (triggerBtn) triggerBtn.hidden = true;
       selectionEl.hidden = false;
 
-      confirmedSlots.forEach(function (entry, index) {
-        var chip = document.createElement("span");
-        chip.className = "booking-widget__selection-chip";
+      var rows = [];
 
-        var label = document.createElement("span");
-        label.className = "booking-widget__selection-chip-text";
+      confirmedSlots.forEach(function (entry, index) {
+        var removeEntry = function () {
+          confirmedSlots.splice(index, 1);
+          updateSelectionDisplay();
+        };
 
         if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
-          label.classList.add("booking-widget__selection-chip-text--bundle");
           entry.slot.bundleSessions.forEach(function (session, sessionIndex) {
-            var line = document.createElement("span");
-            line.className = "booking-widget__selection-chip-line";
             var lineText =
               format(strings.sessionConfirmed, { number: sessionIndex + 1 }) +
               ": " +
               formatDateDisplay(session.date) +
-              " · " +
+              ", " +
               formatTimeRangeDisplay(session.slot);
             if (entry.quantity && entry.quantity > 1) {
               lineText += " \u00d7 " + entry.quantity;
             }
-            line.textContent = lineText;
-            label.appendChild(line);
+            rows.push(
+              createSelectionRow(lineText, sessionIndex === 0 ? removeEntry : null),
+            );
           });
         } else {
-          var chipText = format(strings.selected, {
-            date: formatDateDisplay(entry.date),
-            time: formatTimeRangeDisplay(
+          var rowText =
+            formatDateDisplay(entry.date) +
+            ", " +
+            formatTimeRangeDisplay(
               entry.slot,
               productBookingType === "SLOT" || productBookingType === "BUNDLE",
-            ),
-          });
+            );
           if (entry.quantity && entry.quantity > 1) {
-            chipText += " \u00d7 " + entry.quantity;
+            rowText += " \u00d7 " + entry.quantity;
           }
-          label.textContent = chipText;
+          rows.push(createSelectionRow(rowText, removeEntry));
         }
-        chip.appendChild(label);
-
-        var removeBtn = document.createElement("button");
-        removeBtn.type = "button";
-        removeBtn.className = "booking-widget__selection-remove";
-        removeBtn.setAttribute("aria-label", strings.removeSlot);
-        removeBtn.textContent = "\u00d7";
-        removeBtn.addEventListener("click", function () {
-          confirmedSlots.splice(index, 1);
-          updateSelectionDisplay();
-        });
-        chip.appendChild(removeBtn);
-
-        selectionEl.appendChild(chip);
       });
 
-      var addMoreBtn = document.createElement("button");
-      addMoreBtn.type = "button";
-      addMoreBtn.className = "booking-widget__selection-add-more";
-      addMoreBtn.textContent = strings.addAnotherSlotLink;
-      addMoreBtn.addEventListener("click", function () {
-        openModal();
-      });
-      selectionEl.appendChild(addMoreBtn);
+      selectionEl.appendChild(buildSelectionCard(rows));
     }
 
     function refreshCartReminder() {
@@ -2220,17 +2260,32 @@
     }
 
     function renderCartReminder(items) {
-      cartReminderListEl.innerHTML = "";
+      cartReminderEl.innerHTML = "";
 
       if (items.length === 0) {
         cartReminderEl.hidden = true;
         return;
       }
 
-      cartReminderTitleEl.textContent = strings.alreadyBooked;
+      var banner = document.createElement("div");
+      banner.className = "booking-widget__cart-success-banner";
+
+      var icon = document.createElement("span");
+      icon.className = "booking-widget__cart-success-icon";
+      icon.innerHTML = SUCCESS_CHECK_ICON_SVG;
+      banner.appendChild(icon);
+
+      var message = document.createElement("p");
+      message.className = "booking-widget__cart-success-message";
+      message.textContent = strings.addedToCartSuccess;
+      banner.appendChild(message);
+
+      cartReminderEl.appendChild(banner);
+
+      var rows = [];
 
       items.forEach(function (item) {
-        var li = document.createElement("li");
+        var label = item.product_title || item.title || "";
         var date = item.properties["Booking Date"];
         var time = item.properties["Booking Time"] || "";
 
@@ -2241,19 +2296,19 @@
           sessionCount += 1;
         }
 
-        if (sessionCount > 1) {
-          li.textContent = format(strings.sessionsBooked, {
-            count: sessionCount,
-          });
-        } else {
-          li.textContent = format(strings.selected, {
-            date: formatDateDisplay(date),
-            time: time,
-          });
+        for (var s = 1; s <= sessionCount; s++) {
+          var sDate = s === 1 ? date : item.properties["Session " + s + " Date"];
+          var sTime = s === 1 ? time : item.properties["Session " + s + " Time"];
+          var rowText =
+            (label ? label + ": " : "") +
+            formatDateDisplay(sDate) +
+            ", " +
+            (sTime ? to12Hour(sTime) : "");
+          rows.push(createSelectionRow(rowText));
         }
-        cartReminderListEl.appendChild(li);
       });
 
+      cartReminderEl.appendChild(buildSelectionCard(rows));
       cartReminderEl.hidden = false;
     }
 
