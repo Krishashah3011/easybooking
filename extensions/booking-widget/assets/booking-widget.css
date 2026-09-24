@@ -1270,6 +1270,7 @@ body.booking-widget-lock-scroll {
   gap: 8px;
   min-height: 57px;
   flex: 1 1 240px;
+  flex-wrap: wrap;
   background: #f2f9ff;
   border: 1px solid #88b5e1;
   border-radius: 8px;
@@ -1303,9 +1304,25 @@ body.booking-widget-lock-scroll {
   white-space: nowrap;
 }
 
+.booking-widget__note-question {
+  order: -1;
+  flex: 0 0 100%;
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 18px;
+  color: #373737;
+  overflow-wrap: anywhere;
+}
+
+.booking-widget__note-question[hidden] {
+  display: none;
+}
+
 .booking-widget__note-input {
   box-sizing: border-box;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   height: 34px;
   padding: 5px 10px;
@@ -1400,6 +1417,16 @@ body.booking-widget-lock-scroll {
   font-size: 16px;
   line-height: 19px;
   color: #000;
+}
+
+.booking-widget__review-sub {
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 16px;
+  color: #555;
+  overflow-wrap: anywhere;
 }
 
 .booking-widget__review-value {

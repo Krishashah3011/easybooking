@@ -72,6 +72,44 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     width: "100%",
     minHeight: 0,
   },
+  reportCardHeader: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "nowrap",
+    gap: "12px",
+  },
+  donutToggle: {
+    display: "inline-flex",
+    flexShrink: 0,
+    boxSizing: "border-box",
+    padding: "3px",
+    gap: "2px",
+    background: "#F2F9FF",
+    border: "1px solid #D5E6F5",
+    borderRadius: "10px",
+  },
+  donutToggleBtn: {
+    border: "none",
+    background: "transparent",
+    color: "#4A5B6D",
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "13px",
+    lineHeight: "16px",
+    padding: "6px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    transition: "background 0.15s ease, color 0.15s ease",
+  },
+  donutToggleBtnActive: {
+    background: ANALYTICS_ACCENT,
+    color: "#FFFFFF",
+    fontWeight: 600,
+  },
+
   heading: {
     fontFamily: "Inter",
     fontWeight: 600,
@@ -803,6 +841,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const [productId, setProductId] = useState(reportFilters.bookableProductId);
+  const [donutView, setDonutView] = useState<"hours" | "days" | "months">("hours");
   const [dateFrom, setDateFrom] = useState(reportFilters.dateFrom);
   const [dateTo, setDateTo] = useState(reportFilters.dateTo);
 
@@ -1012,42 +1051,85 @@ export default function Dashboard() {
 
           <div className="eb-reports-row" style={analyticsStyles.reportsRow}>
             <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
-              <h2 style={analyticsStyles.heading}>Peak Hours</h2>
+              <div style={analyticsStyles.reportCardHeader}>
+                <h2 style={analyticsStyles.heading}>
+                  {donutView === "hours"
+                    ? "Peak Hours"
+                    : donutView === "days"
+                      ? "Popular Days"
+                      : "Popular Months"}
+                </h2>
+                <div
+                  role="tablist"
+                  aria-label="Choose chart view"
+                  style={analyticsStyles.donutToggle}
+                >
+                  {(
+                    [
+                      { value: "hours", label: "Hours" },
+                      { value: "days", label: "Days" },
+                      { value: "months", label: "Months" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="tab"
+                      aria-selected={donutView === opt.value}
+                      onClick={() => setDonutView(opt.value)}
+                      style={{
+                        ...analyticsStyles.donutToggleBtn,
+                        ...(donutView === opt.value
+                          ? analyticsStyles.donutToggleBtnActive
+                          : {}),
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <hr style={analyticsStyles.divider} />
               <div style={analyticsStyles.reportCardBody}>
-                <DonutChart
-                  rows={report.bookingsByHour.map((r) => ({ ...r, hour: to12Hour(r.hour) }))}
-                  labelKey="hour"
-                  countKey="count"
-                  emptyLabel="No bookings yet for this range."
-                />
+                {donutView === "hours" ? (
+                  <DonutChart
+                    key="hours"
+                    rows={report.bookingsByHour.map((r) => ({ ...r, hour: to12Hour(r.hour) }))}
+                    labelKey="hour"
+                    countKey="count"
+                    emptyLabel="No bookings yet for this range."
+                  />
+                ) : donutView === "days" ? (
+                  <DonutChart
+                    key="days"
+                    rows={report.bookingsByDayOfWeek}
+                    labelKey="day"
+                    countKey="count"
+                    emptyLabel="No bookings yet for this range."
+                  />
+                ) : (
+                  <DonutChart
+                    key="months"
+                    rows={report.bookingsByMonth}
+                    labelKey="month"
+                    countKey="count"
+                    emptyLabel="No bookings yet for this range."
+                  />
+                )}
               </div>
             </div>
 
             <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
-              <h2 style={analyticsStyles.heading}>Popular Days</h2>
+              <h2 style={analyticsStyles.heading}>Bookings by Product</h2>
               <hr style={analyticsStyles.divider} />
-              <div style={analyticsStyles.reportCardBody}>
-                <DonutChart
-                  rows={report.bookingsByDayOfWeek}
-                  labelKey="day"
+              <div style={analyticsStyles.productCardBody}>
+                <ProductLineChart
+                  rows={report.bookingsByProduct}
+                  labelKey="productTitle"
                   countKey="count"
                   emptyLabel="No bookings yet for this range."
                 />
               </div>
-            </div>
-          </div>
-
-          <div className="eb-analytics-card" style={analyticsStyles.card}>
-            <h2 style={analyticsStyles.heading}>Bookings by Product</h2>
-            <hr style={analyticsStyles.divider} />
-            <div style={analyticsStyles.productCardBody}>
-              <ProductLineChart
-                rows={report.bookingsByProduct}
-                labelKey="productTitle"
-                countKey="count"
-                emptyLabel="No bookings yet for this range."
-              />
             </div>
           </div>
         </>

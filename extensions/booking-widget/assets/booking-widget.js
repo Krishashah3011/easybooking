@@ -421,10 +421,27 @@
 
     function applyNoteQuestion() {
       var field = getNoteField();
-      var text = field ? field.label : "Note";
-      if (noteLabelEl) noteLabelEl.textContent = text;
+      if (noteLabelEl) noteLabelEl.textContent = "Note";
+      if (noteWrapEl) {
+        var questionEl = noteWrapEl.querySelector(
+          "[data-booking-note-question]",
+        );
+        if (field && !questionEl) {
+          questionEl = document.createElement("p");
+          questionEl.className = "booking-widget__note-question";
+          questionEl.setAttribute("data-booking-note-question", "");
+          noteWrapEl.insertBefore(questionEl, noteWrapEl.firstChild);
+        }
+        if (questionEl) {
+          questionEl.textContent = field ? field.label : "";
+          questionEl.hidden = !field;
+        }
+      }
       if (noteInputEl) {
-        noteInputEl.setAttribute("aria-label", text);
+        noteInputEl.setAttribute(
+          "aria-label",
+          field ? "Note: " + field.label : "Note",
+        );
         noteInputEl.placeholder = field
           ? "Type your answer here"
           : "Enter Your Request";
@@ -2007,7 +2024,8 @@
 
       var requestText = (pendingNote || "").trim();
       rows.push({
-        label: getNoteField() ? getNoteField().label : "Request (optional)",
+        label: "Note",
+        sub: getNoteField() ? getNoteField().label : "",
         value: requestText || "-",
         icon: "note",
       });
@@ -2022,6 +2040,12 @@
         var labelSpan = document.createElement("span");
         labelSpan.className = "booking-widget__review-label";
         labelSpan.textContent = row.label;
+        if (row.sub) {
+          var subSpan = document.createElement("span");
+          subSpan.className = "booking-widget__review-sub";
+          subSpan.textContent = row.sub;
+          labelSpan.appendChild(subSpan);
+        }
         var valueSpan = document.createElement("span");
         valueSpan.className = "booking-widget__review-value";
         valueSpan.textContent = row.value;

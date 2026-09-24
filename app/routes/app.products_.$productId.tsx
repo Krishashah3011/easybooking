@@ -350,16 +350,30 @@ const ui: Record<string, React.CSSProperties> = {
     gap: "8px 20px",
     width: "100%",
   },
-  dayTimeRow: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: "8px 16px",
+  dayGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+    gap: "12px",
     width: "100%",
-    padding: "6px 0",
   },
+  dayTimeRow: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    gap: "12px",
+    minHeight: "112px",
+    padding: "14px 16px",
+    background: "#FFFFFF",
+    border: "1px solid #E3E3E3",
+    borderRadius: "10px",
+    transition: "background 0.15s ease, border-color 0.15s ease",
+  },
+  dayTimeRowActive: {
+    background: "#F2F9FF",
+    border: "1px solid #88B5E1",
+  },
+
   dayTimeInputs: {
     display: "flex",
     flexDirection: "row",
@@ -1532,16 +1546,24 @@ export default function BookableProductPage() {
                       label="Select All"
                     />
                   </div>
+                  <div style={ui.dayGrid}>
                   {WEEKDAY_LABELS.map((day) => {
                     const dayTime = values.dayTimes?.[day.value];
                     const isChecked = dayTime != null;
                     return (
-                      <div key={day.value} style={ui.dayTimeRow}>
-                        <Checkbox
-                          checked={isChecked}
-                          onChange={() => toggleWorkingDay(day.value)}
-                          label={day.label}
-                        />
+                      <div
+                        key={day.value}
+                        style={{
+                          ...ui.dayTimeRow,
+                          ...(isChecked ? ui.dayTimeRowActive : {}),
+                        }}
+                      >
+                <Checkbox
+                    checked={isChecked}
+                    onChange={() => toggleWorkingDay(day.value)}
+                    label={day.label}
+                  />
+                        {!isChecked && <p style={ui.hintText}>Closed</p>}
                         {isChecked && (
                           <div style={ui.dayTimeInputs}>
                             <InlineTimeField
@@ -1564,6 +1586,7 @@ export default function BookableProductPage() {
                       </div>
                     );
                   })}
+                  </div>
                 </div>
                 {errors.dayTimes && (
                   <p style={ui.errorText}>{errors.dayTimes}</p>

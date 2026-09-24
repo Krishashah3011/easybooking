@@ -178,16 +178,30 @@ const styles: Record<string, React.CSSProperties> = {
     color: LABEL_GREY,
     margin: 0,
   },
-  dayTimeRow: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: "8px 16px",
+  dayGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+    gap: "12px",
     width: "100%",
-    padding: "6px 0",
   },
+  dayTimeRow: {
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    gap: "12px",
+    minHeight: "112px",
+    padding: "14px 16px",
+    background: "#FFFFFF",
+    border: "1px solid #E3E3E3",
+    borderRadius: "10px",
+    transition: "background 0.15s ease, border-color 0.15s ease",
+  },
+  dayTimeRowActive: {
+    background: "#F2F9FF",
+    border: "1px solid #88B5E1",
+  },
+
   dayTimeInputs: {
     display: "flex",
     flexDirection: "row",
@@ -553,6 +567,7 @@ export default function BookingSettingsPage() {
               label="Select All"
             />
           </div>
+          <div style={styles.dayGrid}>
           {WEEKDAY_LABELS.map((day) => {
             const dayTime = values.dayTimes?.[day.value];
             const isChecked = dayTime != null;
@@ -561,18 +576,25 @@ export default function BookingSettingsPage() {
                 ? dayTime.end <= dayTime.start
                 : false;
             return (
-              <div key={day.value} style={styles.dayTimeRow}>
+              <div
+                key={day.value}
+                style={{
+                  ...styles.dayTimeRow,
+                  ...(isChecked ? styles.dayTimeRowActive : {}),
+                }}
+              >
                 <Checkbox
-                  checked={isChecked}
-                  onChange={() => toggleWorkingDay(day.value)}
-                  label={day.label}
-                />
+                    checked={isChecked}
+                    onChange={() => toggleWorkingDay(day.value)}
+                    label={day.label}
+                  />
+                {!isChecked && <p style={styles.hintText}>Closed</p>}
                 {isChecked && (
                   <div
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "flex-end",
+                      alignItems: "flex-start",
                       gap: "4px",
                     }}
                   >
@@ -605,6 +627,7 @@ export default function BookingSettingsPage() {
               </div>
             );
           })}
+          </div>
         </div>
         {errors.dayTimes && (
           <p style={{ ...styles.hintText, color: "#D82C0D" }}>

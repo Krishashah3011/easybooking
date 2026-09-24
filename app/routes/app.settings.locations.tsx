@@ -251,6 +251,27 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     alignSelf: "stretch",
   },
+  dayGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+    gap: "10px",
+    width: "100%",
+  },
+  dayTile: {
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    minHeight: "48px",
+    padding: "10px 14px",
+    background: "#FFFFFF",
+    border: "1px solid #E3E3E3",
+    borderRadius: "10px",
+    transition: "background 0.15s ease, border-color 0.15s ease",
+  },
+  dayTileActive: {
+    background: "#F2F9FF",
+    border: "1px solid #88B5E1",
+  },
   daysRow: {
     display: "flex",
     flexDirection: "row",
@@ -827,15 +848,27 @@ function LocationEditor({
                   label="Select All"
                 />
               </div>
-              <div style={styles.daysRow}>
-                {WEEKDAY_LABELS.map((day) => (
-                  <Checkbox
-                    key={day.value}
-                    checked={(values.workingDays ?? []).includes(day.value)}
-                    onChange={() => toggleWorkingDay(day.value)}
-                    label={day.label}
-                  />
-                ))}
+              <div style={styles.dayGrid}>
+                {WEEKDAY_LABELS.map((day) => {
+                  const isChecked = (values.workingDays ?? []).includes(
+                    day.value,
+                  );
+                  return (
+                    <div
+                      key={day.value}
+                      style={{
+                        ...styles.dayTile,
+                        ...(isChecked ? styles.dayTileActive : {}),
+                      }}
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onChange={() => toggleWorkingDay(day.value)}
+                        label={day.label}
+                      />
+                    </div>
+                  );
+                })}
               </div>
               <p style={styles.descText}>
                 Leave blank to use the shop default. Only set these if

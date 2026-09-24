@@ -5,6 +5,11 @@ const DAY_NAMES = [
   "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
 ];
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 export type ReportFilters = {
   bookableProductId?: string;
   dateFrom?: string;
@@ -20,6 +25,7 @@ export type BookingReportData = {
   bookingsByProduct: { productTitle: string; count: number }[];
   bookingsByHour: { hour: string; count: number }[];
   bookingsByDayOfWeek: { day: string; count: number }[];
+  bookingsByMonth: { month: string; count: number }[];
 };
 
 const REPORT_ROW_CAP = 5000;
@@ -57,6 +63,7 @@ export async function getBookingReportData(
   const byProduct = new Map<string, number>();
   const byHour = new Map<string, number>();
   const byDay = new Map<number, number>();
+  const byMonth = new Map<number, number>();
 
   for (const booking of bookings) {
     if (booking.status === "CANCELLED") continue;
@@ -69,6 +76,11 @@ export async function getBookingReportData(
 
     const dow = dayOfWeek(booking.date);
     byDay.set(dow, (byDay.get(dow) ?? 0) + 1);
+
+    const monthIndex = Number(booking.date.slice(5, 7)) - 1;
+    if (monthIndex >= 0 && monthIndex < 12) {
+      byMonth.set(monthIndex, (byMonth.get(monthIndex) ?? 0) + 1);
+    }
   }
 
   const bookingsByProduct = Array.from(byProduct.entries())
@@ -84,6 +96,11 @@ export async function getBookingReportData(
     count: byDay.get(index) ?? 0,
   }));
 
+  const bookingsByMonth = MONTH_NAMES.map((month, index) => ({
+    month,
+    count: byMonth.get(index) ?? 0,
+  }));
+
   return {
     totalBookings,
     confirmedCount,
@@ -93,5 +110,6 @@ export async function getBookingReportData(
     bookingsByProduct,
     bookingsByHour,
     bookingsByDayOfWeek,
+    bookingsByMonth,
   };
 }
