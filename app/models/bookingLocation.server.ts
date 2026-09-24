@@ -1,10 +1,10 @@
 import type { BookingLocation } from "@prisma/client";
-import prisma from "../db.server";
-import { isValidTimezone } from "../utils/timezones";
-import { getBookingSettings } from "./bookingSettings.server";
+import prismaML from "../db.server";
+import { isValidTimezoneML } from "../utils/timezones";
+import { getBookingSettingsML } from "./bookingSettings.server";
 
-const MAX_NAME_LENGTH = 80;
-const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const MAX_NAME_LENGTH_ML = 80;
+const TIME_RE_ML = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export type LocationFormValues = {
   name: string;
@@ -17,177 +17,177 @@ export type LocationFormValues = {
 
 export type LocationFieldErrors = Partial<Record<keyof LocationFormValues, string>>;
 
-export async function listLocations(shop: string): Promise<BookingLocation[]> {
-  return prisma.bookingLocation.findMany({
-    where: { shop },
+export async function listLocationsML(shopML: string): Promise<BookingLocation[]> {
+  return prismaML.bookingLocation.findMany({
+    where: { shop: shopML },
     orderBy: { sortOrder: "asc" },
   });
 }
 
-export async function listEnabledLocations(
-  shop: string,
+export async function listEnabledLocationsML(
+  shopML: string,
 ): Promise<BookingLocation[]> {
-  return prisma.bookingLocation.findMany({
-    where: { shop, isEnabled: true },
+  return prismaML.bookingLocation.findMany({
+    where: { shop: shopML, isEnabled: true },
     orderBy: { sortOrder: "asc" },
   });
 }
 
-export async function getLocationById(
-  shop: string,
-  id: string,
+export async function getLocationByIdML(
+  shopML: string,
+  idML: string,
 ): Promise<BookingLocation | null> {
-  return prisma.bookingLocation.findFirst({ where: { id, shop } });
+  return prismaML.bookingLocation.findFirst({ where: { id: idML, shop: shopML } });
 }
 
-function emptyToNull(value: FormDataEntryValue | null): string | null {
-  const str = String(value ?? "").trim();
-  return str === "" ? null : str;
+function emptyToNullML(valueML: FormDataEntryValue | null): string | null {
+  const strML = String(valueML ?? "").trim();
+  return strML === "" ? null : strML;
 }
 
-export function parseLocationForm(formData: FormData): {
+export function parseLocationFormML(formDataML: FormData): {
   values: LocationFormValues;
   errors: LocationFieldErrors;
 } {
-  const errors: LocationFieldErrors = {};
-  const name = String(formData.get("name") ?? "").trim();
-  const timezone = String(formData.get("timezone") ?? "UTC").trim() || "UTC";
+  const errorsML: LocationFieldErrors = {};
+  const nameML = String(formDataML.get("name") ?? "").trim();
+  const timezoneML = String(formDataML.get("timezone") ?? "UTC").trim() || "UTC";
 
-  if (!name) {
-    errors.name = "Enter a location name.";
-  } else if (name.length > MAX_NAME_LENGTH) {
-    errors.name = `Keep it under ${MAX_NAME_LENGTH} characters.`;
+  if (!nameML) {
+    errorsML.name = "Enter a location name.";
+  } else if (nameML.length > MAX_NAME_LENGTH_ML) {
+    errorsML.name = `Keep it under ${MAX_NAME_LENGTH_ML} characters.`;
   }
 
-  if (!isValidTimezone(timezone)) {
-    errors.timezone = "Pick a valid timezone.";
+  if (!isValidTimezoneML(timezoneML)) {
+    errorsML.timezone = "Pick a valid timezone.";
   }
 
-  const isEnabled = formData.get("isEnabled") !== "false";
+  const isEnabledML = formDataML.get("isEnabled") !== "false";
 
-  const workingDaysRaw = String(formData.get("workingDays") ?? "");
-  const workingDays =
-    workingDaysRaw === ""
+  const workingDaysRawML = String(formDataML.get("workingDays") ?? "");
+  const workingDaysML =
+    workingDaysRawML === ""
       ? null
-      : workingDaysRaw
+      : workingDaysRawML
           .split(",")
-          .map((v) => Number(v.trim()))
-          .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
-  if (workingDays !== null && workingDays.length === 0) {
-    errors.workingDays =
+          .map((vML) => Number(vML.trim()))
+          .filter((nML) => Number.isInteger(nML) && nML >= 0 && nML <= 6);
+  if (workingDaysML !== null && workingDaysML.length === 0) {
+    errorsML.workingDays =
       "Select at least one day, or clear all to inherit the shop default.";
   }
 
-  const dailyStartTime = emptyToNull(formData.get("dailyStartTime"));
-  const dailyEndTime = emptyToNull(formData.get("dailyEndTime"));
-  if (dailyStartTime && !TIME_RE.test(dailyStartTime)) {
-    errors.dailyStartTime = "Enter a valid start time (HH:mm).";
+  const dailyStartTimeML = emptyToNullML(formDataML.get("dailyStartTime"));
+  const dailyEndTimeML = emptyToNullML(formDataML.get("dailyEndTime"));
+  if (dailyStartTimeML && !TIME_RE_ML.test(dailyStartTimeML)) {
+    errorsML.dailyStartTime = "Enter a valid start time (HH:mm).";
   }
-  if (dailyEndTime && !TIME_RE.test(dailyEndTime)) {
-    errors.dailyEndTime = "Enter a valid end time (HH:mm).";
+  if (dailyEndTimeML && !TIME_RE_ML.test(dailyEndTimeML)) {
+    errorsML.dailyEndTime = "Enter a valid end time (HH:mm).";
   }
   if (
-    dailyStartTime &&
-    dailyEndTime &&
-    !errors.dailyStartTime &&
-    !errors.dailyEndTime &&
-    dailyEndTime <= dailyStartTime
+    dailyStartTimeML &&
+    dailyEndTimeML &&
+    !errorsML.dailyStartTime &&
+    !errorsML.dailyEndTime &&
+    dailyEndTimeML <= dailyStartTimeML
   ) {
-    errors.dailyEndTime = "End time must be after start time.";
+    errorsML.dailyEndTime = "End time must be after start time.";
   }
 
   return {
     values: {
-      name,
-      timezone,
-      isEnabled,
-      workingDays,
-      dailyStartTime,
-      dailyEndTime,
+      name: nameML,
+      timezone: timezoneML,
+      isEnabled: isEnabledML,
+      workingDays: workingDaysML,
+      dailyStartTime: dailyStartTimeML,
+      dailyEndTime: dailyEndTimeML,
     },
-    errors,
+    errors: errorsML,
   };
 }
 
-export async function createLocation(
-  shop: string,
-  values: LocationFormValues,
+export async function createLocationML(
+  shopML: string,
+  valuesML: LocationFormValues,
 ): Promise<{ ok: true; location: BookingLocation } | { ok: false; error: string }> {
-  const existing = await prisma.bookingLocation.findUnique({
-    where: { shop_name: { shop, name: values.name } },
+  const existingML = await prismaML.bookingLocation.findUnique({
+    where: { shop_name: { shop: shopML, name: valuesML.name } },
   });
-  if (existing) {
+  if (existingML) {
     return { ok: false, error: "A location with this name already exists." };
   }
 
-  const lastLocation = await prisma.bookingLocation.findFirst({
-    where: { shop },
+  const lastLocationML = await prismaML.bookingLocation.findFirst({
+    where: { shop: shopML },
     orderBy: { sortOrder: "desc" },
   });
-  const sortOrder = (lastLocation?.sortOrder ?? -1) + 1;
+  const sortOrderML = (lastLocationML?.sortOrder ?? -1) + 1;
 
-  const location = await prisma.bookingLocation.create({
+  const locationML = await prismaML.bookingLocation.create({
     data: {
-      shop,
-      name: values.name,
-      timezone: values.timezone,
-      isEnabled: values.isEnabled,
-      sortOrder,
-      workingDays: values.workingDays ? values.workingDays.join(",") : null,
-      dailyStartTime: values.dailyStartTime,
-      dailyEndTime: values.dailyEndTime,
+      shop: shopML,
+      name: valuesML.name,
+      timezone: valuesML.timezone,
+      isEnabled: valuesML.isEnabled,
+      sortOrder: sortOrderML,
+      workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : null,
+      dailyStartTime: valuesML.dailyStartTime,
+      dailyEndTime: valuesML.dailyEndTime,
     },
   });
-  return { ok: true, location };
+  return { ok: true, location: locationML };
 }
 
-export async function updateLocation(
-  shop: string,
-  id: string,
-  values: LocationFormValues,
+export async function updateLocationML(
+  shopML: string,
+  idML: string,
+  valuesML: LocationFormValues,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const existing = await prisma.bookingLocation.findFirst({
-    where: { id, shop },
+  const existingML = await prismaML.bookingLocation.findFirst({
+    where: { id: idML, shop: shopML },
   });
-  if (!existing) {
+  if (!existingML) {
     return { ok: false, error: "Location not found." };
   }
 
-  const nameTaken = await prisma.bookingLocation.findFirst({
-    where: { shop, name: values.name, id: { not: id } },
+  const nameTakenML = await prismaML.bookingLocation.findFirst({
+    where: { shop: shopML, name: valuesML.name, id: { not: idML } },
   });
-  if (nameTaken) {
+  if (nameTakenML) {
     return { ok: false, error: "A location with this name already exists." };
   }
 
-  await prisma.bookingLocation.update({
-    where: { id },
+  await prismaML.bookingLocation.update({
+    where: { id: idML },
     data: {
-      name: values.name,
-      timezone: values.timezone,
-      isEnabled: values.isEnabled,
-      workingDays: values.workingDays ? values.workingDays.join(",") : null,
-      dailyStartTime: values.dailyStartTime,
-      dailyEndTime: values.dailyEndTime,
+      name: valuesML.name,
+      timezone: valuesML.timezone,
+      isEnabled: valuesML.isEnabled,
+      workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : null,
+      dailyStartTime: valuesML.dailyStartTime,
+      dailyEndTime: valuesML.dailyEndTime,
     },
   });
   return { ok: true };
 }
 
-export async function deleteLocation(
-  shop: string,
-  id: string,
+export async function deleteLocationML(
+  shopML: string,
+  idML: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const existing = await prisma.bookingLocation.findFirst({
-    where: { id, shop },
+  const existingML = await prismaML.bookingLocation.findFirst({
+    where: { id: idML, shop: shopML },
   });
-  if (!existing) {
+  if (!existingML) {
     return { ok: false, error: "Location not found." };
   }
   try {
-    await prisma.bookingLocation.delete({ where: { id } });
-  } catch (err) {
-    console.error(`deleteLocation failed for shop=${shop} id=${id}:`, err);
+    await prismaML.bookingLocation.delete({ where: { id: idML } });
+  } catch (errML) {
+    console.error(`deleteLocation failed for shop=${shopML} id=${idML}:`, errML);
     return {
       ok: false,
       error: "Couldn't delete this location. Please try again.",
@@ -196,15 +196,15 @@ export async function deleteLocation(
   return { ok: true };
 }
 
-export async function reorderLocations(
-  shop: string,
-  orderedIds: string[],
+export async function reorderLocationsML(
+  shopML: string,
+  orderedIdsML: string[],
 ): Promise<void> {
-  await prisma.$transaction(
-    orderedIds.map((id, index) =>
-      prisma.bookingLocation.update({
-        where: { id },
-        data: { sortOrder: index },
+  await prismaML.$transaction(
+    orderedIdsML.map((idML, indexML) =>
+      prismaML.bookingLocation.update({
+        where: { id: idML },
+        data: { sortOrder: indexML },
       }),
     ),
   );
@@ -216,32 +216,32 @@ export type PublicLocation = {
   timezone: string;
 };
 
-export function toPublicLocation(location: BookingLocation): PublicLocation {
-  return { id: location.id, name: location.name, timezone: location.timezone };
+export function toPublicLocationML(locationML: BookingLocation): PublicLocation {
+  return { id: locationML.id, name: locationML.name, timezone: locationML.timezone };
 }
 
 type MinimalAdminGraphqlClient = {
   graphql: (query: string) => Promise<Response>;
 };
 
-export async function maybePrefillFirstLocationFromShopTimezone(
-  shop: string,
-  admin: MinimalAdminGraphqlClient,
+export async function maybePrefillFirstLocationFromShopTimezoneML(
+  shopML: string,
+  adminML: MinimalAdminGraphqlClient,
 ): Promise<void> {
-  const settings = await getBookingSettings(shop);
-  if (settings.locationPrefillDone) return;
+  const settingsML = await getBookingSettingsML(shopML);
+  if (settingsML.locationPrefillDone) return;
 
-  const existingCount = await prisma.bookingLocation.count({ where: { shop } });
-  if (existingCount > 0) {
-    await prisma.bookingSettings.update({
-      where: { shop },
+  const existingCountML = await prismaML.bookingLocation.count({ where: { shop: shopML } });
+  if (existingCountML > 0) {
+    await prismaML.bookingSettings.update({
+      where: { shop: shopML },
       data: { locationPrefillDone: true },
     });
     return;
   }
 
   try {
-    const response = await admin.graphql(
+    const responseML = await adminML.graphql(
       `#graphql
         query ShopTimezoneForLocationPrefill {
           shop {
@@ -249,26 +249,26 @@ export async function maybePrefillFirstLocationFromShopTimezone(
           }
         }`,
     );
-    const responseJson = await response.json();
-    const timezone = responseJson?.data?.shop?.ianaTimezone;
-    if (timezone && isValidTimezone(timezone)) {
-      await createLocation(shop, {
+    const responseJsonML = await responseML.json();
+    const timezoneML = responseJsonML?.data?.shop?.ianaTimezone;
+    if (timezoneML && isValidTimezoneML(timezoneML)) {
+      await createLocationML(shopML, {
         name: "Main location",
-        timezone,
+        timezone: timezoneML,
         isEnabled: true,
         workingDays: null,
         dailyStartTime: null,
         dailyEndTime: null,
       });
     }
-  } catch (error) {
+  } catch (errorML) {
     console.warn(
-      `Could not prefill a first Location for ${shop} from the shop's Shopify timezone`,
-      error,
+      `Could not prefill a first Location for ${shopML} from the shop's Shopify timezone`,
+      errorML,
     );
   } finally {
-    await prisma.bookingSettings.update({
-      where: { shop },
+    await prismaML.bookingSettings.update({
+      where: { shop: shopML },
       data: { locationPrefillDone: true },
     });
   }

@@ -1,13 +1,13 @@
-export const BLUE = "#073E74";
-export const BORDER = "#DBDBDB";
-export const LICENSE_BG = "#EDEDED";
-export const LICENSE_BORDER = "#E9E9EA";
-export const TEXT_DARK = "#000000";
-export const TEXT_MUTED = "#373737";
+export const BLUE_ML = "#073E74";
+export const BORDER_ML = "#DBDBDB";
+export const LICENSE_BG_ML = "#EDEDED";
+export const LICENSE_BORDER_ML = "#E9E9EA";
+export const TEXT_DARK_ML = "#000000";
+export const TEXT_MUTED_ML = "#373737";
 
-export const styles: Record<string, React.CSSProperties> = {
+export const stylesML: Record<string, React.CSSProperties> = {
   outerCard: {
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
     background: "#fff",
     padding: "16px",
@@ -25,21 +25,21 @@ export const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "18px",
     letterSpacing: "0.02em",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   pageSubtitle: {
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "12px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     margin: "4px 0 0",
   },
   tabBar: {
     display: "flex",
     gap: "8px",
     padding: "8px",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "10px",
     background: "#fff",
     marginBottom: "16px",
@@ -47,7 +47,7 @@ export const styles: Record<string, React.CSSProperties> = {
     overflowX: "auto",
   },
   innerCard: {
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
     background: "#fff",
     padding: "16px",
@@ -60,19 +60,19 @@ export const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: "12px",
     padding: "10px",
-    background: LICENSE_BG,
-    border: `1px solid ${LICENSE_BORDER}`,
+    background: LICENSE_BG_ML,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
   },
   licenseTitle: {
     fontFamily: "Inter",
     fontSize: "16px",
     fontWeight: 500,
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${BORDER}`,
+    borderTop: `1px solid ${BORDER_ML}`,
     margin: 0,
   },
   rowBetween: {
@@ -84,13 +84,13 @@ export const styles: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 500,
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   subLabel: {
     fontFamily: "Inter",
     fontSize: "12px",
     fontWeight: 400,
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     marginTop: "4px",
   },
   serialPill: {
@@ -103,7 +103,7 @@ export const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
   },
   clientCard: {
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
     background: "#fff",
     overflow: "hidden",
@@ -116,7 +116,7 @@ export const styles: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontSize: "16px",
     fontWeight: 600,
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   clientCardBody: {
     display: "flex",
@@ -126,7 +126,7 @@ export const styles: Record<string, React.CSSProperties> = {
   },
   clientDivider: {
     border: "none",
-    borderTop: `1px solid ${BORDER}`,
+    borderTop: `1px solid ${BORDER_ML}`,
     width: "100%",
   },
   clientFieldGroup: {
@@ -138,18 +138,18 @@ export const styles: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 500,
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
   },
   clientInput: {
     width: "100%",
     padding: "7px 8px",
     borderRadius: "4px",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 400,
     letterSpacing: "0.02em",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     boxSizing: "border-box",
   },
   secretInputWrap: {
@@ -161,12 +161,12 @@ export const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     padding: "7px 34px 7px 8px",
     borderRadius: "4px",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 400,
     letterSpacing: "0.02em",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     boxSizing: "border-box",
   },
   secretToggleButton: {
@@ -193,7 +193,7 @@ export const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export function tabButtonStyle(active: boolean): React.CSSProperties {
+export function tabButtonStyleML(activeML: boolean): React.CSSProperties {
   return {
     padding: "9px 17px",
     borderRadius: "6px",
@@ -202,8 +202,8 @@ export function tabButtonStyle(active: boolean): React.CSSProperties {
     fontWeight: 600,
     fontSize: "14px",
     cursor: "pointer",
-    background: active ? BLUE : "#ECECEC",
-    color: active ? "#fff" : TEXT_DARK,
+    background: activeML ? BLUE_ML : "#ECECEC",
+    color: activeML ? "#fff" : TEXT_DARK_ML,
     textDecoration: "none",
     display: "inline-flex",
     alignItems: "center",
@@ -212,7 +212,7 @@ export function tabButtonStyle(active: boolean): React.CSSProperties {
   };
 }
 
-export function saveWrapperStyle(): React.CSSProperties {
+export function saveWrapperStyleML(): React.CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
@@ -226,7 +226,7 @@ export function saveWrapperStyle(): React.CSSProperties {
   };
 }
 
-export function saveButtonStyle(disabled: boolean): React.CSSProperties {
+export function saveButtonStyleML(disabledML: boolean): React.CSSProperties {
   return {
     display: "flex",
     alignItems: "center",
@@ -243,7 +243,7 @@ export function saveButtonStyle(disabled: boolean): React.CSSProperties {
     fontWeight: 600,
     fontSize: "16px",
     lineHeight: "19px",
-    cursor: disabled ? "default" : "pointer",
+    cursor: disabledML ? "default" : "pointer",
   };
 }
 
@@ -252,13 +252,13 @@ export function EyeIcon() {
     <svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M7.75 2.45962C8.66153 2.16968 9.6604 2 10.75 2C14.9319 2 17.778 4.49956 19.4751 6.70433C20.325 7.80853 20.75 8.3606 20.75 10C20.75 11.6394 20.325 12.1915 19.4751 13.2957C17.778 15.5004 14.9319 18 10.75 18C6.56811 18 3.72196 15.5004 2.02489 13.2957C1.17496 12.1915 0.75 11.6394 0.75 10C0.75 8.3606 1.17496 7.80853 2.02489 6.70433C2.50612 6.07914 3.07973 5.43025 3.75 4.82137"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
       />
       <path
         d="M13.75 10C13.75 11.6569 12.4069 13 10.75 13C9.0931 13 7.75 11.6569 7.75 10C7.75 8.3431 9.0931 7 10.75 7C12.4069 7 13.75 8.3431 13.75 10Z"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
       />
     </svg>
@@ -270,45 +270,45 @@ export function EyeOffIcon() {
     <svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M7.75 2.45962C8.66153 2.16968 9.6604 2 10.75 2C14.9319 2 17.778 4.49956 19.4751 6.70433C20.325 7.80853 20.75 8.3606 20.75 10C20.75 11.6394 20.325 12.1915 19.4751 13.2957C17.778 15.5004 14.9319 18 10.75 18C6.56811 18 3.72196 15.5004 2.02489 13.2957C1.17496 12.1915 0.75 11.6394 0.75 10C0.75 8.3606 1.17496 7.80853 2.02489 6.70433C2.50612 6.07914 3.07973 5.43025 3.75 4.82137"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
       />
       <path
         d="M13.75 10C13.75 11.6569 12.4069 13 10.75 13C9.0931 13 7.75 11.6569 7.75 10C7.75 8.3431 9.0931 7 10.75 7C12.4069 7 13.75 8.3431 13.75 10Z"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
       />
-      <path d="M1.75 1.5L19.75 18.5" stroke={BLUE} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M1.75 1.5L19.75 18.5" stroke={BLUE_ML} strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
-export const tabNavRowStyle: React.CSSProperties = {
+export const tabNavRowStyleML: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   marginTop: "20px",
 };
 
-export function backNavButtonStyle(disabled: boolean): React.CSSProperties {
+export function backNavButtonStyleML(disabledML: boolean): React.CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
     padding: "10px 20px",
     borderRadius: "8px",
-    border: `1px solid ${BORDER}`,
-    background: LICENSE_BG,
-    color: disabled ? "#A6A6A6" : TEXT_DARK,
+    border: `1px solid ${BORDER_ML}`,
+    background: LICENSE_BG_ML,
+    color: disabledML ? "#A6A6A6" : TEXT_DARK_ML,
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
-    cursor: disabled ? "default" : "pointer",
-    opacity: disabled ? 0.6 : 1,
+    cursor: disabledML ? "default" : "pointer",
+    opacity: disabledML ? 0.6 : 1,
   };
 }
 
-export function nextNavButtonStyle(disabled: boolean): React.CSSProperties {
+export function nextNavButtonStyleML(disabledML: boolean): React.CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
@@ -316,13 +316,13 @@ export function nextNavButtonStyle(disabled: boolean): React.CSSProperties {
     padding: "10px 24px",
     borderRadius: "8px",
     border: "none",
-    background: BLUE,
+    background: BLUE_ML,
     color: "#fff",
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
-    cursor: disabled ? "default" : "pointer",
-    opacity: disabled ? 0.6 : 1,
+    cursor: disabledML ? "default" : "pointer",
+    opacity: disabledML ? 0.6 : 1,
   };
 }
 
@@ -342,7 +342,7 @@ export function ChevronRightIcon() {
   );
 }
 
-export function ChevronDownIcon({ open }: { open: boolean }) {
+export function ChevronDownIcon({ open: openML }: { open: boolean }) {
   return (
     <svg
       width="16"
@@ -351,7 +351,7 @@ export function ChevronDownIcon({ open }: { open: boolean }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{
-        transform: open ? "rotate(180deg)" : "rotate(0deg)",
+        transform: openML ? "rotate(180deg)" : "rotate(0deg)",
         transition: "transform 0.15s ease",
         flexShrink: 0,
       }}
@@ -361,7 +361,7 @@ export function ChevronDownIcon({ open }: { open: boolean }) {
   );
 }
 
-export function collapsibleHeaderStyle(): React.CSSProperties {
+export function collapsibleHeaderStyleML(): React.CSSProperties {
   return {
     display: "flex",
     justifyContent: "space-between",
@@ -373,10 +373,10 @@ export function collapsibleHeaderStyle(): React.CSSProperties {
 }
 
 export function TabNavRow({
-  onBack,
-  onNext,
-  isFirst,
-  isLast,
+  onBack: onBackML,
+  onNext: onNextML,
+  isFirst: isFirstML,
+  isLast: isLastML,
 }: {
   onBack: () => void;
   onNext: () => void;
@@ -384,12 +384,12 @@ export function TabNavRow({
   isLast: boolean;
 }) {
   return (
-    <div style={tabNavRowStyle}>
-      <button type="button" style={backNavButtonStyle(isFirst)} disabled={isFirst} onClick={onBack}>
+    <div style={tabNavRowStyleML}>
+      <button type="button" style={backNavButtonStyleML(isFirstML)} disabled={isFirstML} onClick={onBackML}>
         <ChevronLeftIcon />
         Back
       </button>
-      <button type="button" style={nextNavButtonStyle(isLast)} disabled={isLast} onClick={onNext}>
+      <button type="button" style={nextNavButtonStyleML(isLastML)} disabled={isLastML} onClick={onNextML}>
         Next
         <ChevronRightIcon />
       </button>

@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
-import { BORDER, TEXT_MUTED } from "./SettingsUI";
+import { BORDER_ML, TEXT_MUTED_ML } from "./SettingsUI";
 
 export type RichTextEditorHandle = {
   insertText: (text: string) => void;
@@ -15,8 +15,8 @@ type RichTextEditorProps = {
 };
 
 const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
-  function RichTextEditor({ value, onChange, footer }, ref) {
-    const editor = useEditor({
+  function RichTextEditor({ value: valueML, onChange: onChangeML, footer: footerML }, refML) {
+    const editorML = useEditor({
       extensions: [
         StarterKit.configure({
           heading: false,
@@ -29,77 +29,77 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
           autolink: false,
         }),
       ],
-      content: value,
-      onUpdate: ({ editor }) => {
-        onChange(editor.getHTML());
+      content: valueML,
+      onUpdate: ({ editor: editorML }) => {
+        onChangeML(editorML.getHTML());
       },
     });
 
     useEffect(() => {
-      if (!editor) return;
-      if (value !== editor.getHTML()) {
-        editor.commands.setContent(value, { emitUpdate: false });
+      if (!editorML) return;
+      if (valueML !== editorML.getHTML()) {
+        editorML.commands.setContent(valueML, { emitUpdate: false });
       }
-    }, [value, editor]);
+    }, [valueML, editorML]);
 
     useImperativeHandle(
-      ref,
+      refML,
       () => ({
-        insertText: (text: string) => {
-          editor?.chain().focus().insertContent(text).run();
+        insertText: (textML: string) => {
+          editorML?.chain().focus().insertContent(textML).run();
         },
       }),
-      [editor],
+      [editorML],
     );
 
-    if (!editor) return null;
+    if (!editorML) return null;
 
-    const setLink = () => {
-      const previousUrl = editor.getAttributes("link").href as string | undefined;
-      const url = window.prompt("Link URL", previousUrl ?? "https://");
-      if (url === null) return;
-      if (url === "") {
-        editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    const setLinkML = () => {
+      const previousUrlML = editorML.getAttributes("link").href as string | undefined;
+      const urlML = window.prompt("Link URL", previousUrlML ?? "https://");
+      if (urlML === null) return;
+      if (urlML === "") {
+        editorML.chain().focus().extendMarkRange("link").unsetLink().run();
         return;
       }
-      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+      editorML.chain().focus().extendMarkRange("link").setLink({ href: urlML }).run();
     };
 
     return (
-      <div style={wrapStyle} className="rte-wrap">
-        <style>{PROSEMIRROR_CSS}</style>
-        <div style={toolbarStyle}>
+      <div style={wrapStyleML} className="rte-wrap">
+        <style>{PROSEMIRROR_CSS_ML}</style>
+        <div style={toolbarStyleML}>
           <ToolbarButton
-            active={editor.isActive("bold")}
+            active={editorML.isActive("bold")}
             label="Bold"
-            onClick={() => editor.chain().focus().toggleBold().run()}
+            onClick={() => editorML.chain().focus().toggleBold().run()}
           >
             <strong>B</strong>
           </ToolbarButton>
           <ToolbarButton
-            active={editor.isActive("italic")}
+            active={editorML.isActive("italic")}
             label="Italic"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
+            onClick={() => editorML.chain().focus().toggleItalic().run()}
           >
             <em>I</em>
           </ToolbarButton>
           <ToolbarButton
-            active={editor.isActive("bulletList")}
+            active={editorML.isActive("bulletList")}
             label="Bullet list"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            onClick={() => editorML.chain().focus().toggleBulletList().run()}
           >
             &#8226; List
           </ToolbarButton>
           <ToolbarButton
-            active={editor.isActive("link")}
+            active={editorML.isActive("link")}
             label="Link"
-            onClick={setLink}
+            onClick={setLinkML}
           >
             Link
           </ToolbarButton>
         </div>
-        <EditorContent editor={editor} style={editorAreaStyle} />
-        {footer && <div style={footerStyle}>{footer}</div>}
+        <EditorContent editor={editorML} style={editorAreaStyleML} />
+        {footerML && <div style={footerStyleML}>{footerML}</div>}
       </div>
     );
   },
@@ -108,10 +108,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
 export default RichTextEditor;
 
 function ToolbarButton({
-  active,
-  label,
-  onClick,
-  children,
+  active: activeML,
+  label: labelML,
+  onClick: onClickML,
+  children: childrenML,
 }: {
   active: boolean;
   label: string;
@@ -121,29 +121,29 @@ function ToolbarButton({
   return (
     <button
       type="button"
-      title={label}
-      aria-label={label}
-      aria-pressed={active}
-      onClick={onClick}
+      title={labelML}
+      aria-label={labelML}
+      aria-pressed={activeML}
+      onClick={onClickML}
       style={{
         padding: "4px 10px",
         borderRadius: "4px",
-        border: `1px solid ${active ? "#073E74" : BORDER}`,
-        background: active ? "#E8EEF5" : "#fff",
-        color: active ? "#073E74" : TEXT_MUTED,
+        border: `1px solid ${activeML ? "#073E74" : BORDER_ML}`,
+        background: activeML ? "#E8EEF5" : "#fff",
+        color: activeML ? "#073E74" : TEXT_MUTED_ML,
         fontFamily: "Inter",
         fontSize: "13px",
         cursor: "pointer",
         lineHeight: 1.4,
       }}
     >
-      {children}
+      {childrenML}
     </button>
   );
 }
 
-const wrapStyle: React.CSSProperties = {
-  border: `1px solid ${BORDER}`,
+const wrapStyleML: React.CSSProperties = {
+  border: `1px solid ${BORDER_ML}`,
   borderRadius: "4px",
   overflow: "hidden",
   display: "flex",
@@ -152,15 +152,15 @@ const wrapStyle: React.CSSProperties = {
   height: "100%",
 };
 
-const toolbarStyle: React.CSSProperties = {
+const toolbarStyleML: React.CSSProperties = {
   display: "flex",
   gap: "6px",
   padding: "6px 8px",
-  borderBottom: `1px solid ${BORDER}`,
+  borderBottom: `1px solid ${BORDER_ML}`,
   background: "#F5F6F7",
 };
 
-const editorAreaStyle: React.CSSProperties = {
+const editorAreaStyleML: React.CSSProperties = {
   padding: "10px",
   minHeight: "220px",
   flex: 1,
@@ -169,16 +169,16 @@ const editorAreaStyle: React.CSSProperties = {
   lineHeight: 1.5,
 };
 
-const footerStyle: React.CSSProperties = {
+const footerStyleML: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   gap: "6px",
   padding: "8px 10px",
-  borderTop: `1px solid ${BORDER}`,
+  borderTop: `1px solid ${BORDER_ML}`,
   background: "#F5F6F7",
 };
 
-const PROSEMIRROR_CSS = `
+const PROSEMIRROR_CSS_ML = `
   .rte-wrap .ProseMirror {
     min-height: 220px;
     outline: none;

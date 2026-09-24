@@ -1,56 +1,56 @@
 import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import {
-  cancelBooking,
-  listSlotsForReschedule,
-  rescheduleBooking,
+  cancelBookingML,
+  listSlotsForRescheduleML,
+  rescheduleBookingML,
 } from "../models/booking.server";
 import type { TimeSlot } from "../models/slotAvailability.server";
 
-export async function bookingListAction({ request }: ActionFunctionArgs) {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "") as
+export async function bookingListActionML({ request: requestML }: ActionFunctionArgs) {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
+  const intentML = String(formDataML.get("intent") ?? "") as
     "cancel" | "reschedule" | "loadRescheduleSlots" | "";
 
-  if (intent === "cancel") {
-    const id = String(formData.get("id") ?? "");
-    const result = await cancelBooking(session.shop, id);
-    return { intent, ...result };
+  if (intentML === "cancel") {
+    const idML = String(formDataML.get("id") ?? "");
+    const resultML = await cancelBookingML(sessionML.shop, idML);
+    return { intent: intentML, ...resultML };
   }
 
-  if (intent === "loadRescheduleSlots") {
-    const id = String(formData.get("id") ?? "");
-    const date = String(formData.get("date") ?? "");
-    if (!id || !date) {
+  if (intentML === "loadRescheduleSlots") {
+    const idML = String(formDataML.get("id") ?? "");
+    const dateML = String(formDataML.get("date") ?? "");
+    if (!idML || !dateML) {
       return {
-        intent,
+        intent: intentML,
         ok: false as const,
         error: "Missing booking or date.",
         slots: [] as TimeSlot[],
       };
     }
-    const result = await listSlotsForReschedule(session.shop, id, date);
-    if (!result.ok) {
-      return { intent, ok: false as const, error: result.error, slots: [] as TimeSlot[] };
+    const resultML = await listSlotsForRescheduleML(sessionML.shop, idML, dateML);
+    if (!resultML.ok) {
+      return { intent: intentML, ok: false as const, error: resultML.error, slots: [] as TimeSlot[] };
     }
-    return { intent, ok: true as const, slots: result.slots };
+    return { intent: intentML, ok: true as const, slots: resultML.slots };
   }
 
-  if (intent === "reschedule") {
-    const id = String(formData.get("id") ?? "");
-    const date = String(formData.get("date") ?? "");
-    const slotStart = String(formData.get("slotStart") ?? "");
-    const endDate = String(formData.get("endDate") ?? "") || null;
-    const result = await rescheduleBooking(
-      session.shop,
-      id,
-      date,
-      slotStart,
-      endDate,
+  if (intentML === "reschedule") {
+    const idML = String(formDataML.get("id") ?? "");
+    const dateML = String(formDataML.get("date") ?? "");
+    const slotStartML = String(formDataML.get("slotStart") ?? "");
+    const endDateML = String(formDataML.get("endDate") ?? "") || null;
+    const resultML = await rescheduleBookingML(
+      sessionML.shop,
+      idML,
+      dateML,
+      slotStartML,
+      endDateML,
     );
-    return { intent, ...result };
+    return { intent: intentML, ...resultML };
   }
 
-  return { intent, ok: false as const, error: "Unknown action." };
+  return { intent: intentML, ok: false as const, error: "Unknown action." };
 }

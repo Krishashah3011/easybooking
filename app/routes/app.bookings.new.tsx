@@ -9,46 +9,46 @@ import { Link, useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { listBookableProducts } from "../models/bookableProduct.server";
+import { listBookableProductsML } from "../models/bookableProduct.server";
 import {
-  computeSlotsForDate,
-  getAvailableDatesInMonth,
-  getAvailableFullDayDatesInMonth,
-  getAvailableMultiDayNightsInMonth,
+  computeSlotsForDateML,
+  getAvailableDatesInMonthML,
+  getAvailableFullDayDatesInMonthML,
+  getAvailableMultiDayNightsInMonthML,
   type TimeSlot,
 } from "../models/slotAvailability.server";
-import { resolveBookingContextById } from "../models/booking-context.server";
+import { resolveBookingContextByIdML } from "../models/booking-context.server";
 import {
-  createManualBooking,
-  sendManualBookingEmailsInBackground,
-  getBookedCountsInRange,
-  getBookedNightCountsInRange,
+  createManualBookingML,
+  sendManualBookingEmailsInBackgroundML,
+  getBookedCountsInRangeML,
+  getBookedNightCountsInRangeML,
 } from "../models/booking.server";
-import { listEnabledLocations } from "../models/bookingLocation.server";
-import { listCustomFields, toPublicField } from "../models/customBookingField.server";
-import { formatDateDisplay, formatTimeRangeDisplay } from "../utils/format";
-import { localDayRangeUtc, localMonthRangeUtc } from "../utils/timezones";
+import { listEnabledLocationsML } from "../models/bookingLocation.server";
+import { listCustomFieldsML, toPublicFieldML } from "../models/customBookingField.server";
+import { formatDateDisplayML, formatTimeRangeDisplayML } from "../utils/format";
+import { localDayRangeUtcML, localMonthRangeUtcML } from "../utils/timezones";
 import {
-  BLUE,
-  BORDER,
-  LICENSE_BORDER,
-  TEXT_DARK,
-  TEXT_MUTED,
-  styles as settingsStyles,
-  saveWrapperStyle,
-  saveButtonStyle,
+  BLUE_ML,
+  BORDER_ML,
+  LICENSE_BORDER_ML,
+  TEXT_DARK_ML,
+  TEXT_MUTED_ML,
+  stylesML as settingsStyles,
+  saveWrapperStyleML,
+  saveButtonStyleML,
 } from "../components/SettingsUI";
 
-const WEEKDAY_HEADERS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const WEEKDAY_HEADERS_ML = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-const CAL_BLUE = "#0060E6";
-const BLUE_TINT = "rgba(0, 96, 230, 0.08)";
-const NAV_ARROW = "#4C4C4C";
-const DISABLED_DATE = "#ADADAD";
-const YEAR_PICKER_SPAN = 5;
+const CAL_BLUE_ML = "#0060E6";
+const BLUE_TINT_ML = "rgba(0, 96, 230, 0.08)";
+const NAV_ARROW_ML = "#4C4C4C";
+const DISABLED_DATE_ML = "#ADADAD";
+const YEAR_PICKER_SPAN_ML = 5;
 
-const CAL_TEXT = "#1A1A1A";
-const PLACEHOLDER = "#6E6E6E";
+const CAL_TEXT_ML = "#1A1A1A";
+const PLACEHOLDER_ML = "#6E6E6E";
 
 const S = {
   outerCard: {
@@ -59,7 +59,7 @@ const S = {
     gap: "16px",
     padding: "16px",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
   } as React.CSSProperties,
   headerRow: {
@@ -76,7 +76,7 @@ const S = {
     fontSize: "18px",
     lineHeight: "22px",
     letterSpacing: "0.02em",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   } as React.CSSProperties,
   headerActions: {
     display: "flex",
@@ -97,7 +97,7 @@ const S = {
     border: "none",
     background: "transparent",
     cursor: "pointer",
-    color: BLUE,
+    color: BLUE_ML,
     textDecoration: "none",
   } as React.CSSProperties,
   card: {
@@ -106,14 +106,14 @@ const S = {
     gap: "12px",
     padding: "16px",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
   } as React.CSSProperties,
   cardHeading: {
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "16px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   } as React.CSSProperties,
   innerCard: {
     boxSizing: "border-box",
@@ -123,7 +123,7 @@ const S = {
     gap: "12px",
     padding: "10px 10px 13px",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
   } as React.CSSProperties,
   dateTimeCard: {
@@ -134,7 +134,7 @@ const S = {
     gap: "12px",
     padding: "10px",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
   } as React.CSSProperties,
   fieldsRow: {
@@ -155,7 +155,7 @@ const S = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   } as React.CSSProperties,
   input: {
     width: "100%",
@@ -163,11 +163,11 @@ const S = {
     height: "34px",
     padding: "5px 10px",
     background: "#FFFFFF",
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
     fontFamily: "Inter",
     fontSize: "14px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   } as React.CSSProperties,
   selectWrap: {
     position: "relative",
@@ -179,11 +179,11 @@ const S = {
     height: "34px",
     padding: "5px 34px 5px 10px",
     background: "#FFFFFF",
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
     fontFamily: "Inter",
     fontSize: "14px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     appearance: "none",
     WebkitAppearance: "none",
     MozAppearance: "none",
@@ -244,7 +244,7 @@ const S = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     whiteSpace: "nowrap",
   } as React.CSSProperties,
   qtyNoteHint: {
@@ -252,7 +252,7 @@ const S = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     whiteSpace: "nowrap",
   } as React.CSSProperties,
   quantityBox: {
@@ -266,7 +266,7 @@ const S = {
     width: "110px",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
   } as React.CSSProperties,
   quantityStepBtn: {
@@ -286,7 +286,7 @@ const S = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   } as React.CSSProperties,
   calendarLayout: {
     display: "flex",
@@ -342,7 +342,7 @@ const S = {
     flexShrink: 0,
   } as React.CSSProperties,
   navBtnNext: {
-    background: BLUE_TINT,
+    background: BLUE_TINT_ML,
   } as React.CSSProperties,
   monthPicker: {
     position: "relative",
@@ -362,7 +362,7 @@ const S = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "21px",
-    color: CAL_TEXT,
+    color: CAL_TEXT_ML,
     whiteSpace: "nowrap",
   } as React.CSSProperties,
   monthPickerSelect: {
@@ -389,7 +389,7 @@ const S = {
     fontSize: "12px",
     lineHeight: "12px",
     textTransform: "uppercase",
-    color: CAL_TEXT,
+    color: CAL_TEXT_ML,
     textAlign: "center",
   } as React.CSSProperties,
   dayGrid: {
@@ -398,9 +398,9 @@ const S = {
     rowGap: "8px",
   } as React.CSSProperties,
   dayBtn: (
-    selected: boolean,
-    inRange: boolean,
-    available: boolean,
+    selectedML: boolean,
+    inRangeML: boolean,
+    availableML: boolean,
   ): React.CSSProperties => ({
     justifySelf: "center",
     width: "100%",
@@ -413,13 +413,13 @@ const S = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "24px",
-    cursor: available ? "pointer" : "not-allowed",
-    background: selected
-      ? CAL_BLUE
-      : inRange
+    cursor: availableML ? "pointer" : "not-allowed",
+    background: selectedML
+      ? CAL_BLUE_ML
+      : inRangeML
         ? "rgba(0, 96, 230, 0.12)"
         : "transparent",
-    color: selected ? "#FFFFFF" : available ? CAL_TEXT : DISABLED_DATE,
+    color: selectedML ? "#FFFFFF" : availableML ? CAL_TEXT_ML : DISABLED_DATE_ML,
   }),
   slotsColumn: {
     boxSizing: "border-box",
@@ -438,10 +438,10 @@ const S = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "18px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     margin: 0,
   } as React.CSSProperties,
-  timeSlotBtn: (active: boolean, disabled: boolean): React.CSSProperties => ({
+  timeSlotBtn: (activeML: boolean, disabledML: boolean): React.CSSProperties => ({
     boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
@@ -451,19 +451,19 @@ const S = {
     padding: "12px 24px",
     width: "100%",
     minHeight: "45px",
-    border: `1px solid ${CAL_BLUE}`,
+    border: `1px solid ${CAL_BLUE_ML}`,
     borderRadius: "28px",
-    background: active ? CAL_BLUE : "#FFFFFF",
-    color: active ? "#FFFFFF" : CAL_TEXT,
+    background: activeML ? CAL_BLUE_ML : "#FFFFFF",
+    color: activeML ? "#FFFFFF" : CAL_TEXT_ML,
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "21px",
     whiteSpace: "nowrap",
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.5 : 1,
+    cursor: disabledML ? "not-allowed" : "pointer",
+    opacity: disabledML ? 0.5 : 1,
   }),
-  chip: (tone: "info" | "ok"): React.CSSProperties => ({
+  chip: (toneML: "info" | "ok"): React.CSSProperties => ({
     alignSelf: "flex-start",
     display: "inline-flex",
     alignItems: "center",
@@ -471,24 +471,24 @@ const S = {
     marginTop: "16px",
     padding: "5px 10px",
     borderRadius: "999px",
-    background: tone === "ok" ? "#e3f6e8" : BLUE_TINT,
+    background: toneML === "ok" ? "#e3f6e8" : BLUE_TINT_ML,
   }),
-  chipText: (tone: "info" | "ok"): React.CSSProperties => ({
+  chipText: (toneML: "info" | "ok"): React.CSSProperties => ({
     fontFamily: "Inter",
     fontSize: "12px",
     fontWeight: 600,
-    color: tone === "ok" ? "#1a7f37" : CAL_BLUE,
+    color: toneML === "ok" ? "#1a7f37" : CAL_BLUE_ML,
   }),
 };
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-const MONTH_NAMES = [
+const MONTH_NAMES_ML = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
 
-const MONTH_SHORT = [
+const MONTH_SHORT_ML = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
@@ -498,7 +498,7 @@ function CollapseIcon() {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <path
         d="M0 20L10 10L20 20M20 0L9.998 10L0 0"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -519,7 +519,7 @@ function SelectChevron() {
     >
       <path
         d="M1 1L6 6L11 1"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -531,7 +531,7 @@ function SelectChevron() {
 function MinusIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path d="M5 10H15" stroke={BLUE} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 10H15" stroke={BLUE_ML} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -539,20 +539,20 @@ function MinusIcon() {
 function PlusStepIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path d="M10 5V15M15 10H5" stroke={BLUE} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 5V15M15 10H5" stroke={BLUE_ML} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function splitFieldLabel(label: string): { title: string; hint: string | null } {
-  const match = /^(.*?)\s*(\([^()]+\))\s*$/.exec(label.trim());
-  if (match && match[1]) return { title: match[1], hint: match[2] };
-  return { title: label, hint: null };
+function splitFieldLabelML(labelML: string): { title: string; hint: string | null } {
+  const matchML = /^(.*?)\s*(\([^()]+\))\s*$/.exec(labelML.trim());
+  if (matchML && matchML[1]) return { title: matchML[1], hint: matchML[2] };
+  return { title: labelML, hint: null };
 }
 
 function NavChevron({
-  direction,
-  color,
+  direction: directionML,
+  color: colorML,
 }: {
   direction: "left" | "right";
   color: string;
@@ -566,14 +566,14 @@ function NavChevron({
       aria-hidden="true"
       style={{
         display: "block",
-        transform: direction === "right" ? "scaleX(-1)" : undefined,
+        transform: directionML === "right" ? "scaleX(-1)" : undefined,
       }}
     >
       <path
         fillRule="evenodd"
         clipRule="evenodd"
         d="M32.4806 34.9941C32.8398 34.6529 32.8398 34.0998 32.4806 33.7586L27.4706 29L32.4806 24.2414C32.8398 23.9002 32.8398 23.3471 32.4806 23.0059C32.1214 22.6647 31.539 22.6647 31.1798 23.0059L25.5194 28.3822C25.1602 28.7234 25.1602 29.2766 25.5194 29.6178L31.1798 34.9941C31.539 35.3353 32.1214 35.3353 32.4806 34.9941Z"
-        fill={color}
+        fill={colorML}
       />
     </svg>
   );
@@ -593,7 +593,7 @@ function DropdownChevron() {
         fillRule="evenodd"
         clipRule="evenodd"
         d="M205.494 25.5194C205.153 25.1602 204.6 25.1602 204.259 25.5194L199.5 30.5294L194.741 25.5194C194.4 25.1602 193.847 25.1602 193.506 25.5194C193.165 25.8786 193.165 26.461 193.506 26.8202L198.882 32.4806C199.223 32.8398 199.777 32.8398 200.118 32.4806L205.494 26.8202C205.835 26.461 205.835 25.8786 205.494 25.5194Z"
-        fill={TEXT_DARK}
+        fill={TEXT_DARK_ML}
       />
     </svg>
   );
@@ -624,797 +624,797 @@ type SlotResult = {
   error?: string;
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const allProducts = await listBookableProducts(session.shop);
-  const enabledProducts = allProducts.filter((p) => p.isEnabled);
-  const [locations, customFields] = await Promise.all([
-    listEnabledLocations(session.shop),
-    listCustomFields(session.shop),
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const allProductsML = await listBookableProductsML(sessionML.shop);
+  const enabledProductsML = allProductsML.filter((pML) => pML.isEnabled);
+  const [locationsML, customFieldsML] = await Promise.all([
+    listEnabledLocationsML(sessionML.shop),
+    listCustomFieldsML(sessionML.shop),
   ]);
   return {
-    products: enabledProducts.map((p) => ({
-      id: p.id,
-      title: p.productTitle,
-      bookingType: p.bookingType,
-      minNights: p.minNights,
-      maxNights: p.maxNights,
-      bundleSessionCount: p.bundleSessionCount,
-      bundleValidityDays: p.bundleValidityDays,
+    products: enabledProductsML.map((pML) => ({
+      id: pML.id,
+      title: pML.productTitle,
+      bookingType: pML.bookingType,
+      minNights: pML.minNights,
+      maxNights: pML.maxNights,
+      bundleSessionCount: pML.bundleSessionCount,
+      bundleValidityDays: pML.bundleValidityDays,
     })),
-    locations: locations.map((l) => ({ id: l.id, name: l.name })),
-    customFields: customFields.map(toPublicField),
+    locations: locationsML.map((lML) => ({ id: lML.id, name: lML.name })),
+    customFields: customFieldsML.map(toPublicFieldML),
   };
 };
 
-async function resolveBlackoutDatesAndSettings(
-  shop: string,
-  bookableProductId: string,
-  locationId?: string | null,
+async function resolveBlackoutDatesAndSettingsML(
+  shopML: string,
+  bookableProductIdML: string,
+  locationIdML?: string | null,
 ) {
-  const context = await resolveBookingContextById(shop, bookableProductId, locationId);
-  if (!context) return null;
+  const contextML = await resolveBookingContextByIdML(shopML, bookableProductIdML, locationIdML);
+  if (!contextML) return null;
   return {
-    bookingType: context.bookingType,
-    effectiveSettings: context.effectiveSettings,
-    blackoutDates: context.blackoutDates,
-    location: context.location,
+    bookingType: contextML.bookingType,
+    effectiveSettings: contextML.effectiveSettings,
+    blackoutDates: contextML.blackoutDates,
+    location: contextML.location,
   };
 }
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "") as
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
+  const intentML = String(formDataML.get("intent") ?? "") as
     | "loadAvailability"
     | "loadSlots"
     | "createBooking"
     | "";
 
-  if (intent === "loadAvailability") {
-    const bookableProductId = String(formData.get("bookableProductId") ?? "");
-    const locationId = String(formData.get("locationId") ?? "") || null;
-    const year = Number(formData.get("year"));
-    const month = Number(formData.get("month"));
-    if (!bookableProductId || !Number.isInteger(year) || !Number.isInteger(month)) {
-      return { intent, ok: false as const, availableDates: [] as string[] };
+  if (intentML === "loadAvailability") {
+    const bookableProductIdML = String(formDataML.get("bookableProductId") ?? "");
+    const locationIdML = String(formDataML.get("locationId") ?? "") || null;
+    const yearML = Number(formDataML.get("year"));
+    const monthML = Number(formDataML.get("month"));
+    if (!bookableProductIdML || !Number.isInteger(yearML) || !Number.isInteger(monthML)) {
+      return { intent: intentML, ok: false as const, availableDates: [] as string[] };
     }
 
-    const resolved = await resolveBlackoutDatesAndSettings(
-      session.shop,
-      bookableProductId,
-      locationId,
+    const resolvedML = await resolveBlackoutDatesAndSettingsML(
+      sessionML.shop,
+      bookableProductIdML,
+      locationIdML,
     );
-    if (!resolved) {
-      return { intent, ok: false as const, availableDates: [] as string[] };
+    if (!resolvedML) {
+      return { intent: intentML, ok: false as const, availableDates: [] as string[] };
     }
 
-    const monthStart = new Date(Date.UTC(year, month - 1, 1));
-    const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+    const monthStartML = new Date(Date.UTC(yearML, monthML - 1, 1));
+    const monthEndML = new Date(Date.UTC(yearML, monthML, 0, 23, 59, 59, 999));
 
-    let availableDates: string[];
-    if (resolved.bookingType === "FULL_DAY") {
-      const bookedCounts = await getBookedCountsInRange(
-        session.shop,
-        bookableProductId,
-        monthStart,
-        monthEnd,
-        resolved.location?.id,
+    let availableDatesML: string[];
+    if (resolvedML.bookingType === "FULL_DAY") {
+      const bookedCountsML = await getBookedCountsInRangeML(
+        sessionML.shop,
+        bookableProductIdML,
+        monthStartML,
+        monthEndML,
+        resolvedML.location?.id,
       );
-      availableDates = getAvailableFullDayDatesInMonth(
-        resolved.effectiveSettings,
-        year,
-        month,
-        resolved.blackoutDates,
+      availableDatesML = getAvailableFullDayDatesInMonthML(
+        resolvedML.effectiveSettings,
+        yearML,
+        monthML,
+        resolvedML.blackoutDates,
         new Date(),
-        bookedCounts,
+        bookedCountsML,
       );
-    } else if (resolved.bookingType === "MULTI_DAY") {
-      const bookedNightCounts = await getBookedNightCountsInRange(
-        session.shop,
-        bookableProductId,
-        monthStart,
-        monthEnd,
-        resolved.location?.id,
+    } else if (resolvedML.bookingType === "MULTI_DAY") {
+      const bookedNightCountsML = await getBookedNightCountsInRangeML(
+        sessionML.shop,
+        bookableProductIdML,
+        monthStartML,
+        monthEndML,
+        resolvedML.location?.id,
       );
-      availableDates = getAvailableMultiDayNightsInMonth(
-        resolved.effectiveSettings,
-        year,
-        month,
-        resolved.blackoutDates,
+      availableDatesML = getAvailableMultiDayNightsInMonthML(
+        resolvedML.effectiveSettings,
+        yearML,
+        monthML,
+        resolvedML.blackoutDates,
         new Date(),
-        bookedNightCounts,
+        bookedNightCountsML,
       );
     } else {
-      const localMonth = localMonthRangeUtc(
-        year,
-        month,
-        resolved.location?.timezone ?? null,
+      const localMonthML = localMonthRangeUtcML(
+        yearML,
+        monthML,
+        resolvedML.location?.timezone ?? null,
       );
-      const bookedCounts = await getBookedCountsInRange(
-        session.shop,
-        bookableProductId,
-        localMonth.start,
-        localMonth.end,
-        resolved.location?.id,
+      const bookedCountsML = await getBookedCountsInRangeML(
+        sessionML.shop,
+        bookableProductIdML,
+        localMonthML.start,
+        localMonthML.end,
+        resolvedML.location?.id,
       );
-      availableDates = getAvailableDatesInMonth(
-        resolved.effectiveSettings,
-        year,
-        month,
-        resolved.blackoutDates,
+      availableDatesML = getAvailableDatesInMonthML(
+        resolvedML.effectiveSettings,
+        yearML,
+        monthML,
+        resolvedML.blackoutDates,
         new Date(),
-        bookedCounts,
-        resolved.location?.timezone ?? null,
+        bookedCountsML,
+        resolvedML.location?.timezone ?? null,
       );
     }
 
     return {
-      intent,
+      intent: intentML,
       ok: true as const,
-      availableDates,
-      dailyStartTime: resolved.effectiveSettings.dailyStartTime,
-      dailyEndTime: resolved.effectiveSettings.dailyEndTime,
+      availableDates: availableDatesML,
+      dailyStartTime: resolvedML.effectiveSettings.dailyStartTime,
+      dailyEndTime: resolvedML.effectiveSettings.dailyEndTime,
     };
   }
 
-  if (intent === "loadSlots") {
-    const bookableProductId = String(formData.get("bookableProductId") ?? "");
-    const locationId = String(formData.get("locationId") ?? "") || null;
-    const date = String(formData.get("date") ?? "");
-    if (!bookableProductId || !date) {
-      return { intent, ok: false as const, slots: [] as TimeSlot[] };
+  if (intentML === "loadSlots") {
+    const bookableProductIdML = String(formDataML.get("bookableProductId") ?? "");
+    const locationIdML = String(formDataML.get("locationId") ?? "") || null;
+    const dateML = String(formDataML.get("date") ?? "");
+    if (!bookableProductIdML || !dateML) {
+      return { intent: intentML, ok: false as const, slots: [] as TimeSlot[] };
     }
 
-    const resolved = await resolveBlackoutDatesAndSettings(
-      session.shop,
-      bookableProductId,
-      locationId,
+    const resolvedML = await resolveBlackoutDatesAndSettingsML(
+      sessionML.shop,
+      bookableProductIdML,
+      locationIdML,
     );
-    if (!resolved) {
-      return { intent, ok: false as const, slots: [] as TimeSlot[] };
+    if (!resolvedML) {
+      return { intent: intentML, ok: false as const, slots: [] as TimeSlot[] };
     }
 
-    const { start: dayStart, end: dayEnd } = localDayRangeUtc(
-      date,
-      resolved.location?.timezone ?? null,
+    const { start: dayStartML, end: dayEndML } = localDayRangeUtcML(
+      dateML,
+      resolvedML.location?.timezone ?? null,
     );
-    const bookedCounts = await getBookedCountsInRange(
-      session.shop,
-      bookableProductId,
-      dayStart,
-      dayEnd,
-      resolved.location?.id,
+    const bookedCountsML = await getBookedCountsInRangeML(
+      sessionML.shop,
+      bookableProductIdML,
+      dayStartML,
+      dayEndML,
+      resolvedML.location?.id,
     );
 
-    const slots = computeSlotsForDate(
-      resolved.effectiveSettings,
-      date,
-      resolved.blackoutDates,
+    const slotsML = computeSlotsForDateML(
+      resolvedML.effectiveSettings,
+      dateML,
+      resolvedML.blackoutDates,
       new Date(),
-      bookedCounts,
-      resolved.location?.timezone ?? null,
+      bookedCountsML,
+      resolvedML.location?.timezone ?? null,
     );
 
-    return { intent, ok: true as const, slots };
+    return { intent: intentML, ok: true as const, slots: slotsML };
   }
 
-  if (intent === "createBooking") {
-    const location = String(formData.get("location") ?? "") || null;
-    const locationId = String(formData.get("locationId") ?? "") || null;
-    const customerName = String(formData.get("customerName") ?? "");
-    const customerEmail = String(formData.get("customerEmail") ?? "") || null;
-    const customerPhone = String(formData.get("customerPhone") ?? "") || null;
+  if (intentML === "createBooking") {
+    const locationML = String(formDataML.get("location") ?? "") || null;
+    const locationIdML = String(formDataML.get("locationId") ?? "") || null;
+    const customerNameML = String(formDataML.get("customerName") ?? "");
+    const customerEmailML = String(formDataML.get("customerEmail") ?? "") || null;
+    const customerPhoneML = String(formDataML.get("customerPhone") ?? "") || null;
 
-    let customFieldResponses: Record<string, string> = {};
+    let customFieldResponsesML: Record<string, string> = {};
     try {
-      customFieldResponses = JSON.parse(
-        String(formData.get("customFieldResponses") ?? "{}"),
+      customFieldResponsesML = JSON.parse(
+        String(formDataML.get("customFieldResponses") ?? "{}"),
       );
     } catch {
-      customFieldResponses = {};
+      customFieldResponsesML = {};
     }
 
-    let slots: QueuedSlotInput[] = [];
+    let slotsML: QueuedSlotInput[] = [];
     try {
-      slots = JSON.parse(String(formData.get("slots") ?? "[]"));
+      slotsML = JSON.parse(String(formDataML.get("slots") ?? "[]"));
     } catch {
-      slots = [];
+      slotsML = [];
     }
 
-    if (slots.length === 0) {
+    if (slotsML.length === 0) {
       return {
-        intent,
+        intent: intentML,
         ok: false as const,
         error: "Add at least one date/time before creating a booking.",
       };
     }
 
-    const groupId = slots.length > 1 ? crypto.randomUUID() : undefined;
+    const groupIdML = slotsML.length > 1 ? crypto.randomUUID() : undefined;
 
-    const results: SlotResult[] = [];
-    const createdBookings: {
+    const resultsML: SlotResult[] = [];
+    const createdBookingsML: {
       booking: Booking;
       productTitle: string;
       bookingType: BookingType;
     }[] = [];
-    for (const slot of slots) {
-      const result = await createManualBooking(session.shop, {
-        bookableProductId: slot.bookableProductId,
-        date: slot.date,
-        slotStart: slot.slotStart,
-        endDate: slot.endDate ?? null,
-        quantity: slot.quantity,
-        location,
-        locationId,
-        customerName,
-        customerEmail,
-        customerPhone,
-        customFieldResponses,
-        groupId,
+    for (const slotML of slotsML) {
+      const resultML = await createManualBookingML(sessionML.shop, {
+        bookableProductId: slotML.bookableProductId,
+        date: slotML.date,
+        slotStart: slotML.slotStart,
+        endDate: slotML.endDate ?? null,
+        quantity: slotML.quantity,
+        location: locationML,
+        locationId: locationIdML,
+        customerName: customerNameML,
+        customerEmail: customerEmailML,
+        customerPhone: customerPhoneML,
+        customFieldResponses: customFieldResponsesML,
+        groupId: groupIdML,
       });
-      if (result.ok) {
-        createdBookings.push({
-          booking: result.booking,
-          productTitle: result.productTitle,
-          bookingType: result.bookingType,
+      if (resultML.ok) {
+        createdBookingsML.push({
+          booking: resultML.booking,
+          productTitle: resultML.productTitle,
+          bookingType: resultML.bookingType,
         });
       }
-      results.push({
-        bookableProductId: slot.bookableProductId,
-        date: slot.date,
-        slotStart: slot.slotStart,
-        ok: result.ok,
-        error: result.ok ? undefined : result.error,
+      resultsML.push({
+        bookableProductId: slotML.bookableProductId,
+        date: slotML.date,
+        slotStart: slotML.slotStart,
+        ok: resultML.ok,
+        error: resultML.ok ? undefined : resultML.error,
       });
     }
 
-    sendManualBookingEmailsInBackground(session.shop, createdBookings);
+    sendManualBookingEmailsInBackgroundML(sessionML.shop, createdBookingsML);
 
-    const createdCount = results.filter((r) => r.ok).length;
-    const failedCount = results.length - createdCount;
+    const createdCountML = resultsML.filter((rML) => rML.ok).length;
+    const failedCountML = resultsML.length - createdCountML;
 
     return {
-      intent,
-      ok: failedCount === 0,
-      results,
-      createdCount,
-      failedCount,
+      intent: intentML,
+      ok: failedCountML === 0,
+      results: resultsML,
+      createdCount: createdCountML,
+      failedCount: failedCountML,
     };
   }
 
-  return { intent, ok: false as const };
+  return { intent: intentML, ok: false as const };
 };
 
 export default function NewBookingPage() {
-  const { products, locations, customFields } = useLoaderData<typeof loader>();
-  const availabilityFetcher = useFetcher<typeof action>();
-  const secondMonthFetcher = useFetcher<typeof action>();
-  const slotsFetcher = useFetcher<typeof action>();
-  const createFetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
+  const { products: productsML, locations: locationsML, customFields: customFieldsML } = useLoaderData<typeof loader>();
+  const availabilityFetcherML = useFetcher<typeof action>();
+  const secondMonthFetcherML = useFetcher<typeof action>();
+  const slotsFetcherML = useFetcher<typeof action>();
+  const createFetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
 
-  const today = new Date();
+  const todayML = new Date();
 
-  const [bookableProductId, setBookableProductId] = useState("");
-  const selectedProduct = products.find((p) => p.id === bookableProductId);
-  const selectedBookingType = selectedProduct?.bookingType ?? "SLOT";
-  const [viewYear, setViewYear] = useState(today.getUTCFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getUTCMonth() + 1);
-  const [date, setDate] = useState("");
-  const [checkoutDate, setCheckoutDate] = useState("");
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [locationId, setLocationId] = useState("");
-  const readyForCalendar =
-    Boolean(bookableProductId) && (locations.length === 0 || Boolean(locationId));
-  const [customFieldValues, setCustomFieldValues] = useState<
+  const [bookableProductIdML, setBookableProductIdML] = useState("");
+  const selectedProductML = productsML.find((pML) => pML.id === bookableProductIdML);
+  const selectedBookingTypeML = selectedProductML?.bookingType ?? "SLOT";
+  const [viewYearML, setViewYearML] = useState(todayML.getUTCFullYear());
+  const [viewMonthML, setViewMonthML] = useState(todayML.getUTCMonth() + 1);
+  const [dateML, setDateML] = useState("");
+  const [checkoutDateML, setCheckoutDateML] = useState("");
+  const [selectedSlotML, setSelectedSlotML] = useState<TimeSlot | null>(null);
+  const [quantityML, setQuantityML] = useState(1);
+  const [locationIdML, setLocationIdML] = useState("");
+  const readyForCalendarML =
+    Boolean(bookableProductIdML) && (locationsML.length === 0 || Boolean(locationIdML));
+  const [customFieldValuesML, setCustomFieldValuesML] = useState<
     Record<string, string>
   >({});
-  const [queuedSlots, setQueuedSlots] = useState<QueuedEntry[]>([]);
-  const submittedRef = useRef<QueuedEntry[]>([]);
-  const [customerName, setCustomerName] = useState("");
-  const [nameTouched, setNameTouched] = useState(false);
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [emailTouched, setEmailTouched] = useState(false);
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [phoneTouched, setPhoneTouched] = useState(false);
-  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [queuedSlotsML, setQueuedSlotsML] = useState<QueuedEntry[]>([]);
+  const submittedRefML = useRef<QueuedEntry[]>([]);
+  const [customerNameML, setCustomerNameML] = useState("");
+  const [nameTouchedML, setNameTouchedML] = useState(false);
+  const [customerEmailML, setCustomerEmailML] = useState("");
+  const [emailTouchedML, setEmailTouchedML] = useState(false);
+  const [customerPhoneML, setCustomerPhoneML] = useState("");
+  const [phoneTouchedML, setPhoneTouchedML] = useState(false);
+  const [submitAttemptedML, setSubmitAttemptedML] = useState(false);
 
-  const bundleSessionsQueued = queuedSlots.filter(
-    (entry) => entry.bookableProductId === bookableProductId,
+  const bundleSessionsQueuedML = queuedSlotsML.filter(
+    (entryML) => entryML.bookableProductId === bookableProductIdML,
   );
-  const bundleSessionCount = selectedProduct?.bundleSessionCount ?? null;
-  const bundleSessionsRemaining =
-    bundleSessionCount !== null
-      ? Math.max(0, bundleSessionCount - bundleSessionsQueued.length)
+  const bundleSessionCountML = selectedProductML?.bundleSessionCount ?? null;
+  const bundleSessionsRemainingML =
+    bundleSessionCountML !== null
+      ? Math.max(0, bundleSessionCountML - bundleSessionsQueuedML.length)
       : null;
-  const bundleComplete =
-    bundleSessionCount !== null && bundleSessionsRemaining === 0;
+  const bundleCompleteML =
+    bundleSessionCountML !== null && bundleSessionsRemainingML === 0;
 
-  const bundleValidityDays =
-    selectedBookingType === "BUNDLE"
-      ? (selectedProduct?.bundleValidityDays ?? null)
+  const bundleValidityDaysML =
+    selectedBookingTypeML === "BUNDLE"
+      ? (selectedProductML?.bundleValidityDays ?? null)
       : null;
-  const bundleQueuedDates = bundleSessionsQueued.map((entry) => entry.date).sort();
-  const bundleWindowStart = bundleValidityDays ? (bundleQueuedDates[0] ?? null) : null;
-  const addDaysToIso = (iso: string, days: number) => {
-    const d = new Date(`${iso}T00:00:00.000Z`);
-    d.setUTCDate(d.getUTCDate() + days);
-    return d.toISOString().slice(0, 10);
+  const bundleQueuedDatesML = bundleSessionsQueuedML.map((entryML) => entryML.date).sort();
+  const bundleWindowStartML = bundleValidityDaysML ? (bundleQueuedDatesML[0] ?? null) : null;
+  const addDaysToIsoML = (isoML: string, daysML: number) => {
+    const dML = new Date(`${isoML}T00:00:00.000Z`);
+    dML.setUTCDate(dML.getUTCDate() + daysML);
+    return dML.toISOString().slice(0, 10);
   };
-  const bundleValidityDeadline =
-    bundleValidityDays && bundleWindowStart
-      ? addDaysToIso(bundleWindowStart, bundleValidityDays)
+  const bundleValidityDeadlineML =
+    bundleValidityDaysML && bundleWindowStartML
+      ? addDaysToIsoML(bundleWindowStartML, bundleValidityDaysML)
       : null;
 
-  const availableDates: string[] =
-    availabilityFetcher.data?.intent === "loadAvailability" &&
-    availabilityFetcher.data.ok
-      ? availabilityFetcher.data.availableDates
+  const availableDatesML: string[] =
+    availabilityFetcherML.data?.intent === "loadAvailability" &&
+    availabilityFetcherML.data.ok
+      ? availabilityFetcherML.data.availableDates
       : [];
 
-  const fullDayStartTime: string =
-    availabilityFetcher.data?.intent === "loadAvailability" &&
-    availabilityFetcher.data.ok
-      ? availabilityFetcher.data.dailyStartTime
+  const fullDayStartTimeML: string =
+    availabilityFetcherML.data?.intent === "loadAvailability" &&
+    availabilityFetcherML.data.ok
+      ? availabilityFetcherML.data.dailyStartTime
       : "00:00";
 
-  const fullDayEndTime: string =
-    availabilityFetcher.data?.intent === "loadAvailability" &&
-    availabilityFetcher.data.ok
-      ? availabilityFetcher.data.dailyEndTime
+  const fullDayEndTimeML: string =
+    availabilityFetcherML.data?.intent === "loadAvailability" &&
+    availabilityFetcherML.data.ok
+      ? availabilityFetcherML.data.dailyEndTime
       : "23:59";
 
-  const isTwoMonthType = true;
+  const isTwoMonthTypeML = true;
 
-  const todayMonthIndex = today.getUTCFullYear() * 12 + today.getUTCMonth();
+  const todayMonthIndexML = todayML.getUTCFullYear() * 12 + todayML.getUTCMonth();
 
-  const yearPickerOptions = (shownYear: number) => {
-    const thisYear = today.getUTCFullYear();
-    const from = Math.min(thisYear, shownYear);
-    const to = Math.max(thisYear + YEAR_PICKER_SPAN - 1, shownYear);
-    const options: number[] = [];
-    for (let y = from; y <= to; y += 1) options.push(y);
-    return options;
+  const yearPickerOptionsML = (shownYearML: number) => {
+    const thisYearML = todayML.getUTCFullYear();
+    const fromML = Math.min(thisYearML, shownYearML);
+    const toML = Math.max(thisYearML + YEAR_PICKER_SPAN_ML - 1, shownYearML);
+    const optionsML: number[] = [];
+    for (let yML = fromML; yML <= toML; yML += 1) optionsML.push(yML);
+    return optionsML;
   };
 
-  const jumpToYear = (year: number, shownMonth: number, offset: number) => {
-    const target = Math.max(
-      year * 12 + (shownMonth - 1),
-      todayMonthIndex + offset,
+  const jumpToYearML = (yearML: number, shownMonthML: number, offsetML: number) => {
+    const targetML = Math.max(
+      yearML * 12 + (shownMonthML - 1),
+      todayMonthIndexML + offsetML,
     );
-    const index = target - offset;
-    setViewYear(Math.floor(index / 12));
-    setViewMonth((index % 12) + 1);
+    const indexML = targetML - offsetML;
+    setViewYearML(Math.floor(indexML / 12));
+    setViewMonthML((indexML % 12) + 1);
   };
 
-  let secondYear = viewYear;
-  let secondMonth = viewMonth + 1;
-  if (secondMonth > 12) {
-    secondMonth = 1;
-    secondYear += 1;
+  let secondYearML = viewYearML;
+  let secondMonthML = viewMonthML + 1;
+  if (secondMonthML > 12) {
+    secondMonthML = 1;
+    secondYearML += 1;
   }
 
-  const secondMonthDates: string[] =
-    secondMonthFetcher.data?.intent === "loadAvailability" &&
-    secondMonthFetcher.data.ok
-      ? secondMonthFetcher.data.availableDates
+  const secondMonthDatesML: string[] =
+    secondMonthFetcherML.data?.intent === "loadAvailability" &&
+    secondMonthFetcherML.data.ok
+      ? secondMonthFetcherML.data.availableDates
       : [];
 
-  const slots: TimeSlot[] =
-    slotsFetcher.data?.intent === "loadSlots" && slotsFetcher.data.ok
-      ? slotsFetcher.data.slots
+  const slotsML: TimeSlot[] =
+    slotsFetcherML.data?.intent === "loadSlots" && slotsFetcherML.data.ok
+      ? slotsFetcherML.data.slots
       : [];
 
-  const createResult =
-    createFetcher.data?.intent === "createBooking" ? createFetcher.data : null;
-  const createError =
-    createResult && "error" in createResult ? createResult.error : null;
+  const createResultML =
+    createFetcherML.data?.intent === "createBooking" ? createFetcherML.data : null;
+  const createErrorML =
+    createResultML && "error" in createResultML ? createResultML.error : null;
 
-  const quantityLocked =
-    selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0;
+  const quantityLockedML =
+    selectedBookingTypeML === "BUNDLE" && bundleSessionsQueuedML.length > 0;
 
-  const maxQuantity = Math.max(
+  const maxQuantityML = Math.max(
     1,
-    typeof selectedSlot?.remainingCapacity === "number"
-      ? selectedSlot.remainingCapacity
+    typeof selectedSlotML?.remainingCapacity === "number"
+      ? selectedSlotML.remainingCapacity
       : 1,
   );
 
-  const loadAvailability = (productId: string, year: number, month: number) => {
-    if (!productId) return;
-    availabilityFetcher.submit(
+  const loadAvailabilityML = (productIdML: string, yearML: number, monthML: number) => {
+    if (!productIdML) return;
+    availabilityFetcherML.submit(
       {
         intent: "loadAvailability",
-        bookableProductId: productId,
-        locationId,
-        year: String(year),
-        month: String(month),
+        bookableProductId: productIdML,
+        locationId: locationIdML,
+        year: String(yearML),
+        month: String(monthML),
       },
       { method: "POST" },
     );
   };
 
-  const loadSecondMonthAvailability = (
-    productId: string,
-    year: number,
-    month: number,
+  const loadSecondMonthAvailabilityML = (
+    productIdML: string,
+    yearML: number,
+    monthML: number,
   ) => {
-    if (!productId) return;
-    secondMonthFetcher.submit(
+    if (!productIdML) return;
+    secondMonthFetcherML.submit(
       {
         intent: "loadAvailability",
-        bookableProductId: productId,
-        locationId,
-        year: String(year),
-        month: String(month),
+        bookableProductId: productIdML,
+        locationId: locationIdML,
+        year: String(yearML),
+        month: String(monthML),
       },
       { method: "POST" },
     );
   };
 
   useEffect(() => {
-    setDate("");
-    setCheckoutDate("");
-    setCheckoutError(null);
-    setSelectedSlot(null);
-    if (!readyForCalendar) return;
-    loadAvailability(bookableProductId, viewYear, viewMonth);
-    if (isTwoMonthType) {
-      loadSecondMonthAvailability(bookableProductId, secondYear, secondMonth);
+    setDateML("");
+    setCheckoutDateML("");
+    setCheckoutErrorML(null);
+    setSelectedSlotML(null);
+    if (!readyForCalendarML) return;
+    loadAvailabilityML(bookableProductIdML, viewYearML, viewMonthML);
+    if (isTwoMonthTypeML) {
+      loadSecondMonthAvailabilityML(bookableProductIdML, secondYearML, secondMonthML);
     }
-  }, [bookableProductId, viewYear, viewMonth, locationId, isTwoMonthType, readyForCalendar]);
+  }, [bookableProductIdML, viewYearML, viewMonthML, locationIdML, isTwoMonthTypeML, readyForCalendarML]);
 
   useEffect(() => {
-    if (selectedSlot) {
-      setQuantity(1);
+    if (selectedSlotML) {
+      setQuantityML(1);
     }
-  }, [selectedSlot]);
+  }, [selectedSlotML]);
 
   useEffect(() => {
-    if (!date || selectedBookingType !== "SLOT") return;
-    setSelectedSlot(null);
-    slotsFetcher.submit(
-      { intent: "loadSlots", bookableProductId, locationId, date },
+    if (!dateML || selectedBookingTypeML !== "SLOT") return;
+    setSelectedSlotML(null);
+    slotsFetcherML.submit(
+      { intent: "loadSlots", bookableProductId: bookableProductIdML, locationId: locationIdML, date: dateML },
       { method: "POST" },
     );
-  }, [locationId]);
+  }, [locationIdML]);
 
   useEffect(() => {
-    if (createFetcher.data?.intent !== "createBooking") return;
-    const result = createFetcher.data;
-    if (!("results" in result) || !result.results) return;
+    if (createFetcherML.data?.intent !== "createBooking") return;
+    const resultML = createFetcherML.data;
+    if (!("results" in resultML) || !resultML.results) return;
 
-    const results = result.results;
-    const createdCount = result.createdCount ?? 0;
-    const failedCount = result.failedCount ?? 0;
+    const resultsML = resultML.results;
+    const createdCountML = resultML.createdCount ?? 0;
+    const failedCountML = resultML.failedCount ?? 0;
 
-    shopify.toast.show(
-      failedCount > 0
-        ? `Created ${createdCount} of ${createdCount + failedCount} booking(s)`
-        : `Created ${createdCount} booking(s)`,
+    shopifyML.toast.show(
+      failedCountML > 0
+        ? `Created ${createdCountML} of ${createdCountML + failedCountML} booking(s)`
+        : `Created ${createdCountML} booking(s)`,
     );
 
-    setDate("");
-    setCheckoutDate("");
-    setSelectedSlot(null);
+    setDateML("");
+    setCheckoutDateML("");
+    setSelectedSlotML(null);
 
-    if (failedCount === 0) {
-      setQueuedSlots([]);
-      setCustomFieldValues({});
-      setCustomerName("");
-      setNameTouched(false);
-      setCustomerEmail("");
-      setEmailTouched(false);
-      setCustomerPhone("");
-      setPhoneTouched(false);
-      setSubmitAttempted(false);
+    if (failedCountML === 0) {
+      setQueuedSlotsML([]);
+      setCustomFieldValuesML({});
+      setCustomerNameML("");
+      setNameTouchedML(false);
+      setCustomerEmailML("");
+      setEmailTouchedML(false);
+      setCustomerPhoneML("");
+      setPhoneTouchedML(false);
+      setSubmitAttemptedML(false);
     } else {
-      setQueuedSlots(
-        submittedRef.current
-          .map((entry) => {
-            const match = results.find(
-              (r) =>
-                r.bookableProductId === entry.bookableProductId &&
-                r.date === entry.date &&
-                r.slotStart === entry.slot.start,
+      setQueuedSlotsML(
+        submittedRefML.current
+          .map((entryML) => {
+            const matchML = resultsML.find(
+              (rML) =>
+                rML.bookableProductId === entryML.bookableProductId &&
+                rML.date === entryML.date &&
+                rML.slotStart === entryML.slot.start,
             );
-            if (!match) return entry;
-            return match.ok ? null : { ...entry, error: match.error };
+            if (!matchML) return entryML;
+            return matchML.ok ? null : { ...entryML, error: matchML.error };
           })
-          .filter((entry): entry is QueuedEntry => entry !== null),
+          .filter((entryML): entryML is QueuedEntry => entryML !== null),
       );
     }
-    loadAvailability(bookableProductId, viewYear, viewMonth);
-    if (isTwoMonthType) {
-      loadSecondMonthAvailability(bookableProductId, secondYear, secondMonth);
+    loadAvailabilityML(bookableProductIdML, viewYearML, viewMonthML);
+    if (isTwoMonthTypeML) {
+      loadSecondMonthAvailabilityML(bookableProductIdML, secondYearML, secondMonthML);
     }
-    if (date) {
-      slotsFetcher.submit(
-        { intent: "loadSlots", bookableProductId, locationId, date },
+    if (dateML) {
+      slotsFetcherML.submit(
+        { intent: "loadSlots", bookableProductId: bookableProductIdML, locationId: locationIdML, date: dateML },
         { method: "POST" },
       );
     }
-  }, [createFetcher.data, shopify]);
+  }, [createFetcherML.data, shopifyML]);
 
-  const goToMonth = (delta: number) => {
-    let newMonth = viewMonth + delta;
-    let newYear = viewYear;
-    if (newMonth < 1) {
-      newMonth = 12;
-      newYear -= 1;
-    } else if (newMonth > 12) {
-      newMonth = 1;
-      newYear += 1;
+  const goToMonthML = (deltaML: number) => {
+    let newMonthML = viewMonthML + deltaML;
+    let newYearML = viewYearML;
+    if (newMonthML < 1) {
+      newMonthML = 12;
+      newYearML -= 1;
+    } else if (newMonthML > 12) {
+      newMonthML = 1;
+      newYearML += 1;
     }
-    setViewMonth(newMonth);
-    setViewYear(newYear);
+    setViewMonthML(newMonthML);
+    setViewYearML(newYearML);
   };
 
-  const nightsBetween = (checkin: string, checkout: string): number =>
+  const nightsBetweenML = (checkinML: string, checkoutML: string): number =>
     Math.round(
-      (new Date(`${checkout}T00:00:00.000Z`).getTime() -
-        new Date(`${checkin}T00:00:00.000Z`).getTime()) /
+      (new Date(`${checkoutML}T00:00:00.000Z`).getTime() -
+        new Date(`${checkinML}T00:00:00.000Z`).getTime()) /
         86400000,
     );
 
-  const multiDayMinNights = selectedProduct?.minNights ?? null;
-  const multiDayMaxNights = selectedProduct?.maxNights ?? null;
+  const multiDayMinNightsML = selectedProductML?.minNights ?? null;
+  const multiDayMaxNightsML = selectedProductML?.maxNights ?? null;
 
-  const stayLengthError = (checkin: string, checkout: string): string | null => {
-    const nights = nightsBetween(checkin, checkout);
-    if (multiDayMinNights !== null && nights < multiDayMinNights) {
-      return `Minimum stay is ${multiDayMinNights} night${multiDayMinNights === 1 ? "" : "s"}.`;
+  const stayLengthErrorML = (checkinML: string, checkoutML: string): string | null => {
+    const nightsML = nightsBetweenML(checkinML, checkoutML);
+    if (multiDayMinNightsML !== null && nightsML < multiDayMinNightsML) {
+      return `Minimum stay is ${multiDayMinNightsML} night${multiDayMinNightsML === 1 ? "" : "s"}.`;
     }
-    if (multiDayMaxNights !== null && nights > multiDayMaxNights) {
-      return `Maximum stay is ${multiDayMaxNights} night${multiDayMaxNights === 1 ? "" : "s"}.`;
+    if (multiDayMaxNightsML !== null && nightsML > multiDayMaxNightsML) {
+      return `Maximum stay is ${multiDayMaxNightsML} night${multiDayMaxNightsML === 1 ? "" : "s"}.`;
     }
     return null;
   };
 
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutErrorML, setCheckoutErrorML] = useState<string | null>(null);
 
-  const selectDate = (dateStr: string) => {
-    if (selectedBookingType === "MULTI_DAY") {
-      if (!date || checkoutDate || dateStr <= date) {
-        setDate(dateStr);
-        setCheckoutDate("");
-        setCheckoutError(null);
-        setSelectedSlot(null);
+  const selectDateML = (dateStrML: string) => {
+    if (selectedBookingTypeML === "MULTI_DAY") {
+      if (!dateML || checkoutDateML || dateStrML <= dateML) {
+        setDateML(dateStrML);
+        setCheckoutDateML("");
+        setCheckoutErrorML(null);
+        setSelectedSlotML(null);
         return;
       }
-      const error = stayLengthError(date, dateStr);
-      if (error) {
-        setCheckoutError(error);
-        setCheckoutDate("");
-        setSelectedSlot(null);
+      const errorML = stayLengthErrorML(dateML, dateStrML);
+      if (errorML) {
+        setCheckoutErrorML(errorML);
+        setCheckoutDateML("");
+        setSelectedSlotML(null);
         return;
       }
-      setCheckoutError(null);
-      setCheckoutDate(dateStr);
-      setSelectedSlot({
+      setCheckoutErrorML(null);
+      setCheckoutDateML(dateStrML);
+      setSelectedSlotML({
         start: "00:00",
         end: "00:00",
-        startsAt: `${date}T00:00:00.000Z`,
+        startsAt: `${dateML}T00:00:00.000Z`,
         available: true,
         remainingCapacity: null,
       } as TimeSlot);
       return;
     }
 
-    setDate(dateStr);
-    setCheckoutDate("");
-    setCheckoutError(null);
-    if (selectedBookingType === "FULL_DAY") {
-      setSelectedSlot({
-        start: fullDayStartTime,
-        end: fullDayEndTime,
-        startsAt: `${dateStr}T00:00:00.000Z`,
+    setDateML(dateStrML);
+    setCheckoutDateML("");
+    setCheckoutErrorML(null);
+    if (selectedBookingTypeML === "FULL_DAY") {
+      setSelectedSlotML({
+        start: fullDayStartTimeML,
+        end: fullDayEndTimeML,
+        startsAt: `${dateStrML}T00:00:00.000Z`,
         available: true,
         remainingCapacity: null,
       } as TimeSlot);
       return;
     }
-    setSelectedSlot(null);
-    slotsFetcher.submit(
-      { intent: "loadSlots", bookableProductId, locationId, date: dateStr },
+    setSelectedSlotML(null);
+    slotsFetcherML.submit(
+      { intent: "loadSlots", bookableProductId: bookableProductIdML, locationId: locationIdML, date: dateStrML },
       { method: "POST" },
     );
   };
 
-  const handleChangeMultiDayDates = () => {
-    setDate("");
-    setCheckoutDate("");
-    setCheckoutError(null);
-    setSelectedSlot(null);
+  const handleChangeMultiDayDatesML = () => {
+    setDateML("");
+    setCheckoutDateML("");
+    setCheckoutErrorML(null);
+    setSelectedSlotML(null);
   };
 
-  const isValidEmail = (value: string) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const isValidEmailML = (valueML: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valueML);
 
-  const multiDayStayLengthMessage = (() => {
-    if (selectedBookingType !== "MULTI_DAY") return null;
-    const min = multiDayMinNights;
-    const max = multiDayMaxNights;
-    if (min !== null && max !== null) {
-      return `Min Days: ${min}, Max Days: ${max}`;
+  const multiDayStayLengthMessageML = (() => {
+    if (selectedBookingTypeML !== "MULTI_DAY") return null;
+    const minML = multiDayMinNightsML;
+    const maxML = multiDayMaxNightsML;
+    if (minML !== null && maxML !== null) {
+      return `Min Days: ${minML}, Max Days: ${maxML}`;
     }
-    if (min !== null) return `Min Days: ${min}`;
-    if (max !== null) return `Max Days: ${max}`;
+    if (minML !== null) return `Min Days: ${minML}`;
+    if (maxML !== null) return `Max Days: ${maxML}`;
     return null;
   })();
 
-  const nameError =
-    (nameTouched || submitAttempted) && !customerName.trim()
+  const nameErrorML =
+    (nameTouchedML || submitAttemptedML) && !customerNameML.trim()
       ? "Name is required"
       : undefined;
 
-  const emailError =
-    (emailTouched || submitAttempted) && !customerEmail.trim()
+  const emailErrorML =
+    (emailTouchedML || submitAttemptedML) && !customerEmailML.trim()
       ? "Email is required"
-      : (emailTouched || submitAttempted) &&
-          customerEmail !== "" &&
-          !isValidEmail(customerEmail)
+      : (emailTouchedML || submitAttemptedML) &&
+          customerEmailML !== "" &&
+          !isValidEmailML(customerEmailML)
         ? "Please enter a valid email address"
         : undefined;
 
-  const phoneError =
-    (phoneTouched || submitAttempted) &&
-    customerPhone !== "" &&
-    customerPhone.length !== 10
+  const phoneErrorML =
+    (phoneTouchedML || submitAttemptedML) &&
+    customerPhoneML !== "" &&
+    customerPhoneML.length !== 10
       ? "Phone number must be exactly 10 digits"
       : undefined;
 
-  const currentEntry: QueuedEntry | null = (() => {
-    if (!date || !selectedSlot) return null;
-    if (selectedBookingType === "MULTI_DAY" && !checkoutDate) return null;
-    const alreadyQueued = queuedSlots.some(
-      (entry) =>
-        entry.bookableProductId === bookableProductId &&
-        entry.date === date &&
-        entry.slot.startsAt === selectedSlot.startsAt,
+  const currentEntryML: QueuedEntry | null = (() => {
+    if (!dateML || !selectedSlotML) return null;
+    if (selectedBookingTypeML === "MULTI_DAY" && !checkoutDateML) return null;
+    const alreadyQueuedML = queuedSlotsML.some(
+      (entryML) =>
+        entryML.bookableProductId === bookableProductIdML &&
+        entryML.date === dateML &&
+        entryML.slot.startsAt === selectedSlotML.startsAt,
     );
-    if (alreadyQueued) return null;
+    if (alreadyQueuedML) return null;
     return {
-      bookableProductId,
-      productTitle: selectedProduct?.title ?? "",
-      date,
-      slot: selectedSlot,
-      endDate: selectedBookingType === "MULTI_DAY" ? checkoutDate : null,
+      bookableProductId: bookableProductIdML,
+      productTitle: selectedProductML?.title ?? "",
+      date: dateML,
+      slot: selectedSlotML,
+      endDate: selectedBookingTypeML === "MULTI_DAY" ? checkoutDateML : null,
       quantity:
-        selectedBookingType === "BUNDLE" && bundleSessionsQueued.length > 0
-          ? bundleSessionsQueued[0].quantity
-          : quantity,
+        selectedBookingTypeML === "BUNDLE" && bundleSessionsQueuedML.length > 0
+          ? bundleSessionsQueuedML[0].quantity
+          : quantityML,
     };
   })();
 
-  const submissionSlots: QueuedEntry[] = currentEntry
-    ? [...queuedSlots, currentEntry]
-    : queuedSlots;
+  const submissionSlotsML: QueuedEntry[] = currentEntryML
+    ? [...queuedSlotsML, currentEntryML]
+    : queuedSlotsML;
 
-  const hasSelection = submissionSlots.length > 0;
+  const hasSelectionML = submissionSlotsML.length > 0;
 
-  const createBookingCount =
-    submissionSlots.filter(
-      (entry) =>
-        products.find((p) => p.id === entry.bookableProductId)?.bookingType !==
+  const createBookingCountML =
+    submissionSlotsML.filter(
+      (entryML) =>
+        productsML.find((pML) => pML.id === entryML.bookableProductId)?.bookingType !==
         "BUNDLE",
     ).length +
     new Set(
-      submissionSlots
+      submissionSlotsML
         .filter(
-          (entry) =>
-            products.find((p) => p.id === entry.bookableProductId)
+          (entryML) =>
+            productsML.find((pML) => pML.id === entryML.bookableProductId)
               ?.bookingType === "BUNDLE",
         )
-        .map((entry) => entry.bookableProductId),
+        .map((entryML) => entryML.bookableProductId),
     ).size;
 
-  const productError =
-    submitAttempted && !bookableProductId ? "Select a product" : undefined;
-  const locationError =
-    submitAttempted && locations.length > 0 && !locationId
+  const productErrorML =
+    submitAttemptedML && !bookableProductIdML ? "Select a product" : undefined;
+  const locationErrorML =
+    submitAttemptedML && locationsML.length > 0 && !locationIdML
       ? "Select a location"
       : undefined;
 
-  const noSelectionError =
-    submitAttempted && submissionSlots.length === 0
-      ? selectedBookingType === "MULTI_DAY"
+  const noSelectionErrorML =
+    submitAttemptedML && submissionSlotsML.length === 0
+      ? selectedBookingTypeML === "MULTI_DAY"
         ? "Select check-in and check-out dates first."
         : "Select a date and time first."
       : undefined;
 
-  const needsNextSlot =
-    !!selectedSlot &&
-    selectedBookingType === "BUNDLE" &&
-    bundleSessionCount !== null &&
-    bundleSessionsQueued.length + 1 < bundleSessionCount;
+  const needsNextSlotML =
+    !!selectedSlotML &&
+    selectedBookingTypeML === "BUNDLE" &&
+    bundleSessionCountML !== null &&
+    bundleSessionsQueuedML.length + 1 < bundleSessionCountML;
 
-  const isLastBundleSession =
-    !!selectedSlot &&
-    selectedBookingType === "BUNDLE" &&
-    bundleSessionCount !== null &&
-    bundleSessionsQueued.length + 1 === bundleSessionCount;
+  const isLastBundleSessionML =
+    !!selectedSlotML &&
+    selectedBookingTypeML === "BUNDLE" &&
+    bundleSessionCountML !== null &&
+    bundleSessionsQueuedML.length + 1 === bundleSessionCountML;
 
-  const handleNextSlot = () => {
-    if (!currentEntry) return;
-    setQueuedSlots((prev) => [...prev, currentEntry]);
-    setDate("");
-    setCheckoutDate("");
-    setSelectedSlot(null);
+  const handleNextSlotML = () => {
+    if (!currentEntryML) return;
+    setQueuedSlotsML((prevML) => [...prevML, currentEntryML]);
+    setDateML("");
+    setCheckoutDateML("");
+    setSelectedSlotML(null);
   };
 
-  const handleRemoveQueued = (index: number) => {
-    setQueuedSlots((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveQueuedML = (indexML: number) => {
+    setQueuedSlotsML((prevML) => prevML.filter((_, iML) => iML !== indexML));
   };
 
-  const incompleteBundleTitles = Array.from(
-    new Set(submissionSlots.map((entry) => entry.bookableProductId)),
+  const incompleteBundleTitlesML = Array.from(
+    new Set(submissionSlotsML.map((entryML) => entryML.bookableProductId)),
   )
-    .map((id) => {
-      const product = products.find((p) => p.id === id);
-      if (!product || product.bookingType !== "BUNDLE" || product.bundleSessionCount === null) {
+    .map((idML) => {
+      const productML = productsML.find((pML) => pML.id === idML);
+      if (!productML || productML.bookingType !== "BUNDLE" || productML.bundleSessionCount === null) {
         return null;
       }
-      const queuedCount = submissionSlots.filter(
-        (entry) => entry.bookableProductId === id,
+      const queuedCountML = submissionSlotsML.filter(
+        (entryML) => entryML.bookableProductId === idML,
       ).length;
-      return queuedCount !== product.bundleSessionCount ? product.title : null;
+      return queuedCountML !== productML.bundleSessionCount ? productML.title : null;
     })
-    .filter((title): title is string => title !== null);
+    .filter((titleML): titleML is string => titleML !== null);
 
-  const handleCreateBooking = () => {
-    setSubmitAttempted(true);
-    setNameTouched(true);
-    setEmailTouched(true);
-    setPhoneTouched(true);
+  const handleCreateBookingML = () => {
+    setSubmitAttemptedML(true);
+    setNameTouchedML(true);
+    setEmailTouchedML(true);
+    setPhoneTouchedML(true);
 
     if (
-      !bookableProductId ||
-      (locations.length > 0 && !locationId) ||
-      submissionSlots.length === 0 ||
-      incompleteBundleTitles.length > 0 ||
-      !customerName.trim() ||
-      !customerEmail.trim() ||
-      !isValidEmail(customerEmail) ||
-      (customerPhone !== "" && customerPhone.length !== 10)
+      !bookableProductIdML ||
+      (locationsML.length > 0 && !locationIdML) ||
+      submissionSlotsML.length === 0 ||
+      incompleteBundleTitlesML.length > 0 ||
+      !customerNameML.trim() ||
+      !customerEmailML.trim() ||
+      !isValidEmailML(customerEmailML) ||
+      (customerPhoneML !== "" && customerPhoneML.length !== 10)
     ) {
       return;
     }
 
-    const selectedLocation = locations.find((l) => l.id === locationId);
+    const selectedLocationML = locationsML.find((lML) => lML.id === locationIdML);
 
-    submittedRef.current = submissionSlots;
+    submittedRefML.current = submissionSlotsML;
 
-    createFetcher.submit(
+    createFetcherML.submit(
       {
         intent: "createBooking",
-        location: selectedLocation?.name ?? "",
-        locationId: selectedLocation?.id ?? "",
-        customFieldResponses: JSON.stringify(customFieldValues),
+        location: selectedLocationML?.name ?? "",
+        locationId: selectedLocationML?.id ?? "",
+        customFieldResponses: JSON.stringify(customFieldValuesML),
         slots: JSON.stringify(
-          submissionSlots.map((entry) => ({
-            bookableProductId: entry.bookableProductId,
-            date: entry.date,
-            slotStart: entry.slot.start,
-            endDate: entry.endDate ?? null,
-            quantity: entry.quantity,
+          submissionSlotsML.map((entryML) => ({
+            bookableProductId: entryML.bookableProductId,
+            date: entryML.date,
+            slotStart: entryML.slot.start,
+            endDate: entryML.endDate ?? null,
+            quantity: entryML.quantity,
           })),
         ),
-        customerName,
-        customerEmail,
-        customerPhone,
+        customerName: customerNameML,
+        customerEmail: customerEmailML,
+        customerPhone: customerPhoneML,
       },
       { method: "POST" },
     );
   };
 
-  if (products.length === 0) {
+  if (productsML.length === 0) {
     return (
       <s-page heading="New Booking" inlineSize="950px">
         <div style={S.card}>
-          <p style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_MUTED, margin: 0 }}>
+          <p style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_MUTED_ML, margin: 0 }}>
             No products have booking enabled yet. Enable booking on a
             product first from the Products page.
           </p>
@@ -1423,78 +1423,78 @@ export default function NewBookingPage() {
     );
   }
 
-  const applyBundleDeadline = (dates: string[]) =>
-    selectedBookingType === "BUNDLE" && bundleValidityDeadline
-      ? dates.filter(
-          (d) =>
-            d <= bundleValidityDeadline &&
-            (!bundleWindowStart || d >= bundleWindowStart),
+  const applyBundleDeadlineML = (datesML: string[]) =>
+    selectedBookingTypeML === "BUNDLE" && bundleValidityDeadlineML
+      ? datesML.filter(
+          (dML) =>
+            dML <= bundleValidityDeadlineML &&
+            (!bundleWindowStartML || dML >= bundleWindowStartML),
         )
-      : dates;
+      : datesML;
 
-  const availableSet = new Set(applyBundleDeadline(availableDates));
-  const secondAvailableSet = new Set(applyBundleDeadline(secondMonthDates));
-  const daysInMonth = new Date(Date.UTC(viewYear, viewMonth, 0)).getUTCDate();
-  const firstWeekday = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).getUTCDay();
-  const secondDaysInMonth = new Date(
-    Date.UTC(secondYear, secondMonth, 0),
+  const availableSetML = new Set(applyBundleDeadlineML(availableDatesML));
+  const secondAvailableSetML = new Set(applyBundleDeadlineML(secondMonthDatesML));
+  const daysInMonthML = new Date(Date.UTC(viewYearML, viewMonthML, 0)).getUTCDate();
+  const firstWeekdayML = new Date(Date.UTC(viewYearML, viewMonthML - 1, 1)).getUTCDay();
+  const secondDaysInMonthML = new Date(
+    Date.UTC(secondYearML, secondMonthML, 0),
   ).getUTCDate();
-  const secondFirstWeekday = new Date(
-    Date.UTC(secondYear, secondMonth - 1, 1),
+  const secondFirstWeekdayML = new Date(
+    Date.UTC(secondYearML, secondMonthML - 1, 1),
   ).getUTCDay();
-  const isLoadingAvailability = availabilityFetcher.state !== "idle";
-  const isLoadingSecondMonth = secondMonthFetcher.state !== "idle";
-  const isLoadingSlots = slotsFetcher.state !== "idle";
-  const isCreatingBooking = createFetcher.state !== "idle";
+  const isLoadingAvailabilityML = availabilityFetcherML.state !== "idle";
+  const isLoadingSecondMonthML = secondMonthFetcherML.state !== "idle";
+  const isLoadingSlotsML = slotsFetcherML.state !== "idle";
+  const isCreatingBookingML = createFetcherML.state !== "idle";
 
-  const renderMonthGrid = (
-    year: number,
-    month: number,
-    monthDaysInMonth: number,
-    monthFirstWeekday: number,
-    monthAvailableSet: Set<string>,
+  const renderMonthGridML = (
+    yearML: number,
+    monthML: number,
+    monthDaysInMonthML: number,
+    monthFirstWeekdayML: number,
+    monthAvailableSetML: Set<string>,
   ) => (
     <div>
       <div style={S.weekdayRow}>
-        {WEEKDAY_HEADERS.map((label) => (
-          <span key={`wd-${year}-${month}-${label}`} style={S.weekdayLabel}>
-            {label}
+        {WEEKDAY_HEADERS_ML.map((labelML) => (
+          <span key={`wd-${yearML}-${monthML}-${labelML}`} style={S.weekdayLabel}>
+            {labelML}
           </span>
         ))}
       </div>
       <div style={S.dayGrid}>
-        {Array.from({ length: monthFirstWeekday }).map((_, i) => (
-          <span key={`blank-${year}-${month}-${i}`} />
+        {Array.from({ length: monthFirstWeekdayML }).map((_, iML) => (
+          <span key={`blank-${yearML}-${monthML}-${iML}`} />
         ))}
-        {Array.from({ length: monthDaysInMonth }).map((_, i) => {
-          const day = i + 1;
-          const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          const isPickingCheckout =
-            selectedBookingType === "MULTI_DAY" && !!date && !checkoutDate;
-          const isAvailable = isPickingCheckout
-            ? dateStr > date
-            : monthAvailableSet.has(dateStr) && !bundleComplete;
-          const isSelected =
-            dateStr === date ||
-            (selectedBookingType === "MULTI_DAY" && dateStr === checkoutDate);
-          const isInRange =
-            selectedBookingType === "MULTI_DAY" &&
-            !!date &&
-            !!checkoutDate &&
-            dateStr > date &&
-            dateStr < checkoutDate;
+        {Array.from({ length: monthDaysInMonthML }).map((_, iML) => {
+          const dayML = iML + 1;
+          const dateStrML = `${yearML}-${String(monthML).padStart(2, "0")}-${String(dayML).padStart(2, "0")}`;
+          const isPickingCheckoutML =
+            selectedBookingTypeML === "MULTI_DAY" && !!dateML && !checkoutDateML;
+          const isAvailableML = isPickingCheckoutML
+            ? dateStrML > dateML
+            : monthAvailableSetML.has(dateStrML) && !bundleCompleteML;
+          const isSelectedML =
+            dateStrML === dateML ||
+            (selectedBookingTypeML === "MULTI_DAY" && dateStrML === checkoutDateML);
+          const isInRangeML =
+            selectedBookingTypeML === "MULTI_DAY" &&
+            !!dateML &&
+            !!checkoutDateML &&
+            dateStrML > dateML &&
+            dateStrML < checkoutDateML;
           return (
             <button
-              key={dateStr}
+              key={dateStrML}
               type="button"
               className="nb-day"
-              disabled={!isAvailable}
-              aria-pressed={isSelected}
-              aria-label={`${day} ${MONTH_NAMES[month - 1]} ${year}`}
-              onClick={() => isAvailable && selectDate(dateStr)}
-              style={S.dayBtn(isSelected, isInRange, isAvailable)}
+              disabled={!isAvailableML}
+              aria-pressed={isSelectedML}
+              aria-label={`${dayML} ${MONTH_NAMES_ML[monthML - 1]} ${yearML}`}
+              onClick={() => isAvailableML && selectDateML(dateStrML)}
+              style={S.dayBtn(isSelectedML, isInRangeML, isAvailableML)}
             >
-              {day}
+              {dayML}
             </button>
           );
         })}
@@ -1502,20 +1502,20 @@ export default function NewBookingPage() {
     </div>
   );
 
-  const renderMonthPane = (
-    year: number,
-    month: number,
-    monthDaysInMonth: number,
-    monthFirstWeekday: number,
-    monthAvailableSet: Set<string>,
-    isLoading: boolean,
-    hasAnyAvailability: boolean,
-    offset: number,
+  const renderMonthPaneML = (
+    yearML: number,
+    monthML: number,
+    monthDaysInMonthML: number,
+    monthFirstWeekdayML: number,
+    monthAvailableSetML: Set<string>,
+    isLoadingML: boolean,
+    hasAnyAvailabilityML: boolean,
+    offsetML: number,
   ) => {
-    const paneLabel = `${MONTH_SHORT[month - 1]} ${year}`;
+    const paneLabelML = `${MONTH_SHORT_ML[monthML - 1]} ${yearML}`;
     return (
       <div
-        key={`pane-${year}-${month}`}
+        key={`pane-${yearML}-${monthML}`}
         className="nb-month-pane"
         style={S.monthPane}
       >
@@ -1524,26 +1524,26 @@ export default function NewBookingPage() {
             type="button"
             className="nb-nav"
             style={S.navBtn}
-            onClick={() => goToMonth(-1)}
+            onClick={() => goToMonthML(-1)}
             aria-label="Previous month"
           >
-            <NavChevron direction="left" color={NAV_ARROW} />
+            <NavChevron direction="left" color={NAV_ARROW_ML} />
           </button>
 
           <label className="nb-month-picker" style={S.monthPicker}>
-            <span style={S.monthPickerText}>{paneLabel}</span>
+            <span style={S.monthPickerText}>{paneLabelML}</span>
             <DropdownChevron />
             <select
               style={S.monthPickerSelect}
-              aria-label={`Select year, currently ${year}`}
-              value={year}
-              onChange={(e: FieldChangeEvent) =>
-                jumpToYear(Number(e.currentTarget.value), month, offset)
+              aria-label={`Select year, currently ${yearML}`}
+              value={yearML}
+              onChange={(eML: FieldChangeEvent) =>
+                jumpToYearML(Number(eML.currentTarget.value), monthML, offsetML)
               }
             >
-              {yearPickerOptions(year).map((optionYear) => (
-                <option key={optionYear} value={optionYear}>
-                  {optionYear}
+              {yearPickerOptionsML(yearML).map((optionYearML) => (
+                <option key={optionYearML} value={optionYearML}>
+                  {optionYearML}
                 </option>
               ))}
             </select>
@@ -1553,29 +1553,29 @@ export default function NewBookingPage() {
             type="button"
             className="nb-nav"
             style={{ ...S.navBtn, ...S.navBtnNext }}
-            onClick={() => goToMonth(1)}
+            onClick={() => goToMonthML(1)}
             aria-label="Next month"
           >
-            <NavChevron direction="right" color={CAL_BLUE} />
+            <NavChevron direction="right" color={CAL_BLUE_ML} />
           </button>
         </div>
 
-        {isLoading ? (
-          <p style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED, margin: 0 }}>
+        {isLoadingML ? (
+          <p style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED_ML, margin: 0 }}>
             Loading availability…
           </p>
         ) : (
-          renderMonthGrid(
-            year,
-            month,
-            monthDaysInMonth,
-            monthFirstWeekday,
-            monthAvailableSet,
+          renderMonthGridML(
+            yearML,
+            monthML,
+            monthDaysInMonthML,
+            monthFirstWeekdayML,
+            monthAvailableSetML,
           )
         )}
-        {!isLoading && !hasAnyAvailability && (
-          <p style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED, margin: "12px 0 0" }}>
-            {bookableProductId
+        {!isLoadingML && !hasAnyAvailabilityML && (
+          <p style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED_ML, margin: "12px 0 0" }}>
+            {bookableProductIdML
               ? "No availability this month."
               : "Select a product to see availability."}
           </p>
@@ -1589,10 +1589,10 @@ export default function NewBookingPage() {
       <div style={S.outerCard}>
         <style>{`
           .nb-day:not(:disabled):not([aria-pressed="true"]):hover {
-            background: ${BLUE_TINT} !important;
+            background: ${BLUE_TINT_ML} !important;
           }
           .nb-slot:not(:disabled):not([aria-pressed="true"]):hover {
-            background: ${BLUE_TINT} !important;
+            background: ${BLUE_TINT_ML} !important;
           }
           .nb-nav:hover {
             background: rgba(0, 96, 230, 0.14) !important;
@@ -1600,7 +1600,7 @@ export default function NewBookingPage() {
           .nb-day:focus-visible,
           .nb-slot:focus-visible,
           .nb-nav:focus-visible {
-            outline: 2px solid ${CAL_BLUE};
+            outline: 2px solid ${CAL_BLUE_ML};
             outline-offset: 2px;
           }
           .nb-note-input::placeholder {
@@ -1617,11 +1617,11 @@ export default function NewBookingPage() {
           .nb-select:focus-visible,
           .nb-note-input:focus-visible,
           .nb-cust-input:focus-visible {
-            outline: 2px solid ${CAL_BLUE};
+            outline: 2px solid ${CAL_BLUE_ML};
             outline-offset: 1px;
           }
           .nb-month-picker:focus-within {
-            outline: 2px solid ${CAL_BLUE};
+            outline: 2px solid ${CAL_BLUE_ML};
             outline-offset: 2px;
             border-radius: 4px;
           }
@@ -1648,31 +1648,31 @@ export default function NewBookingPage() {
                   className="nb-select"
                   style={{
                     ...S.select,
-                    ...(!bookableProductId ? { color: PLACEHOLDER } : {}),
-                    ...(productError ? { borderColor: "#C0392B" } : {}),
+                    ...(!bookableProductIdML ? { color: PLACEHOLDER_ML } : {}),
+                    ...(productErrorML ? { borderColor: "#C0392B" } : {}),
                   }}
-                  value={bookableProductId}
-                  onChange={(e: FieldChangeEvent) =>
-                    setBookableProductId(e.currentTarget.value)
+                  value={bookableProductIdML}
+                  onChange={(eML: FieldChangeEvent) =>
+                    setBookableProductIdML(eML.currentTarget.value)
                   }
                 >
                   <option value="" disabled>
                     Select product
                   </option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}
+                  {productsML.map((pML) => (
+                    <option key={pML.id} value={pML.id}>
+                      {pML.title}
                     </option>
                   ))}
                 </select>
                 <SelectChevron />
               </div>
-              {productError && (
-                <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{productError}</span>
+              {productErrorML && (
+                <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{productErrorML}</span>
               )}
             </div>
 
-            {locations.length > 0 && (
+            {locationsML.length > 0 && (
               <div style={S.fieldBlock}>
                 <label htmlFor="nb-location" style={S.fieldLabel}>
                   Add Location
@@ -1683,62 +1683,62 @@ export default function NewBookingPage() {
                     className="nb-select"
                     style={{
                       ...S.select,
-                      ...(!locationId ? { color: PLACEHOLDER } : {}),
-                      ...(locationError ? { borderColor: "#C0392B" } : {}),
+                      ...(!locationIdML ? { color: PLACEHOLDER_ML } : {}),
+                      ...(locationErrorML ? { borderColor: "#C0392B" } : {}),
                     }}
-                    value={locationId}
-                    onChange={(e: FieldChangeEvent) =>
-                      setLocationId(e.currentTarget.value)
+                    value={locationIdML}
+                    onChange={(eML: FieldChangeEvent) =>
+                      setLocationIdML(eML.currentTarget.value)
                     }
                   >
                     <option value="" disabled>
                       Select location
                     </option>
-                    {locations.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.name}
+                    {locationsML.map((lML) => (
+                      <option key={lML.id} value={lML.id}>
+                        {lML.name}
                       </option>
                     ))}
                   </select>
                   <SelectChevron />
                 </div>
-                {locationError && (
-                  <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{locationError}</span>
+                {locationErrorML && (
+                  <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{locationErrorML}</span>
                 )}
               </div>
             )}
           </div>
         </div>
 
-        {readyForCalendar && (
+        {readyForCalendarML && (
         <div style={S.dateTimeCard}>
-          {selectedBookingType === "MULTI_DAY" && (
+          {selectedBookingTypeML === "MULTI_DAY" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <span style={S.cardHeading}>Select your preferred date & time</span>
-              {multiDayStayLengthMessage && (
-                <span style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED }}>
-                  {multiDayStayLengthMessage}
+              {multiDayStayLengthMessageML && (
+                <span style={{ fontFamily: "Inter", fontSize: "12px", color: TEXT_MUTED_ML }}>
+                  {multiDayStayLengthMessageML}
                 </span>
               )}
             </div>
           )}
-          {selectedBookingType === "BUNDLE" && bundleSessionCount !== null && (
+          {selectedBookingTypeML === "BUNDLE" && bundleSessionCountML !== null && (
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <span style={S.cardHeading}>Select your preferred date & time</span>
               <span
                 style={{
                   fontFamily: "Inter",
                   fontSize: "12px",
-                  color: bundleComplete ? "#1a7f37" : TEXT_MUTED,
+                  color: bundleCompleteML ? "#1a7f37" : TEXT_MUTED_ML,
                 }}
               >
-                {bundleComplete
-                  ? `All ${bundleSessionCount} session(s) added for this bundle.`
-                  : `Session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}` +
-                    (bundleValidityDeadline
-                      ? ` — all sessions must be booked by ${formatDateDisplay(bundleValidityDeadline)}`
-                      : bundleValidityDays
-                        ? ` — all sessions within ${bundleValidityDays} days of the first session`
+                {bundleCompleteML
+                  ? `All ${bundleSessionCountML} session(s) added for this bundle.`
+                  : `Session ${bundleSessionsQueuedML.length + 1} of ${bundleSessionCountML}` +
+                    (bundleValidityDeadlineML
+                      ? ` — all sessions must be booked by ${formatDateDisplayML(bundleValidityDeadlineML)}`
+                      : bundleValidityDaysML
+                        ? ` — all sessions within ${bundleValidityDaysML} days of the first session`
                         : "")}
               </span>
             </div>
@@ -1747,45 +1747,45 @@ export default function NewBookingPage() {
           <div style={S.calendarLayout}>
             <div style={S.calendarColumn}>
               <div style={S.monthsRow}>
-                {renderMonthPane(
-                  viewYear,
-                  viewMonth,
-                  daysInMonth,
-                  firstWeekday,
-                  availableSet,
-                  isLoadingAvailability,
-                  availableDates.length > 0,
+                {renderMonthPaneML(
+                  viewYearML,
+                  viewMonthML,
+                  daysInMonthML,
+                  firstWeekdayML,
+                  availableSetML,
+                  isLoadingAvailabilityML,
+                  availableDatesML.length > 0,
                   0,
                 )}
-                {isTwoMonthType &&
-                  renderMonthPane(
-                    secondYear,
-                    secondMonth,
-                    secondDaysInMonth,
-                    secondFirstWeekday,
-                    secondAvailableSet,
-                    isLoadingSecondMonth,
-                    secondMonthDates.length > 0,
+                {isTwoMonthTypeML &&
+                  renderMonthPaneML(
+                    secondYearML,
+                    secondMonthML,
+                    secondDaysInMonthML,
+                    secondFirstWeekdayML,
+                    secondAvailableSetML,
+                    isLoadingSecondMonthML,
+                    secondMonthDatesML.length > 0,
                     1,
                   )}
               </div>
 
-              {selectedBookingType === "FULL_DAY" && date && (
+              {selectedBookingTypeML === "FULL_DAY" && dateML && (
                 <div style={S.chip("info")}>
                   <span style={S.chipText("info")}>
-                    {formatTimeRangeDisplay(fullDayStartTime, fullDayEndTime)}{" "}
-                    {"\u2014"} {date}
+                    {formatTimeRangeDisplayML(fullDayStartTimeML, fullDayEndTimeML)}{" "}
+                    {"\u2014"} {dateML}
                   </span>
                 </div>
               )}
-              {selectedBookingType === "MULTI_DAY" && date && !checkoutDate && (
+              {selectedBookingTypeML === "MULTI_DAY" && dateML && !checkoutDateML && (
                 <div style={S.chip("info")}>
                   <span style={S.chipText("info")}>
-                    Check-in {date}. Now pick a check-out date.
+                    Check-in {dateML}. Now pick a check-out date.
                   </span>
                 </div>
               )}
-              {selectedBookingType === "MULTI_DAY" && checkoutError && (
+              {selectedBookingTypeML === "MULTI_DAY" && checkoutErrorML && (
                 <span
                   role="alert"
                   style={{
@@ -1795,26 +1795,26 @@ export default function NewBookingPage() {
                     color: "#C0392B",
                   }}
                 >
-                  {checkoutError}
+                  {checkoutErrorML}
                 </span>
               )}
-              {selectedBookingType === "MULTI_DAY" && date && checkoutDate && (
+              {selectedBookingTypeML === "MULTI_DAY" && dateML && checkoutDateML && (
                 <div style={S.chip("ok")}>
                   <span style={S.chipText("ok")}>
-                    {date} → {checkoutDate} ({nightsBetween(date, checkoutDate)}{" "}
-                    night{nightsBetween(date, checkoutDate) === 1 ? "" : "s"})
+                    {dateML} → {checkoutDateML} ({nightsBetweenML(dateML, checkoutDateML)}{" "}
+                    night{nightsBetweenML(dateML, checkoutDateML) === 1 ? "" : "s"})
                   </span>
                   <button
                     type="button"
                     style={{
                       border: "none",
                       background: "transparent",
-                      color: BLUE,
+                      color: BLUE_ML,
                       fontFamily: "Inter",
                       fontSize: "14px",
                       cursor: "pointer",
                     }}
-                    onClick={handleChangeMultiDayDates}
+                    onClick={handleChangeMultiDayDatesML}
                   >
                     Change dates
                   </button>
@@ -1822,50 +1822,50 @@ export default function NewBookingPage() {
               )}
             </div>
 
-            {(selectedBookingType === "SLOT" ||
-              selectedBookingType === "BUNDLE") && (
+            {(selectedBookingTypeML === "SLOT" ||
+              selectedBookingTypeML === "BUNDLE") && (
               <div
                 className="nb-slots-col"
                 style={S.slotsColumn}
                 role="group"
                 aria-label={
-                  selectedBookingType === "BUNDLE" && bundleSessionCount !== null
-                    ? `Available times, session ${bundleSessionsQueued.length + 1} of ${bundleSessionCount}`
+                  selectedBookingTypeML === "BUNDLE" && bundleSessionCountML !== null
+                    ? `Available times, session ${bundleSessionsQueuedML.length + 1} of ${bundleSessionCountML}`
                     : "Available times"
                 }
               >
-                {!date ? (
+                {!dateML ? (
                   <p style={S.slotsHint}>Select a date to see available times.</p>
-                ) : isLoadingSlots ? (
+                ) : isLoadingSlotsML ? (
                   <p style={S.slotsHint}>Loading available times…</p>
-                ) : slots.length === 0 ? (
+                ) : slotsML.length === 0 ? (
                   <p style={S.slotsHint}>No slots at all on this date.</p>
                 ) : (
-                  slots.map((slot) => {
-                    const isActive = selectedSlot?.startsAt === slot.startsAt;
-                    const extra = !slot.available
+                  slotsML.map((slotML) => {
+                    const isActiveML = selectedSlotML?.startsAt === slotML.startsAt;
+                    const extraML = !slotML.available
                       ? "Booked"
-                      : typeof slot.remainingCapacity === "number"
-                        ? slot.remainingCapacity === 1
+                      : typeof slotML.remainingCapacity === "number"
+                        ? slotML.remainingCapacity === 1
                           ? "1 slot left"
-                          : `${slot.remainingCapacity} slots left`
+                          : `${slotML.remainingCapacity} slots left`
                         : null;
                     return (
                       <button
-                        key={slot.startsAt}
+                        key={slotML.startsAt}
                         type="button"
                         className="nb-slot"
-                        style={S.timeSlotBtn(isActive, !slot.available)}
-                        disabled={!slot.available}
-                        aria-pressed={isActive}
+                        style={S.timeSlotBtn(isActiveML, !slotML.available)}
+                        disabled={!slotML.available}
+                        aria-pressed={isActiveML}
                         onClick={() => {
-                          if (slot.available) setSelectedSlot(slot);
+                          if (slotML.available) setSelectedSlotML(slotML);
                         }}
                       >
-                        <span>{formatTimeRangeDisplay(slot.start, slot.end)}</span>
-                        {extra && (
+                        <span>{formatTimeRangeDisplayML(slotML.start, slotML.end)}</span>
+                        {extraML && (
                           <span style={{ fontSize: "12px", lineHeight: "15px" }}>
-                            {extra}
+                            {extraML}
                           </span>
                         )}
                       </button>
@@ -1876,14 +1876,14 @@ export default function NewBookingPage() {
             )}
           </div>
 
-          {(needsNextSlot || isLastBundleSession) && (
+          {(needsNextSlotML || isLastBundleSessionML) && (
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button
                 type="button"
                 style={{
                   border: "none",
                   borderRadius: "6px",
-                  background: CAL_BLUE,
+                  background: CAL_BLUE_ML,
                   color: "#fff",
                   fontFamily: "Inter",
                   fontWeight: 600,
@@ -1893,50 +1893,50 @@ export default function NewBookingPage() {
                   whiteSpace: "nowrap",
                   cursor: "pointer",
                 }}
-                onClick={handleNextSlot}
+                onClick={handleNextSlotML}
               >
-                {needsNextSlot ? "Next slot" : "Done"}
+                {needsNextSlotML ? "Next slot" : "Done"}
               </button>
             </div>
           )}
         </div>
         )}
 
-        {queuedSlots.length > 0 && (
+        {queuedSlotsML.length > 0 && (
           <div style={S.innerCard}>
             <span style={S.cardHeading}>Slots to book</span>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {queuedSlots.map((entry, index) => (
+              {queuedSlotsML.map((entryML, indexML) => (
                 <div
-                  key={entry.bookableProductId + entry.date + entry.slot.startsAt}
+                  key={entryML.bookableProductId + entryML.date + entryML.slot.startsAt}
                   style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}
                 >
-                  <span style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_DARK }}>
-                    <b>{entry.productTitle}</b> —{" "}
+                  <span style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_DARK_ML }}>
+                    <b>{entryML.productTitle}</b> —{" "}
                     {(() => {
-                      const entryType =
-                        products.find((p) => p.id === entry.bookableProductId)
+                      const entryTypeML =
+                        productsML.find((pML) => pML.id === entryML.bookableProductId)
                           ?.bookingType ?? "SLOT";
-                      if (entryType === "FULL_DAY") {
-                        return `${entry.date} \u00b7 ${formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}`;
+                      if (entryTypeML === "FULL_DAY") {
+                        return `${entryML.date} \u00b7 ${formatTimeRangeDisplayML(entryML.slot.start, entryML.slot.end)}`;
                       }
-                      if (entryType === "MULTI_DAY") {
-                        return `${entry.date} \u2192 ${entry.endDate ?? "—"}`;
+                      if (entryTypeML === "MULTI_DAY") {
+                        return `${entryML.date} \u2192 ${entryML.endDate ?? "—"}`;
                       }
-                      return `${entry.date} | ${formatTimeRangeDisplay(entry.slot.start, entry.slot.end)}`;
+                      return `${entryML.date} | ${formatTimeRangeDisplayML(entryML.slot.start, entryML.slot.end)}`;
                     })()}
-                    {entry.quantity > 1 ? ` × ${entry.quantity}` : ""}
+                    {entryML.quantity > 1 ? ` × ${entryML.quantity}` : ""}
                   </span>
-                  {entry.error && (
+                  {entryML.error && (
                     <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>
-                      {entry.error}
+                      {entryML.error}
                     </span>
                   )}
                   <button
                     type="button"
-                    style={{ border: "none", background: "transparent", color: BLUE, fontFamily: "Inter", fontSize: "14px", cursor: isCreatingBooking ? "default" : "pointer" }}
-                    disabled={isCreatingBooking}
-                    onClick={() => handleRemoveQueued(index)}
+                    style={{ border: "none", background: "transparent", color: BLUE_ML, fontFamily: "Inter", fontSize: "14px", cursor: isCreatingBookingML ? "default" : "pointer" }}
+                    disabled={isCreatingBookingML}
+                    onClick={() => handleRemoveQueuedML(indexML)}
                   >
                     Remove
                   </button>
@@ -1946,24 +1946,24 @@ export default function NewBookingPage() {
           </div>
         )}
 
-        {hasSelection && (
+        {hasSelectionML && (
           <>
             <div style={S.innerCard}>
               <div style={S.qtyNoteRow}>
                 <div className="nb-qty-block" style={S.qtyBlock}>
                   <div style={S.qtyNoteLabelRow}>
                     <span style={S.qtyNoteLabel}>Quantity</span>
-                    {selectedSlot && !quantityLocked && maxQuantity <= 5 && (
-                      <span style={S.qtyNoteHint}>(max {maxQuantity})</span>
+                    {selectedSlotML && !quantityLockedML && maxQuantityML <= 5 && (
+                      <span style={S.qtyNoteHint}>(max {maxQuantityML})</span>
                     )}
                   </div>
-                  {quantityLocked ? (
+                  {quantityLockedML ? (
                     <div
                       style={S.quantityBox}
                       title="Set on the first session of this bundle"
                     >
                       <span style={S.quantityValue}>
-                        {bundleSessionsQueued[0].quantity}
+                        {bundleSessionsQueuedML[0].quantity}
                       </span>
                     </div>
                   ) : (
@@ -1972,28 +1972,28 @@ export default function NewBookingPage() {
                         type="button"
                         style={{
                           ...S.quantityStepBtn,
-                          ...(!selectedSlot || quantity <= 1
+                          ...(!selectedSlotML || quantityML <= 1
                             ? { opacity: 0.4, cursor: "not-allowed" }
                             : {}),
                         }}
-                        disabled={!selectedSlot || quantity <= 1}
+                        disabled={!selectedSlotML || quantityML <= 1}
                         aria-label="Decrease quantity"
-                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        onClick={() => setQuantityML((qML) => Math.max(1, qML - 1))}
                       >
                         <MinusIcon />
                       </button>
-                      <span style={S.quantityValue}>{quantity}</span>
+                      <span style={S.quantityValue}>{quantityML}</span>
                       <button
                         type="button"
                         style={{
                           ...S.quantityStepBtn,
-                          ...(!selectedSlot || quantity >= maxQuantity
+                          ...(!selectedSlotML || quantityML >= maxQuantityML
                             ? { opacity: 0.4, cursor: "not-allowed" }
                             : {}),
                         }}
-                        disabled={!selectedSlot || quantity >= maxQuantity}
+                        disabled={!selectedSlotML || quantityML >= maxQuantityML}
                         aria-label="Increase quantity"
-                        onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                        onClick={() => setQuantityML((qML) => Math.min(maxQuantityML, qML + 1))}
                       >
                         <PlusStepIcon />
                       </button>
@@ -2001,29 +2001,29 @@ export default function NewBookingPage() {
                   )}
                 </div>
 
-                {customFields.length > 0 && (
+                {customFieldsML.length > 0 && (
                   <div style={S.noteBlock}>
-                    {customFields.map((field) => {
-                      const { title, hint } = splitFieldLabel(field.label);
+                    {customFieldsML.map((fieldML) => {
+                      const { title: titleML, hint: hintML } = splitFieldLabelML(fieldML.label);
                       return (
-                        <div key={field.fieldKey} style={S.noteField}>
+                        <div key={fieldML.fieldKey} style={S.noteField}>
                           <div style={S.qtyNoteLabelRow}>
-                            <span style={S.qtyNoteLabel}>{title}</span>
-                            {hint && <span style={S.qtyNoteHint}>{hint}</span>}
+                            <span style={S.qtyNoteLabel}>{titleML}</span>
+                            {hintML && <span style={S.qtyNoteHint}>{hintML}</span>}
                           </div>
                           <input
                             type="text"
                             className="nb-note-input"
                             style={S.input}
                             placeholder="Enter message here"
-                            aria-label={field.label}
-                            required={field.required}
-                            value={customFieldValues[field.fieldKey] ?? ""}
-                            onChange={(e: FieldChangeEvent) => {
-                              const value = e.currentTarget.value;
-                              setCustomFieldValues((prev) => ({
-                                ...prev,
-                                [field.fieldKey]: value,
+                            aria-label={fieldML.label}
+                            required={fieldML.required}
+                            value={customFieldValuesML[fieldML.fieldKey] ?? ""}
+                            onChange={(eML: FieldChangeEvent) => {
+                              const valueML = eML.currentTarget.value;
+                              setCustomFieldValuesML((prevML) => ({
+                                ...prevML,
+                                [fieldML.fieldKey]: valueML,
                               }));
                             }}
                           />
@@ -2047,13 +2047,13 @@ export default function NewBookingPage() {
                     required
                     className="nb-cust-input"
                     placeholder="Enter name"
-                    style={{ ...S.input, ...(nameError ? { borderColor: "#C0392B" } : {}) }}
-                    value={customerName}
-                    onChange={(e: FieldChangeEvent) => setCustomerName(e.currentTarget.value)}
-                    onBlur={() => setNameTouched(true)}
+                    style={{ ...S.input, ...(nameErrorML ? { borderColor: "#C0392B" } : {}) }}
+                    value={customerNameML}
+                    onChange={(eML: FieldChangeEvent) => setCustomerNameML(eML.currentTarget.value)}
+                    onBlur={() => setNameTouchedML(true)}
                   />
-                  {nameError && (
-                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{nameError}</span>
+                  {nameErrorML && (
+                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{nameErrorML}</span>
                   )}
                 </div>
                 <div style={S.fieldBlock}>
@@ -2066,13 +2066,13 @@ export default function NewBookingPage() {
                     required
                     className="nb-cust-input"
                     placeholder="Enter email"
-                    style={{ ...S.input, ...(emailError ? { borderColor: "#C0392B" } : {}) }}
-                    value={customerEmail}
-                    onChange={(e: FieldChangeEvent) => setCustomerEmail(e.currentTarget.value)}
-                    onBlur={() => setEmailTouched(true)}
+                    style={{ ...S.input, ...(emailErrorML ? { borderColor: "#C0392B" } : {}) }}
+                    value={customerEmailML}
+                    onChange={(eML: FieldChangeEvent) => setCustomerEmailML(eML.currentTarget.value)}
+                    onBlur={() => setEmailTouchedML(true)}
                   />
-                  {emailError && (
-                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{emailError}</span>
+                  {emailErrorML && (
+                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{emailErrorML}</span>
                   )}
                 </div>
                 <div style={S.fieldBlock}>
@@ -2088,43 +2088,43 @@ export default function NewBookingPage() {
                     className="nb-cust-input"
                     placeholder="Enter 10-digit phone number"
                     style={S.input}
-                    value={customerPhone}
-                    onChange={(e: FieldChangeEvent) =>
-                      setCustomerPhone(
-                        e.currentTarget.value.replace(/\D/g, "").slice(0, 10),
+                    value={customerPhoneML}
+                    onChange={(eML: FieldChangeEvent) =>
+                      setCustomerPhoneML(
+                        eML.currentTarget.value.replace(/\D/g, "").slice(0, 10),
                       )
                     }
-                    onBlur={() => setPhoneTouched(true)}
+                    onBlur={() => setPhoneTouchedML(true)}
                   />
-                  {phoneError && (
-                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{phoneError}</span>
+                  {phoneErrorML && (
+                    <span style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B" }}>{phoneErrorML}</span>
                   )}
                 </div>
               </div>
 
-              {noSelectionError && (
+              {noSelectionErrorML && (
                 <p role="alert" style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B", margin: 0 }}>
-                  {noSelectionError}
+                  {noSelectionErrorML}
                 </p>
               )}
 
-              {createError && (
+              {createErrorML && (
                 <p style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B", margin: 0 }}>
-                  {createError}
+                  {createErrorML}
                 </p>
               )}
 
-              {submitAttempted && (nameError || emailError) && (
+              {submitAttemptedML && (nameErrorML || emailErrorML) && (
                 <p style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B", margin: 0 }}>
                   Please fix the highlighted fields before creating this booking.
                 </p>
               )}
 
-              {incompleteBundleTitles.length > 0 && submitAttempted && (
+              {incompleteBundleTitlesML.length > 0 && submitAttemptedML && (
                 <p style={{ fontFamily: "Inter", fontSize: "12px", color: "#C0392B", margin: 0 }}>
-                  {incompleteBundleTitles.length === 1
-                    ? `${incompleteBundleTitles[0]} doesn't have all its bundle sessions queued yet.`
-                    : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitles.join(", ")}.`}
+                  {incompleteBundleTitlesML.length === 1
+                    ? `${incompleteBundleTitlesML[0]} doesn't have all its bundle sessions queued yet.`
+                    : `These bundles don't have all their sessions queued yet: ${incompleteBundleTitlesML.join(", ")}.`}
                 </p>
               )}
             </div>
@@ -2133,21 +2133,21 @@ export default function NewBookingPage() {
               className="nb-save-row"
               style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}
             >
-              <div style={{ ...saveWrapperStyle(), width: "auto", minWidth: "143px" }}>
+              <div style={{ ...saveWrapperStyleML(), width: "auto", minWidth: "143px" }}>
                 <button
                   type="button"
                   style={{
-                    ...saveButtonStyle(isCreatingBooking),
+                    ...saveButtonStyleML(isCreatingBookingML),
                     width: "auto",
                     minWidth: "139px",
                     padding: "7px 10px",
                     whiteSpace: "nowrap",
                   }}
-                  disabled={isCreatingBooking}
-                  onClick={handleCreateBooking}
+                  disabled={isCreatingBookingML}
+                  onClick={handleCreateBookingML}
                 >
-                  {createBookingCount > 1
-                    ? `Create ${createBookingCount} bookings`
+                  {createBookingCountML > 1
+                    ? `Create ${createBookingCountML} bookings`
                     : "Create Booking"}
                 </button>
               </div>
@@ -2161,6 +2161,6 @@ export default function NewBookingPage() {
 
 export const shouldRevalidate = () => false;
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

@@ -9,47 +9,47 @@ import { addDocumentResponseHeaders } from "./shopify.server";
 export const streamTimeout = 5000;
 
 export default async function handleRequest(
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  reactRouterContext: EntryContext
+  requestML: Request,
+  responseStatusCodeML: number,
+  responseHeadersML: Headers,
+  reactRouterContextML: EntryContext
 ) {
-  addDocumentResponseHeaders(request, responseHeaders);
-  const userAgent = request.headers.get("user-agent");
-  const callbackName = isbot(userAgent ?? '')
+  addDocumentResponseHeaders(requestML, responseHeadersML);
+  const userAgentML = requestML.headers.get("user-agent");
+  const callbackNameML = isbot(userAgentML ?? '')
     ? "onAllReady"
     : "onShellReady";
 
-  return new Promise((resolve, reject) => {
-    const { pipe, abort } = renderToPipeableStream(
+  return new Promise((resolveML, rejectML) => {
+    const { pipe: pipeML, abort: abortML } = renderToPipeableStream(
       <ServerRouter
-        context={reactRouterContext}
-        url={request.url}
+        context={reactRouterContextML}
+        url={requestML.url}
       />,
       {
-        [callbackName]: () => {
-          const body = new PassThrough();
-          const stream = createReadableStreamFromReadable(body);
+        [callbackNameML]: () => {
+          const bodyML = new PassThrough();
+          const streamML = createReadableStreamFromReadable(bodyML);
 
-          responseHeaders.set("Content-Type", "text/html");
-          resolve(
-            new Response(stream, {
-              headers: responseHeaders,
-              status: responseStatusCode,
+          responseHeadersML.set("Content-Type", "text/html");
+          resolveML(
+            new Response(streamML, {
+              headers: responseHeadersML,
+              status: responseStatusCodeML,
             })
           );
-          pipe(body);
+          pipeML(bodyML);
         },
-        onShellError(error) {
-          reject(error);
+        onShellError(errorML) {
+          rejectML(errorML);
         },
-        onError(error) {
-          responseStatusCode = 500;
-          console.error(error);
+        onError(errorML) {
+          responseStatusCodeML = 500;
+          console.error(errorML);
         },
       }
     );
     
-    setTimeout(abort, streamTimeout + 1000);
+    setTimeout(abortML, streamTimeout + 1000);
   });
 }

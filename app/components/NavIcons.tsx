@@ -5,13 +5,13 @@ export type IconProps = {
   active?: boolean;
 };
 
-const GREEN = "#96BF47";
-const NAVY = "#073E74";
+const GREEN_ML = "#96BF47";
+const NAVY_ML = "#073E74";
 
 function NavBadge({
-  active,
-  className,
-  children,
+  active: activeML,
+  className: classNameML,
+  children: childrenML,
 }: {
   active?: boolean;
   className?: string;
@@ -24,7 +24,7 @@ function NavBadge({
       viewBox="0 0 48 48"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={classNameML}
     >
       <rect
         x="4.75"
@@ -32,33 +32,33 @@ function NavBadge({
         width="40"
         height="40"
         rx="7.25"
-        fill={active ? GREEN : "none"}
-        stroke={GREEN}
+        fill={activeML ? GREEN_ML : "none"}
+        stroke={GREEN_ML}
         strokeWidth="1.5"
       />
-      {children}
+      {childrenML}
     </svg>
   );
 }
 
-function PlaceholderGlyph({ children }: { children: ReactNode }) {
+function PlaceholderGlyph({ children: childrenML }: { children: ReactNode }) {
   return (
     <g
       transform="translate(14 14) scale(0.8333)"
-      stroke={NAVY}
+      stroke={NAVY_ML}
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
       fill="none"
     >
-      {children}
+      {childrenML}
     </g>
   );
 }
 
-export function HomeIcon({ className, active }: IconProps) {
+export function HomeIcon({ className: classNameML, active: activeML }: IconProps) {
   return (
-    <NavBadge active={active} className={className}>
+    <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Homeicon.svg"
         x="14.75"
@@ -71,9 +71,9 @@ export function HomeIcon({ className, active }: IconProps) {
   );
 }
 
-export function SettingsIcon({ className, active }: IconProps) {
+export function SettingsIcon({ className: classNameML, active: activeML }: IconProps) {
   return (
-    <NavBadge active={active} className={className}>
+    <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Configurationsicon.svg"
         x="14.75"
@@ -86,7 +86,7 @@ export function SettingsIcon({ className, active }: IconProps) {
   );
 }
 
-export function AccountIcon({ className }: IconProps) {
+export function AccountIcon({ className: classNameML }: IconProps) {
   return (
     <svg
       width="48"
@@ -94,9 +94,9 @@ export function AccountIcon({ className }: IconProps) {
       viewBox="0 0 48 48"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={classNameML}
     >
-      <rect x="4.75" y="4.75" width="40" height="40" rx="7.25" fill={NAVY} stroke={NAVY} strokeWidth="1.5" />
+      <rect x="4.75" y="4.75" width="40" height="40" rx="7.25" fill={NAVY_ML} stroke={NAVY_ML} strokeWidth="1.5" />
       <image
         href="/accounticon.svg"
         x="14.75"
@@ -109,9 +109,9 @@ export function AccountIcon({ className }: IconProps) {
   );
 }
 
-export function ScheduleIcon({ className, active }: IconProps) {
+export function ScheduleIcon({ className: classNameML, active: activeML }: IconProps) {
   return (
-    <NavBadge active={active} className={className}>
+    <NavBadge active={activeML} className={classNameML}>
       <PlaceholderGlyph>
         <rect x="3" y="4" width="18" height="17" rx="2" />
         <path d="M3 9h18" />
@@ -123,9 +123,9 @@ export function ScheduleIcon({ className, active }: IconProps) {
   );
 }
 
-export function ProductsIcon({ className, active }: IconProps) {
+export function ProductsIcon({ className: classNameML, active: activeML }: IconProps) {
   return (
-    <NavBadge active={active} className={className}>
+    <NavBadge active={activeML} className={classNameML}>
       <image
         href="/producticon.svg"
         x="14.75"
@@ -138,9 +138,9 @@ export function ProductsIcon({ className, active }: IconProps) {
   );
 }
 
-export function BookingsIcon({ className, active }: IconProps) {
+export function BookingsIcon({ className: classNameML, active: activeML }: IconProps) {
   return (
-    <NavBadge active={active} className={className}>
+    <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Bookingicon.svg"
         x="14.75"

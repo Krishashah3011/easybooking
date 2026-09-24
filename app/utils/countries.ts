@@ -9,7 +9,7 @@ export type Country = {
   timezones: CountryTimezone[];
 };
 
-export const COUNTRIES: Country[] = [
+export const COUNTRIES_ML: Country[] = [
   { code: "US", name: "United States", timezones: [
     { tz: "America/New_York", label: "Eastern (New York)" },
     { tz: "America/Chicago", label: "Central (Chicago)" },
@@ -190,8 +190,8 @@ export const COUNTRIES: Country[] = [
   { code: "PR", name: "Puerto Rico", timezones: [{ tz: "America/Puerto_Rico", label: "San Juan" }] },
 ];
 
-export function findCountryByTimezone(tz: string): Country | null {
+export function findCountryByTimezoneML(tzML: string): Country | null {
   return (
-    COUNTRIES.find((c) => c.timezones.some((z) => z.tz === tz)) ?? null
+    COUNTRIES_ML.find((cML) => cML.timezones.some((zML) => zML.tz === tzML)) ?? null
   );
 }

@@ -3,22 +3,22 @@ import type {
   BookingSettings,
   BookingType,
 } from "@prisma/client";
-import prisma from "../db.server";
-import { parseWorkingDays } from "../utils/workingDays";
-import { BOOKING_TYPES } from "./bookingTypes";
+import prismaML from "../db.server";
+import { parseWorkingDaysML } from "../utils/workingDays";
+import { BOOKING_TYPES_ML } from "./bookingTypes";
 import {
-  dayTimeMapFromLegacy,
-  dayTimesToWorkingDaysCsv,
-  parseDayTimesFormValue,
-  parseDayTimesJson,
+  dayTimeMapFromLegacyML,
+  dayTimesToWorkingDaysCsvML,
+  parseDayTimesFormValueML,
+  parseDayTimesJsonML,
   type DayTimeMap,
 } from "../utils/dayTimes";
 
-export { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "./bookingTypes";
+export { BOOKING_TYPES_ML as BOOKING_TYPES, BOOKING_TYPE_LABELS_ML as BOOKING_TYPE_LABELS } from "./bookingTypes";
 
 export type CountryMode = "ALL" | "INCLUDE" | "EXCLUDE";
 
-export const COUNTRY_MODES: CountryMode[] = ["ALL", "INCLUDE", "EXCLUDE"];
+export const COUNTRY_MODES_ML: CountryMode[] = ["ALL", "INCLUDE", "EXCLUDE"];
 
 export type BookableProductFormValues = {
   isEnabled: boolean;
@@ -61,414 +61,414 @@ export type EffectiveBookingSettings = {
   bookingEndDate: Date | null;
 };
 
-export async function listBookableProducts(
-  shop: string,
+export async function listBookableProductsML(
+  shopML: string,
 ): Promise<BookableProduct[]> {
-  return prisma.bookableProduct.findMany({
-    where: { shop },
+  return prismaML.bookableProduct.findMany({
+    where: { shop: shopML },
     orderBy: { productTitle: "asc" },
   });
 }
 
-export async function getBookableProduct(
-  shop: string,
-  productId: string,
+export async function getBookableProductML(
+  shopML: string,
+  productIdML: string,
 ): Promise<BookableProduct | null> {
-  return prisma.bookableProduct.findUnique({
-    where: { shop_productId: { shop, productId } },
+  return prismaML.bookableProduct.findUnique({
+    where: { shop_productId: { shop: shopML, productId: productIdML } },
   });
 }
 
-export async function getBookableProductById(
-  shop: string,
-  id: string,
+export async function getBookableProductByIdML(
+  shopML: string,
+  idML: string,
 ): Promise<BookableProduct | null> {
-  return prisma.bookableProduct.findFirst({ where: { id, shop } });
+  return prismaML.bookableProduct.findFirst({ where: { id: idML, shop: shopML } });
 }
 
-export async function ensureBookableProduct(
-  shop: string,
-  productId: string,
-  productTitle: string,
+export async function ensureBookableProductML(
+  shopML: string,
+  productIdML: string,
+  productTitleML: string,
 ): Promise<BookableProduct> {
-  const existing = await getBookableProduct(shop, productId);
-  if (existing) {
-    if (existing.productTitle !== productTitle) {
-      return prisma.bookableProduct.update({
-        where: { id: existing.id },
-        data: { productTitle },
+  const existingML = await getBookableProductML(shopML, productIdML);
+  if (existingML) {
+    if (existingML.productTitle !== productTitleML) {
+      return prismaML.bookableProduct.update({
+        where: { id: existingML.id },
+        data: { productTitle: productTitleML },
       });
     }
-    return existing;
+    return existingML;
   }
 
-  return prisma.bookableProduct.create({
-    data: { shop, productId, productTitle, isEnabled: false },
+  return prismaML.bookableProduct.create({
+    data: { shop: shopML, productId: productIdML, productTitle: productTitleML, isEnabled: false },
   });
 }
 
-export function toBookableProductFormValues(
-  product: BookableProduct,
+export function toBookableProductFormValuesML(
+  productML: BookableProduct,
 ): BookableProductFormValues {
   return {
-    isEnabled: product.isEnabled,
-    bookingType: product.bookingType,
-    workingDays: product.workingDays
-      ? parseWorkingDays(product.workingDays)
+    isEnabled: productML.isEnabled,
+    bookingType: productML.bookingType,
+    workingDays: productML.workingDays
+      ? parseWorkingDaysML(productML.workingDays)
       : null,
-    dailyStartTime: product.dailyStartTime,
-    dailyEndTime: product.dailyEndTime,
-    dayTimes: parseDayTimesJson(product.dayTimes),
-    slotDurationMinutes: product.slotDurationMinutes,
-    bufferMinutes: product.bufferMinutes,
-    minAdvanceHours: product.minAdvanceHours,
-    maxAdvanceDays: product.maxAdvanceDays,
-    maxBookingsPerSlot: product.maxBookingsPerSlot,
-    bookingStartDate: toDateInputValue(product.bookingStartDate),
-    bookingEndDate: toDateInputValue(product.bookingEndDate),
-    minNights: product.minNights,
-    maxNights: product.maxNights,
-    bundleSessionCount: product.bundleSessionCount,
-    bundleSessionDurationMinutes: product.bundleSessionDurationMinutes,
-    bundleValidityDays: product.bundleValidityDays,
-    countryMode: parseCountryMode(product.countryMode),
-    countryCodes: parseCountryCodes(product.countryCodes),
+    dailyStartTime: productML.dailyStartTime,
+    dailyEndTime: productML.dailyEndTime,
+    dayTimes: parseDayTimesJsonML(productML.dayTimes),
+    slotDurationMinutes: productML.slotDurationMinutes,
+    bufferMinutes: productML.bufferMinutes,
+    minAdvanceHours: productML.minAdvanceHours,
+    maxAdvanceDays: productML.maxAdvanceDays,
+    maxBookingsPerSlot: productML.maxBookingsPerSlot,
+    bookingStartDate: toDateInputValueML(productML.bookingStartDate),
+    bookingEndDate: toDateInputValueML(productML.bookingEndDate),
+    minNights: productML.minNights,
+    maxNights: productML.maxNights,
+    bundleSessionCount: productML.bundleSessionCount,
+    bundleSessionDurationMinutes: productML.bundleSessionDurationMinutes,
+    bundleValidityDays: productML.bundleValidityDays,
+    countryMode: parseCountryModeML(productML.countryMode),
+    countryCodes: parseCountryCodesML(productML.countryCodes),
   };
 }
 
-function toDateInputValue(date: Date | null): string | null {
-  if (!date) return null;
-  return date.toISOString().slice(0, 10);
+function toDateInputValueML(dateML: Date | null): string | null {
+  if (!dateML) return null;
+  return dateML.toISOString().slice(0, 10);
 }
 
-function parseCountryMode(value: string | null | undefined): CountryMode {
-  return COUNTRY_MODES.includes(value as CountryMode)
-    ? (value as CountryMode)
+function parseCountryModeML(valueML: string | null | undefined): CountryMode {
+  return COUNTRY_MODES_ML.includes(valueML as CountryMode)
+    ? (valueML as CountryMode)
     : "ALL";
 }
 
-function parseCountryCodes(value: string | null | undefined): string[] {
-  if (!value) return [];
-  return value
+function parseCountryCodesML(valueML: string | null | undefined): string[] {
+  if (!valueML) return [];
+  return valueML
     .split(",")
-    .map((v) => v.trim().toUpperCase())
+    .map((vML) => vML.trim().toUpperCase())
     .filter(Boolean);
 }
 
-const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const TIME_RE_ML = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-export function parseBookableProductForm(formData: FormData): {
+export function parseBookableProductFormML(formDataML: FormData): {
   values: BookableProductFormValues;
   errors: BookableProductFieldErrors;
 } {
-  const errors: BookableProductFieldErrors = {};
+  const errorsML: BookableProductFieldErrors = {};
 
-  const isEnabled = formData.get("isEnabled") === "true";
+  const isEnabledML = formDataML.get("isEnabled") === "true";
 
-  const bookingTypeRaw = String(formData.get("bookingType") ?? "SLOT");
-  const bookingType: BookingType = BOOKING_TYPES.includes(
-    bookingTypeRaw as BookingType,
+  const bookingTypeRawML = String(formDataML.get("bookingType") ?? "SLOT");
+  const bookingTypeML: BookingType = BOOKING_TYPES_ML.includes(
+    bookingTypeRawML as BookingType,
   )
-    ? (bookingTypeRaw as BookingType)
+    ? (bookingTypeRawML as BookingType)
     : "SLOT";
 
-  const workingDaysRaw = String(formData.get("workingDays") ?? "");
-  const workingDays =
-    workingDaysRaw === ""
+  const workingDaysRawML = String(formDataML.get("workingDays") ?? "");
+  const workingDaysML =
+    workingDaysRawML === ""
       ? null
-      : workingDaysRaw
+      : workingDaysRawML
           .split(",")
-          .map((v) => Number(v.trim()))
-          .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
-  if (workingDays !== null && workingDays.length === 0) {
-    errors.workingDays =
+          .map((vML) => Number(vML.trim()))
+          .filter((nML) => Number.isInteger(nML) && nML >= 0 && nML <= 6);
+  if (workingDaysML !== null && workingDaysML.length === 0) {
+    errorsML.workingDays =
       "Select at least one day, or clear all to inherit the shop default.";
   }
 
-  const dailyStartTime = emptyToNull(formData.get("dailyStartTime"));
-  const dailyEndTime = emptyToNull(formData.get("dailyEndTime"));
-  if (dailyStartTime && !TIME_RE.test(dailyStartTime)) {
-    errors.dailyStartTime = "Enter a valid start time (HH:mm).";
+  const dailyStartTimeML = emptyToNullML(formDataML.get("dailyStartTime"));
+  const dailyEndTimeML = emptyToNullML(formDataML.get("dailyEndTime"));
+  if (dailyStartTimeML && !TIME_RE_ML.test(dailyStartTimeML)) {
+    errorsML.dailyStartTime = "Enter a valid start time (HH:mm).";
   }
-  if (dailyEndTime && !TIME_RE.test(dailyEndTime)) {
-    errors.dailyEndTime = "Enter a valid end time (HH:mm).";
+  if (dailyEndTimeML && !TIME_RE_ML.test(dailyEndTimeML)) {
+    errorsML.dailyEndTime = "Enter a valid end time (HH:mm).";
   }
   if (
-    dailyStartTime &&
-    dailyEndTime &&
-    !errors.dailyStartTime &&
-    !errors.dailyEndTime &&
-    dailyEndTime <= dailyStartTime
+    dailyStartTimeML &&
+    dailyEndTimeML &&
+    !errorsML.dailyStartTime &&
+    !errorsML.dailyEndTime &&
+    dailyEndTimeML <= dailyStartTimeML
   ) {
-    errors.dailyEndTime = "End time must be after start time.";
+    errorsML.dailyEndTime = "End time must be after start time.";
   }
 
-  const dayTimesRaw = String(formData.get("dayTimesJson") ?? "");
-  const dayTimesResult = parseDayTimesFormValue(dayTimesRaw);
-  if (dayTimesResult.error) {
-    errors.dayTimes = dayTimesResult.error;
+  const dayTimesRawML = String(formDataML.get("dayTimesJson") ?? "");
+  const dayTimesResultML = parseDayTimesFormValueML(dayTimesRawML);
+  if (dayTimesResultML.error) {
+    errorsML.dayTimes = dayTimesResultML.error;
   }
-  const dayTimes = dayTimesResult.map;
+  const dayTimesML = dayTimesResultML.map;
 
-  const slotDurationMinutesResult = parseOptionalInt(
-    formData.get("slotDurationMinutes"),
+  const slotDurationMinutesResultML = parseOptionalIntML(
+    formDataML.get("slotDurationMinutes"),
   );
-  const slotDurationMinutes = slotDurationMinutesResult.value;
-  if (slotDurationMinutesResult.invalid) {
-    errors.slotDurationMinutes = "Enter a whole number of minutes.";
-  } else if (slotDurationMinutes !== null && slotDurationMinutes < 5) {
-    errors.slotDurationMinutes = "Slot duration must be at least 5 minutes.";
+  const slotDurationMinutesML = slotDurationMinutesResultML.value;
+  if (slotDurationMinutesResultML.invalid) {
+    errorsML.slotDurationMinutes = "Enter a whole number of minutes.";
+  } else if (slotDurationMinutesML !== null && slotDurationMinutesML < 5) {
+    errorsML.slotDurationMinutes = "Slot duration must be at least 5 minutes.";
   }
 
-  const bufferMinutesResult = parseOptionalInt(formData.get("bufferMinutes"));
-  const bufferMinutes = bufferMinutesResult.value;
-  if (bufferMinutesResult.invalid) {
-    errors.bufferMinutes = "Enter a whole number of minutes.";
-  } else if (bufferMinutes !== null && bufferMinutes < 0) {
-    errors.bufferMinutes = "Buffer time can't be negative.";
+  const bufferMinutesResultML = parseOptionalIntML(formDataML.get("bufferMinutes"));
+  const bufferMinutesML = bufferMinutesResultML.value;
+  if (bufferMinutesResultML.invalid) {
+    errorsML.bufferMinutes = "Enter a whole number of minutes.";
+  } else if (bufferMinutesML !== null && bufferMinutesML < 0) {
+    errorsML.bufferMinutes = "Buffer time can't be negative.";
   }
 
-  const minAdvanceHoursResult = parseOptionalInt(
-    formData.get("minAdvanceHours"),
+  const minAdvanceHoursResultML = parseOptionalIntML(
+    formDataML.get("minAdvanceHours"),
   );
-  const minAdvanceHours = minAdvanceHoursResult.value;
-  if (minAdvanceHoursResult.invalid) {
-    errors.minAdvanceHours = "Enter a whole number of hours.";
-  } else if (minAdvanceHours !== null && minAdvanceHours < 0) {
-    errors.minAdvanceHours = "Minimum advance time can't be negative.";
+  const minAdvanceHoursML = minAdvanceHoursResultML.value;
+  if (minAdvanceHoursResultML.invalid) {
+    errorsML.minAdvanceHours = "Enter a whole number of hours.";
+  } else if (minAdvanceHoursML !== null && minAdvanceHoursML < 0) {
+    errorsML.minAdvanceHours = "Minimum advance time can't be negative.";
   }
 
-  const maxAdvanceDaysResult = parseOptionalInt(formData.get("maxAdvanceDays"));
-  const maxAdvanceDays = maxAdvanceDaysResult.value;
-  if (maxAdvanceDaysResult.invalid) {
-    errors.maxAdvanceDays = "Enter a whole number of days.";
-  } else if (maxAdvanceDays !== null && maxAdvanceDays < 1) {
-    errors.maxAdvanceDays = "Maximum advance days must be at least 1.";
+  const maxAdvanceDaysResultML = parseOptionalIntML(formDataML.get("maxAdvanceDays"));
+  const maxAdvanceDaysML = maxAdvanceDaysResultML.value;
+  if (maxAdvanceDaysResultML.invalid) {
+    errorsML.maxAdvanceDays = "Enter a whole number of days.";
+  } else if (maxAdvanceDaysML !== null && maxAdvanceDaysML < 1) {
+    errorsML.maxAdvanceDays = "Maximum advance days must be at least 1.";
   }
 
-  const maxBookingsPerSlotResult = parseOptionalInt(
-    formData.get("maxBookingsPerSlot"),
+  const maxBookingsPerSlotResultML = parseOptionalIntML(
+    formDataML.get("maxBookingsPerSlot"),
   );
-  const maxBookingsPerSlot = maxBookingsPerSlotResult.value;
-  if (maxBookingsPerSlotResult.invalid) {
-    errors.maxBookingsPerSlot = "Enter a whole number.";
-  } else if (maxBookingsPerSlot !== null && maxBookingsPerSlot < 1) {
-    errors.maxBookingsPerSlot = "Capacity per slot must be at least 1.";
+  const maxBookingsPerSlotML = maxBookingsPerSlotResultML.value;
+  if (maxBookingsPerSlotResultML.invalid) {
+    errorsML.maxBookingsPerSlot = "Enter a whole number.";
+  } else if (maxBookingsPerSlotML !== null && maxBookingsPerSlotML < 1) {
+    errorsML.maxBookingsPerSlot = "Capacity per slot must be at least 1.";
   }
 
-  const bookingStartDate = emptyToNull(formData.get("bookingStartDate"));
-  const bookingEndDate = emptyToNull(formData.get("bookingEndDate"));
-  if (bookingStartDate && bookingEndDate && bookingEndDate < bookingStartDate) {
-    errors.bookingEndDate = "End date must be after start date.";
+  const bookingStartDateML = emptyToNullML(formDataML.get("bookingStartDate"));
+  const bookingEndDateML = emptyToNullML(formDataML.get("bookingEndDate"));
+  if (bookingStartDateML && bookingEndDateML && bookingEndDateML < bookingStartDateML) {
+    errorsML.bookingEndDate = "End date must be after start date.";
   }
 
-  const minNightsResult = parseOptionalInt(formData.get("minNights"));
-  const minNights = minNightsResult.value;
-  if (minNightsResult.invalid) {
-    errors.minNights = "Enter a whole number of nights.";
-  } else if (minNights !== null && minNights < 1) {
-    errors.minNights = "Minimum nights must be at least 1.";
+  const minNightsResultML = parseOptionalIntML(formDataML.get("minNights"));
+  const minNightsML = minNightsResultML.value;
+  if (minNightsResultML.invalid) {
+    errorsML.minNights = "Enter a whole number of nights.";
+  } else if (minNightsML !== null && minNightsML < 1) {
+    errorsML.minNights = "Minimum nights must be at least 1.";
   }
 
-  const maxNightsResult = parseOptionalInt(formData.get("maxNights"));
-  const maxNights = maxNightsResult.value;
-  if (maxNightsResult.invalid) {
-    errors.maxNights = "Enter a whole number of nights.";
-  } else if (maxNights !== null && minNights !== null && maxNights < minNights) {
-    errors.maxNights = "Maximum nights can't be less than minimum nights.";
+  const maxNightsResultML = parseOptionalIntML(formDataML.get("maxNights"));
+  const maxNightsML = maxNightsResultML.value;
+  if (maxNightsResultML.invalid) {
+    errorsML.maxNights = "Enter a whole number of nights.";
+  } else if (maxNightsML !== null && minNightsML !== null && maxNightsML < minNightsML) {
+    errorsML.maxNights = "Maximum nights can't be less than minimum nights.";
   }
 
-  const bundleSessionCountResult = parseOptionalInt(
-    formData.get("bundleSessionCount"),
+  const bundleSessionCountResultML = parseOptionalIntML(
+    formDataML.get("bundleSessionCount"),
   );
-  const bundleSessionCount = bundleSessionCountResult.value;
-  if (bundleSessionCountResult.invalid) {
-    errors.bundleSessionCount = "Enter a whole number of sessions.";
-  } else if (bundleSessionCount !== null && bundleSessionCount < 2) {
-    errors.bundleSessionCount = "A bundle needs at least 2 sessions.";
+  const bundleSessionCountML = bundleSessionCountResultML.value;
+  if (bundleSessionCountResultML.invalid) {
+    errorsML.bundleSessionCount = "Enter a whole number of sessions.";
+  } else if (bundleSessionCountML !== null && bundleSessionCountML < 2) {
+    errorsML.bundleSessionCount = "A bundle needs at least 2 sessions.";
   }
 
-  const bundleSessionDurationMinutesResult = parseOptionalInt(
-    formData.get("bundleSessionDurationMinutes"),
+  const bundleSessionDurationMinutesResultML = parseOptionalIntML(
+    formDataML.get("bundleSessionDurationMinutes"),
   );
-  const bundleSessionDurationMinutes =
-    bundleSessionDurationMinutesResult.value;
-  if (bundleSessionDurationMinutesResult.invalid) {
-    errors.bundleSessionDurationMinutes = "Enter a whole number of minutes.";
+  const bundleSessionDurationMinutesML =
+    bundleSessionDurationMinutesResultML.value;
+  if (bundleSessionDurationMinutesResultML.invalid) {
+    errorsML.bundleSessionDurationMinutes = "Enter a whole number of minutes.";
   } else if (
-    bundleSessionDurationMinutes !== null &&
-    bundleSessionDurationMinutes < 5
+    bundleSessionDurationMinutesML !== null &&
+    bundleSessionDurationMinutesML < 5
   ) {
-    errors.bundleSessionDurationMinutes =
+    errorsML.bundleSessionDurationMinutes =
       "Session duration must be at least 5 minutes.";
   }
 
-  const bundleValidityDaysResult = parseOptionalInt(
-    formData.get("bundleValidityDays"),
+  const bundleValidityDaysResultML = parseOptionalIntML(
+    formDataML.get("bundleValidityDays"),
   );
-  const bundleValidityDays = bundleValidityDaysResult.value;
-  if (bundleValidityDaysResult.invalid) {
-    errors.bundleValidityDays = "Enter a whole number of days.";
-  } else if (bundleValidityDays !== null && bundleValidityDays < 1) {
-    errors.bundleValidityDays = "Validity window must be at least 1 day.";
+  const bundleValidityDaysML = bundleValidityDaysResultML.value;
+  if (bundleValidityDaysResultML.invalid) {
+    errorsML.bundleValidityDays = "Enter a whole number of days.";
+  } else if (bundleValidityDaysML !== null && bundleValidityDaysML < 1) {
+    errorsML.bundleValidityDays = "Validity window must be at least 1 day.";
   }
 
-  const countryModeRaw = String(formData.get("countryMode") ?? "ALL");
-  const countryMode: CountryMode = COUNTRY_MODES.includes(
-    countryModeRaw as CountryMode,
+  const countryModeRawML = String(formDataML.get("countryMode") ?? "ALL");
+  const countryModeML: CountryMode = COUNTRY_MODES_ML.includes(
+    countryModeRawML as CountryMode,
   )
-    ? (countryModeRaw as CountryMode)
+    ? (countryModeRawML as CountryMode)
     : "ALL";
 
-  const countryCodesRaw = String(formData.get("countryCodes") ?? "");
-  const countryCodes = countryCodesRaw
+  const countryCodesRawML = String(formDataML.get("countryCodes") ?? "");
+  const countryCodesML = countryCodesRawML
     .split(",")
-    .map((v) => v.trim().toUpperCase())
+    .map((vML) => vML.trim().toUpperCase())
     .filter(Boolean);
-  if (countryMode !== "ALL" && countryCodes.length === 0) {
-    errors.countryCodes =
+  if (countryModeML !== "ALL" && countryCodesML.length === 0) {
+    errorsML.countryCodes =
       "Select at least one country, or switch back to all countries.";
   }
 
   return {
     values: {
-      isEnabled,
-      bookingType,
-      workingDays,
-      dailyStartTime,
-      dailyEndTime,
-      dayTimes,
-      slotDurationMinutes,
-      bufferMinutes,
-      minAdvanceHours,
-      maxAdvanceDays,
-      maxBookingsPerSlot,
-      bookingStartDate,
-      bookingEndDate,
-      minNights,
-      maxNights,
-      bundleSessionCount,
-      bundleSessionDurationMinutes,
-      bundleValidityDays,
-      countryMode,
-      countryCodes,
+      isEnabled: isEnabledML,
+      bookingType: bookingTypeML,
+      workingDays: workingDaysML,
+      dailyStartTime: dailyStartTimeML,
+      dailyEndTime: dailyEndTimeML,
+      dayTimes: dayTimesML,
+      slotDurationMinutes: slotDurationMinutesML,
+      bufferMinutes: bufferMinutesML,
+      minAdvanceHours: minAdvanceHoursML,
+      maxAdvanceDays: maxAdvanceDaysML,
+      maxBookingsPerSlot: maxBookingsPerSlotML,
+      bookingStartDate: bookingStartDateML,
+      bookingEndDate: bookingEndDateML,
+      minNights: minNightsML,
+      maxNights: maxNightsML,
+      bundleSessionCount: bundleSessionCountML,
+      bundleSessionDurationMinutes: bundleSessionDurationMinutesML,
+      bundleValidityDays: bundleValidityDaysML,
+      countryMode: countryModeML,
+      countryCodes: countryCodesML,
     },
-    errors,
+    errors: errorsML,
   };
 }
 
-function emptyToNull(value: FormDataEntryValue | null): string | null {
-  const str = String(value ?? "");
-  return str === "" ? null : str;
+function emptyToNullML(valueML: FormDataEntryValue | null): string | null {
+  const strML = String(valueML ?? "");
+  return strML === "" ? null : strML;
 }
 
 type OptionalIntResult = { value: number | null; invalid: boolean };
 
-function parseOptionalInt(value: FormDataEntryValue | null): OptionalIntResult {
-  const str = String(value ?? "");
-  if (str === "") return { value: null, invalid: false };
-  const n = Number(str);
-  return Number.isInteger(n)
-    ? { value: n, invalid: false }
+function parseOptionalIntML(valueML: FormDataEntryValue | null): OptionalIntResult {
+  const strML = String(valueML ?? "");
+  if (strML === "") return { value: null, invalid: false };
+  const nML = Number(strML);
+  return Number.isInteger(nML)
+    ? { value: nML, invalid: false }
     : { value: null, invalid: true };
 }
 
-export async function setBookableProductEnabled(
-  shop: string,
-  productId: string,
-  productTitle: string,
-  isEnabled: boolean,
+export async function setBookableProductEnabledML(
+  shopML: string,
+  productIdML: string,
+  productTitleML: string,
+  isEnabledML: boolean,
 ): Promise<BookableProduct> {
-  return prisma.bookableProduct.upsert({
-    where: { shop_productId: { shop, productId } },
-    create: { shop, productId, productTitle, isEnabled },
-    update: { productTitle, isEnabled },
+  return prismaML.bookableProduct.upsert({
+    where: { shop_productId: { shop: shopML, productId: productIdML } },
+    create: { shop: shopML, productId: productIdML, productTitle: productTitleML, isEnabled: isEnabledML },
+    update: { productTitle: productTitleML, isEnabled: isEnabledML },
   });
 }
 
-export async function setAllBookableProductsEnabled(
-  shop: string,
-  products: { id: string; title: string }[],
-  isEnabled: boolean,
+export async function setAllBookableProductsEnabledML(
+  shopML: string,
+  productsML: { id: string; title: string }[],
+  isEnabledML: boolean,
 ): Promise<void> {
-  await prisma.$transaction(
-    products.map((product) =>
-      prisma.bookableProduct.upsert({
-        where: { shop_productId: { shop, productId: product.id } },
+  await prismaML.$transaction(
+    productsML.map((productML) =>
+      prismaML.bookableProduct.upsert({
+        where: { shop_productId: { shop: shopML, productId: productML.id } },
         create: {
-          shop,
-          productId: product.id,
-          productTitle: product.title,
-          isEnabled,
+          shop: shopML,
+          productId: productML.id,
+          productTitle: productML.title,
+          isEnabled: isEnabledML,
         },
-        update: { productTitle: product.title, isEnabled },
+        update: { productTitle: productML.title, isEnabled: isEnabledML },
       }),
     ),
   );
 }
 
-export async function upsertBookableProductOverrides(
-  shop: string,
-  productId: string,
-  productTitle: string,
-  values: BookableProductFormValues,
+export async function upsertBookableProductOverridesML(
+  shopML: string,
+  productIdML: string,
+  productTitleML: string,
+  valuesML: BookableProductFormValues,
 ): Promise<BookableProduct> {
-  const data = {
-    productTitle,
-    isEnabled: values.isEnabled,
-    bookingType: values.bookingType,
-    workingDays: values.dayTimes
-      ? dayTimesToWorkingDaysCsv(values.dayTimes)
-      : values.workingDays
-        ? values.workingDays.join(",")
+  const dataML = {
+    productTitle: productTitleML,
+    isEnabled: valuesML.isEnabled,
+    bookingType: valuesML.bookingType,
+    workingDays: valuesML.dayTimes
+      ? dayTimesToWorkingDaysCsvML(valuesML.dayTimes)
+      : valuesML.workingDays
+        ? valuesML.workingDays.join(",")
         : null,
-    dailyStartTime: values.dayTimes ? null : values.dailyStartTime,
-    dailyEndTime: values.dayTimes ? null : values.dailyEndTime,
-    dayTimes: values.dayTimes,
-    slotDurationMinutes: values.slotDurationMinutes,
-    bufferMinutes: values.bufferMinutes,
-    minAdvanceHours: values.minAdvanceHours,
-    maxAdvanceDays: values.maxAdvanceDays,
-    maxBookingsPerSlot: values.maxBookingsPerSlot,
-    bookingStartDate: values.bookingStartDate
-      ? new Date(values.bookingStartDate)
+    dailyStartTime: valuesML.dayTimes ? null : valuesML.dailyStartTime,
+    dailyEndTime: valuesML.dayTimes ? null : valuesML.dailyEndTime,
+    dayTimes: valuesML.dayTimes,
+    slotDurationMinutes: valuesML.slotDurationMinutes,
+    bufferMinutes: valuesML.bufferMinutes,
+    minAdvanceHours: valuesML.minAdvanceHours,
+    maxAdvanceDays: valuesML.maxAdvanceDays,
+    maxBookingsPerSlot: valuesML.maxBookingsPerSlot,
+    bookingStartDate: valuesML.bookingStartDate
+      ? new Date(valuesML.bookingStartDate)
       : null,
-    bookingEndDate: values.bookingEndDate
-      ? new Date(values.bookingEndDate)
+    bookingEndDate: valuesML.bookingEndDate
+      ? new Date(valuesML.bookingEndDate)
       : null,
-    minNights: values.minNights,
-    maxNights: values.maxNights,
-    bundleSessionCount: values.bundleSessionCount,
-    bundleSessionDurationMinutes: values.bundleSessionDurationMinutes,
-    bundleValidityDays: values.bundleValidityDays,
-    countryMode: values.countryMode,
+    minNights: valuesML.minNights,
+    maxNights: valuesML.maxNights,
+    bundleSessionCount: valuesML.bundleSessionCount,
+    bundleSessionDurationMinutes: valuesML.bundleSessionDurationMinutes,
+    bundleValidityDays: valuesML.bundleValidityDays,
+    countryMode: valuesML.countryMode,
     countryCodes:
-      values.countryMode === "ALL" || values.countryCodes.length === 0
+      valuesML.countryMode === "ALL" || valuesML.countryCodes.length === 0
         ? null
-        : values.countryCodes.join(","),
+        : valuesML.countryCodes.join(","),
   };
 
-  return prisma.bookableProduct.upsert({
-    where: { shop_productId: { shop, productId } },
-    create: { shop, productId, ...data },
-    update: data,
+  return prismaML.bookableProduct.upsert({
+    where: { shop_productId: { shop: shopML, productId: productIdML } },
+    create: { shop: shopML, productId: productIdML, ...dataML },
+    update: dataML,
   });
 }
 
-export function isProductAvailableForCountry(
-  product: Pick<BookableProduct, "countryMode" | "countryCodes">,
-  countryCode: string | null,
+export function isProductAvailableForCountryML(
+  productML: Pick<BookableProduct, "countryMode" | "countryCodes">,
+  countryCodeML: string | null,
 ): boolean {
-  const mode = parseCountryMode(product.countryMode);
-  if (mode === "ALL") return true;
+  const modeML = parseCountryModeML(productML.countryMode);
+  if (modeML === "ALL") return true;
 
-  const codes = parseCountryCodes(product.countryCodes);
-  if (codes.length === 0) return true;
-  if (!countryCode) return true;
+  const codesML = parseCountryCodesML(productML.countryCodes);
+  if (codesML.length === 0) return true;
+  if (!countryCodeML) return true;
 
-  const normalized = countryCode.trim().toUpperCase();
-  const isListed = codes.includes(normalized);
-  return mode === "INCLUDE" ? isListed : !isListed;
+  const normalizedML = countryCodeML.trim().toUpperCase();
+  const isListedML = codesML.includes(normalizedML);
+  return modeML === "INCLUDE" ? isListedML : !isListedML;
 }
 
 export type LocationHoursOverride = {
@@ -477,58 +477,58 @@ export type LocationHoursOverride = {
   dailyEndTime: string | null;
 };
 
-function levelDayTimes(entity: {
+function levelDayTimesML(entityML: {
   workingDays: string | null;
   dailyStartTime: string | null;
   dailyEndTime: string | null;
   dayTimes?: unknown;
 } | null): DayTimeMap | null {
-  if (!entity) return null;
-  const fromJson = "dayTimes" in entity ? parseDayTimesJson(entity.dayTimes) : null;
-  if (fromJson) return fromJson;
-  if (entity.workingDays && entity.dailyStartTime && entity.dailyEndTime) {
-    return dayTimeMapFromLegacy(
-      parseWorkingDays(entity.workingDays),
-      entity.dailyStartTime,
-      entity.dailyEndTime,
+  if (!entityML) return null;
+  const fromJsonML = "dayTimes" in entityML ? parseDayTimesJsonML(entityML.dayTimes) : null;
+  if (fromJsonML) return fromJsonML;
+  if (entityML.workingDays && entityML.dailyStartTime && entityML.dailyEndTime) {
+    return dayTimeMapFromLegacyML(
+      parseWorkingDaysML(entityML.workingDays),
+      entityML.dailyStartTime,
+      entityML.dailyEndTime,
     );
   }
   return null;
 }
 
-export function resolveEffectiveSettings(
-  shopSettings: BookingSettings,
-  product: BookableProduct | null,
-  location?: LocationHoursOverride | null,
+export function resolveEffectiveSettingsML(
+  shopSettingsML: BookingSettings,
+  productML: BookableProduct | null,
+  locationML?: LocationHoursOverride | null,
 ): EffectiveBookingSettings {
-  const dayTimes =
-    levelDayTimes(location ?? null) ??
-    levelDayTimes(product) ??
-    levelDayTimes(shopSettings) ??
+  const dayTimesML =
+    levelDayTimesML(locationML ?? null) ??
+    levelDayTimesML(productML) ??
+    levelDayTimesML(shopSettingsML) ??
     {};
 
   return {
-    workingDays: location?.workingDays
-      ? parseWorkingDays(location.workingDays)
-      : product?.workingDays
-        ? parseWorkingDays(product.workingDays)
-        : parseWorkingDays(shopSettings.workingDays),
+    workingDays: locationML?.workingDays
+      ? parseWorkingDaysML(locationML.workingDays)
+      : productML?.workingDays
+        ? parseWorkingDaysML(productML.workingDays)
+        : parseWorkingDaysML(shopSettingsML.workingDays),
     dailyStartTime:
-      location?.dailyStartTime ?? product?.dailyStartTime ?? shopSettings.dailyStartTime,
+      locationML?.dailyStartTime ?? productML?.dailyStartTime ?? shopSettingsML.dailyStartTime,
     dailyEndTime:
-      location?.dailyEndTime ?? product?.dailyEndTime ?? shopSettings.dailyEndTime,
-    dayTimes,
+      locationML?.dailyEndTime ?? productML?.dailyEndTime ?? shopSettingsML.dailyEndTime,
+    dayTimes: dayTimesML,
     slotDurationMinutes:
-      product?.bookingType === "BUNDLE" && product.bundleSessionDurationMinutes
-        ? product.bundleSessionDurationMinutes
-        : (product?.slotDurationMinutes ?? shopSettings.slotDurationMinutes),
-    bufferMinutes: product?.bufferMinutes ?? shopSettings.bufferMinutes,
-    minAdvanceHours: product?.minAdvanceHours ?? shopSettings.minAdvanceHours,
-    maxAdvanceDays: product?.maxAdvanceDays ?? shopSettings.maxAdvanceDays,
+      productML?.bookingType === "BUNDLE" && productML.bundleSessionDurationMinutes
+        ? productML.bundleSessionDurationMinutes
+        : (productML?.slotDurationMinutes ?? shopSettingsML.slotDurationMinutes),
+    bufferMinutes: productML?.bufferMinutes ?? shopSettingsML.bufferMinutes,
+    minAdvanceHours: productML?.minAdvanceHours ?? shopSettingsML.minAdvanceHours,
+    maxAdvanceDays: productML?.maxAdvanceDays ?? shopSettingsML.maxAdvanceDays,
     maxBookingsPerSlot:
-      product?.maxBookingsPerSlot ?? shopSettings.maxBookingsPerSlot,
+      productML?.maxBookingsPerSlot ?? shopSettingsML.maxBookingsPerSlot,
     bookingStartDate:
-      product?.bookingStartDate ?? shopSettings.bookingStartDate,
-    bookingEndDate: product?.bookingEndDate ?? shopSettings.bookingEndDate,
+      productML?.bookingStartDate ?? shopSettingsML.bookingStartDate,
+    bookingEndDate: productML?.bookingEndDate ?? shopSettingsML.bookingEndDate,
   };
 }

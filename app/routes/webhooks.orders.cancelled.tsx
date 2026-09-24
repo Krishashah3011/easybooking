@@ -1,14 +1,14 @@
 import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
-import { cancelBookingsForOrder } from "../models/booking.server";
+import { cancelBookingsForOrderML } from "../models/booking.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { shop, topic, payload } = await authenticate.webhook(request);
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { shop: shopML, topic: topicML, payload: payloadML } = await authenticate.webhook(requestML);
 
-  console.log(`Received ${topic} webhook for ${shop}`);
+  console.log(`Received ${topicML} webhook for ${shopML}`);
 
-  const orderId = (payload as { id: number | string }).id;
-  await cancelBookingsForOrder(shop, orderId);
+  const orderIdML = (payloadML as { id: number | string }).id;
+  await cancelBookingsForOrderML(shopML, orderIdML);
 
   return new Response();
 };

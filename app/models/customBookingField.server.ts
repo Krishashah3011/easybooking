@@ -1,5 +1,5 @@
 import type { CustomBookingField, CustomFieldType } from "@prisma/client";
-import prisma from "../db.server";
+import prismaML from "../db.server";
 
 export type CustomFieldFormValues = {
   label: string;
@@ -12,12 +12,12 @@ export type CustomFieldFieldErrors = Partial<
   Record<keyof CustomFieldFormValues, string>
 >;
 
-const MAX_LABEL_LENGTH = 80;
-const MAX_OPTIONS = 20;
+const MAX_LABEL_LENGTH_ML = 80;
+const MAX_OPTIONS_ML = 20;
 
-function slugify(label: string): string {
+function slugifyML(labelML: string): string {
   return (
-    label
+    labelML
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -25,152 +25,152 @@ function slugify(label: string): string {
   );
 }
 
-async function uniqueFieldKey(shop: string, base: string): Promise<string> {
-  let candidate = base;
-  let suffix = 2;
+async function uniqueFieldKeyML(shopML: string, baseML: string): Promise<string> {
+  let candidateML = baseML;
+  let suffixML = 2;
 
   while (
-    await prisma.customBookingField.findUnique({
-      where: { shop_fieldKey: { shop, fieldKey: candidate } },
+    await prismaML.customBookingField.findUnique({
+      where: { shop_fieldKey: { shop: shopML, fieldKey: candidateML } },
     })
   ) {
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
+    candidateML = `${baseML}-${suffixML}`;
+    suffixML += 1;
   }
-  return candidate;
+  return candidateML;
 }
 
-export async function listCustomFields(
-  shop: string,
+export async function listCustomFieldsML(
+  shopML: string,
 ): Promise<CustomBookingField[]> {
-  return prisma.customBookingField.findMany({
-    where: { shop },
+  return prismaML.customBookingField.findMany({
+    where: { shop: shopML },
     orderBy: { sortOrder: "asc" },
   });
 }
 
-export function parseCustomFieldForm(formData: FormData): {
+export function parseCustomFieldFormML(formDataML: FormData): {
   values: CustomFieldFormValues;
   errors: CustomFieldFieldErrors;
 } {
-  const errors: CustomFieldFieldErrors = {};
+  const errorsML: CustomFieldFieldErrors = {};
 
-  const label = String(formData.get("label") ?? "").trim();
-  if (!label) {
-    errors.label = "Enter a question or field label.";
-  } else if (label.length > MAX_LABEL_LENGTH) {
-    errors.label = `Keep it under ${MAX_LABEL_LENGTH} characters.`;
+  const labelML = String(formDataML.get("label") ?? "").trim();
+  if (!labelML) {
+    errorsML.label = "Enter a question or field label.";
+  } else if (labelML.length > MAX_LABEL_LENGTH_ML) {
+    errorsML.label = `Keep it under ${MAX_LABEL_LENGTH_ML} characters.`;
   }
 
-  const typeRaw = String(formData.get("type") ?? "TEXT");
-  const validTypes: CustomFieldType[] = ["TEXT", "TEXTAREA", "NUMBER", "SELECT"];
-  const type = validTypes.includes(typeRaw as CustomFieldType)
-    ? (typeRaw as CustomFieldType)
+  const typeRawML = String(formDataML.get("type") ?? "TEXT");
+  const validTypesML: CustomFieldType[] = ["TEXT", "TEXTAREA", "NUMBER", "SELECT"];
+  const typeML = validTypesML.includes(typeRawML as CustomFieldType)
+    ? (typeRawML as CustomFieldType)
     : "TEXT";
 
-  const required = formData.get("required") === "true";
-  const optionsRaw = String(formData.get("options") ?? "").trim();
+  const requiredML = formDataML.get("required") === "true";
+  const optionsRawML = String(formDataML.get("options") ?? "").trim();
 
-  if (type === "SELECT") {
-    const options = optionsRaw
+  if (typeML === "SELECT") {
+    const optionsML = optionsRawML
       .split(",")
-      .map((o) => o.trim())
+      .map((oML) => oML.trim())
       .filter(Boolean);
-    if (options.length === 0) {
-      errors.options = "Add at least one option, separated by commas.";
-    } else if (options.length > MAX_OPTIONS) {
-      errors.options = `Keep it to ${MAX_OPTIONS} options or fewer.`;
+    if (optionsML.length === 0) {
+      errorsML.options = "Add at least one option, separated by commas.";
+    } else if (optionsML.length > MAX_OPTIONS_ML) {
+      errorsML.options = `Keep it to ${MAX_OPTIONS_ML} options or fewer.`;
     }
   }
 
   return {
-    values: { label, type, required, options: optionsRaw },
-    errors,
+    values: { label: labelML, type: typeML, required: requiredML, options: optionsRawML },
+    errors: errorsML,
   };
 }
 
-export async function createCustomField(
-  shop: string,
-  values: CustomFieldFormValues,
+export async function createCustomFieldML(
+  shopML: string,
+  valuesML: CustomFieldFormValues,
 ): Promise<CustomBookingField> {
-  const baseKey = slugify(values.label);
-  const fieldKey = await uniqueFieldKey(shop, baseKey);
+  const baseKeyML = slugifyML(valuesML.label);
+  const fieldKeyML = await uniqueFieldKeyML(shopML, baseKeyML);
 
-  const lastField = await prisma.customBookingField.findFirst({
-    where: { shop },
+  const lastFieldML = await prismaML.customBookingField.findFirst({
+    where: { shop: shopML },
     orderBy: { sortOrder: "desc" },
   });
-  const sortOrder = (lastField?.sortOrder ?? -1) + 1;
+  const sortOrderML = (lastFieldML?.sortOrder ?? -1) + 1;
 
-  return prisma.customBookingField.create({
+  return prismaML.customBookingField.create({
     data: {
-      shop,
-      fieldKey,
-      label: values.label,
-      type: values.type,
-      required: values.required,
-      options: values.type === "SELECT" ? normalizeOptions(values.options) : null,
-      sortOrder,
+      shop: shopML,
+      fieldKey: fieldKeyML,
+      label: valuesML.label,
+      type: valuesML.type,
+      required: valuesML.required,
+      options: valuesML.type === "SELECT" ? normalizeOptionsML(valuesML.options) : null,
+      sortOrder: sortOrderML,
     },
   });
 }
 
-export async function updateCustomField(
-  shop: string,
-  id: string,
-  values: CustomFieldFormValues,
+export async function updateCustomFieldML(
+  shopML: string,
+  idML: string,
+  valuesML: CustomFieldFormValues,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const existing = await prisma.customBookingField.findFirst({
-    where: { id, shop },
+  const existingML = await prismaML.customBookingField.findFirst({
+    where: { id: idML, shop: shopML },
   });
-  if (!existing) {
+  if (!existingML) {
     return { ok: false, error: "Field not found." };
   }
 
-  await prisma.customBookingField.update({
-    where: { id },
+  await prismaML.customBookingField.update({
+    where: { id: idML },
     data: {
-      label: values.label,
-      type: values.type,
-      required: values.required,
-      options: values.type === "SELECT" ? normalizeOptions(values.options) : null,
+      label: valuesML.label,
+      type: valuesML.type,
+      required: valuesML.required,
+      options: valuesML.type === "SELECT" ? normalizeOptionsML(valuesML.options) : null,
     },
   });
   return { ok: true };
 }
 
-export async function deleteCustomField(
-  shop: string,
-  id: string,
+export async function deleteCustomFieldML(
+  shopML: string,
+  idML: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const existing = await prisma.customBookingField.findFirst({
-    where: { id, shop },
+  const existingML = await prismaML.customBookingField.findFirst({
+    where: { id: idML, shop: shopML },
   });
-  if (!existing) {
+  if (!existingML) {
     return { ok: false, error: "Field not found." };
   }
-  await prisma.customBookingField.delete({ where: { id } });
+  await prismaML.customBookingField.delete({ where: { id: idML } });
   return { ok: true };
 }
 
-export async function reorderCustomFields(
-  shop: string,
-  orderedIds: string[],
+export async function reorderCustomFieldsML(
+  shopML: string,
+  orderedIdsML: string[],
 ): Promise<void> {
-  await prisma.$transaction(
-    orderedIds.map((id, index) =>
-      prisma.customBookingField.update({
-        where: { id },
-        data: { sortOrder: index },
+  await prismaML.$transaction(
+    orderedIdsML.map((idML, indexML) =>
+      prismaML.customBookingField.update({
+        where: { id: idML },
+        data: { sortOrder: indexML },
       }),
     ),
   );
 }
 
-function normalizeOptions(raw: string): string {
-  return raw
+function normalizeOptionsML(rawML: string): string {
+  return rawML
     .split(",")
-    .map((o) => o.trim())
+    .map((oML) => oML.trim())
     .filter(Boolean)
     .join(",");
 }
@@ -183,12 +183,12 @@ export type PublicCustomField = {
   options: string[];
 };
 
-export function toPublicField(field: CustomBookingField): PublicCustomField {
+export function toPublicFieldML(fieldML: CustomBookingField): PublicCustomField {
   return {
-    fieldKey: field.fieldKey,
-    label: field.label,
-    type: field.type,
-    required: field.required,
-    options: field.options ? field.options.split(",") : [],
+    fieldKey: fieldML.fieldKey,
+    label: fieldML.label,
+    type: fieldML.type,
+    required: fieldML.required,
+    options: fieldML.options ? fieldML.options.split(",") : [],
   };
 }

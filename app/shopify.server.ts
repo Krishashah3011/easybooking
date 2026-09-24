@@ -5,16 +5,16 @@ import {
   shopifyApp,
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
-import prisma from "./db.server";
+import prismaML from "./db.server";
 
-const shopify = shopifyApp({
+const shopifyML = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
   apiVersion: ApiVersion.July26,
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
-  sessionStorage: new PrismaSessionStorage(prisma),
+  sessionStorage: new PrismaSessionStorage(prismaML),
   distribution: AppDistribution.AppStore,
   future: {
     expiringOfflineAccessTokens: true,
@@ -24,11 +24,11 @@ const shopify = shopifyApp({
     : {}),
 });
 
-export default shopify;
+export default shopifyML;
 export const apiVersion = ApiVersion.July26;
-export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
-export const authenticate = shopify.authenticate;
-export const unauthenticated = shopify.unauthenticated;
-export const login = shopify.login;
-export const registerWebhooks = shopify.registerWebhooks;
-export const sessionStorage = shopify.sessionStorage;
+export const addDocumentResponseHeaders = shopifyML.addDocumentResponseHeaders;
+export const authenticate = shopifyML.authenticate;
+export const unauthenticated = shopifyML.unauthenticated;
+export const login = shopifyML.login;
+export const registerWebhooks = shopifyML.registerWebhooks;
+export const sessionStorage = shopifyML.sessionStorage;

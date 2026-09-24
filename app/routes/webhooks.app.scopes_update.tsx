@@ -2,18 +2,18 @@ import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-    const { payload, session, topic, shop } = await authenticate.webhook(request);
-    console.log(`Received ${topic} webhook for ${shop}`);
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+    const { payload: payloadML, session: sessionML, topic: topicML, shop: shopML } = await authenticate.webhook(requestML);
+    console.log(`Received ${topicML} webhook for ${shopML}`);
 
-    const current = payload.current as string[];
-    if (session) {
+    const currentML = payloadML.current as string[];
+    if (sessionML) {
         await db.session.update({   
             where: {
-                id: session.id
+                id: sessionML.id
             },
             data: {
-                scope: current.toString(),
+                scope: currentML.toString(),
             },
         });
     }

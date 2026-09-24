@@ -1,44 +1,44 @@
 import nodemailer from "nodemailer";
-import { getSmtpSettings } from "../models/smtpSettings.server";
+import { getSmtpSettingsML } from "../models/smtpSettings.server";
 
-const transporterCache = new Map<string, nodemailer.Transporter>();
-const transporterCacheKey = new Map<string, string>();
+const transporterCacheML = new Map<string, nodemailer.Transporter>();
+const transporterCacheKeyML = new Map<string, string>();
 
-async function getTransporter(
-  shop: string,
+async function getTransporterML(
+  shopML: string,
 ): Promise<{ transporter: nodemailer.Transporter; fromEmail: string } | null> {
-  const settings = await getSmtpSettings(shop);
+  const settingsML = await getSmtpSettingsML(shopML);
 
   if (
-    !settings?.host ||
-    !settings.port ||
-    !settings.username ||
-    !settings.password ||
-    !settings.fromEmail
+    !settingsML?.host ||
+    !settingsML.port ||
+    !settingsML.username ||
+    !settingsML.password ||
+    !settingsML.fromEmail
   ) {
     return null;
   }
 
-  const cacheKey = `${settings.host}:${settings.port}:${settings.username}:${settings.password}`;
-  const cached = transporterCache.get(shop);
-  if (cached && transporterCacheKey.get(shop) === cacheKey) {
-    return { transporter: cached, fromEmail: settings.fromEmail };
+  const cacheKeyML = `${settingsML.host}:${settingsML.port}:${settingsML.username}:${settingsML.password}`;
+  const cachedML = transporterCacheML.get(shopML);
+  if (cachedML && transporterCacheKeyML.get(shopML) === cacheKeyML) {
+    return { transporter: cachedML, fromEmail: settingsML.fromEmail };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: settings.host,
-    port: settings.port,
-    secure: settings.port === 465,
-    auth: { user: settings.username, pass: settings.password },
+  const transporterML = nodemailer.createTransport({
+    host: settingsML.host,
+    port: settingsML.port,
+    secure: settingsML.port === 465,
+    auth: { user: settingsML.username, pass: settingsML.password },
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
     socketTimeout: 20_000,
   });
 
-  transporterCache.set(shop, transporter);
-  transporterCacheKey.set(shop, cacheKey);
+  transporterCacheML.set(shopML, transporterML);
+  transporterCacheKeyML.set(shopML, cacheKeyML);
 
-  return { transporter, fromEmail: settings.fromEmail };
+  return { transporter: transporterML, fromEmail: settingsML.fromEmail };
 }
 
 export type SendEmailInput = {
@@ -50,29 +50,29 @@ export type SendEmailInput = {
   fromName?: string | null;
 };
 
-export async function sendEmail(input: SendEmailInput): Promise<boolean> {
-  const result = await getTransporter(input.shop);
-  if (!result) {
+export async function sendEmailML(inputML: SendEmailInput): Promise<boolean> {
+  const resultML = await getTransporterML(inputML.shop);
+  if (!resultML) {
     console.warn(
-      `SMTP is not configured for shop ${input.shop} — go to Settings > SMTP Settings to set it up. Skipping email send.`,
+      `SMTP is not configured for shop ${inputML.shop} — go to Settings > SMTP Settings to set it up. Skipping email send.`,
     );
     return false;
   }
 
-  const { transporter, fromEmail } = result;
-  const fromName = input.fromName?.trim() || "Bookings";
+  const { transporter: transporterML, fromEmail: fromEmailML } = resultML;
+  const fromNameML = inputML.fromName?.trim() || "Bookings";
 
   try {
-    await transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
-      to: input.to,
-      subject: input.subject,
-      text: input.text,
-      html: input.html,
+    await transporterML.sendMail({
+      from: `"${fromNameML}" <${fromEmailML}>`,
+      to: inputML.to,
+      subject: inputML.subject,
+      text: inputML.text,
+      html: inputML.html,
     });
     return true;
-  } catch (error) {
-    console.error("Failed to send email:", error);
+  } catch (errorML) {
+    console.error("Failed to send email:", errorML);
     return false;
   }
 }

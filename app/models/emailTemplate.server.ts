@@ -1,14 +1,14 @@
 import type { EmailTemplate } from "@prisma/client";
-import prisma from "../db.server";
-import { formatTimeRangeDisplay } from "../utils/format";
+import prismaML from "../db.server";
+import { formatTimeRangeDisplayML } from "../utils/format";
 import {
-  EMAIL_TEMPLATE_TYPES,
+  EMAIL_TEMPLATE_TYPES_ML,
   type EmailTemplateType,
 } from "./emailTemplateTypes";
 
-export { EMAIL_TEMPLATE_TYPES, type EmailTemplateType } from "./emailTemplateTypes";
+export { EMAIL_TEMPLATE_TYPES_ML as EMAIL_TEMPLATE_TYPES, type EmailTemplateType } from "./emailTemplateTypes";
 
-export const EMAIL_TEMPLATE_LABELS: Record<EmailTemplateType, string> = {
+export const EMAIL_TEMPLATE_LABELS_ML: Record<EmailTemplateType, string> = {
   confirmation: "Booking Confirmation",
   bundleConfirmation: "Bundle Booking Confirmation",
   reminder: "Booking Reminder",
@@ -16,7 +16,7 @@ export const EMAIL_TEMPLATE_LABELS: Record<EmailTemplateType, string> = {
   rescheduled: "Booking Rescheduled",
 };
 
-export const EMAIL_TEMPLATE_DESCRIPTIONS: Record<EmailTemplateType, string> = {
+export const EMAIL_TEMPLATE_DESCRIPTIONS_ML: Record<EmailTemplateType, string> = {
   confirmation: "Sent to the customer right after a single-session booking is placed.",
   bundleConfirmation: "Sent once for a bundle purchase, listing every session in the bundle.",
   reminder: "Sent automatically ahead of an upcoming booking.",
@@ -24,7 +24,7 @@ export const EMAIL_TEMPLATE_DESCRIPTIONS: Record<EmailTemplateType, string> = {
   rescheduled: "Sent to the customer when a booking's date/time is changed.",
 };
 
-const COMMON_PLACEHOLDERS = [
+const COMMON_PLACEHOLDERS_ML = [
   { token: "{{customer_name}}", description: "Customer's name (falls back to a generic greeting if unknown)" },
   { token: "{{product_title}}", description: "The booked product/service name" },
   { token: "{{date}}", description: "Booking date" },
@@ -32,22 +32,22 @@ const COMMON_PLACEHOLDERS = [
   { token: "{{shop_name}}", description: "Your store's name" },
 ];
 
-export const EMAIL_TEMPLATE_PLACEHOLDERS: Record<
+export const EMAIL_TEMPLATE_PLACEHOLDERS_ML: Record<
   EmailTemplateType,
   { token: string; description: string }[]
 > = {
-  confirmation: COMMON_PLACEHOLDERS,
-  reminder: COMMON_PLACEHOLDERS,
-  cancellation: COMMON_PLACEHOLDERS,
+  confirmation: COMMON_PLACEHOLDERS_ML,
+  reminder: COMMON_PLACEHOLDERS_ML,
+  cancellation: COMMON_PLACEHOLDERS_ML,
   bundleConfirmation: [
-    COMMON_PLACEHOLDERS[0],
-    COMMON_PLACEHOLDERS[1],
+    COMMON_PLACEHOLDERS_ML[0],
+    COMMON_PLACEHOLDERS_ML[1],
     { token: "{{session_count}}", description: "Number of sessions in the bundle" },
     { token: "{{sessions_list}}", description: "A formatted list of every session's date and time" },
-    COMMON_PLACEHOLDERS[4],
+    COMMON_PLACEHOLDERS_ML[4],
   ],
   rescheduled: [
-    ...COMMON_PLACEHOLDERS,
+    ...COMMON_PLACEHOLDERS_ML,
     { token: "{{previous_date}}", description: "The booking's previous date" },
     { token: "{{previous_time_range}}", description: "The booking's previous time range" },
   ],
@@ -82,8 +82,8 @@ export type AnyEmailData =
   | BundleBookingEmailData
   | RescheduledEmailData;
 
-function escapeHtml(value: string): string {
-  return value
+function escapeHtmlML(valueML: string): string {
+  return valueML
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -91,11 +91,11 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function greetingName(customerName: string | null): string {
-  return customerName ? customerName : "there";
+function greetingNameML(customerNameML: string | null): string {
+  return customerNameML ? customerNameML : "there";
 }
 
-export const DEFAULT_EMAIL_TEMPLATES: Record<
+export const DEFAULT_EMAIL_TEMPLATES_ML: Record<
   EmailTemplateType,
   { subject: string; body: string }
 > = {
@@ -152,66 +152,66 @@ export const DEFAULT_EMAIL_TEMPLATES: Record<
   },
 };
 
-function buildRawTokens(
-  type: EmailTemplateType,
-  data: AnyEmailData,
+function buildRawTokensML(
+  typeML: EmailTemplateType,
+  dataML: AnyEmailData,
 ): Record<string, string> {
-  if (type === "bundleConfirmation") {
-    const bundleData = data as BundleBookingEmailData;
+  if (typeML === "bundleConfirmation") {
+    const bundleDataML = dataML as BundleBookingEmailData;
     return {
-      customer_name: greetingName(bundleData.customerName),
-      product_title: bundleData.productTitle,
-      session_count: String(bundleData.sessions.length),
-      shop_name: bundleData.shopName,
+      customer_name: greetingNameML(bundleDataML.customerName),
+      product_title: bundleDataML.productTitle,
+      session_count: String(bundleDataML.sessions.length),
+      shop_name: bundleDataML.shopName,
     };
   }
 
-  const single = data as BookingEmailData | RescheduledEmailData;
-  const tokens: Record<string, string> = {
-    customer_name: greetingName(single.customerName),
-    product_title: single.productTitle,
-    date: single.date,
-    time_range: formatTimeRangeDisplay(single.slotStart, single.slotEnd),
-    shop_name: single.shopName,
+  const singleML = dataML as BookingEmailData | RescheduledEmailData;
+  const tokensML: Record<string, string> = {
+    customer_name: greetingNameML(singleML.customerName),
+    product_title: singleML.productTitle,
+    date: singleML.date,
+    time_range: formatTimeRangeDisplayML(singleML.slotStart, singleML.slotEnd),
+    shop_name: singleML.shopName,
   };
 
-  if (type === "rescheduled") {
-    const rescheduledData = data as RescheduledEmailData;
-    tokens.previous_date = rescheduledData.previousDate;
-    tokens.previous_time_range = formatTimeRangeDisplay(
-      rescheduledData.previousSlotStart,
-      rescheduledData.previousSlotEnd,
+  if (typeML === "rescheduled") {
+    const rescheduledDataML = dataML as RescheduledEmailData;
+    tokensML.previous_date = rescheduledDataML.previousDate;
+    tokensML.previous_time_range = formatTimeRangeDisplayML(
+      rescheduledDataML.previousSlotStart,
+      rescheduledDataML.previousSlotEnd,
     );
   }
 
-  return tokens;
+  return tokensML;
 }
 
-function escapeTokens(tokens: Record<string, string>): Record<string, string> {
-  const escaped: Record<string, string> = {};
-  for (const [key, value] of Object.entries(tokens)) {
-    escaped[key] = escapeHtml(value);
+function escapeTokensML(tokensML: Record<string, string>): Record<string, string> {
+  const escapedML: Record<string, string> = {};
+  for (const [keyML, valueML] of Object.entries(tokensML)) {
+    escapedML[keyML] = escapeHtmlML(valueML);
   }
-  return escaped;
+  return escapedML;
 }
 
-function buildSessionsListHtml(sessions: BundleSessionInfo[]): string {
-  return sessions
+function buildSessionsListHtmlML(sessionsML: BundleSessionInfo[]): string {
+  return sessionsML
     .map(
-      (s) =>
-        `  <li>${escapeHtml(s.date)}, ${escapeHtml(formatTimeRangeDisplay(s.slotStart, s.slotEnd))}</li>`,
+      (sML) =>
+        `  <li>${escapeHtmlML(sML.date)}, ${escapeHtmlML(formatTimeRangeDisplayML(sML.slotStart, sML.slotEnd))}</li>`,
     )
     .join("\n");
 }
 
-function fillTemplate(template: string, tokens: Record<string, string>): string {
-  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key) => {
-    return Object.prototype.hasOwnProperty.call(tokens, key) ? tokens[key] : match;
+function fillTemplateML(templateML: string, tokensML: Record<string, string>): string {
+  return templateML.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (matchML, keyML) => {
+    return Object.prototype.hasOwnProperty.call(tokensML, keyML) ? tokensML[keyML] : matchML;
   });
 }
 
-function htmlToText(html: string): string {
-  return html
+function htmlToTextML(htmlML: string): string {
+  return htmlML
     .replace(/<li>/gi, "- ")
     .replace(/<\/li>/gi, "\n")
     .replace(/<br\s*\/?>/gi, "\n")
@@ -227,8 +227,8 @@ function htmlToText(html: string): string {
     .trim();
 }
 
-export async function listEmailTemplates(
-  shop: string,
+export async function listEmailTemplatesML(
+  shopML: string,
 ): Promise<
   {
     type: EmailTemplateType;
@@ -240,108 +240,108 @@ export async function listEmailTemplates(
     isCustomized: boolean;
   }[]
 > {
-  const rows = await prisma.emailTemplate.findMany({ where: { shop } });
-  const byType = new Map<string, EmailTemplate>(
-    rows.map((row: EmailTemplate) => [row.type, row]),
+  const rowsML = await prismaML.emailTemplate.findMany({ where: { shop: shopML } });
+  const byTypeML = new Map<string, EmailTemplate>(
+    rowsML.map((rowML: EmailTemplate) => [rowML.type, rowML]),
   );
 
-  return EMAIL_TEMPLATE_TYPES.map((type) => {
-    const row = byType.get(type);
-    const fallback = DEFAULT_EMAIL_TEMPLATES[type];
+  return EMAIL_TEMPLATE_TYPES_ML.map((typeML) => {
+    const rowML = byTypeML.get(typeML);
+    const fallbackML = DEFAULT_EMAIL_TEMPLATES_ML[typeML];
     return {
-      type,
-      label: EMAIL_TEMPLATE_LABELS[type],
-      description: EMAIL_TEMPLATE_DESCRIPTIONS[type],
-      placeholders: EMAIL_TEMPLATE_PLACEHOLDERS[type],
-      subject: row?.subject ?? fallback.subject,
-      body: row?.body ?? fallback.body,
+      type: typeML,
+      label: EMAIL_TEMPLATE_LABELS_ML[typeML],
+      description: EMAIL_TEMPLATE_DESCRIPTIONS_ML[typeML],
+      placeholders: EMAIL_TEMPLATE_PLACEHOLDERS_ML[typeML],
+      subject: rowML?.subject ?? fallbackML.subject,
+      body: rowML?.body ?? fallbackML.body,
       isCustomized: Boolean(
-        row &&
-          (row.subject.trim() !== fallback.subject.trim() ||
-            row.body.trim() !== fallback.body.trim()),
+        rowML &&
+          (rowML.subject.trim() !== fallbackML.subject.trim() ||
+            rowML.body.trim() !== fallbackML.body.trim()),
       ),
     };
   });
 }
 
-export async function upsertEmailTemplate(
-  shop: string,
-  type: EmailTemplateType,
-  subject: string,
-  body: string,
+export async function upsertEmailTemplateML(
+  shopML: string,
+  typeML: EmailTemplateType,
+  subjectML: string,
+  bodyML: string,
 ): Promise<EmailTemplate> {
-  return prisma.emailTemplate.upsert({
-    where: { shop_type: { shop, type } },
-    create: { shop, type, subject, body },
-    update: { subject, body },
+  return prismaML.emailTemplate.upsert({
+    where: { shop_type: { shop: shopML, type: typeML } },
+    create: { shop: shopML, type: typeML, subject: subjectML, body: bodyML },
+    update: { subject: subjectML, body: bodyML },
   });
 }
 
-export async function resetEmailTemplate(
-  shop: string,
-  type: EmailTemplateType,
+export async function resetEmailTemplateML(
+  shopML: string,
+  typeML: EmailTemplateType,
 ): Promise<void> {
-  await prisma.emailTemplate.deleteMany({ where: { shop, type } });
+  await prismaML.emailTemplate.deleteMany({ where: { shop: shopML, type: typeML } });
 }
 
-export async function renderEmailTemplate(
-  shop: string,
-  type: EmailTemplateType,
-  data: AnyEmailData,
+export async function renderEmailTemplateML(
+  shopML: string,
+  typeML: EmailTemplateType,
+  dataML: AnyEmailData,
 ): Promise<{ subject: string; html: string; text: string }> {
-  const row = await prisma.emailTemplate.findUnique({
-    where: { shop_type: { shop, type } },
+  const rowML = await prismaML.emailTemplate.findUnique({
+    where: { shop_type: { shop: shopML, type: typeML } },
   });
-  const fallback = DEFAULT_EMAIL_TEMPLATES[type];
-  const subjectTemplate = row?.subject ?? fallback.subject;
-  const bodyTemplate = row?.body ?? fallback.body;
+  const fallbackML = DEFAULT_EMAIL_TEMPLATES_ML[typeML];
+  const subjectTemplateML = rowML?.subject ?? fallbackML.subject;
+  const bodyTemplateML = rowML?.body ?? fallbackML.body;
 
-  const rawTokens = buildRawTokens(type, data);
-  const subject = fillTemplate(subjectTemplate, rawTokens);
+  const rawTokensML = buildRawTokensML(typeML, dataML);
+  const subjectML = fillTemplateML(subjectTemplateML, rawTokensML);
 
-  const htmlTokens = escapeTokens(rawTokens);
-  if (type === "bundleConfirmation") {
-    htmlTokens.sessions_list = buildSessionsListHtml(
-      (data as BundleBookingEmailData).sessions,
+  const htmlTokensML = escapeTokensML(rawTokensML);
+  if (typeML === "bundleConfirmation") {
+    htmlTokensML.sessions_list = buildSessionsListHtmlML(
+      (dataML as BundleBookingEmailData).sessions,
     );
   }
-  const html = fillTemplate(bodyTemplate, htmlTokens);
-  const text = htmlToText(html);
+  const htmlML = fillTemplateML(bodyTemplateML, htmlTokensML);
+  const textML = htmlToTextML(htmlML);
 
-  return { subject, html, text };
+  return { subject: subjectML, html: htmlML, text: textML };
 }
 
-export async function confirmationEmail(
-  shop: string,
-  data: BookingEmailData,
+export async function confirmationEmailML(
+  shopML: string,
+  dataML: BookingEmailData,
 ): Promise<{ subject: string; text: string; html: string }> {
-  return renderEmailTemplate(shop, "confirmation", data);
+  return renderEmailTemplateML(shopML, "confirmation", dataML);
 }
 
-export async function bundleConfirmationEmail(
-  shop: string,
-  data: BundleBookingEmailData,
+export async function bundleConfirmationEmailML(
+  shopML: string,
+  dataML: BundleBookingEmailData,
 ): Promise<{ subject: string; text: string; html: string }> {
-  return renderEmailTemplate(shop, "bundleConfirmation", data);
+  return renderEmailTemplateML(shopML, "bundleConfirmation", dataML);
 }
 
-export async function reminderEmail(
-  shop: string,
-  data: BookingEmailData,
+export async function reminderEmailML(
+  shopML: string,
+  dataML: BookingEmailData,
 ): Promise<{ subject: string; text: string; html: string }> {
-  return renderEmailTemplate(shop, "reminder", data);
+  return renderEmailTemplateML(shopML, "reminder", dataML);
 }
 
-export async function cancellationEmail(
-  shop: string,
-  data: BookingEmailData,
+export async function cancellationEmailML(
+  shopML: string,
+  dataML: BookingEmailData,
 ): Promise<{ subject: string; text: string; html: string }> {
-  return renderEmailTemplate(shop, "cancellation", data);
+  return renderEmailTemplateML(shopML, "cancellation", dataML);
 }
 
-export async function rescheduledEmail(
-  shop: string,
-  data: RescheduledEmailData,
+export async function rescheduledEmailML(
+  shopML: string,
+  dataML: RescheduledEmailData,
 ): Promise<{ subject: string; text: string; html: string }> {
-  return renderEmailTemplate(shop, "rescheduled", data);
+  return renderEmailTemplateML(shopML, "rescheduled", dataML);
 }

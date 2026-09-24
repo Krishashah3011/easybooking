@@ -1,6 +1,6 @@
-export function parseWorkingDays(csv: string): number[] {
-  return csv
+export function parseWorkingDaysML(csvML: string): number[] {
+  return csvML
     .split(",")
-    .map((part) => Number(part.trim()))
-    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
+    .map((partML) => Number(partML.trim()))
+    .filter((nML) => Number.isInteger(nML) && nML >= 0 && nML <= 6);
 }

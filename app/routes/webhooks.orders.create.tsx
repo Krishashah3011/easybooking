@@ -1,19 +1,19 @@
 import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
-import { createBookingsFromOrder, type OrderPayload } from "../models/booking.server";
+import { createBookingsFromOrderML, type OrderPayload } from "../models/booking.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { shop, topic, payload } = await authenticate.webhook(request);
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { shop: shopML, topic: topicML, payload: payloadML } = await authenticate.webhook(requestML);
 
-  console.log(`Received ${topic} webhook for ${shop}`);
+  console.log(`Received ${topicML} webhook for ${shopML}`);
 
-  const order = payload as unknown as OrderPayload;
-  const created = await createBookingsFromOrder(shop, order);
-  console.log(`Created ${created.length} booking(s) for order ${order.id}`);
+  const orderML = payloadML as unknown as OrderPayload;
+  const createdML = await createBookingsFromOrderML(shopML, orderML);
+  console.log(`Created ${createdML.length} booking(s) for order ${orderML.id}`);
 
-  if (created.some((b) => b.status === "OVERBOOKED")) {
+  if (createdML.some((bML) => bML.status === "OVERBOOKED")) {
     console.warn(
-      `Order ${order.id} for ${shop} created one or more OVERBOOKED bookings — needs merchant review.`,
+      `Order ${orderML.id} for ${shopML} created one or more OVERBOOKED bookings — needs merchant review.`,
     );
   }
 

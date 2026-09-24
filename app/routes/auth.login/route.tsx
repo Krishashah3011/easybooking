@@ -4,27 +4,27 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Form, useActionData, useLoaderData } from "react-router";
 
 import { login } from "../../shopify.server";
-import { loginErrorMessage } from "./error.server";
+import { loginErrorMessageML } from "./error.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const errors = loginErrorMessage(await login(request));
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const errorsML = loginErrorMessageML(await login(requestML));
 
-  return { errors };
+  return { errors: errorsML };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const errors = loginErrorMessage(await login(request));
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const errorsML = loginErrorMessageML(await login(requestML));
 
   return {
-    errors,
+    errors: errorsML,
   };
 };
 
 export default function Auth() {
-  const loaderData = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
-  const [shop, setShop] = useState("");
-  const { errors } = actionData || loaderData;
+  const loaderDataML = useLoaderData<typeof loader>();
+  const actionDataML = useActionData<typeof action>();
+  const [shopML, setShopML] = useState("");
+  const { errors: errorsML } = actionDataML || loaderDataML;
 
   return (
     <AppProvider embedded={false}>
@@ -35,10 +35,10 @@ export default function Auth() {
             name="shop"
             label="Shop domain"
             details="example.myshopify.com"
-            value={shop}
-            onChange={(e) => setShop(e.currentTarget.value)}
+            value={shopML}
+            onChange={(eML) => setShopML(eML.currentTarget.value)}
             autocomplete="on"
-            error={errors.shop}
+            error={errorsML.shop}
           ></s-text-field>
           <s-button type="submit">Log in</s-button>
         </s-section>

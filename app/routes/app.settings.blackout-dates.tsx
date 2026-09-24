@@ -8,20 +8,20 @@ import { useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
-  addBlackoutDate,
-  deleteBlackoutDate,
-  listShopBlackoutDates,
-  parseBlackoutDateForm,
+  addBlackoutDateML,
+  deleteBlackoutDateML,
+  listShopBlackoutDatesML,
+  parseBlackoutDateFormML,
   type BlackoutDateFieldErrors,
 } from "../models/blackoutDate.server";
 
-const ACCENT = "#073E74";
-const LINE_BORDER = "#DBDBDB";
-const INPUT_BORDER = "#E9E9EA";
-const LABEL_GREY = "#373737";
-const TEXT_BLACK = "#000000";
+const ACCENT_ML = "#073E74";
+const LINE_BORDER_ML = "#DBDBDB";
+const INPUT_BORDER_ML = "#E9E9EA";
+const LABEL_GREY_ML = "#373737";
+const TEXT_BLACK_ML = "#000000";
 
-const ChevronIcon = ({ open }: { open: boolean }) => (
+const ChevronIcon = ({ open: openML }: { open: boolean }) => (
   <svg
     width="11"
     height="6"
@@ -29,13 +29,13 @@ const ChevronIcon = ({ open }: { open: boolean }) => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     style={{
-      transform: open ? "rotate(180deg)" : "rotate(0deg)",
+      transform: openML ? "rotate(180deg)" : "rotate(0deg)",
       transition: "transform 0.2s ease",
     }}
   >
     <path
       d="M1 1L5.5 5L10 1"
-      stroke={ACCENT}
+      stroke={ACCENT_ML}
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -49,7 +49,7 @@ const PlusIcon = () => (
   </svg>
 );
 
-const styles: Record<string, React.CSSProperties> = {
+const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
     display: "flex",
@@ -60,7 +60,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     maxWidth: "886px",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
   },
   body: {
@@ -91,7 +91,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   descText: {
@@ -99,7 +99,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   chevronButton: {
@@ -116,7 +116,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${LINE_BORDER}`,
+    borderTop: `1px solid ${LINE_BORDER_ML}`,
     margin: 0,
     width: "100%",
     alignSelf: "stretch",
@@ -152,7 +152,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: LABEL_GREY,
+    color: LABEL_GREY_ML,
     margin: 0,
   },
   inputBoxDate: {
@@ -166,7 +166,7 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
   },
   visibleDateInput: {
@@ -179,7 +179,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
     cursor: "pointer",
   },
@@ -196,7 +196,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
   },
   reasonInput: {
@@ -208,7 +208,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
     minWidth: 0,
   },
@@ -223,7 +223,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "auto",
     minWidth: "min(188px, 100%)",
     height: "42px",
-    background: ACCENT,
+    background: ACCENT_ML,
     borderRadius: "10px",
     border: "none",
     cursor: "pointer",
@@ -259,7 +259,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "16px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
     padding: "10px 10px 13px",
     marginTop: "16px",
@@ -284,7 +284,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   columnHeaderRow: {
@@ -301,7 +301,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   rowWrap: {
@@ -320,7 +320,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   actionsCell: {
@@ -349,90 +349,90 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: LABEL_GREY,
+    color: LABEL_GREY_ML,
     margin: 0,
   },
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const dates = await listShopBlackoutDates(session.shop);
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const datesML = await listShopBlackoutDatesML(sessionML.shop);
   return {
-    blackoutDates: dates.map(
-      (b: { id: string; date: Date; reason: string | null }) => ({
-        id: b.id,
-        date: b.date.toISOString().slice(0, 10),
-        reason: b.reason,
+    blackoutDates: datesML.map(
+      (bML: { id: string; date: Date; reason: string | null }) => ({
+        id: bML.id,
+        date: bML.date.toISOString().slice(0, 10),
+        reason: bML.reason,
       }),
     ),
   };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "") as "add" | "delete" | "";
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
+  const intentML = String(formDataML.get("intent") ?? "") as "add" | "delete" | "";
 
-  if (intent === "add") {
-    const { date, reason, errors } = parseBlackoutDateForm(formData);
-    if (!date) {
-      return { intent, ok: false as const, errors };
+  if (intentML === "add") {
+    const { date: dateML, reason: reasonML, errors: errorsML } = parseBlackoutDateFormML(formDataML);
+    if (!dateML) {
+      return { intent: intentML, ok: false as const, errors: errorsML };
     }
-    await addBlackoutDate(session.shop, date, reason, null);
-    return { intent, ok: true as const, errors: {} };
+    await addBlackoutDateML(sessionML.shop, dateML, reasonML, null);
+    return { intent: intentML, ok: true as const, errors: {} };
   }
 
-  if (intent === "delete") {
-    const id = String(formData.get("id") ?? "");
-    await deleteBlackoutDate(session.shop, id);
-    return { intent, ok: true as const };
+  if (intentML === "delete") {
+    const idML = String(formDataML.get("id") ?? "");
+    await deleteBlackoutDateML(sessionML.shop, idML);
+    return { intent: intentML, ok: true as const };
   }
 
-  return { intent, ok: false as const };
+  return { intent: intentML, ok: false as const };
 };
 
 export default function BlackoutDatesPage() {
-  const { blackoutDates } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
+  const { blackoutDates: blackoutDatesML } = useLoaderData<typeof loader>();
+  const fetcherML = useFetcher<typeof action>();
 
-  const [date, setDate] = useState("");
-  const [reason, setReason] = useState("");
-  const [open, setOpen] = useState(false);
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [dateML, setDateML] = useState("");
+  const [reasonML, setReasonML] = useState("");
+  const [openML, setOpenML] = useState(false);
+  const dateInputRefML = useRef<HTMLInputElement>(null);
 
-  const openDatePicker = () => {
-    const el = dateInputRef.current;
-    if (!el) return;
-    if (typeof el.showPicker === "function") {
-      el.showPicker();
+  const openDatePickerML = () => {
+    const elML = dateInputRefML.current;
+    if (!elML) return;
+    if (typeof elML.showPicker === "function") {
+      elML.showPicker();
     } else {
-      el.focus();
+      elML.focus();
     }
   };
 
-  const errors: BlackoutDateFieldErrors =
-    fetcher.data?.intent === "add" ? (fetcher.data.errors ?? {}) : {};
+  const errorsML: BlackoutDateFieldErrors =
+    fetcherML.data?.intent === "add" ? (fetcherML.data.errors ?? {}) : {};
 
   useEffect(() => {
-    if (fetcher.data?.intent === "add" && fetcher.data.ok) {
-      setDate("");
-      setReason("");
+    if (fetcherML.data?.intent === "add" && fetcherML.data.ok) {
+      setDateML("");
+      setReasonML("");
     }
-  }, [fetcher.data]);
+  }, [fetcherML.data]);
 
-  const isSubmitting = fetcher.state !== "idle";
-  const pendingIntent = isSubmitting
-    ? String(fetcher.formData?.get("intent") ?? "")
+  const isSubmittingML = fetcherML.state !== "idle";
+  const pendingIntentML = isSubmittingML
+    ? String(fetcherML.formData?.get("intent") ?? "")
     : "";
-  const isAdding = pendingIntent === "add";
+  const isAddingML = pendingIntentML === "add";
 
-  const handleAdd = () => {
-    if (!date) return;
-    fetcher.submit({ intent: "add", date, reason }, { method: "POST" });
+  const handleAddML = () => {
+    if (!dateML) return;
+    fetcherML.submit({ intent: "add", date: dateML, reason: reasonML }, { method: "POST" });
   };
 
-  const handleDelete = (id: string) => {
-    fetcher.submit({ intent: "delete", id }, { method: "POST" });
+  const handleDeleteML = (idML: string) => {
+    fetcherML.submit({ intent: "delete", id: idML }, { method: "POST" });
   };
 
   return (
@@ -451,96 +451,96 @@ export default function BlackoutDatesPage() {
           position: relative;
         }
       `}</style>
-      <div style={{ ...styles.card, minHeight: open ? "225px" : "auto", height: "auto" }}>
-        <div style={styles.body}>
+      <div style={{ ...stylesML.card, minHeight: openML ? "225px" : "auto", height: "auto" }}>
+        <div style={stylesML.body}>
           <div
-            style={{ ...styles.headerRow, cursor: "pointer" }}
-            onClick={() => setOpen(!open)}
+            style={{ ...stylesML.headerRow, cursor: "pointer" }}
+            onClick={() => setOpenML(!openML)}
           >
-            <div style={styles.headerLeft}>
-              <p style={styles.title}>Add a Blackout Date</p>
-              <p style={styles.descText}>
+            <div style={stylesML.headerLeft}>
+              <p style={stylesML.title}>Add a Blackout Date</p>
+              <p style={stylesML.descText}>
                 Block bookings across your store on specific dates-
                 holidays, closures, and one-off events.
               </p>
             </div>
             <button
               type="button"
-              style={styles.chevronButton}
-              aria-label={open ? "Collapse" : "Expand"}
+              style={stylesML.chevronButton}
+              aria-label={openML ? "Collapse" : "Expand"}
             >
-              <ChevronIcon open={open} />
+              <ChevronIcon open={openML} />
             </button>
           </div>
 
-          {open && (
+          {openML && (
             <>
-              <hr style={styles.divider} />
+              <hr style={stylesML.divider} />
 
-              <div style={styles.fieldsRow}>
-                <div style={styles.fieldGroupDate}>
-                  <p style={styles.fieldLabel}>Date</p>
+              <div style={stylesML.fieldsRow}>
+                <div style={stylesML.fieldGroupDate}>
+                  <p style={stylesML.fieldLabel}>Date</p>
                   <div
                     style={{
-                      ...styles.inputBoxDate,
-                      ...styles.inputBoxDateClickable,
+                      ...stylesML.inputBoxDate,
+                      ...stylesML.inputBoxDateClickable,
                     }}
-                    onClick={openDatePicker}
+                    onClick={openDatePickerML}
                   >
                     <img src="/date-icon.svg" width={18} height={20} alt="" />
                     <input
-                      ref={dateInputRef}
+                      ref={dateInputRefML}
                       type="date"
                       className="blackout-date-input"
-                      style={styles.visibleDateInput}
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
+                      style={stylesML.visibleDateInput}
+                      value={dateML}
+                      onChange={(eML) => setDateML(eML.target.value)}
+                      onClick={(eML) => eML.stopPropagation()}
                       aria-label="Date"
                     />
                   </div>
-                  {errors.date && (
+                  {errorsML.date && (
                     <p
                       style={{
-                        ...styles.fieldLabel,
+                        ...stylesML.fieldLabel,
                         color: "#D82C0D",
                         fontWeight: 400,
                         fontSize: "12px",
                       }}
                     >
-                      {errors.date}
+                      {errorsML.date}
                     </p>
                   )}
                 </div>
 
-                <div style={styles.fieldGroupReason}>
-                  <p style={styles.fieldLabel}>Reason (Optional)</p>
-                  <div style={styles.inputBoxReason}>
+                <div style={stylesML.fieldGroupReason}>
+                  <p style={stylesML.fieldLabel}>Reason (Optional)</p>
+                  <div style={stylesML.inputBoxReason}>
                     <input
                       type="text"
-                      style={styles.reasonInput}
+                      style={stylesML.reasonInput}
                       placeholder="e.g. Public holiday"
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
+                      value={reasonML}
+                      onChange={(eML) => setReasonML(eML.target.value)}
                     />
                   </div>
                 </div>
               </div>
 
-              <hr style={styles.divider} />
+              <hr style={stylesML.divider} />
 
               <button
                 type="button"
                 className="eb-add-btn"
                 style={{
-                  ...styles.addButton,
-                  ...(isAdding ? styles.addButtonDisabled : {}),
+                  ...stylesML.addButton,
+                  ...(isAddingML ? stylesML.addButtonDisabled : {}),
                 }}
-                onClick={handleAdd}
-                disabled={isAdding}
+                onClick={handleAddML}
+                disabled={isAddingML}
               >
-                <span style={styles.addButtonLabel}>Add Blackout Date</span>
-                <span style={styles.plusWrap}>
+                <span style={stylesML.addButtonLabel}>Add Blackout Date</span>
+                <span style={stylesML.plusWrap}>
                   <PlusIcon />
                 </span>
               </button>
@@ -549,42 +549,42 @@ export default function BlackoutDatesPage() {
         </div>
       </div>
 
-      <div style={styles.listCard}>
-        <div style={styles.listHeaderRow}>
-          <div style={styles.listHeaderLeft}>
-            <p style={styles.listTitle}>Current Blackout Dates</p>
-            <p style={styles.descText}>
+      <div style={stylesML.listCard}>
+        <div style={stylesML.listHeaderRow}>
+          <div style={stylesML.listHeaderLeft}>
+            <p style={stylesML.listTitle}>Current Blackout Dates</p>
+            <p style={stylesML.descText}>
               This blackout dates block bookings across your entire store.
             </p>
           </div>
         </div>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        <div style={styles.columnHeaderRow}>
-          <p style={styles.columnHeaderCell}>Date</p>
-          <p style={styles.columnHeaderCell}>Reason</p>
-          <p style={{ ...styles.columnHeaderCell, textAlign: "center" }}>
+        <div style={stylesML.columnHeaderRow}>
+          <p style={stylesML.columnHeaderCell}>Date</p>
+          <p style={stylesML.columnHeaderCell}>Reason</p>
+          <p style={{ ...stylesML.columnHeaderCell, textAlign: "center" }}>
             Actions
           </p>
         </div>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        {blackoutDates.length === 0 ? (
-          <p style={styles.emptyText}>No shop-wide blackout dates yet.</p>
+        {blackoutDatesML.length === 0 ? (
+          <p style={stylesML.emptyText}>No shop-wide blackout dates yet.</p>
         ) : (
-          blackoutDates.map((b) => (
-            <div key={b.id}>
-              <div style={styles.rowWrap}>
-                <p style={styles.rowCell}>{b.date}</p>
-                <p style={styles.rowCell}>{b.reason ?? "—"}</p>
-                <div style={styles.actionsCell}>
+          blackoutDatesML.map((bML) => (
+            <div key={bML.id}>
+              <div style={stylesML.rowWrap}>
+                <p style={stylesML.rowCell}>{bML.date}</p>
+                <p style={stylesML.rowCell}>{bML.reason ?? "—"}</p>
+                <div style={stylesML.actionsCell}>
                   <button
                     type="button"
-                    style={styles.deleteButton}
-                    onClick={() => handleDelete(b.id)}
-                    disabled={isSubmitting}
+                    style={stylesML.deleteButton}
+                    onClick={() => handleDeleteML(bML.id)}
+                    disabled={isSubmittingML}
                     aria-label="Delete blackout date"
                   >
                     <img
@@ -597,7 +597,7 @@ export default function BlackoutDatesPage() {
                   </button>
                 </div>
               </div>
-              <hr style={styles.divider} />
+              <hr style={stylesML.divider} />
             </div>
           ))
         )}
@@ -606,6 +606,6 @@ export default function BlackoutDatesPage() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

@@ -1,37 +1,37 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import {
-  listEnabledLocations,
-  toPublicLocation,
+  listEnabledLocationsML,
+  toPublicLocationML,
 } from "../models/bookingLocation.server";
 import {
-  getBookableProduct,
-  isProductAvailableForCountry,
+  getBookableProductML,
+  isProductAvailableForCountryML,
 } from "../models/bookableProduct.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.public.appProxy(request);
-  if (!session) {
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.public.appProxy(requestML);
+  if (!sessionML) {
     return Response.json({ error: "Unknown shop" }, { status: 401 });
   }
 
-  const url = new URL(request.url);
-  const productId = url.searchParams.get("productId");
-  const countryCode = url.searchParams.get("country");
+  const urlML = new URL(requestML.url);
+  const productIdML = urlML.searchParams.get("productId");
+  const countryCodeML = urlML.searchParams.get("country");
 
-  const [locations, bookableProduct] = await Promise.all([
-    listEnabledLocations(session.shop),
-    productId ? getBookableProduct(session.shop, productId) : Promise.resolve(null),
+  const [locationsML, bookableProductML] = await Promise.all([
+    listEnabledLocationsML(sessionML.shop),
+    productIdML ? getBookableProductML(sessionML.shop, productIdML) : Promise.resolve(null),
   ]);
 
-  const productBookingEnabled = productId
-    ? !!bookableProduct &&
-      bookableProduct.isEnabled &&
-      isProductAvailableForCountry(bookableProduct, countryCode)
+  const productBookingEnabledML = productIdML
+    ? !!bookableProductML &&
+      bookableProductML.isEnabled &&
+      isProductAvailableForCountryML(bookableProductML, countryCodeML)
     : true;
 
   return Response.json({
-    locations: locations.map(toPublicLocation),
-    productBookingEnabled,
+    locations: locationsML.map(toPublicLocationML),
+    productBookingEnabled: productBookingEnabledML,
   });
 };

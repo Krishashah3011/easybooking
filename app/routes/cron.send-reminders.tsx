@@ -1,26 +1,26 @@
 import type { ActionFunctionArgs } from "react-router";
-import { sendDueReminders } from "../models/booking.server";
+import { sendDueRemindersML } from "../models/booking.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const secretML = process.env.CRON_SECRET;
+  if (!secretML) {
     return Response.json(
       { error: "CRON_SECRET is not configured on the server." },
       { status: 500 },
     );
   }
 
-  const authHeader = request.headers.get("Authorization") ?? "";
-  if (authHeader !== `Bearer ${secret}`) {
+  const authHeaderML = requestML.headers.get("Authorization") ?? "";
+  if (authHeaderML !== `Bearer ${secretML}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const windowHoursParam = new URL(request.url).searchParams.get("windowHours");
-  const windowHours = windowHoursParam ? Number(windowHoursParam) : 24;
+  const windowHoursParamML = new URL(requestML.url).searchParams.get("windowHours");
+  const windowHoursML = windowHoursParamML ? Number(windowHoursParamML) : 24;
 
-  const result = await sendDueReminders(
-    Number.isFinite(windowHours) ? windowHours : 24,
+  const resultML = await sendDueRemindersML(
+    Number.isFinite(windowHoursML) ? windowHoursML : 24,
   );
 
-  return Response.json(result);
+  return Response.json(resultML);
 };

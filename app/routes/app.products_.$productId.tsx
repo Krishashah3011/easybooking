@@ -8,48 +8,48 @@ import { Link, useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { WEEKDAY_LABELS } from "../models/weekday-labels";
+import { WEEKDAY_LABELS_ML } from "../models/weekday-labels";
 import { TimeField12h } from "../components/TimeField12h";
-import { BOOKING_TYPES, BOOKING_TYPE_LABELS } from "../models/bookingTypes";
-import { getBookingSettings } from "../models/bookingSettings.server";
+import { BOOKING_TYPES_ML, BOOKING_TYPE_LABELS_ML } from "../models/bookingTypes";
+import { getBookingSettingsML } from "../models/bookingSettings.server";
 import {
-  ensureBookableProduct,
-  parseBookableProductForm,
-  toBookableProductFormValues,
-  upsertBookableProductOverrides,
+  ensureBookableProductML,
+  parseBookableProductFormML,
+  toBookableProductFormValuesML,
+  upsertBookableProductOverridesML,
   type BookableProductFieldErrors,
   type BookableProductFormValues,
 } from "../models/bookableProduct.server";
 import {
-  addBlackoutDate,
-  deleteBlackoutDate,
-  excludeShopBlackoutDateForProduct,
-  listProductBlackoutDates,
-  listProductBlackoutExclusions,
-  listShopBlackoutDates,
-  parseBlackoutDateForm,
+  addBlackoutDateML,
+  deleteBlackoutDateML,
+  excludeShopBlackoutDateForProductML,
+  listProductBlackoutDatesML,
+  listProductBlackoutExclusionsML,
+  listShopBlackoutDatesML,
+  parseBlackoutDateFormML,
   type BlackoutDateFieldErrors,
 } from "../models/blackoutDate.server";
-import { listEnabledLocations } from "../models/bookingLocation.server";
-import { COUNTRIES, findCountryByTimezone } from "../utils/countries";
+import { listEnabledLocationsML } from "../models/bookingLocation.server";
+import { COUNTRIES_ML, findCountryByTimezoneML } from "../utils/countries";
 import {
-  BLUE,
-  BORDER,
-  LICENSE_BORDER,
-  TEXT_DARK,
-  TEXT_MUTED,
-  styles as pageStyles,
-  saveWrapperStyle,
-  saveButtonStyle,
+  BLUE_ML,
+  BORDER_ML,
+  LICENSE_BORDER_ML,
+  TEXT_DARK_ML,
+  TEXT_MUTED_ML,
+  stylesML as pageStyles,
+  saveWrapperStyleML,
+  saveButtonStyleML,
 } from "../components/SettingsUI";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
-  const productId = `gid://shopify/Product/${params.productId}`;
+export const loader = async ({ request: requestML, params: paramsML }: LoaderFunctionArgs) => {
+  const { admin: adminML, session: sessionML } = await authenticate.admin(requestML);
+  const productIdML = `gid://shopify/Product/${paramsML.productId}`;
 
-  const response = await admin.graphql(
+  const responseML = await adminML.graphql(
     `#graphql
       query BookingProductLookup($id: ID!) {
         product(id: $id) {
@@ -57,67 +57,67 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           title
         }
       }`,
-    { variables: { id: productId } },
+    { variables: { id: productIdML } },
   );
-  const responseJson = await response.json();
-  const product = responseJson.data?.product;
+  const responseJsonML = await responseML.json();
+  const productML = responseJsonML.data?.product;
 
-  if (!product) {
+  if (!productML) {
     throw new Response("Product not found", { status: 404 });
   }
 
-  const bookableProduct = await ensureBookableProduct(
-    session.shop,
-    productId,
-    product.title,
+  const bookableProductML = await ensureBookableProductML(
+    sessionML.shop,
+    productIdML,
+    productML.title,
   );
-  const [shopSettings, blackoutDates, shopBlackoutDates, productExclusions, enabledLocations] =
+  const [shopSettingsML, blackoutDatesML, shopBlackoutDatesML, productExclusionsML, enabledLocationsML] =
     await Promise.all([
-      getBookingSettings(session.shop),
-      listProductBlackoutDates(session.shop, bookableProduct.id),
-      listShopBlackoutDates(session.shop),
-      listProductBlackoutExclusions(session.shop, bookableProduct.id),
-      listEnabledLocations(session.shop),
+      getBookingSettingsML(sessionML.shop),
+      listProductBlackoutDatesML(sessionML.shop, bookableProductML.id),
+      listShopBlackoutDatesML(sessionML.shop),
+      listProductBlackoutExclusionsML(sessionML.shop, bookableProductML.id),
+      listEnabledLocationsML(sessionML.shop),
     ]);
 
-  const availableCountryCodes = Array.from(
+  const availableCountryCodesML = Array.from(
     new Set(
-      enabledLocations
-        .map((loc) => findCountryByTimezone(loc.timezone)?.code)
-        .filter((code): code is string => Boolean(code)),
+      enabledLocationsML
+        .map((locML) => findCountryByTimezoneML(locML.timezone)?.code)
+        .filter((codeML): codeML is string => Boolean(codeML)),
     ),
   );
 
   return {
-    productId,
-    productTitle: product.title as string,
-    values: toBookableProductFormValues(bookableProduct),
-    hasLocations: enabledLocations.length > 0,
-    availableCountryCodes,
+    productId: productIdML,
+    productTitle: productML.title as string,
+    values: toBookableProductFormValuesML(bookableProductML),
+    hasLocations: enabledLocationsML.length > 0,
+    availableCountryCodes: availableCountryCodesML,
     shopDefaults: {
-      workingDays: shopSettings.workingDays,
-      dailyStartTime: shopSettings.dailyStartTime,
-      dailyEndTime: shopSettings.dailyEndTime,
-      slotDurationMinutes: shopSettings.slotDurationMinutes,
-      bufferMinutes: shopSettings.bufferMinutes,
-      minAdvanceHours: shopSettings.minAdvanceHours,
-      maxAdvanceDays: shopSettings.maxAdvanceDays,
-      maxBookingsPerSlot: shopSettings.maxBookingsPerSlot,
+      workingDays: shopSettingsML.workingDays,
+      dailyStartTime: shopSettingsML.dailyStartTime,
+      dailyEndTime: shopSettingsML.dailyEndTime,
+      slotDurationMinutes: shopSettingsML.slotDurationMinutes,
+      bufferMinutes: shopSettingsML.bufferMinutes,
+      minAdvanceHours: shopSettingsML.minAdvanceHours,
+      maxAdvanceDays: shopSettingsML.maxAdvanceDays,
+      maxBookingsPerSlot: shopSettingsML.maxBookingsPerSlot,
     },
     blackoutDates: [
-      ...shopBlackoutDates
-        .filter((b: { date: Date }) => !productExclusions.has(b.date.toISOString().slice(0, 10)))
-        .map((b: { id: string; date: Date; reason: string | null }) => ({
-          id: b.id,
-          date: b.date.toISOString().slice(0, 10),
-          reason: b.reason,
+      ...shopBlackoutDatesML
+        .filter((bML: { date: Date }) => !productExclusionsML.has(bML.date.toISOString().slice(0, 10)))
+        .map((bML: { id: string; date: Date; reason: string | null }) => ({
+          id: bML.id,
+          date: bML.date.toISOString().slice(0, 10),
+          reason: bML.reason,
           source: "shop" as const,
         })),
-      ...blackoutDates.map(
-        (b: { id: string; date: Date; reason: string | null }) => ({
-          id: b.id,
-          date: b.date.toISOString().slice(0, 10),
-          reason: b.reason,
+      ...blackoutDatesML.map(
+        (bML: { id: string; date: Date; reason: string | null }) => ({
+          id: bML.id,
+          date: bML.date.toISOString().slice(0, 10),
+          reason: bML.reason,
           source: "product" as const,
         }),
       ),
@@ -125,95 +125,95 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   };
 };
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const productId = `gid://shopify/Product/${params.productId}`;
-  const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "") as
+export const action = async ({ request: requestML, params: paramsML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const productIdML = `gid://shopify/Product/${paramsML.productId}`;
+  const formDataML = await requestML.formData();
+  const intentML = String(formDataML.get("intent") ?? "") as
     | "saveOverrides"
     | "addBlackoutDate"
     | "deleteBlackoutDate"
     | "excludeBlackoutDate"
     | "";
 
-  if (intent === "saveOverrides") {
-    const productTitle = String(formData.get("productTitle") ?? "");
-    const { values, errors } = parseBookableProductForm(formData);
+  if (intentML === "saveOverrides") {
+    const productTitleML = String(formDataML.get("productTitle") ?? "");
+    const { values: valuesML, errors: errorsML } = parseBookableProductFormML(formDataML);
 
-    if (Object.keys(errors).length > 0) {
-      return { intent, ok: false as const, errors, values };
+    if (Object.keys(errorsML).length > 0) {
+      return { intent: intentML, ok: false as const, errors: errorsML, values: valuesML };
     }
 
-    if (values.isEnabled) {
-      const enabledLocations = await listEnabledLocations(session.shop);
-      if (enabledLocations.length === 0) {
+    if (valuesML.isEnabled) {
+      const enabledLocationsML = await listEnabledLocationsML(sessionML.shop);
+      if (enabledLocationsML.length === 0) {
         return {
-          intent,
+          intent: intentML,
           ok: false as const,
           errors: {
             isEnabled:
               "Add at least one location in Booking Settings before enabling booking for a product.",
           },
-          values,
+          values: valuesML,
         };
       }
     }
 
-    const saved = await upsertBookableProductOverrides(
-      session.shop,
-      productId,
-      productTitle,
-      values,
+    const savedML = await upsertBookableProductOverridesML(
+      sessionML.shop,
+      productIdML,
+      productTitleML,
+      valuesML,
     );
     return {
-      intent,
+      intent: intentML,
       ok: true as const,
       errors: {},
-      values: toBookableProductFormValues(saved),
+      values: toBookableProductFormValuesML(savedML),
     };
   }
 
-  if (intent === "addBlackoutDate") {
-    const bookableProduct = await ensureBookableProduct(
-      session.shop,
-      productId,
-      String(formData.get("productTitle") ?? ""),
+  if (intentML === "addBlackoutDate") {
+    const bookableProductML = await ensureBookableProductML(
+      sessionML.shop,
+      productIdML,
+      String(formDataML.get("productTitle") ?? ""),
     );
-    const { date, reason, errors } = parseBlackoutDateForm(formData);
-    if (!date) {
-      return { intent, ok: false as const, blackoutErrors: errors };
+    const { date: dateML, reason: reasonML, errors: errorsML } = parseBlackoutDateFormML(formDataML);
+    if (!dateML) {
+      return { intent: intentML, ok: false as const, blackoutErrors: errorsML };
     }
-    await addBlackoutDate(session.shop, date, reason, bookableProduct.id);
-    return { intent, ok: true as const, blackoutErrors: {} };
+    await addBlackoutDateML(sessionML.shop, dateML, reasonML, bookableProductML.id);
+    return { intent: intentML, ok: true as const, blackoutErrors: {} };
   }
 
-  if (intent === "deleteBlackoutDate") {
-    const id = String(formData.get("id") ?? "");
-    await deleteBlackoutDate(session.shop, id);
-    return { intent, ok: true as const };
+  if (intentML === "deleteBlackoutDate") {
+    const idML = String(formDataML.get("id") ?? "");
+    await deleteBlackoutDateML(sessionML.shop, idML);
+    return { intent: intentML, ok: true as const };
   }
 
-  if (intent === "excludeBlackoutDate") {
-    const bookableProduct = await ensureBookableProduct(
-      session.shop,
-      productId,
-      String(formData.get("productTitle") ?? ""),
+  if (intentML === "excludeBlackoutDate") {
+    const bookableProductML = await ensureBookableProductML(
+      sessionML.shop,
+      productIdML,
+      String(formDataML.get("productTitle") ?? ""),
     );
-    const date = String(formData.get("date") ?? "");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return { intent, ok: false as const };
+    const dateML = String(formDataML.get("date") ?? "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateML)) {
+      return { intent: intentML, ok: false as const };
     }
-    await excludeShopBlackoutDateForProduct(session.shop, bookableProduct.id, date);
-    return { intent, ok: true as const };
+    await excludeShopBlackoutDateForProductML(sessionML.shop, bookableProductML.id, dateML);
+    return { intent: intentML, ok: true as const };
   }
 
-  return { intent, ok: false as const };
+  return { intent: intentML, ok: false as const };
 };
 
-const ERROR_RED = "#D82C0D";
-const INPUT_BORDER = LICENSE_BORDER;
+const ERROR_RED_ML = "#D82C0D";
+const INPUT_BORDER_ML = LICENSE_BORDER_ML;
 
-const ui: Record<string, React.CSSProperties> = {
+const uiML: Record<string, React.CSSProperties> = {
   root: { fontFamily: "Inter" },
   stack: {
     display: "flex",
@@ -248,7 +248,7 @@ const ui: Record<string, React.CSSProperties> = {
     gap: "12px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
   },
   toggleCard: {
@@ -260,7 +260,7 @@ const ui: Record<string, React.CSSProperties> = {
     gap: "12px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
   },
   toggleRow: {
@@ -299,7 +299,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   descRow: {
@@ -313,7 +313,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   chevronButton: {
@@ -330,7 +330,7 @@ const ui: Record<string, React.CSSProperties> = {
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${BORDER}`,
+    borderTop: `1px solid ${BORDER_ML}`,
     margin: 0,
     width: "100%",
     alignSelf: "stretch",
@@ -392,7 +392,7 @@ const ui: Record<string, React.CSSProperties> = {
     width: "24px",
     height: "24px",
     borderRadius: "4px",
-    border: `1.5px solid ${BLUE}`,
+    border: `1.5px solid ${BLUE_ML}`,
     background: "#FFFFFF",
     cursor: "pointer",
     display: "flex",
@@ -405,14 +405,14 @@ const ui: Record<string, React.CSSProperties> = {
     width: "14px",
     height: "14px",
     borderRadius: "50%",
-    background: BLUE,
+    background: BLUE_ML,
   },
   dayLabel: {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
     cursor: "pointer",
   },
@@ -462,7 +462,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     margin: 0,
   },
   fieldLabelBlack: {
@@ -470,7 +470,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   inputBox: {
@@ -483,7 +483,7 @@ const ui: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
     position: "relative",
   },
@@ -497,7 +497,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     padding: 0,
   },
   numberInput: {
@@ -510,7 +510,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     padding: 0,
   },
   dateInput: {
@@ -523,7 +523,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     padding: 0,
     cursor: "pointer",
   },
@@ -536,14 +536,14 @@ const ui: Record<string, React.CSSProperties> = {
     height: "34px",
     padding: "5px 34px 5px 10px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
     outline: "none",
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     cursor: "pointer",
   },
   selectWrap: {
@@ -588,7 +588,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     margin: 0,
   },
   errorText: {
@@ -596,7 +596,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: ERROR_RED,
+    color: ERROR_RED_ML,
     margin: 0,
   },
   textInput: {
@@ -605,14 +605,14 @@ const ui: Record<string, React.CSSProperties> = {
     height: "34px",
     padding: "5px 10px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
     outline: "none",
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   countryListScroll: {
     boxSizing: "border-box",
@@ -623,7 +623,7 @@ const ui: Record<string, React.CSSProperties> = {
     maxHeight: "220px",
     overflowY: "auto",
     padding: "10px",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
   },
   toggleButton: {
@@ -646,7 +646,7 @@ const ui: Record<string, React.CSSProperties> = {
     height: "24px",
     borderRadius: "12px",
     background: "#E4E4E4",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
   },
   toggleKnob: {
     position: "absolute",
@@ -670,7 +670,7 @@ const ui: Record<string, React.CSSProperties> = {
     gap: "4px",
     minWidth: "min(188px, 100%)",
     height: "42px",
-    background: BLUE,
+    background: BLUE_ML,
     borderRadius: "10px",
     border: "none",
     cursor: "pointer",
@@ -707,7 +707,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   rowWrap: {
@@ -725,7 +725,7 @@ const ui: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   actionsCell: {
@@ -762,7 +762,7 @@ function CloseIcon() {
     >
       <path
         d="M904 47L914 37L924 47M924 27L913.998 37L904 27"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -783,7 +783,7 @@ function ChevronDownIcon() {
     >
       <path
         d="M1 1l3.15 3.433c.395.431.593.647.837.694.093.018.189.018.282 0 .244-.047.442-.263.837-.694L9.25 1"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -792,7 +792,7 @@ function ChevronDownIcon() {
   );
 }
 
-function CollapseChevron({ open }: { open: boolean }) {
+function CollapseChevron({ open: openML }: { open: boolean }) {
   return (
     <svg
       width="11"
@@ -801,13 +801,13 @@ function CollapseChevron({ open }: { open: boolean }) {
       fill="none"
       aria-hidden="true"
       style={{
-        transform: open ? "rotate(180deg)" : "rotate(0deg)",
+        transform: openML ? "rotate(180deg)" : "rotate(0deg)",
         transition: "transform 0.2s ease",
       }}
     >
       <path
         d="M1 1L5.5 5L10 1"
-        stroke={BLUE}
+        stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -825,10 +825,10 @@ function PlusIcon() {
 }
 
 function Toggle({
-  checked,
-  disabled,
-  onChange,
-  label,
+  checked: checkedML,
+  disabled: disabledML,
+  onChange: onChangeML,
+  label: labelML,
 }: {
   checked: boolean;
   disabled?: boolean;
@@ -839,20 +839,20 @@ function Toggle({
     <button
       type="button"
       role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onChange}
+      aria-checked={checkedML}
+      aria-label={labelML}
+      disabled={disabledML}
+      onClick={onChangeML}
       style={{
-        ...ui.toggleButton,
-        ...(disabled ? { opacity: 0.5, cursor: "not-allowed" } : {}),
+        ...uiML.toggleButton,
+        ...(disabledML ? { opacity: 0.5, cursor: "not-allowed" } : {}),
       }}
     >
-      {checked ? (
+      {checkedML ? (
         <img src="/enable.svg" width={46} height={24} alt="" />
       ) : (
-        <span style={ui.toggleOff}>
-          <span style={ui.toggleKnob} />
+        <span style={uiML.toggleOff}>
+          <span style={uiML.toggleKnob} />
         </span>
       )}
     </button>
@@ -860,49 +860,49 @@ function Toggle({
 }
 
 function Checkbox({
-  checked,
-  onChange,
-  label,
+  checked: checkedML,
+  onChange: onChangeML,
+  label: labelML,
 }: {
   checked: boolean;
   onChange: () => void;
   label: string;
 }) {
   return (
-    <div style={ui.dayItem}>
+    <div style={uiML.dayItem}>
       <button
         type="button"
         role="checkbox"
-        aria-checked={checked}
-        aria-label={label}
-        style={ui.checkbox}
-        onClick={onChange}
+        aria-checked={checkedML}
+        aria-label={labelML}
+        style={uiML.checkbox}
+        onClick={onChangeML}
       >
-        {checked && <span style={ui.checkboxDot} />}
+        {checkedML && <span style={uiML.checkboxDot} />}
       </button>
-      <p style={ui.dayLabel} onClick={onChange}>
-        {label}
+      <p style={uiML.dayLabel} onClick={onChangeML}>
+        {labelML}
       </p>
     </div>
   );
 }
 
 function NumberStepper({
-  onIncrement,
-  onDecrement,
-  label,
+  onIncrement: onIncrementML,
+  onDecrement: onDecrementML,
+  label: labelML,
 }: {
   onIncrement: () => void;
   onDecrement: () => void;
   label: string;
 }) {
   return (
-    <div style={ui.stepperWrap}>
+    <div style={uiML.stepperWrap}>
       <button
         type="button"
-        style={ui.stepperBtn}
-        onClick={onIncrement}
-        aria-label={`Increase ${label}`}
+        style={uiML.stepperBtn}
+        onClick={onIncrementML}
+        aria-label={`Increase ${labelML}`}
         tabIndex={-1}
       >
         <span style={{ display: "flex", transform: "rotate(180deg)" }}>
@@ -911,9 +911,9 @@ function NumberStepper({
       </button>
       <button
         type="button"
-        style={ui.stepperBtn}
-        onClick={onDecrement}
-        aria-label={`Decrease ${label}`}
+        style={uiML.stepperBtn}
+        onClick={onDecrementML}
+        aria-label={`Decrease ${labelML}`}
         tabIndex={-1}
       >
         <ChevronDownIcon />
@@ -924,20 +924,20 @@ function NumberStepper({
 
 type FieldSize = "half" | "third" | "fixed" | "grow";
 
-function fieldSizeStyle(size: FieldSize): React.CSSProperties {
-  if (size === "third") return ui.fieldThird;
-  if (size === "fixed") return ui.fieldFixed;
-  if (size === "grow") return ui.fieldGrow;
-  return ui.fieldHalf;
+function fieldSizeStyleML(sizeML: FieldSize): React.CSSProperties {
+  if (sizeML === "third") return uiML.fieldThird;
+  if (sizeML === "fixed") return uiML.fieldFixed;
+  if (sizeML === "grow") return uiML.fieldGrow;
+  return uiML.fieldHalf;
 }
 
 function FieldGroup({
-  label,
-  grey,
-  size = "half",
-  hint,
-  error,
-  children,
+  label: labelML,
+  grey: greyML,
+  size: sizeML = "half",
+  hint: hintML,
+  error: errorML,
+  children: childrenML,
 }: {
   label: string;
   grey?: boolean;
@@ -947,22 +947,22 @@ function FieldGroup({
   children: React.ReactNode;
 }) {
   return (
-    <div style={fieldSizeStyle(size)}>
-      <p style={grey ? ui.fieldLabelGrey : ui.fieldLabelBlack}>{label}</p>
-      {children}
-      {hint && <p style={ui.hintText}>{hint}</p>}
-      {error && <p style={ui.errorText}>{error}</p>}
+    <div style={fieldSizeStyleML(sizeML)}>
+      <p style={greyML ? uiML.fieldLabelGrey : uiML.fieldLabelBlack}>{labelML}</p>
+      {childrenML}
+      {hintML && <p style={uiML.hintText}>{hintML}</p>}
+      {errorML && <p style={uiML.errorText}>{errorML}</p>}
     </div>
   );
 }
 
 function Card({
-  title,
-  description,
-  collapsible,
-  open = true,
-  onToggle,
-  children,
+  title: titleML,
+  description: descriptionML,
+  collapsible: collapsibleML,
+  open: openML = true,
+  onToggle: onToggleML,
+  children: childrenML,
 }: {
   title: string;
   description?: string;
@@ -972,37 +972,37 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div style={ui.card}>
+    <div style={uiML.card}>
       <div
         style={{
-          ...ui.cardHeaderRow,
-          ...(collapsible ? { cursor: "pointer" } : {}),
+          ...uiML.cardHeaderRow,
+          ...(collapsibleML ? { cursor: "pointer" } : {}),
         }}
-        onClick={collapsible ? onToggle : undefined}
+        onClick={collapsibleML ? onToggleML : undefined}
       >
-        <div style={ui.cardHeaderText}>
-          <p style={ui.title}>{title}</p>
-          {description && (
-            <div style={ui.descRow}>
-              <p style={ui.descText}>{description}</p>
+        <div style={uiML.cardHeaderText}>
+          <p style={uiML.title}>{titleML}</p>
+          {descriptionML && (
+            <div style={uiML.descRow}>
+              <p style={uiML.descText}>{descriptionML}</p>
             </div>
           )}
         </div>
-        {collapsible && (
+        {collapsibleML && (
           <button
             type="button"
-            style={ui.chevronButton}
-            aria-label={open ? "Collapse" : "Expand"}
-            aria-expanded={open}
+            style={uiML.chevronButton}
+            aria-label={openML ? "Collapse" : "Expand"}
+            aria-expanded={openML}
           >
-            <CollapseChevron open={open} />
+            <CollapseChevron open={openML} />
           </button>
         )}
       </div>
-      {open && (
+      {openML && (
         <>
-          <hr style={ui.divider} />
-          {children}
+          <hr style={uiML.divider} />
+          {childrenML}
         </>
       )}
     </div>
@@ -1010,9 +1010,9 @@ function Card({
 }
 
 function InlineTimeField({
-  value,
-  placeholder,
-  onChange,
+  value: valueML,
+  placeholder: placeholderML,
+  onChange: onChangeML,
 }: {
   value: string;
   placeholder?: string;
@@ -1020,36 +1020,36 @@ function InlineTimeField({
 }) {
   return (
     <TimeField12h
-      value={value}
-      placeholder={placeholder}
-      onChange={(next) => {
-        if (next) onChange(next);
+      value={valueML}
+      placeholder={placeholderML}
+      onChange={(nextML) => {
+        if (nextML) onChangeML(nextML);
       }}
       inputBoxStyle={{
-        ...ui.inputBox,
+        ...uiML.inputBox,
         width: "auto",
         padding: "4px 8px",
         height: "32px",
       }}
-      inputStyle={{ ...ui.timeInput, flex: "0 0 20px" }}
-      borderColor={INPUT_BORDER}
-      textColor={TEXT_DARK}
+      inputStyle={{ ...uiML.timeInput, flex: "0 0 20px" }}
+      borderColor={INPUT_BORDER_ML}
+      textColor={TEXT_DARK_ML}
       periodButtonStyle={{ fontSize: "11px", padding: "2px 6px" }}
     />
   );
 }
 
 function NumberField({
-  label,
-  value,
-  placeholder,
-  base,
-  min,
-  step,
-  size = "half",
-  hint,
-  error,
-  onChange,
+  label: labelML,
+  value: valueML,
+  placeholder: placeholderML,
+  base: baseML,
+  min: minML,
+  step: stepML,
+  size: sizeML = "half",
+  hint: hintML,
+  error: errorML,
+  onChange: onChangeML,
 }: {
   label: string;
   value: number | null;
@@ -1062,31 +1062,31 @@ function NumberField({
   error?: string;
   onChange: (next: number | null) => void;
 }) {
-  const current = value ?? base ?? min;
+  const currentML = valueML ?? baseML ?? minML;
   return (
-    <FieldGroup label={label} size={size} hint={hint} error={error}>
-      <div style={ui.inputBox}>
+    <FieldGroup label={labelML} size={sizeML} hint={hintML} error={errorML}>
+      <div style={uiML.inputBox}>
         <input
           type="text"
           inputMode="numeric"
           maxLength={4}
           className="pc-no-spinner"
-          style={ui.numberInput}
-          placeholder={placeholder}
-          value={value ?? ""}
-          aria-label={label}
-          onFocus={(e: { currentTarget: HTMLInputElement }) =>
-            e.currentTarget.select()
+          style={uiML.numberInput}
+          placeholder={placeholderML}
+          value={valueML ?? ""}
+          aria-label={labelML}
+          onFocus={(eML: { currentTarget: HTMLInputElement }) =>
+            eML.currentTarget.select()
           }
-          onChange={(e: FieldChangeEvent) => {
-            const digits = e.currentTarget.value.replace(/\D/g, "").slice(0, 4);
-            onChange(digits === "" ? null : Number(digits));
+          onChange={(eML: FieldChangeEvent) => {
+            const digitsML = eML.currentTarget.value.replace(/\D/g, "").slice(0, 4);
+            onChangeML(digitsML === "" ? null : Number(digitsML));
           }}
         />
         <NumberStepper
-          label={label.toLowerCase()}
-          onIncrement={() => onChange(current + step)}
-          onDecrement={() => onChange(Math.max(min, current - step))}
+          label={labelML.toLowerCase()}
+          onIncrement={() => onChangeML(currentML + stepML)}
+          onDecrement={() => onChangeML(Math.max(minML, currentML - stepML))}
         />
       </div>
     </FieldGroup>
@@ -1094,14 +1094,14 @@ function NumberField({
 }
 
 function DateField({
-  label,
-  value,
-  grey,
-  size = "half",
-  error,
-  onChange,
-  min,
-  max,
+  label: labelML,
+  value: valueML,
+  grey: greyML,
+  size: sizeML = "half",
+  error: errorML,
+  onChange: onChangeML,
+  min: minML,
+  max: maxML,
 }: {
   label: string;
   value: string;
@@ -1112,34 +1112,34 @@ function DateField({
   min?: string;
   max?: string;
 }) {
-  const ref = useRef<HTMLInputElement>(null);
-  const openPicker = () => {
-    const el = ref.current;
-    if (!el) return;
-    if (typeof el.showPicker === "function") {
-      el.showPicker();
+  const refML = useRef<HTMLInputElement>(null);
+  const openPickerML = () => {
+    const elML = refML.current;
+    if (!elML) return;
+    if (typeof elML.showPicker === "function") {
+      elML.showPicker();
     } else {
-      el.focus();
+      elML.focus();
     }
   };
   return (
-    <FieldGroup label={label} grey={grey} size={size} error={error}>
+    <FieldGroup label={labelML} grey={greyML} size={sizeML} error={errorML}>
       <div
-        style={{ ...ui.inputBox, cursor: "pointer" }}
-        onClick={openPicker}
+        style={{ ...uiML.inputBox, cursor: "pointer" }}
+        onClick={openPickerML}
       >
         <img src="/date-icon.svg" width={18} height={20} alt="" />
         <input
-          ref={ref}
+          ref={refML}
           type="date"
           className="pc-date-input"
-          style={ui.dateInput}
-          value={value}
-          min={min}
-          max={max}
-          onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
-          onClick={(e) => e.stopPropagation()}
-          aria-label={label}
+          style={uiML.dateInput}
+          value={valueML}
+          min={minML}
+          max={maxML}
+          onChange={(eML: FieldChangeEvent) => onChangeML(eML.currentTarget.value)}
+          onClick={(eML) => eML.stopPropagation()}
+          aria-label={labelML}
         />
       </div>
     </FieldGroup>
@@ -1148,206 +1148,206 @@ function DateField({
 
 export default function BookableProductPage() {
   const {
-    productId,
-    productTitle,
-    values: initialValues,
-    hasLocations,
-    availableCountryCodes,
-    shopDefaults,
-    blackoutDates,
+    productId: productIdML,
+    productTitle: productTitleML,
+    values: initialValuesML,
+    hasLocations: hasLocationsML,
+    availableCountryCodes: availableCountryCodesML,
+    shopDefaults: shopDefaultsML,
+    blackoutDates: blackoutDatesML,
   } = useLoaderData<typeof loader>();
-  const overridesFetcher = useFetcher<typeof action>();
-  const blackoutFetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
+  const overridesFetcherML = useFetcher<typeof action>();
+  const blackoutFetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
 
-  const [values, setValues] =
-    useState<BookableProductFormValues>(initialValues);
-  const [newBlackoutDate, setNewBlackoutDate] = useState("");
-  const [newBlackoutReason, setNewBlackoutReason] = useState("");
-  const [blackoutOpen, setBlackoutOpen] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
+  const [valuesML, setValuesML] =
+    useState<BookableProductFormValues>(initialValuesML);
+  const [newBlackoutDateML, setNewBlackoutDateML] = useState("");
+  const [newBlackoutReasonML, setNewBlackoutReasonML] = useState("");
+  const [blackoutOpenML, setBlackoutOpenML] = useState(false);
+  const [countrySearchML, setCountrySearchML] = useState("");
 
-  const errors: BookableProductFieldErrors =
-    overridesFetcher.data?.intent === "saveOverrides"
-      ? (overridesFetcher.data.errors ?? {})
+  const errorsML: BookableProductFieldErrors =
+    overridesFetcherML.data?.intent === "saveOverrides"
+      ? (overridesFetcherML.data.errors ?? {})
       : {};
-  const isSaving =
-    overridesFetcher.state === "submitting" ||
-    overridesFetcher.state === "loading";
-  const blackoutErrors: BlackoutDateFieldErrors =
-    blackoutFetcher.data && "blackoutErrors" in blackoutFetcher.data
-      ? (blackoutFetcher.data.blackoutErrors ?? {})
+  const isSavingML =
+    overridesFetcherML.state === "submitting" ||
+    overridesFetcherML.state === "loading";
+  const blackoutErrorsML: BlackoutDateFieldErrors =
+    blackoutFetcherML.data && "blackoutErrors" in blackoutFetcherML.data
+      ? (blackoutFetcherML.data.blackoutErrors ?? {})
       : {};
-  const isBlackoutBusy = blackoutFetcher.state !== "idle";
-  const isAddingBlackout =
-    isBlackoutBusy &&
-    String(blackoutFetcher.formData?.get("intent") ?? "") ===
+  const isBlackoutBusyML = blackoutFetcherML.state !== "idle";
+  const isAddingBlackoutML =
+    isBlackoutBusyML &&
+    String(blackoutFetcherML.formData?.get("intent") ?? "") ===
       "addBlackoutDate";
-  const numericProductId = productId.split("/").pop() ?? productId;
+  const numericProductIdML = productIdML.split("/").pop() ?? productIdML;
 
   useEffect(() => {
     if (
-      overridesFetcher.data?.intent === "saveOverrides" &&
-      overridesFetcher.data.ok
+      overridesFetcherML.data?.intent === "saveOverrides" &&
+      overridesFetcherML.data.ok
     ) {
-      setValues(overridesFetcher.data.values);
-      shopify.toast.show("Product booking settings saved");
+      setValuesML(overridesFetcherML.data.values);
+      shopifyML.toast.show("Product booking settings saved");
     }
-  }, [overridesFetcher.data, shopify]);
+  }, [overridesFetcherML.data, shopifyML]);
 
   useEffect(() => {
     if (
-      blackoutFetcher.data?.intent === "addBlackoutDate" &&
-      blackoutFetcher.data.ok
+      blackoutFetcherML.data?.intent === "addBlackoutDate" &&
+      blackoutFetcherML.data.ok
     ) {
-      setNewBlackoutDate("");
-      setNewBlackoutReason("");
+      setNewBlackoutDateML("");
+      setNewBlackoutReasonML("");
     }
-  }, [blackoutFetcher.data]);
+  }, [blackoutFetcherML.data]);
 
-  const setField = <K extends keyof BookableProductFormValues>(
-    key: K,
-    value: BookableProductFormValues[K],
+  const setFieldML = <K extends keyof BookableProductFormValues>(
+    keyML: K,
+    valueML: BookableProductFormValues[K],
   ) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    setValuesML((prevML) => ({ ...prevML, [keyML]: valueML }));
   };
 
-  const toggleWorkingDay = (day: number) => {
-    setValues((prev) => {
-      const current = { ...(prev.dayTimes ?? {}) };
-      if (current[day]) {
-        delete current[day];
+  const toggleWorkingDayML = (dayML: number) => {
+    setValuesML((prevML) => {
+      const currentML = { ...(prevML.dayTimes ?? {}) };
+      if (currentML[dayML]) {
+        delete currentML[dayML];
       } else {
-        current[day] = { start: "09:00", end: "17:00" };
+        currentML[dayML] = { start: "09:00", end: "17:00" };
       }
-      return { ...prev, dayTimes: Object.keys(current).length ? current : null };
+      return { ...prevML, dayTimes: Object.keys(currentML).length ? currentML : null };
     });
   };
 
-  const setDayTime = (day: number, field: "start" | "end", value: string) => {
-    setValues((prev) => {
-      const existing = prev.dayTimes?.[day] ?? { start: "09:00", end: "17:00" };
+  const setDayTimeML = (dayML: number, fieldML: "start" | "end", valueML: string) => {
+    setValuesML((prevML) => {
+      const existingML = prevML.dayTimes?.[dayML] ?? { start: "09:00", end: "17:00" };
       return {
-        ...prev,
+        ...prevML,
         dayTimes: {
-          ...(prev.dayTimes ?? {}),
-          [day]: { ...existing, [field]: value },
+          ...(prevML.dayTimes ?? {}),
+          [dayML]: { ...existingML, [fieldML]: valueML },
         },
       };
     });
   };
 
-  const toggleCountry = (code: string) => {
-    setValues((prev) => {
-      const has = prev.countryCodes.includes(code);
-      const countryCodes = has
-        ? prev.countryCodes.filter((c) => c !== code)
-        : [...prev.countryCodes, code];
-      return { ...prev, countryCodes };
+  const toggleCountryML = (codeML: string) => {
+    setValuesML((prevML) => {
+      const hasML = prevML.countryCodes.includes(codeML);
+      const countryCodesML = hasML
+        ? prevML.countryCodes.filter((cML) => cML !== codeML)
+        : [...prevML.countryCodes, codeML];
+      return { ...prevML, countryCodes: countryCodesML };
     });
   };
 
-  const availableCountries = COUNTRIES.filter((country) =>
-    availableCountryCodes.includes(country.code),
+  const availableCountriesML = COUNTRIES_ML.filter((countryML) =>
+    availableCountryCodesML.includes(countryML.code),
   );
 
-  const filteredCountries = availableCountries.filter((country) =>
-    country.name.toLowerCase().includes(countrySearch.trim().toLowerCase()),
+  const filteredCountriesML = availableCountriesML.filter((countryML) =>
+    countryML.name.toLowerCase().includes(countrySearchML.trim().toLowerCase()),
   );
 
-  const allWeekdaysSelected = WEEKDAY_LABELS.every(
-    (day) => values.dayTimes?.[day.value] != null,
+  const allWeekdaysSelectedML = WEEKDAY_LABELS_ML.every(
+    (dayML) => valuesML.dayTimes?.[dayML.value] != null,
   );
 
-  const toggleSelectAllWorkingDays = () => {
-    setValues((prev) => {
-      if (allWeekdaysSelected) return { ...prev, dayTimes: null };
-      const next = { ...(prev.dayTimes ?? {}) };
-      for (const day of WEEKDAY_LABELS) {
-        if (!next[day.value]) next[day.value] = { start: "09:00", end: "17:00" };
+  const toggleSelectAllWorkingDaysML = () => {
+    setValuesML((prevML) => {
+      if (allWeekdaysSelectedML) return { ...prevML, dayTimes: null };
+      const nextML = { ...(prevML.dayTimes ?? {}) };
+      for (const dayML of WEEKDAY_LABELS_ML) {
+        if (!nextML[dayML.value]) nextML[dayML.value] = { start: "09:00", end: "17:00" };
       }
-      return { ...prev, dayTimes: next };
+      return { ...prevML, dayTimes: nextML };
     });
   };
 
-  const handleSave = () => {
-    overridesFetcher.submit(
+  const handleSaveML = () => {
+    overridesFetcherML.submit(
       {
         intent: "saveOverrides",
-        productTitle,
-        isEnabled: String(values.isEnabled),
-        bookingType: values.bookingType,
-        workingDays: values.workingDays ? values.workingDays.join(",") : "",
-        dailyStartTime: values.dailyStartTime ?? "",
-        dailyEndTime: values.dailyEndTime ?? "",
-        dayTimesJson: values.dayTimes ? JSON.stringify(values.dayTimes) : "",
+        productTitle: productTitleML,
+        isEnabled: String(valuesML.isEnabled),
+        bookingType: valuesML.bookingType,
+        workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : "",
+        dailyStartTime: valuesML.dailyStartTime ?? "",
+        dailyEndTime: valuesML.dailyEndTime ?? "",
+        dayTimesJson: valuesML.dayTimes ? JSON.stringify(valuesML.dayTimes) : "",
         slotDurationMinutes:
-          values.slotDurationMinutes !== null
-            ? String(values.slotDurationMinutes)
+          valuesML.slotDurationMinutes !== null
+            ? String(valuesML.slotDurationMinutes)
             : "",
         bufferMinutes:
-          values.bufferMinutes !== null ? String(values.bufferMinutes) : "",
+          valuesML.bufferMinutes !== null ? String(valuesML.bufferMinutes) : "",
         minAdvanceHours:
-          values.minAdvanceHours !== null ? String(values.minAdvanceHours) : "",
+          valuesML.minAdvanceHours !== null ? String(valuesML.minAdvanceHours) : "",
         maxAdvanceDays:
-          values.maxAdvanceDays !== null ? String(values.maxAdvanceDays) : "",
+          valuesML.maxAdvanceDays !== null ? String(valuesML.maxAdvanceDays) : "",
         maxBookingsPerSlot:
-          values.maxBookingsPerSlot !== null
-            ? String(values.maxBookingsPerSlot)
+          valuesML.maxBookingsPerSlot !== null
+            ? String(valuesML.maxBookingsPerSlot)
             : "",
-        bookingStartDate: values.bookingStartDate ?? "",
-        bookingEndDate: values.bookingEndDate ?? "",
-        minNights: values.minNights !== null ? String(values.minNights) : "",
-        maxNights: values.maxNights !== null ? String(values.maxNights) : "",
+        bookingStartDate: valuesML.bookingStartDate ?? "",
+        bookingEndDate: valuesML.bookingEndDate ?? "",
+        minNights: valuesML.minNights !== null ? String(valuesML.minNights) : "",
+        maxNights: valuesML.maxNights !== null ? String(valuesML.maxNights) : "",
         bundleSessionCount:
-          values.bundleSessionCount !== null
-            ? String(values.bundleSessionCount)
+          valuesML.bundleSessionCount !== null
+            ? String(valuesML.bundleSessionCount)
             : "",
         bundleSessionDurationMinutes:
-          values.bundleSessionDurationMinutes !== null
-            ? String(values.bundleSessionDurationMinutes)
+          valuesML.bundleSessionDurationMinutes !== null
+            ? String(valuesML.bundleSessionDurationMinutes)
             : "",
         bundleValidityDays:
-          values.bundleValidityDays !== null
-            ? String(values.bundleValidityDays)
+          valuesML.bundleValidityDays !== null
+            ? String(valuesML.bundleValidityDays)
             : "",
-        countryMode: values.countryMode,
-        countryCodes: values.countryCodes.join(","),
+        countryMode: valuesML.countryMode,
+        countryCodes: valuesML.countryCodes.join(","),
       },
       { method: "POST" },
     );
   };
 
-  const handleAddBlackoutDate = () => {
-    if (!newBlackoutDate) return;
-    blackoutFetcher.submit(
+  const handleAddBlackoutDateML = () => {
+    if (!newBlackoutDateML) return;
+    blackoutFetcherML.submit(
       {
         intent: "addBlackoutDate",
-        productTitle,
-        date: newBlackoutDate,
-        reason: newBlackoutReason,
+        productTitle: productTitleML,
+        date: newBlackoutDateML,
+        reason: newBlackoutReasonML,
       },
       { method: "POST" },
     );
   };
 
-  const handleDeleteBlackoutDate = (id: string) => {
-    blackoutFetcher.submit(
-      { intent: "deleteBlackoutDate", id },
+  const handleDeleteBlackoutDateML = (idML: string) => {
+    blackoutFetcherML.submit(
+      { intent: "deleteBlackoutDate", id: idML },
       { method: "POST" },
     );
   };
 
-  const handleExcludeBlackoutDate = (date: string) => {
-    blackoutFetcher.submit(
-      { intent: "excludeBlackoutDate", productTitle, date },
+  const handleExcludeBlackoutDateML = (dateML: string) => {
+    blackoutFetcherML.submit(
+      { intent: "excludeBlackoutDate", productTitle: productTitleML, date: dateML },
       { method: "POST" },
     );
   };
 
   return (
     <s-page inlineSize="large">
-      <div style={ui.root}>
+      <div style={uiML.root}>
         <style>{`
           .pc-no-spinner::-webkit-outer-spin-button,
           .pc-no-spinner::-webkit-inner-spin-button {
@@ -1371,25 +1371,25 @@ export default function BookableProductPage() {
         <div style={pageStyles.outerCard}>
           <div style={pageStyles.headerRow}>
             <div style={{ minWidth: 0 }}>
-              <h1 style={pageStyles.heading}>{productTitle}</h1>
+              <h1 style={pageStyles.heading}>{productTitleML}</h1>
               <p style={pageStyles.pageSubtitle}>
-                Product ID: {numericProductId}
+                Product ID: {numericProductIdML}
               </p>
             </div>
-            <div style={ui.headerActions}>
-              <div style={saveWrapperStyle()}>
+            <div style={uiML.headerActions}>
+              <div style={saveWrapperStyleML()}>
                 <button
                   type="button"
-                  style={saveButtonStyle(isSaving)}
-                  disabled={isSaving}
-                  onClick={handleSave}
+                  style={saveButtonStyleML(isSavingML)}
+                  disabled={isSavingML}
+                  onClick={handleSaveML}
                 >
-                  {isSaving ? "Saving..." : "Save Settings"}
+                  {isSavingML ? "Saving..." : "Save Settings"}
                 </button>
               </div>
               <Link
                 to="/app/products"
-                style={ui.closeButton}
+                style={uiML.closeButton}
                 aria-label="Close and go back to Products"
                 title="Back to Products"
               >
@@ -1398,8 +1398,8 @@ export default function BookableProductPage() {
             </div>
           </div>
 
-          <div style={ui.stack}>
-            {!hasLocations && (
+          <div style={uiML.stack}>
+            {!hasLocationsML && (
               <s-banner tone="warning" heading="No locations configured">
                 <s-paragraph>
                   Booking needs at least one location so every slot has a
@@ -1411,20 +1411,20 @@ export default function BookableProductPage() {
               </s-banner>
             )}
 
-            <div style={ui.toggleCard}>
-              <div style={ui.toggleRow}>
-                <div style={ui.toggleText}>
-                  <p style={ui.fieldLabelBlack}>Bookings</p>
+            <div style={uiML.toggleCard}>
+              <div style={uiML.toggleRow}>
+                <div style={uiML.toggleText}>
+                  <p style={uiML.fieldLabelBlack}>Bookings</p>
                 </div>
                 <Toggle
-                  checked={values.isEnabled}
-                  disabled={!hasLocations && !values.isEnabled}
-                  onChange={() => setField("isEnabled", !values.isEnabled)}
+                  checked={valuesML.isEnabled}
+                  disabled={!hasLocationsML && !valuesML.isEnabled}
+                  onChange={() => setFieldML("isEnabled", !valuesML.isEnabled)}
                   label="Booking enabled for this product"
                 />
               </div>
-              {errors.isEnabled && (
-                <p style={ui.errorText}>{errors.isEnabled}</p>
+              {errorsML.isEnabled && (
+                <p style={uiML.errorText}>{errorsML.isEnabled}</p>
               )}
             </div>
 
@@ -1432,28 +1432,28 @@ export default function BookableProductPage() {
               title="Booking Type"
               description="Choose how this product is booked. Changing this only affects what settings apply below, existing bookings aren’t touched."
             >
-              <div style={ui.fieldsRow}>
+              <div style={uiML.fieldsRow}>
                 <FieldGroup label="Booking Type" size="grow">
-                  <div style={ui.selectWrap}>
+                  <div style={uiML.selectWrap}>
                     <select
-                      style={ui.select}
-                      value={values.bookingType}
+                      style={uiML.select}
+                      value={valuesML.bookingType}
                       aria-label="Booking Type"
-                      onChange={(e: FieldChangeEvent) =>
-                        setField(
+                      onChange={(eML: FieldChangeEvent) =>
+                        setFieldML(
                           "bookingType",
-                          e.currentTarget
+                          eML.currentTarget
                             .value as BookableProductFormValues["bookingType"],
                         )
                       }
                     >
-                      {BOOKING_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {BOOKING_TYPE_LABELS[type]}
+                      {BOOKING_TYPES_ML.map((typeML) => (
+                        <option key={typeML} value={typeML}>
+                          {BOOKING_TYPE_LABELS_ML[typeML]}
                         </option>
                       ))}
                     </select>
-                    <span style={ui.selectChevron}>
+                    <span style={uiML.selectChevron}>
                       <ChevronDownIcon />
                     </span>
                   </div>
@@ -1465,19 +1465,19 @@ export default function BookableProductPage() {
               title="Country Availability"
               description='Control which countries can book this product. Leave as "All countries" to keep it open everywhere.'
             >
-              <div style={ui.fieldsRow}>
+              <div style={uiML.fieldsRow}>
                 <FieldGroup label="Availability" size="grow">
-                  <div style={ui.selectWrap}>
+                  <div style={uiML.selectWrap}>
                     <select
-                      style={ui.select}
-                      value={values.countryMode}
+                      style={uiML.select}
+                      value={valuesML.countryMode}
                       aria-label="Country Availability"
-                      onChange={(e: FieldChangeEvent) => {
-                        const nextMode = e.currentTarget
+                      onChange={(eML: FieldChangeEvent) => {
+                        const nextModeML = eML.currentTarget
                           .value as BookableProductFormValues["countryMode"];
-                        setField("countryMode", nextMode);
-                        if (nextMode === "ALL") {
-                          setField("countryCodes", []);
+                        setFieldML("countryMode", nextModeML);
+                        if (nextModeML === "ALL") {
+                          setFieldML("countryCodes", []);
                         }
                       }}
                     >
@@ -1487,99 +1487,99 @@ export default function BookableProductPage() {
                         All except these countries
                       </option>
                     </select>
-                    <span style={ui.selectChevron}>
+                    <span style={uiML.selectChevron}>
                       <ChevronDownIcon />
                     </span>
                   </div>
                 </FieldGroup>
               </div>
 
-              {values.countryMode !== "ALL" && (
+              {valuesML.countryMode !== "ALL" && (
                 <div style={{ marginTop: "12px" }}>
                   <input
                     type="text"
-                    style={ui.textInput}
+                    style={uiML.textInput}
                     placeholder="Search countries…"
-                    value={countrySearch}
-                    onChange={(e: FieldChangeEvent) =>
-                      setCountrySearch(e.currentTarget.value)
+                    value={countrySearchML}
+                    onChange={(eML: FieldChangeEvent) =>
+                      setCountrySearchML(eML.currentTarget.value)
                     }
                   />
-                  <div style={{ ...ui.countryListScroll, marginTop: "8px" }}>
-                    {filteredCountries.map((country) => (
+                  <div style={{ ...uiML.countryListScroll, marginTop: "8px" }}>
+                    {filteredCountriesML.map((countryML) => (
                       <Checkbox
-                        key={country.code}
-                        checked={values.countryCodes.includes(country.code)}
-                        onChange={() => toggleCountry(country.code)}
-                        label={country.name}
+                        key={countryML.code}
+                        checked={valuesML.countryCodes.includes(countryML.code)}
+                        onChange={() => toggleCountryML(countryML.code)}
+                        label={countryML.name}
                       />
                     ))}
-                    {filteredCountries.length === 0 && (
-                      <p style={ui.hintText}>No countries match your search.</p>
+                    {filteredCountriesML.length === 0 && (
+                      <p style={uiML.hintText}>No countries match your search.</p>
                     )}
                   </div>
-                  {values.countryCodes.length > 0 && (
-                    <p style={ui.hintText}>
-                      {values.countryMode === "INCLUDE"
-                        ? `Bookable only from: ${values.countryCodes.join(", ")}`
-                        : `Blocked in: ${values.countryCodes.join(", ")}`}
+                  {valuesML.countryCodes.length > 0 && (
+                    <p style={uiML.hintText}>
+                      {valuesML.countryMode === "INCLUDE"
+                        ? `Bookable only from: ${valuesML.countryCodes.join(", ")}`
+                        : `Blocked in: ${valuesML.countryCodes.join(", ")}`}
                     </p>
                   )}
-                  {errors.countryCodes && (
-                    <p style={ui.errorText}>{errors.countryCodes}</p>
+                  {errorsML.countryCodes && (
+                    <p style={uiML.errorText}>{errorsML.countryCodes}</p>
                   )}
                 </div>
               )}
             </Card>
 
-            {(values.bookingType === "SLOT" ||
-              values.bookingType === "FULL_DAY" ||
-              values.bookingType === "BUNDLE") && (
+            {(valuesML.bookingType === "SLOT" ||
+              valuesML.bookingType === "FULL_DAY" ||
+              valuesML.bookingType === "BUNDLE") && (
               <Card
                 title="Working Days & Hours"
                 description="Choose which days this product can be booked on, and set each day's own hours. Leave a day unchecked to leave it unavailable, or clear the whole schedule to inherit the shop default."
               >
-                <div style={ui.daysGroup}>
-                  <div style={ui.daysRow}>
+                <div style={uiML.daysGroup}>
+                  <div style={uiML.daysRow}>
                     <Checkbox
-                      checked={allWeekdaysSelected}
-                      onChange={toggleSelectAllWorkingDays}
+                      checked={allWeekdaysSelectedML}
+                      onChange={toggleSelectAllWorkingDaysML}
                       label="Select All"
                     />
                   </div>
-                  <div style={ui.dayGrid}>
-                  {WEEKDAY_LABELS.map((day) => {
-                    const dayTime = values.dayTimes?.[day.value];
-                    const isChecked = dayTime != null;
+                  <div style={uiML.dayGrid}>
+                  {WEEKDAY_LABELS_ML.map((dayML) => {
+                    const dayTimeML = valuesML.dayTimes?.[dayML.value];
+                    const isCheckedML = dayTimeML != null;
                     return (
                       <div
-                        key={day.value}
+                        key={dayML.value}
                         style={{
-                          ...ui.dayTimeRow,
-                          ...(isChecked ? ui.dayTimeRowActive : {}),
+                          ...uiML.dayTimeRow,
+                          ...(isCheckedML ? uiML.dayTimeRowActive : {}),
                         }}
                       >
                 <Checkbox
-                    checked={isChecked}
-                    onChange={() => toggleWorkingDay(day.value)}
-                    label={day.label}
+                    checked={isCheckedML}
+                    onChange={() => toggleWorkingDayML(dayML.value)}
+                    label={dayML.label}
                   />
-                        {!isChecked && <p style={ui.hintText}>Closed</p>}
-                        {isChecked && (
-                          <div style={ui.dayTimeInputs}>
+                        {!isCheckedML && <p style={uiML.hintText}>Closed</p>}
+                        {isCheckedML && (
+                          <div style={uiML.dayTimeInputs}>
                             <InlineTimeField
-                              value={dayTime.start}
-                              placeholder={shopDefaults.dailyStartTime}
-                              onChange={(next) =>
-                                setDayTime(day.value, "start", next)
+                              value={dayTimeML.start}
+                              placeholder={shopDefaultsML.dailyStartTime}
+                              onChange={(nextML) =>
+                                setDayTimeML(dayML.value, "start", nextML)
                               }
                             />
-                            <span style={ui.hintText}>to</span>
+                            <span style={uiML.hintText}>to</span>
                             <InlineTimeField
-                              value={dayTime.end}
-                              placeholder={shopDefaults.dailyEndTime}
-                              onChange={(next) =>
-                                setDayTime(day.value, "end", next)
+                              value={dayTimeML.end}
+                              placeholder={shopDefaultsML.dailyEndTime}
+                              onChange={(nextML) =>
+                                setDayTimeML(dayML.value, "end", nextML)
                               }
                             />
                           </div>
@@ -1589,97 +1589,97 @@ export default function BookableProductPage() {
                   })}
                   </div>
                 </div>
-                {errors.dayTimes && (
-                  <p style={ui.errorText}>{errors.dayTimes}</p>
+                {errorsML.dayTimes && (
+                  <p style={uiML.errorText}>{errorsML.dayTimes}</p>
                 )}
               </Card>
             )}
 
-            {values.bookingType === "SLOT" && (
+            {valuesML.bookingType === "SLOT" && (
               <Card
                 title="Slot Configuration"
                 description="Leave any field blank to use the shop default."
               >
-                <div style={ui.fieldsRow}>
+                <div style={uiML.fieldsRow}>
                   <NumberField
                     label="Slot Duration (minutes)"
                     size="third"
-                    value={values.slotDurationMinutes}
-                    placeholder={String(shopDefaults.slotDurationMinutes)}
-                    base={shopDefaults.slotDurationMinutes}
+                    value={valuesML.slotDurationMinutes}
+                    placeholder={String(shopDefaultsML.slotDurationMinutes)}
+                    base={shopDefaultsML.slotDurationMinutes}
                     min={5}
                     step={5}
-                    error={errors.slotDurationMinutes}
-                    onChange={(next) => setField("slotDurationMinutes", next)}
+                    error={errorsML.slotDurationMinutes}
+                    onChange={(nextML) => setFieldML("slotDurationMinutes", nextML)}
                   />
                   <NumberField
                     label="Buffer Time Between Slots (minutes)"
                     size="third"
-                    value={values.bufferMinutes}
-                    placeholder={String(shopDefaults.bufferMinutes)}
-                    base={shopDefaults.bufferMinutes}
+                    value={valuesML.bufferMinutes}
+                    placeholder={String(shopDefaultsML.bufferMinutes)}
+                    base={shopDefaultsML.bufferMinutes}
                     min={0}
                     step={5}
-                    error={errors.bufferMinutes}
-                    onChange={(next) => setField("bufferMinutes", next)}
+                    error={errorsML.bufferMinutes}
+                    onChange={(nextML) => setFieldML("bufferMinutes", nextML)}
                   />
                   <NumberField
                     label="Max Bookings Per Slot"
                     size="third"
-                    value={values.maxBookingsPerSlot}
-                    placeholder={String(shopDefaults.maxBookingsPerSlot)}
-                    base={shopDefaults.maxBookingsPerSlot}
+                    value={valuesML.maxBookingsPerSlot}
+                    placeholder={String(shopDefaultsML.maxBookingsPerSlot)}
+                    base={shopDefaultsML.maxBookingsPerSlot}
                     min={1}
                     step={1}
-                    error={errors.maxBookingsPerSlot}
-                    onChange={(next) => setField("maxBookingsPerSlot", next)}
+                    error={errorsML.maxBookingsPerSlot}
+                    onChange={(nextML) => setFieldML("maxBookingsPerSlot", nextML)}
                   />
                 </div>
               </Card>
             )}
 
-            {values.bookingType === "FULL_DAY" && (
+            {valuesML.bookingType === "FULL_DAY" && (
               <Card
                 title="Capacity"
                 description="How many units of this product can be booked for the same day (e.g. number of identical venues/rooms). Leave blank to use the shop default."
               >
-                <div style={ui.fieldsRow}>
+                <div style={uiML.fieldsRow}>
                   <NumberField
                     label="Max Bookings Per Day"
-                    value={values.maxBookingsPerSlot}
-                    placeholder={String(shopDefaults.maxBookingsPerSlot)}
-                    base={shopDefaults.maxBookingsPerSlot}
+                    value={valuesML.maxBookingsPerSlot}
+                    placeholder={String(shopDefaultsML.maxBookingsPerSlot)}
+                    base={shopDefaultsML.maxBookingsPerSlot}
                     min={1}
                     step={1}
-                    error={errors.maxBookingsPerSlot}
-                    onChange={(next) => setField("maxBookingsPerSlot", next)}
+                    error={errorsML.maxBookingsPerSlot}
+                    onChange={(nextML) => setFieldML("maxBookingsPerSlot", nextML)}
                   />
                 </div>
               </Card>
             )}
 
-            {values.bookingType === "MULTI_DAY" && (
+            {valuesML.bookingType === "MULTI_DAY" && (
               <>
                 <Card
                   title="Multi-day Settings"
                   description="The number of nights a customer can book in one go for this product."
                 >
-                  <div style={ui.fieldsRow}>
+                  <div style={uiML.fieldsRow}>
                     <NumberField
                       label="Minimum Nights"
-                      value={values.minNights}
+                      value={valuesML.minNights}
                       min={1}
                       step={1}
-                      error={errors.minNights}
-                      onChange={(next) => setField("minNights", next)}
+                      error={errorsML.minNights}
+                      onChange={(nextML) => setFieldML("minNights", nextML)}
                     />
                     <NumberField
                       label="Maximum Nights"
-                      value={values.maxNights}
+                      value={valuesML.maxNights}
                       min={1}
                       step={1}
-                      error={errors.maxNights}
-                      onChange={(next) => setField("maxNights", next)}
+                      error={errorsML.maxNights}
+                      onChange={(nextML) => setFieldML("maxNights", nextML)}
                     />
                   </div>
                 </Card>
@@ -1688,57 +1688,57 @@ export default function BookableProductPage() {
                   title="Capacity"
                   description="How many identical rooms or units can be booked for the same night (e.g. number of rooms of this type). Leave blank to use the shop default."
                 >
-                  <div style={ui.fieldsRow}>
+                  <div style={uiML.fieldsRow}>
                     <NumberField
                       label="Rooms / Units Available"
-                      value={values.maxBookingsPerSlot}
-                      placeholder={String(shopDefaults.maxBookingsPerSlot)}
-                      base={shopDefaults.maxBookingsPerSlot}
+                      value={valuesML.maxBookingsPerSlot}
+                      placeholder={String(shopDefaultsML.maxBookingsPerSlot)}
+                      base={shopDefaultsML.maxBookingsPerSlot}
                       min={1}
                       step={1}
-                      error={errors.maxBookingsPerSlot}
-                      onChange={(next) => setField("maxBookingsPerSlot", next)}
+                      error={errorsML.maxBookingsPerSlot}
+                      onChange={(nextML) => setFieldML("maxBookingsPerSlot", nextML)}
                     />
                   </div>
                 </Card>
               </>
             )}
 
-            {values.bookingType === "BUNDLE" && (
+            {valuesML.bookingType === "BUNDLE" && (
               <Card
                 title="Bundle Settings"
                 description="How many sessions make up one bundle purchase, how long each session runs, and how many days the customer has to use them all."
               >
-                <div style={ui.fieldsRow}>
+                <div style={uiML.fieldsRow}>
                   <NumberField
                     label="Sessions Per Bundle"
                     size="third"
-                    value={values.bundleSessionCount}
+                    value={valuesML.bundleSessionCount}
                     min={2}
                     step={1}
-                    error={errors.bundleSessionCount}
-                    onChange={(next) => setField("bundleSessionCount", next)}
+                    error={errorsML.bundleSessionCount}
+                    onChange={(nextML) => setFieldML("bundleSessionCount", nextML)}
                   />
                   <NumberField
                     label="Session Duration (minutes)"
                     size="third"
-                    value={values.bundleSessionDurationMinutes}
+                    value={valuesML.bundleSessionDurationMinutes}
                     min={5}
                     step={5}
-                    error={errors.bundleSessionDurationMinutes}
-                    onChange={(next) =>
-                      setField("bundleSessionDurationMinutes", next)
+                    error={errorsML.bundleSessionDurationMinutes}
+                    onChange={(nextML) =>
+                      setFieldML("bundleSessionDurationMinutes", nextML)
                     }
                   />
                   <NumberField
                     label="Validity Window (days)"
                     size="third"
-                    value={values.bundleValidityDays}
+                    value={valuesML.bundleValidityDays}
                     min={1}
                     step={1}
                     hint="How many days after purchase the customer can use all sessions"
-                    error={errors.bundleValidityDays}
-                    onChange={(next) => setField("bundleValidityDays", next)}
+                    error={errorsML.bundleValidityDays}
+                    onChange={(nextML) => setFieldML("bundleValidityDays", nextML)}
                   />
                 </div>
               </Card>
@@ -1748,26 +1748,26 @@ export default function BookableProductPage() {
               title="Advance Booking Rules"
               description="Control how soon and how far ahead customers can book this product (Leave blank to use the shop default)."
             >
-              <div style={ui.fieldsRow}>
+              <div style={uiML.fieldsRow}>
                 <NumberField
                   label="Minimum Advance Booking Time (hours)"
-                  value={values.minAdvanceHours}
-                  placeholder={String(shopDefaults.minAdvanceHours)}
-                  base={shopDefaults.minAdvanceHours}
+                  value={valuesML.minAdvanceHours}
+                  placeholder={String(shopDefaultsML.minAdvanceHours)}
+                  base={shopDefaultsML.minAdvanceHours}
                   min={0}
                   step={1}
-                  error={errors.minAdvanceHours}
-                  onChange={(next) => setField("minAdvanceHours", next)}
+                  error={errorsML.minAdvanceHours}
+                  onChange={(nextML) => setFieldML("minAdvanceHours", nextML)}
                 />
                 <NumberField
                   label="Maximum Advance Booking (days)"
-                  value={values.maxAdvanceDays}
-                  placeholder={String(shopDefaults.maxAdvanceDays)}
-                  base={shopDefaults.maxAdvanceDays}
+                  value={valuesML.maxAdvanceDays}
+                  placeholder={String(shopDefaultsML.maxAdvanceDays)}
+                  base={shopDefaultsML.maxAdvanceDays}
                   min={1}
                   step={1}
-                  error={errors.maxAdvanceDays}
-                  onChange={(next) => setField("maxAdvanceDays", next)}
+                  error={errorsML.maxAdvanceDays}
+                  onChange={(nextML) => setFieldML("maxAdvanceDays", nextML)}
                 />
               </div>
             </Card>
@@ -1776,20 +1776,20 @@ export default function BookableProductPage() {
               title="Booking Start and End Date"
               description="Set the overall window in which bookings are accepted (Leave blank to use the shop default)."
             >
-              <div style={ui.fieldsRow}>
+              <div style={uiML.fieldsRow}>
                 <DateField
                   label="Booking Start Date"
-                  value={values.bookingStartDate ?? ""}
-                  error={errors.bookingStartDate}
-                  onChange={(next) => setField("bookingStartDate", next || null)}
-                  max={values.bookingEndDate ?? undefined}
+                  value={valuesML.bookingStartDate ?? ""}
+                  error={errorsML.bookingStartDate}
+                  onChange={(nextML) => setFieldML("bookingStartDate", nextML || null)}
+                  max={valuesML.bookingEndDate ?? undefined}
                 />
                 <DateField
                   label="Booking End Date"
-                  value={values.bookingEndDate ?? ""}
-                  error={errors.bookingEndDate}
-                  onChange={(next) => setField("bookingEndDate", next || null)}
-                  min={values.bookingStartDate ?? undefined}
+                  value={valuesML.bookingEndDate ?? ""}
+                  error={errorsML.bookingEndDate}
+                  onChange={(nextML) => setFieldML("bookingEndDate", nextML || null)}
+                  min={valuesML.bookingStartDate ?? undefined}
                 />
               </div>
             </Card>
@@ -1798,96 +1798,96 @@ export default function BookableProductPage() {
               title="Add a Blackout Date"
               description="Block bookings of this product on specific dates- holidays, closures, and one-off events (on top of any shop-wide blackout dates)."
               collapsible
-              open={blackoutOpen}
-              onToggle={() => setBlackoutOpen((prev) => !prev)}
+              open={blackoutOpenML}
+              onToggle={() => setBlackoutOpenML((prevML) => !prevML)}
             >
-              <div style={ui.fieldsRow}>
+              <div style={uiML.fieldsRow}>
                 <DateField
                   label="Date"
                   grey
                   size="fixed"
-                  value={newBlackoutDate}
-                  error={blackoutErrors.date}
-                  onChange={setNewBlackoutDate}
+                  value={newBlackoutDateML}
+                  error={blackoutErrorsML.date}
+                  onChange={setNewBlackoutDateML}
                 />
                 <FieldGroup label="Reason (Optional)" grey size="grow">
-                  <div style={ui.inputBox}>
+                  <div style={uiML.inputBox}>
                     <input
                       type="text"
-                      style={ui.timeInput}
+                      style={uiML.timeInput}
                       placeholder="e.g. Maintenance"
-                      value={newBlackoutReason}
-                      onChange={(e: FieldChangeEvent) =>
-                        setNewBlackoutReason(e.currentTarget.value)
+                      value={newBlackoutReasonML}
+                      onChange={(eML: FieldChangeEvent) =>
+                        setNewBlackoutReasonML(eML.currentTarget.value)
                       }
                     />
                   </div>
                 </FieldGroup>
               </div>
 
-              <hr style={ui.divider} />
+              <hr style={uiML.divider} />
 
               <button
                 type="button"
                 className="eb-add-btn"
                 style={{
-                  ...ui.addButton,
-                  ...(isAddingBlackout
+                  ...uiML.addButton,
+                  ...(isAddingBlackoutML
                     ? { opacity: 0.6, cursor: "not-allowed" }
                     : {}),
                 }}
-                onClick={handleAddBlackoutDate}
-                disabled={isAddingBlackout}
+                onClick={handleAddBlackoutDateML}
+                disabled={isAddingBlackoutML}
               >
-                <span style={ui.addButtonLabel}>Add Blackout Date</span>
-                <span style={ui.plusWrap}>
+                <span style={uiML.addButtonLabel}>Add Blackout Date</span>
+                <span style={uiML.plusWrap}>
                   <PlusIcon />
                 </span>
               </button>
             </Card>
 
-            {blackoutDates.length > 0 && (
-              <div style={ui.card}>
-                <div style={ui.cardHeaderText}>
-                  <p style={ui.title}>Current Blackout Dates</p>
-                  <p style={ui.descText}>
+            {blackoutDatesML.length > 0 && (
+              <div style={uiML.card}>
+                <div style={uiML.cardHeaderText}>
+                  <p style={uiML.title}>Current Blackout Dates</p>
+                  <p style={uiML.descText}>
                     This blackout dates block bookings for this product. Shop-wide dates are listed here too - removing one only excludes it for this product, it stays blacked out everywhere else.
                   </p>
                 </div>
 
-                <hr style={ui.divider} />
+                <hr style={uiML.divider} />
 
-                <div style={ui.columnHeaderRow}>
-                  <p style={ui.columnHeaderCell}>Date</p>
-                  <p style={ui.columnHeaderCell}>Reason</p>
-                  <p style={{ ...ui.columnHeaderCell, textAlign: "center" }}>
+                <div style={uiML.columnHeaderRow}>
+                  <p style={uiML.columnHeaderCell}>Date</p>
+                  <p style={uiML.columnHeaderCell}>Reason</p>
+                  <p style={{ ...uiML.columnHeaderCell, textAlign: "center" }}>
                     Actions
                   </p>
                 </div>
 
-                <hr style={ui.divider} />
+                <hr style={uiML.divider} />
 
-                {blackoutDates.map(
-                  (b: {
+                {blackoutDatesML.map(
+                  (bML: {
                     id: string;
                     date: string;
                     reason: string | null;
                     source: "shop" | "product";
                   }) => (
-                    <div key={b.id} style={{ width: "100%" }}>
-                      <div style={ui.rowWrap}>
-                        <p style={ui.rowCell}>{b.date}</p>
-                        <p style={ui.rowCell}>{b.reason ?? "—"}</p>
-                        <div style={ui.actionsCell}>
+                    <div key={bML.id} style={{ width: "100%" }}>
+                      <div style={uiML.rowWrap}>
+                        <p style={uiML.rowCell}>{bML.date}</p>
+                        <p style={uiML.rowCell}>{bML.reason ?? "—"}</p>
+                        <div style={uiML.actionsCell}>
                           <button
                             type="button"
-                            style={ui.deleteButton}
+                            style={uiML.deleteButton}
                             onClick={() =>
-                              b.source === "shop"
-                                ? handleExcludeBlackoutDate(b.date)
-                                : handleDeleteBlackoutDate(b.id)
+                              bML.source === "shop"
+                                ? handleExcludeBlackoutDateML(bML.date)
+                                : handleDeleteBlackoutDateML(bML.id)
                             }
-                            disabled={isBlackoutBusy}
+                            disabled={isBlackoutBusyML}
                             aria-label="Delete blackout date"
                           >
                             <img
@@ -1900,7 +1900,7 @@ export default function BookableProductPage() {
                           </button>
                         </div>
                       </div>
-                      <hr style={ui.divider} />
+                      <hr style={uiML.divider} />
                     </div>
                   ),
                 )}
@@ -1913,6 +1913,6 @@ export default function BookableProductPage() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

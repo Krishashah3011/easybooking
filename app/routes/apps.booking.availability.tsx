@@ -1,140 +1,140 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
-import { resolveBookingContext } from "../models/booking-context.server";
-import { getOrCreateShopSettings } from "../models/shopSettings.server";
+import { resolveBookingContextML } from "../models/booking-context.server";
+import { getOrCreateShopSettingsML } from "../models/shopSettings.server";
 import {
-  getAvailableDatesInMonth,
-  getAvailableFullDayDatesInMonth,
-  getAvailableMultiDayNightsInMonth,
-  getFullDayCapacityInMonth,
-  getMultiDayCapacityInMonth,
+  getAvailableDatesInMonthML,
+  getAvailableFullDayDatesInMonthML,
+  getAvailableMultiDayNightsInMonthML,
+  getFullDayCapacityInMonthML,
+  getMultiDayCapacityInMonthML,
 } from "../models/slotAvailability.server";
 import {
-  getBookedCountsInRange,
-  getBookedNightCountsInRange,
+  getBookedCountsInRangeML,
+  getBookedNightCountsInRangeML,
 } from "../models/booking.server";
-import { localMonthRangeUtc } from "../utils/timezones";
+import { localMonthRangeUtcML } from "../utils/timezones";
 
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.public.appProxy(request);
-  if (!session) {
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.public.appProxy(requestML);
+  if (!sessionML) {
     return Response.json({ error: "Unknown shop" }, { status: 401 });
   }
 
-  const shopSettings = await getOrCreateShopSettings(session.shop);
-  if (!shopSettings.isAppEnabled) {
+  const shopSettingsML = await getOrCreateShopSettingsML(sessionML.shop);
+  if (!shopSettingsML.isAppEnabled) {
     return Response.json({ error: "Booking is currently unavailable" }, { status: 403 });
   }
 
-  const url = new URL(request.url);
-  const productId = url.searchParams.get("productId");
-  const year = Number(url.searchParams.get("year"));
-  const month = Number(url.searchParams.get("month"));
-  const locationId = url.searchParams.get("locationId");
+  const urlML = new URL(requestML.url);
+  const productIdML = urlML.searchParams.get("productId");
+  const yearML = Number(urlML.searchParams.get("year"));
+  const monthML = Number(urlML.searchParams.get("month"));
+  const locationIdML = urlML.searchParams.get("locationId");
 
-  if (!productId || !Number.isInteger(year) || !Number.isInteger(month)) {
+  if (!productIdML || !Number.isInteger(yearML) || !Number.isInteger(monthML)) {
     return Response.json(
       { error: "productId, year, and month are required" },
       { status: 400 },
     );
   }
-  if (month < 1 || month > 12) {
+  if (monthML < 1 || monthML > 12) {
     return Response.json({ error: "month must be 1-12" }, { status: 400 });
   }
 
-  const context = await resolveBookingContext(session.shop, productId, locationId);
-  if (!context) {
+  const contextML = await resolveBookingContextML(sessionML.shop, productIdML, locationIdML);
+  if (!contextML) {
     return Response.json({ availableDates: [] });
   }
 
-  const monthStart = new Date(Date.UTC(year, month - 1, 1));
-  const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+  const monthStartML = new Date(Date.UTC(yearML, monthML - 1, 1));
+  const monthEndML = new Date(Date.UTC(yearML, monthML, 0, 23, 59, 59, 999));
 
-  let availableDates: string[];
-  let remainingCapacityByDate: Record<string, number> | undefined;
+  let availableDatesML: string[];
+  let remainingCapacityByDateML: Record<string, number> | undefined;
 
-  if (context.bookingType === "FULL_DAY") {
-    const bookedCounts = await getBookedCountsInRange(
-      session.shop,
-      context.bookableProductId,
-      monthStart,
-      monthEnd,
-      context.location?.id,
+  if (contextML.bookingType === "FULL_DAY") {
+    const bookedCountsML = await getBookedCountsInRangeML(
+      sessionML.shop,
+      contextML.bookableProductId,
+      monthStartML,
+      monthEndML,
+      contextML.location?.id,
     );
-    availableDates = getAvailableFullDayDatesInMonth(
-      context.effectiveSettings,
-      year,
-      month,
-      context.blackoutDates,
+    availableDatesML = getAvailableFullDayDatesInMonthML(
+      contextML.effectiveSettings,
+      yearML,
+      monthML,
+      contextML.blackoutDates,
       new Date(),
-      bookedCounts,
+      bookedCountsML,
     );
-    remainingCapacityByDate = getFullDayCapacityInMonth(
-      context.effectiveSettings,
-      year,
-      month,
-      context.blackoutDates,
+    remainingCapacityByDateML = getFullDayCapacityInMonthML(
+      contextML.effectiveSettings,
+      yearML,
+      monthML,
+      contextML.blackoutDates,
       new Date(),
-      bookedCounts,
+      bookedCountsML,
     );
-  } else if (context.bookingType === "MULTI_DAY") {
-    const bookedNightCounts = await getBookedNightCountsInRange(
-      session.shop,
-      context.bookableProductId,
-      monthStart,
-      monthEnd,
-      context.location?.id,
+  } else if (contextML.bookingType === "MULTI_DAY") {
+    const bookedNightCountsML = await getBookedNightCountsInRangeML(
+      sessionML.shop,
+      contextML.bookableProductId,
+      monthStartML,
+      monthEndML,
+      contextML.location?.id,
     );
-    availableDates = getAvailableMultiDayNightsInMonth(
-      context.effectiveSettings,
-      year,
-      month,
-      context.blackoutDates,
+    availableDatesML = getAvailableMultiDayNightsInMonthML(
+      contextML.effectiveSettings,
+      yearML,
+      monthML,
+      contextML.blackoutDates,
       new Date(),
-      bookedNightCounts,
+      bookedNightCountsML,
     );
-    remainingCapacityByDate = getMultiDayCapacityInMonth(
-      context.effectiveSettings,
-      year,
-      month,
-      context.blackoutDates,
+    remainingCapacityByDateML = getMultiDayCapacityInMonthML(
+      contextML.effectiveSettings,
+      yearML,
+      monthML,
+      contextML.blackoutDates,
       new Date(),
-      bookedNightCounts,
+      bookedNightCountsML,
     );
   } else {
-    const localMonth = localMonthRangeUtc(
-      year,
-      month,
-      context.location?.timezone ?? null,
+    const localMonthML = localMonthRangeUtcML(
+      yearML,
+      monthML,
+      contextML.location?.timezone ?? null,
     );
-    const bookedCounts = await getBookedCountsInRange(
-      session.shop,
-      context.bookableProductId,
-      localMonth.start,
-      localMonth.end,
-      context.location?.id,
+    const bookedCountsML = await getBookedCountsInRangeML(
+      sessionML.shop,
+      contextML.bookableProductId,
+      localMonthML.start,
+      localMonthML.end,
+      contextML.location?.id,
     );
-    availableDates = getAvailableDatesInMonth(
-      context.effectiveSettings,
-      year,
-      month,
-      context.blackoutDates,
+    availableDatesML = getAvailableDatesInMonthML(
+      contextML.effectiveSettings,
+      yearML,
+      monthML,
+      contextML.blackoutDates,
       new Date(),
-      bookedCounts,
-      context.location?.timezone ?? null,
+      bookedCountsML,
+      contextML.location?.timezone ?? null,
     );
   }
 
   return Response.json({
-    availableDates,
-    bookingType: context.bookingType,
-    minNights: context.minNights,
-    maxNights: context.maxNights,
-    bundleSessionCount: context.bundleSessionCount,
-    bundleValidityDays: context.bundleValidityDays,
-    dailyStartTime: context.effectiveSettings.dailyStartTime,
-    dailyEndTime: context.effectiveSettings.dailyEndTime,
-    ...(remainingCapacityByDate ? { remainingCapacityByDate } : {}),
+    availableDates: availableDatesML,
+    bookingType: contextML.bookingType,
+    minNights: contextML.minNights,
+    maxNights: contextML.maxNights,
+    bundleSessionCount: contextML.bundleSessionCount,
+    bundleValidityDays: contextML.bundleValidityDays,
+    dailyStartTime: contextML.effectiveSettings.dailyStartTime,
+    dailyEndTime: contextML.effectiveSettings.dailyEndTime,
+    ...(remainingCapacityByDateML ? { remainingCapacityByDate: remainingCapacityByDateML } : {}),
   });
 };

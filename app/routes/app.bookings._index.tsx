@@ -8,89 +8,89 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import type { BookingType } from "@prisma/client";
 import { authenticate } from "../shopify.server";
-import { listBookableProducts } from "../models/bookableProduct.server";
-import { listCustomFields } from "../models/customBookingField.server";
+import { listBookableProductsML } from "../models/bookableProduct.server";
+import { listCustomFieldsML } from "../models/customBookingField.server";
 import {
-  listBookings,
+  listBookingsML,
   type ListBookingsFilters,
   type BookingWithProductTitle,
 } from "../models/booking.server";
 import type { TimeSlot } from "../models/slotAvailability.server";
-import { bookingListAction } from "../utils/bookingListAction.server";
+import { bookingListActionML } from "../utils/bookingListAction.server";
 import {
-  bookingSourceLabel,
-  formatDateDisplay,
-  formatTimeRangeDisplay,
+  bookingSourceLabelML,
+  formatDateDisplayML,
+  formatTimeRangeDisplayML,
 } from "../utils/format";
-import { formatInstantInTimezone } from "../utils/timezones";
+import { formatInstantInTimezoneML } from "../utils/timezones";
 import {
-  BLUE,
-  BORDER,
-  LICENSE_BORDER,
-  TEXT_DARK,
-  TEXT_MUTED,
-  styles as settingsStyles,
+  BLUE_ML,
+  BORDER_ML,
+  LICENSE_BORDER_ML,
+  TEXT_DARK_ML,
+  TEXT_MUTED_ML,
+  stylesML as settingsStyles,
 } from "../components/SettingsUI";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const url = new URL(request.url);
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const urlML = new URL(requestML.url);
 
-  const status = url.searchParams.get("status") || undefined;
-  const bookableProductId = url.searchParams.get("productId") || undefined;
-  const search = url.searchParams.get("search") || undefined;
-  const dateFrom = url.searchParams.get("dateFrom") || undefined;
-  const dateTo = url.searchParams.get("dateTo") || undefined;
+  const statusML = urlML.searchParams.get("status") || undefined;
+  const bookableProductIdML = urlML.searchParams.get("productId") || undefined;
+  const searchML = urlML.searchParams.get("search") || undefined;
+  const dateFromML = urlML.searchParams.get("dateFrom") || undefined;
+  const dateToML = urlML.searchParams.get("dateTo") || undefined;
 
-  const filters: ListBookingsFilters = {
-    status: status as ListBookingsFilters["status"],
-    bookableProductId,
-    search,
-    dateFrom,
-    dateTo,
+  const filtersML: ListBookingsFilters = {
+    status: statusML as ListBookingsFilters["status"],
+    bookableProductId: bookableProductIdML,
+    search: searchML,
+    dateFrom: dateFromML,
+    dateTo: dateToML,
     completed: false,
   };
 
-  const [bookings, products, customFields] = await Promise.all([
-    listBookings(session.shop, filters),
-    listBookableProducts(session.shop),
-    listCustomFields(session.shop),
+  const [bookingsML, productsML, customFieldsML] = await Promise.all([
+    listBookingsML(sessionML.shop, filtersML),
+    listBookableProductsML(sessionML.shop),
+    listCustomFieldsML(sessionML.shop),
   ]);
 
   return {
-    bookings,
-    products: products
-      .filter((p) => p.isEnabled)
-      .map((p) => ({ id: p.id, title: p.productTitle })),
+    bookings: bookingsML,
+    products: productsML
+      .filter((pML) => pML.isEnabled)
+      .map((pML) => ({ id: pML.id, title: pML.productTitle })),
     customFieldLabels: Object.fromEntries(
-      customFields.map((f) => [f.fieldKey, f.label]),
+      customFieldsML.map((fML) => [fML.fieldKey, fML.label]),
     ) as Record<string, string>,
     filters: {
-      status: status ?? "",
-      bookableProductId: bookableProductId ?? "",
-      search: search ?? "",
-      dateFrom: dateFrom ?? "",
-      dateTo: dateTo ?? "",
+      status: statusML ?? "",
+      bookableProductId: bookableProductIdML ?? "",
+      search: searchML ?? "",
+      dateFrom: dateFromML ?? "",
+      dateTo: dateToML ?? "",
     },
   };
 };
 
-export const action = bookingListAction;
+export const action = bookingListActionML;
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };
 
 export default function BookingManagementPage() {
-  const { bookings, products, customFieldLabels, filters } =
+  const { bookings: bookingsML, products: productsML, customFieldLabels: customFieldLabelsML, filters: filtersML } =
     useLoaderData<typeof loader>();
 
   return (
     <BookingsListPage
-      bookings={bookings}
-      products={products}
-      customFieldLabels={customFieldLabels}
-      filters={filters}
+      bookings={bookingsML}
+      products={productsML}
+      customFieldLabels={customFieldLabelsML}
+      filters={filtersML}
     />
   );
 }
@@ -98,7 +98,7 @@ export default function BookingManagementPage() {
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-const STATUS_OPTIONS = [
+const STATUS_OPTIONS_ML = [
   "",
   "CONFIRMED",
   "RESCHEDULED",
@@ -115,14 +115,14 @@ type BookingsListFilters = {
 };
 
 
-const TYPE_SHORT_LABELS: Record<BookingType, string> = {
+const TYPE_SHORT_LABELS_ML: Record<BookingType, string> = {
   SLOT: "Slot Booking",
   FULL_DAY: "Full-Day Booking",
   MULTI_DAY: "Multi-Day Booking",
   BUNDLE: "Bundle Booking",
 };
 
-const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
+const STATUS_COLORS_ML: Record<string, { bg: string; fg: string }> = {
   CONFIRMED: { bg: "#FFF9BA", fg: "#000000" },
   RESCHEDULED: { bg: "#D9EAFF", fg: "#000000" },
   OVERBOOKED: { bg: "#FFD9D6", fg: "#000000" },
@@ -140,7 +140,7 @@ const S: Record<string, React.CSSProperties> = {
     gap: "16px",
     padding: "16px",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
   },
   pageHeaderRow: {
@@ -166,7 +166,7 @@ const S: Record<string, React.CSSProperties> = {
     boxSizing: "border-box",
     padding: "10px 16px",
     height: "42px",
-    background: BLUE,
+    background: BLUE_ML,
     borderRadius: "10px",
     border: "none",
     color: "#FFFFFF",
@@ -185,7 +185,7 @@ const S: Record<string, React.CSSProperties> = {
     gap: "16px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
     padding: "16px",
   },
@@ -204,7 +204,7 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   headerActions: {
@@ -225,7 +225,7 @@ const S: Record<string, React.CSSProperties> = {
     maxWidth: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
   },
   searchInput: {
@@ -238,7 +238,7 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     padding: 0,
   },
   squareIconButton: {
@@ -250,17 +250,17 @@ const S: Record<string, React.CSSProperties> = {
     height: "34px",
     padding: 0,
     borderRadius: "4px",
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     background: "#FFFFFF",
     cursor: "pointer",
   },
   squareIconButtonActive: {
     background: "#EAF1F8",
-    border: `1px solid ${BLUE}`,
+    border: `1px solid ${BLUE_ML}`,
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${BORDER}`,
+    borderTop: `1px solid ${BORDER_ML}`,
     margin: 0,
     width: "100%",
   },
@@ -274,7 +274,7 @@ const S: Record<string, React.CSSProperties> = {
     width: "100%",
     padding: "12px",
     background: "#FAFAFA",
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
   },
   filterField: {
@@ -289,7 +289,7 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
   },
   input: {
     boxSizing: "border-box",
@@ -297,12 +297,12 @@ const S: Record<string, React.CSSProperties> = {
     height: "34px",
     padding: "5px 10px",
     background: "#FFFFFF",
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     outline: "none",
   },
   primaryButton: {
@@ -314,7 +314,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: "0 16px",
     borderRadius: "6px",
     border: "none",
-    background: BLUE,
+    background: BLUE_ML,
     color: "#FFFFFF",
     fontFamily: "Inter",
     fontWeight: 600,
@@ -330,9 +330,9 @@ const S: Record<string, React.CSSProperties> = {
     height: "34px",
     padding: "0 14px",
     borderRadius: "6px",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     background: "#FFFFFF",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
@@ -346,7 +346,7 @@ const S: Record<string, React.CSSProperties> = {
     borderRadius: "4px",
     border: "none",
     background: "transparent",
-    color: BLUE,
+    color: BLUE_ML,
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
@@ -368,7 +368,7 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     padding: "0 8px 12px",
     whiteSpace: "nowrap",
   },
@@ -379,9 +379,9 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "16px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     padding: "6px 8px",
-    borderTop: `1px solid ${BORDER}`,
+    borderTop: `1px solid ${BORDER_ML}`,
     verticalAlign: "middle",
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -398,7 +398,7 @@ const S: Record<string, React.CSSProperties> = {
     display: "block",
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
   },
   statusBadge: {
     display: "inline-flex",
@@ -431,7 +431,7 @@ const S: Record<string, React.CSSProperties> = {
     gap: "8px",
     padding: "12px",
     background: "#FAFAFA",
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
     whiteSpace: "normal",
   },
@@ -442,12 +442,12 @@ const S: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontSize: "14px",
     lineHeight: "16px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   detailLabel: {
     minWidth: "100px",
     flexShrink: 0,
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     fontWeight: 500,
   },
   detailsCard: {
@@ -457,7 +457,7 @@ const S: Record<string, React.CSSProperties> = {
     gap: "16px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
     padding: "16px 10px",
   },
@@ -550,7 +550,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   detailsDivider: {
     border: "none",
-    borderTop: `1px solid ${BORDER}`,
+    borderTop: `1px solid ${BORDER_ML}`,
     margin: 0,
     width: "100%",
   },
@@ -590,7 +590,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: "7px 8px",
     minHeight: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
     fontFamily: "Inter",
     fontWeight: 400,
@@ -659,7 +659,7 @@ const S: Record<string, React.CSSProperties> = {
     borderRadius: "10px",
     border: "none",
     background: "transparent",
-    color: BLUE,
+    color: BLUE_ML,
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "16px",
@@ -668,7 +668,7 @@ const S: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap",
   },
   childBox: {
-    border: `1px solid ${LICENSE_BORDER}`,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
     background: "#FFFFFF",
     overflow: "hidden",
@@ -681,7 +681,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: "4px 8px 4px 12px",
     fontFamily: "Inter",
     fontSize: "14px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   errorBanner: {
     fontFamily: "Inter",
@@ -704,7 +704,7 @@ const S: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   emptyText: {
@@ -712,7 +712,7 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     margin: 0,
   },
 };
@@ -722,7 +722,7 @@ const SearchIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
     <path
       d="M19 19L14.657 14.657M16.778 8.889C16.778 11.246 15.841 13.507 14.174 15.174C12.507 16.841 10.246 17.778 7.889 17.778C5.531 17.778 3.27 16.841 1.603 15.174C-0.063 13.507 -1 11.246 -1 8.889C-1 6.531 -0.063 4.27 1.603 2.603C3.27 0.937 5.531 0 7.889 0C10.246 0 12.507 0.937 14.174 2.603C15.841 4.27 16.778 6.531 16.778 8.889Z"
-      stroke={BLUE}
+      stroke={BLUE_ML}
       strokeWidth="1.5"
       strokeMiterlimit="10"
       strokeLinecap="round"
@@ -740,7 +740,7 @@ const RefreshIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
     <path
       d="M16.5 10A6.5 6.5 0 1 1 14.6 5.4M16.5 3.5V6.5H13.5"
-      stroke={BLUE}
+      stroke={BLUE_ML}
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -760,7 +760,7 @@ const PlusIcon = () => (
 );
 
 
-const DETAILS_RESPONSIVE_CSS = `
+const DETAILS_RESPONSIVE_CSS_ML = `
   @media (max-width: 720px) {
     .eb-fields-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -792,44 +792,44 @@ const DETAILS_RESPONSIVE_CSS = `
 `;
 
 function DetailsResponsiveStyles() {
-  return <style>{DETAILS_RESPONSIVE_CSS}</style>;
+  return <style>{DETAILS_RESPONSIVE_CSS_ML}</style>;
 }
 
-function StatusPill({ status }: { status: string }) {
-  const colors = STATUS_COLORS[status] ?? STATUS_COLORS.CANCELLED;
+function StatusPill({ status: statusML }: { status: string }) {
+  const colorsML = STATUS_COLORS_ML[statusML] ?? STATUS_COLORS_ML.CANCELLED;
   return (
     <span
       style={{
         ...S.statusBadge,
-        background: colors.bg,
-        color: colors.fg,
+        background: colorsML.bg,
+        color: colorsML.fg,
       }}
     >
-      {status.toLowerCase()}
+      {statusML.toLowerCase()}
     </span>
   );
 }
 
 function DetailRow({
-  label,
-  children,
+  label: labelML,
+  children: childrenML,
 }: {
   label: string;
   children: React.ReactNode;
 }) {
   return (
     <div style={S.detailRow}>
-      <span style={S.detailLabel}>{label}</span>
-      <div>{children}</div>
+      <span style={S.detailLabel}>{labelML}</span>
+      <div>{childrenML}</div>
     </div>
   );
 }
 
 function FieldBlock({
-  label,
-  children,
-  style,
-  className,
+  label: labelML,
+  children: childrenML,
+  style: styleML,
+  className: classNameML,
 }: {
   label: string;
   children: React.ReactNode;
@@ -838,16 +838,16 @@ function FieldBlock({
 }) {
   return (
     <div
-      className={className}
-      style={style ? { ...S.fieldBlock, ...style } : S.fieldBlock}
+      className={classNameML}
+      style={styleML ? { ...S.fieldBlock, ...styleML } : S.fieldBlock}
     >
-      <span style={S.fieldBlockLabel}>{label}</span>
-      <div style={S.fieldBlockBox}>{children}</div>
+      <span style={S.fieldBlockLabel}>{labelML}</span>
+      <div style={S.fieldBlockBox}>{childrenML}</div>
     </div>
   );
 }
 
-function ChevronToggleIcon({ expanded }: { expanded: boolean }) {
+function ChevronToggleIcon({ expanded: expandedML }: { expanded: boolean }) {
   return (
     <svg
       width="20"
@@ -856,7 +856,7 @@ function ChevronToggleIcon({ expanded }: { expanded: boolean }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{
-        transform: expanded ? "rotate(180deg)" : "none",
+        transform: expandedML ? "rotate(180deg)" : "none",
         transition: "transform 120ms ease",
       }}
     >
@@ -872,34 +872,34 @@ function ChevronToggleIcon({ expanded }: { expanded: boolean }) {
 }
 
 function BookingNotes({
-  responses,
-  labels,
+  responses: responsesML,
+  labels: labelsML,
 }: {
   responses: unknown;
   labels: Record<string, string>;
 }) {
-  const entries =
-    responses && typeof responses === "object"
-      ? Object.entries(responses as Record<string, string>)
+  const entriesML =
+    responsesML && typeof responsesML === "object"
+      ? Object.entries(responsesML as Record<string, string>)
       : [];
 
-  if (entries.length === 0) {
-    return <span style={{ color: TEXT_MUTED }}>—</span>;
+  if (entriesML.length === 0) {
+    return <span style={{ color: TEXT_MUTED_ML }}>—</span>;
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-      {entries.map(([fieldKey, value]) => (
-        <span key={fieldKey}>{(labels[fieldKey] ?? fieldKey) + ": " + value}</span>
+      {entriesML.map(([fieldKeyML, valueML]) => (
+        <span key={fieldKeyML}>{(labelsML[fieldKeyML] ?? fieldKeyML) + ": " + valueML}</span>
       ))}
     </div>
   );
 }
 
 function EyeButton({
-  expanded,
-  onClick,
-  label,
+  expanded: expandedML,
+  onClick: onClickML,
+  label: labelML,
 }: {
   expanded: boolean;
   onClick: () => void;
@@ -911,148 +911,148 @@ function EyeButton({
       className="eb-tap"
       style={{
         ...S.iconButton,
-        ...(expanded ? { background: "#EAF1F8" } : {}),
+        ...(expandedML ? { background: "#EAF1F8" } : {}),
       }}
-      onClick={onClick}
-      aria-expanded={expanded}
-      aria-label={label}
+      onClick={onClickML}
+      aria-expanded={expandedML}
+      aria-label={labelML}
     >
       <img src="/eye-icon.svg" width={22} height={20} alt="" />
     </button>
   );
 }
 
-function whenLines(booking: BookingWithProductTitle): {
+function whenLinesML(bookingML: BookingWithProductTitle): {
   date: string;
   sub: string | null;
 } {
-  if (booking.bookingType === "MULTI_DAY") {
+  if (bookingML.bookingType === "MULTI_DAY") {
     return {
-      date: `${formatDateDisplay(booking.date)} \u2192 ${
-        booking.endDate ? formatDateDisplay(booking.endDate) : "—"
+      date: `${formatDateDisplayML(bookingML.date)} \u2192 ${
+        bookingML.endDate ? formatDateDisplayML(bookingML.endDate) : "—"
       }`,
       sub: null,
     };
   }
-  if (booking.bookingType === "FULL_DAY") {
-    return { date: formatDateDisplay(booking.date), sub: "Whole day" };
+  if (bookingML.bookingType === "FULL_DAY") {
+    return { date: formatDateDisplayML(bookingML.date), sub: "Whole day" };
   }
   return {
-    date: formatDateDisplay(booking.date),
-    sub: formatTimeRangeDisplay(booking.slotStart, booking.slotEnd),
+    date: formatDateDisplayML(bookingML.date),
+    sub: formatTimeRangeDisplayML(bookingML.slotStart, bookingML.slotEnd),
   };
 }
 
 
 function BookingDetails({
-  booking,
-  customFieldLabels,
-  onToggle,
+  booking: bookingML,
+  customFieldLabels: customFieldLabelsML,
+  onToggle: onToggleML,
 }: {
   booking: BookingWithProductTitle;
   customFieldLabels: Record<string, string>;
   onToggle?: () => void;
 }) {
-  const cancelFetcher = useFetcher();
-  const rescheduleFetcher = useFetcher();
-  const rescheduleSlotsFetcher = useFetcher();
-  const shopify = useAppBridge();
+  const cancelFetcherML = useFetcher();
+  const rescheduleFetcherML = useFetcher();
+  const rescheduleSlotsFetcherML = useFetcher();
+  const shopifyML = useAppBridge();
 
-  const [isRescheduling, setIsRescheduling] = useState(false);
-  const [newDate, setNewDate] = useState(booking.date);
-  const [newSlotStart, setNewSlotStart] = useState(booking.slotStart);
-  const [newEndDate, setNewEndDate] = useState(booking.endDate ?? "");
-  const needsTimeSlot =
-    booking.bookingType === "SLOT" || booking.bookingType === "BUNDLE";
-  const isMultiDay = booking.bookingType === "MULTI_DAY";
-  const canSaveReschedule = needsTimeSlot
-    ? !!newSlotStart
-    : isMultiDay
-      ? !!newDate && !!newEndDate && newEndDate > newDate
-      : !!newDate;
+  const [isReschedulingML, setIsReschedulingML] = useState(false);
+  const [newDateML, setNewDateML] = useState(bookingML.date);
+  const [newSlotStartML, setNewSlotStartML] = useState(bookingML.slotStart);
+  const [newEndDateML, setNewEndDateML] = useState(bookingML.endDate ?? "");
+  const needsTimeSlotML =
+    bookingML.bookingType === "SLOT" || bookingML.bookingType === "BUNDLE";
+  const isMultiDayML = bookingML.bookingType === "MULTI_DAY";
+  const canSaveRescheduleML = needsTimeSlotML
+    ? !!newSlotStartML
+    : isMultiDayML
+      ? !!newDateML && !!newEndDateML && newEndDateML > newDateML
+      : !!newDateML;
 
-  const rescheduleError =
-    rescheduleFetcher.data?.intent === "reschedule" &&
-    !rescheduleFetcher.data.ok
-      ? rescheduleFetcher.data.error
+  const rescheduleErrorML =
+    rescheduleFetcherML.data?.intent === "reschedule" &&
+    !rescheduleFetcherML.data.ok
+      ? rescheduleFetcherML.data.error
       : null;
 
-  const rescheduleSlots: TimeSlot[] =
-    rescheduleSlotsFetcher.data?.intent === "loadRescheduleSlots" &&
-    rescheduleSlotsFetcher.data.ok
-      ? rescheduleSlotsFetcher.data.slots
+  const rescheduleSlotsML: TimeSlot[] =
+    rescheduleSlotsFetcherML.data?.intent === "loadRescheduleSlots" &&
+    rescheduleSlotsFetcherML.data.ok
+      ? rescheduleSlotsFetcherML.data.slots
       : [];
-  const isLoadingRescheduleSlots = rescheduleSlotsFetcher.state !== "idle";
+  const isLoadingRescheduleSlotsML = rescheduleSlotsFetcherML.state !== "idle";
 
   useEffect(() => {
     if (
-      rescheduleFetcher.data?.intent === "reschedule" &&
-      rescheduleFetcher.data.ok
+      rescheduleFetcherML.data?.intent === "reschedule" &&
+      rescheduleFetcherML.data.ok
     ) {
-      shopify.toast.show("Booking rescheduled");
-      setIsRescheduling(false);
+      shopifyML.toast.show("Booking rescheduled");
+      setIsReschedulingML(false);
     }
-  }, [rescheduleFetcher.data, shopify]);
+  }, [rescheduleFetcherML.data, shopifyML]);
 
   useEffect(() => {
-    if (cancelFetcher.data?.intent === "cancel" && cancelFetcher.data.ok) {
-      shopify.toast.show("Booking cancelled");
+    if (cancelFetcherML.data?.intent === "cancel" && cancelFetcherML.data.ok) {
+      shopifyML.toast.show("Booking cancelled");
     }
-  }, [cancelFetcher.data, shopify]);
+  }, [cancelFetcherML.data, shopifyML]);
 
   useEffect(() => {
-    if (!isRescheduling || !newDate || !needsTimeSlot) return;
-    rescheduleSlotsFetcher.submit(
-      { intent: "loadRescheduleSlots", id: booking.id, date: newDate },
+    if (!isReschedulingML || !newDateML || !needsTimeSlotML) return;
+    rescheduleSlotsFetcherML.submit(
+      { intent: "loadRescheduleSlots", id: bookingML.id, date: newDateML },
       { method: "POST" },
     );
-  }, [isRescheduling, newDate]);
+  }, [isReschedulingML, newDateML]);
 
   useEffect(() => {
-    if (rescheduleSlots.length === 0) return;
-    const stillValid = rescheduleSlots.some((s) => s.start === newSlotStart);
-    if (stillValid) return;
-    const currentSlot = rescheduleSlots.find((s) => s.start === booking.slotStart);
-    const firstAvailable = rescheduleSlots.find((s) => s.available);
-    setNewSlotStart((currentSlot ?? firstAvailable ?? rescheduleSlots[0]).start);
-  }, [rescheduleSlots]);
+    if (rescheduleSlotsML.length === 0) return;
+    const stillValidML = rescheduleSlotsML.some((sML) => sML.start === newSlotStartML);
+    if (stillValidML) return;
+    const currentSlotML = rescheduleSlotsML.find((sML) => sML.start === bookingML.slotStart);
+    const firstAvailableML = rescheduleSlotsML.find((sML) => sML.available);
+    setNewSlotStartML((currentSlotML ?? firstAvailableML ?? rescheduleSlotsML[0]).start);
+  }, [rescheduleSlotsML]);
 
-  const handleCancel = () => {
-    cancelFetcher.submit(
-      { intent: "cancel", id: booking.id },
+  const handleCancelML = () => {
+    cancelFetcherML.submit(
+      { intent: "cancel", id: bookingML.id },
       { method: "POST" },
     );
   };
 
-  const handleReschedule = () => {
-    rescheduleFetcher.submit(
+  const handleRescheduleML = () => {
+    rescheduleFetcherML.submit(
       {
         intent: "reschedule",
-        id: booking.id,
-        date: newDate,
-        slotStart: newSlotStart,
-        endDate: isMultiDay ? newEndDate : "",
+        id: bookingML.id,
+        date: newDateML,
+        slotStart: newSlotStartML,
+        endDate: isMultiDayML ? newEndDateML : "",
       },
       { method: "POST" },
     );
   };
 
-  const isCompleted = booking.displayStatus === "COMPLETED";
-  const isCancelled = booking.status === "CANCELLED";
-  const statusColors =
-    STATUS_COLORS[booking.displayStatus] ?? STATUS_COLORS.CONFIRMED;
+  const isCompletedML = bookingML.displayStatus === "COMPLETED";
+  const isCancelledML = bookingML.status === "CANCELLED";
+  const statusColorsML =
+    STATUS_COLORS_ML[bookingML.displayStatus] ?? STATUS_COLORS_ML.CONFIRMED;
 
-  const dateLabel =
-    booking.bookingType === "MULTI_DAY"
-      ? `${formatDateDisplay(booking.date)} \u2192 ${
-          booking.endDate ? formatDateDisplay(booking.endDate) : "—"
+  const dateLabelML =
+    bookingML.bookingType === "MULTI_DAY"
+      ? `${formatDateDisplayML(bookingML.date)} \u2192 ${
+          bookingML.endDate ? formatDateDisplayML(bookingML.endDate) : "—"
         }`
-      : formatDateDisplay(booking.date);
+      : formatDateDisplayML(bookingML.date);
 
-  const timeLabel =
-    booking.bookingType === "MULTI_DAY"
+  const timeLabelML =
+    bookingML.bookingType === "MULTI_DAY"
       ? null
-      : formatTimeRangeDisplay(booking.slotStart, booking.slotEnd);
+      : formatTimeRangeDisplayML(bookingML.slotStart, bookingML.slotEnd);
 
   return (
     <div style={S.detailsCard}>
@@ -1060,12 +1060,12 @@ function BookingDetails({
       <div style={S.detailsHeaderRow}>
         <div className="eb-chip-group" style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
-          <span style={S.customerChip}>{booking.customerName ?? "—"}</span>
+          <span style={S.customerChip}>{bookingML.customerName ?? "—"}</span>
         </div>
 
         <div className="eb-chip-group" style={S.dateTimeChipsRow}>
-          <span style={S.dateTimeChip}>{dateLabel}</span>
-          {timeLabel && <span style={S.dateTimeChip}>{timeLabel}</span>}
+          <span style={S.dateTimeChip}>{dateLabelML}</span>
+          {timeLabelML && <span style={S.dateTimeChip}>{timeLabelML}</span>}
         </div>
 
         <div
@@ -1074,18 +1074,18 @@ function BookingDetails({
           <span
             style={{
               ...S.statusChipLarge,
-              background: statusColors.bg,
-              color: statusColors.fg,
+              background: statusColorsML.bg,
+              color: statusColorsML.fg,
             }}
           >
-            {booking.displayStatus.toLowerCase()}
+            {bookingML.displayStatus.toLowerCase()}
           </span>
-          {onToggle && (
+          {onToggleML && (
             <button
               type="button"
               className="eb-tap"
               style={S.chevronToggle}
-              onClick={onToggle}
+              onClick={onToggleML}
               aria-label="Collapse booking details"
             >
               <ChevronToggleIcon expanded />
@@ -1098,20 +1098,20 @@ function BookingDetails({
 
       <div className="eb-fields-grid" style={S.topFieldsRow}>
         <FieldBlock label="Customer Mail">
-          {booking.customerEmail ?? "—"}
+          {bookingML.customerEmail ?? "—"}
         </FieldBlock>
         <FieldBlock label="Customer Phone">
-          {booking.customerPhone ?? "—"}
+          {bookingML.customerPhone ?? "—"}
         </FieldBlock>
         <FieldBlock label="Booking Type">
-          {TYPE_SHORT_LABELS[booking.bookingType]}
+          {TYPE_SHORT_LABELS_ML[bookingML.bookingType]}
         </FieldBlock>
-        <FieldBlock label="Location">{booking.location ?? "—"}</FieldBlock>
+        <FieldBlock label="Location">{bookingML.location ?? "—"}</FieldBlock>
       </div>
 
       <hr style={S.detailsDivider} />
 
-      {isRescheduling ? (
+      {isReschedulingML ? (
         <div
           className="eb-reschedule-row eb-touch"
           style={{
@@ -1125,59 +1125,59 @@ function BookingDetails({
             type="date"
             aria-label="New date"
             style={{ ...S.input, width: "160px", cursor: "pointer" }}
-            value={newDate}
-            onClick={(e) => {
-              const el = e.currentTarget;
-              if (typeof el.showPicker === "function") {
-                el.showPicker();
+            value={newDateML}
+            onClick={(eML) => {
+              const elML = eML.currentTarget;
+              if (typeof elML.showPicker === "function") {
+                elML.showPicker();
               }
             }}
-            onChange={(e) => setNewDate(e.target.value)}
+            onChange={(eML) => setNewDateML(eML.target.value)}
           />
-          {isMultiDay && (
+          {isMultiDayML && (
             <input
               type="date"
               aria-label="New check-out date"
               style={{ ...S.input, width: "160px", cursor: "pointer" }}
-              value={newEndDate}
-              min={newDate || undefined}
-              onClick={(e) => {
-                const el = e.currentTarget;
-                if (typeof el.showPicker === "function") {
-                  el.showPicker();
+              value={newEndDateML}
+              min={newDateML || undefined}
+              onClick={(eML) => {
+                const elML = eML.currentTarget;
+                if (typeof elML.showPicker === "function") {
+                  elML.showPicker();
                 }
               }}
-              onChange={(e) => setNewEndDate(e.target.value)}
+              onChange={(eML) => setNewEndDateML(eML.target.value)}
             />
           )}
-          {needsTimeSlot && (
+          {needsTimeSlotML && (
             <select
               aria-label="New time"
               style={{ ...S.input, width: "240px" }}
-              value={newSlotStart}
-              disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
-              onChange={(e) => setNewSlotStart(e.target.value)}
+              value={newSlotStartML}
+              disabled={isLoadingRescheduleSlotsML || rescheduleSlotsML.length === 0}
+              onChange={(eML) => setNewSlotStartML(eML.target.value)}
             >
-              {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+              {isLoadingRescheduleSlotsML && rescheduleSlotsML.length === 0 && (
                 <option value="">Loading times…</option>
               )}
-              {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+              {!isLoadingRescheduleSlotsML && rescheduleSlotsML.length === 0 && (
                 <option value="">No times on this date</option>
               )}
-              {rescheduleSlots.map((slot) => (
+              {rescheduleSlotsML.map((slotML) => (
                 <option
-                  key={slot.startsAt}
-                  value={slot.start}
-                  disabled={!slot.available && slot.start !== booking.slotStart}
+                  key={slotML.startsAt}
+                  value={slotML.start}
+                  disabled={!slotML.available && slotML.start !== bookingML.slotStart}
                 >
-                  {formatTimeRangeDisplay(slot.start, slot.end)}
-                  {!slot.available && slot.start !== booking.slotStart
+                  {formatTimeRangeDisplayML(slotML.start, slotML.end)}
+                  {!slotML.available && slotML.start !== bookingML.slotStart
                     ? " (booked)"
-                    : typeof slot.remainingCapacity === "number"
+                    : typeof slotML.remainingCapacity === "number"
                       ? ` (${
-                          slot.remainingCapacity === 1
+                          slotML.remainingCapacity === 1
                             ? "1 spot left"
-                            : `${slot.remainingCapacity} spots left`
+                            : `${slotML.remainingCapacity} spots left`
                         })`
                       : ""}
                 </option>
@@ -1186,26 +1186,26 @@ function BookingDetails({
           )}
           <button
             type="button"
-            style={{ ...S.primaryButton, ...(!canSaveReschedule ? { opacity: 0.5 } : {}) }}
-            disabled={!canSaveReschedule || rescheduleFetcher.state !== "idle"}
-            onClick={handleReschedule}
+            style={{ ...S.primaryButton, ...(!canSaveRescheduleML ? { opacity: 0.5 } : {}) }}
+            disabled={!canSaveRescheduleML || rescheduleFetcherML.state !== "idle"}
+            onClick={handleRescheduleML}
           >
             Save
           </button>
           <button
             type="button"
             style={{ ...S.ghostButton }}
-            onClick={() => setIsRescheduling(false)}
+            onClick={() => setIsReschedulingML(false)}
           >
             Cancel edit
           </button>
         </div>
       ) : (
         <div className="eb-fields-grid" style={S.topFieldsRow}>
-          <FieldBlock label="Booking Date">{dateLabel}</FieldBlock>
-          <FieldBlock label="Booking Time">{timeLabel ?? "Whole day"}</FieldBlock>
-          <FieldBlock label="Quantity">{booking.quantity}</FieldBlock>
-          <FieldBlock label="Customer Note">{booking.note ?? "—"}</FieldBlock>
+          <FieldBlock label="Booking Date">{dateLabelML}</FieldBlock>
+          <FieldBlock label="Booking Time">{timeLabelML ?? "Whole day"}</FieldBlock>
+          <FieldBlock label="Quantity">{bookingML.quantity}</FieldBlock>
+          <FieldBlock label="Customer Note">{bookingML.note ?? "—"}</FieldBlock>
         </div>
       )}
 
@@ -1214,23 +1214,23 @@ function BookingDetails({
       <div className="eb-action-row" style={S.actionRow}>
         <FieldBlock label="Note" style={S.actionRowField} className="eb-action-note">
           <BookingNotes
-            responses={booking.customFieldResponses}
-            labels={customFieldLabels}
+            responses={bookingML.customFieldResponses}
+            labels={customFieldLabelsML}
           />
         </FieldBlock>
         <FieldBlock label="Booked at" style={S.actionRowFieldWide} className="eb-action-booked">
-          {formatInstantInTimezone(booking.createdAt, booking.locationTimezone)}
+          {formatInstantInTimezoneML(bookingML.createdAt, bookingML.locationTimezone)}
           {" · "}
-          {bookingSourceLabel(booking.source)}
+          {bookingSourceLabelML(bookingML.source)}
         </FieldBlock>
 
-        {!isCancelled && !isCompleted ? (
+        {!isCancelledML && !isCompletedML ? (
           <div className="eb-action-buttons eb-touch" style={S.cancelBookingWrap}>
-            {!isRescheduling && (
+            {!isReschedulingML && (
               <button
                 type="button"
                 style={S.rescheduleBookingBtn}
-                onClick={() => setIsRescheduling(true)}
+                onClick={() => setIsReschedulingML(true)}
               >
                 Reschedule
               </button>
@@ -1238,7 +1238,7 @@ function BookingDetails({
             <button
               type="button"
               style={S.cancelBookingBtn}
-              onClick={handleCancel}
+              onClick={handleCancelML}
             >
               Cancel Booking
             </button>
@@ -1248,140 +1248,140 @@ function BookingDetails({
         )}
       </div>
 
-      {rescheduleError && <div style={S.errorBanner}>{rescheduleError}</div>}
+      {rescheduleErrorML && <div style={S.errorBanner}>{rescheduleErrorML}</div>}
     </div>
   );
 }
 
 
-const SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5"];
+const SLOT_LABELS_ML = ["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5"];
 
-function slotValueFor(booking: BookingWithProductTitle): string {
-  const when = whenLines(booking);
-  return when.sub ? `${when.date} · ${when.sub}` : when.date;
+function slotValueForML(bookingML: BookingWithProductTitle): string {
+  const whenML = whenLinesML(bookingML);
+  return whenML.sub ? `${whenML.date} · ${whenML.sub}` : whenML.date;
 }
 
 function BundleGroupDetails({
-  group,
-  customFieldLabels,
-  onToggle,
+  group: groupML,
+  customFieldLabels: customFieldLabelsML,
+  onToggle: onToggleML,
 }: {
   group: BookingGroup;
   customFieldLabels: Record<string, string>;
   onToggle?: () => void;
 }) {
-  const shopify = useAppBridge();
-  const revalidator = useRevalidator();
-  const [isCancelling, setIsCancelling] = useState(false);
-  const rescheduleFetcher = useFetcher();
-  const rescheduleSlotsFetcher = useFetcher();
+  const shopifyML = useAppBridge();
+  const revalidatorML = useRevalidator();
+  const [isCancellingML, setIsCancellingML] = useState(false);
+  const rescheduleFetcherML = useFetcher();
+  const rescheduleSlotsFetcherML = useFetcher();
 
-  const first = group.bookings[0];
-  const activeBookings = group.bookings.filter((b) => b.status !== "CANCELLED");
+  const firstML = groupML.bookings[0];
+  const activeBookingsML = groupML.bookings.filter((bML) => bML.status !== "CANCELLED");
 
-  const [isRescheduling, setIsRescheduling] = useState(false);
-  const [rescheduleId, setRescheduleId] = useState(activeBookings[0]?.id ?? "");
-  const rescheduleTarget =
-    activeBookings.find((b) => b.id === rescheduleId) ?? activeBookings[0];
-  const [newDate, setNewDate] = useState(rescheduleTarget?.date ?? "");
-  const [newSlotStart, setNewSlotStart] = useState(
-    rescheduleTarget?.slotStart ?? "",
+  const [isReschedulingML, setIsReschedulingML] = useState(false);
+  const [rescheduleIdML, setRescheduleIdML] = useState(activeBookingsML[0]?.id ?? "");
+  const rescheduleTargetML =
+    activeBookingsML.find((bML) => bML.id === rescheduleIdML) ?? activeBookingsML[0];
+  const [newDateML, setNewDateML] = useState(rescheduleTargetML?.date ?? "");
+  const [newSlotStartML, setNewSlotStartML] = useState(
+    rescheduleTargetML?.slotStart ?? "",
   );
 
-  const rescheduleSlots: TimeSlot[] =
-    rescheduleSlotsFetcher.data?.intent === "loadRescheduleSlots" &&
-    rescheduleSlotsFetcher.data.ok
-      ? rescheduleSlotsFetcher.data.slots
+  const rescheduleSlotsML: TimeSlot[] =
+    rescheduleSlotsFetcherML.data?.intent === "loadRescheduleSlots" &&
+    rescheduleSlotsFetcherML.data.ok
+      ? rescheduleSlotsFetcherML.data.slots
       : [];
-  const isLoadingRescheduleSlots = rescheduleSlotsFetcher.state !== "idle";
-  const rescheduleError =
-    rescheduleFetcher.data?.intent === "reschedule" &&
-    !rescheduleFetcher.data.ok
-      ? rescheduleFetcher.data.error
+  const isLoadingRescheduleSlotsML = rescheduleSlotsFetcherML.state !== "idle";
+  const rescheduleErrorML =
+    rescheduleFetcherML.data?.intent === "reschedule" &&
+    !rescheduleFetcherML.data.ok
+      ? rescheduleFetcherML.data.error
       : null;
 
   useEffect(() => {
     if (
-      rescheduleFetcher.data?.intent === "reschedule" &&
-      rescheduleFetcher.data.ok
+      rescheduleFetcherML.data?.intent === "reschedule" &&
+      rescheduleFetcherML.data.ok
     ) {
-      shopify.toast.show("Session rescheduled");
-      setIsRescheduling(false);
+      shopifyML.toast.show("Session rescheduled");
+      setIsReschedulingML(false);
     }
-  }, [rescheduleFetcher.data, shopify]);
+  }, [rescheduleFetcherML.data, shopifyML]);
 
   useEffect(() => {
-    if (!isRescheduling || !rescheduleTarget || !newDate) return;
-    rescheduleSlotsFetcher.submit(
-      { intent: "loadRescheduleSlots", id: rescheduleTarget.id, date: newDate },
+    if (!isReschedulingML || !rescheduleTargetML || !newDateML) return;
+    rescheduleSlotsFetcherML.submit(
+      { intent: "loadRescheduleSlots", id: rescheduleTargetML.id, date: newDateML },
       { method: "POST" },
     );
-  }, [isRescheduling, rescheduleTarget?.id, newDate]);
+  }, [isReschedulingML, rescheduleTargetML?.id, newDateML]);
 
   useEffect(() => {
-    if (rescheduleSlots.length === 0 || !rescheduleTarget) return;
-    if (rescheduleSlots.some((s) => s.start === newSlotStart)) return;
-    const current = rescheduleSlots.find(
-      (s) => s.start === rescheduleTarget.slotStart,
+    if (rescheduleSlotsML.length === 0 || !rescheduleTargetML) return;
+    if (rescheduleSlotsML.some((sML) => sML.start === newSlotStartML)) return;
+    const currentML = rescheduleSlotsML.find(
+      (sML) => sML.start === rescheduleTargetML.slotStart,
     );
-    const firstAvailable = rescheduleSlots.find((s) => s.available);
-    setNewSlotStart((current ?? firstAvailable ?? rescheduleSlots[0]).start);
-  }, [rescheduleSlots]);
+    const firstAvailableML = rescheduleSlotsML.find((sML) => sML.available);
+    setNewSlotStartML((currentML ?? firstAvailableML ?? rescheduleSlotsML[0]).start);
+  }, [rescheduleSlotsML]);
 
-  const startRescheduling = () => {
-    const target = activeBookings[0];
-    if (!target) return;
-    setRescheduleId(target.id);
-    setNewDate(target.date);
-    setNewSlotStart(target.slotStart);
-    setIsRescheduling(true);
+  const startReschedulingML = () => {
+    const targetML = activeBookingsML[0];
+    if (!targetML) return;
+    setRescheduleIdML(targetML.id);
+    setNewDateML(targetML.date);
+    setNewSlotStartML(targetML.slotStart);
+    setIsReschedulingML(true);
   };
 
-  const pickSession = (id: string) => {
-    const target = activeBookings.find((b) => b.id === id);
-    if (!target) return;
-    setRescheduleId(id);
-    setNewDate(target.date);
-    setNewSlotStart(target.slotStart);
+  const pickSessionML = (idML: string) => {
+    const targetML = activeBookingsML.find((bML) => bML.id === idML);
+    if (!targetML) return;
+    setRescheduleIdML(idML);
+    setNewDateML(targetML.date);
+    setNewSlotStartML(targetML.slotStart);
   };
 
-  const handleRescheduleSession = () => {
-    if (!rescheduleTarget) return;
-    rescheduleFetcher.submit(
+  const handleRescheduleSessionML = () => {
+    if (!rescheduleTargetML) return;
+    rescheduleFetcherML.submit(
       {
         intent: "reschedule",
-        id: rescheduleTarget.id,
-        date: newDate,
-        slotStart: newSlotStart,
+        id: rescheduleTargetML.id,
+        date: newDateML,
+        slotStart: newSlotStartML,
         endDate: "",
       },
       { method: "POST" },
     );
   };
-  const isCancelled = activeBookings.length === 0;
-  const isCompleted =
-    !isCancelled && group.bookings.every((b) => b.displayStatus === "COMPLETED");
+  const isCancelledML = activeBookingsML.length === 0;
+  const isCompletedML =
+    !isCancelledML && groupML.bookings.every((bML) => bML.displayStatus === "COMPLETED");
 
-  const statuses = new Set(group.bookings.map((b) => b.displayStatus));
-  const groupStatus = statuses.size > 1 ? "MIXED" : first.displayStatus;
-  const statusColors = STATUS_COLORS[groupStatus] ?? STATUS_COLORS.CONFIRMED;
+  const statusesML = new Set(groupML.bookings.map((bML) => bML.displayStatus));
+  const groupStatusML = statusesML.size > 1 ? "MIXED" : firstML.displayStatus;
+  const statusColorsML = STATUS_COLORS_ML[groupStatusML] ?? STATUS_COLORS_ML.CONFIRMED;
 
-  const when = whenLines(first);
+  const whenML = whenLinesML(firstML);
 
-  const handleCancelAll = async () => {
-    setIsCancelling(true);
-    for (const booking of activeBookings) {
-      const formData = new FormData();
-      formData.set("intent", "cancel");
-      formData.set("id", booking.id);
+  const handleCancelAllML = async () => {
+    setIsCancellingML(true);
+    for (const bookingML of activeBookingsML) {
+      const formDataML = new FormData();
+      formDataML.set("intent", "cancel");
+      formDataML.set("id", bookingML.id);
       await fetch(window.location.pathname + window.location.search, {
         method: "POST",
-        body: formData,
+        body: formDataML,
       });
     }
-    setIsCancelling(false);
-    shopify.toast.show("Bundle cancelled");
-    revalidator.revalidate();
+    setIsCancellingML(false);
+    shopifyML.toast.show("Bundle cancelled");
+    revalidatorML.revalidate();
   };
 
   return (
@@ -1390,12 +1390,12 @@ function BundleGroupDetails({
       <div style={S.detailsHeaderRow}>
         <div className="eb-chip-group" style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
-          <span style={S.customerChip}>{first.customerName ?? "—"}</span>
+          <span style={S.customerChip}>{firstML.customerName ?? "—"}</span>
         </div>
 
         <div className="eb-chip-group" style={S.dateTimeChipsRow}>
-          <span style={S.dateTimeChip}>{when.date}</span>
-          {when.sub && <span style={S.dateTimeChip}>{when.sub}</span>}
+          <span style={S.dateTimeChip}>{whenML.date}</span>
+          {whenML.sub && <span style={S.dateTimeChip}>{whenML.sub}</span>}
         </div>
 
         <div
@@ -1404,18 +1404,18 @@ function BundleGroupDetails({
           <span
             style={{
               ...S.statusChipLarge,
-              background: statusColors.bg,
-              color: statusColors.fg,
+              background: statusColorsML.bg,
+              color: statusColorsML.fg,
             }}
           >
-            {groupStatus.toLowerCase()}
+            {groupStatusML.toLowerCase()}
           </span>
-          {onToggle && (
+          {onToggleML && (
             <button
               type="button"
               className="eb-tap"
               style={S.chevronToggle}
-              onClick={onToggle}
+              onClick={onToggleML}
               aria-label="Collapse booking details"
             >
               <ChevronToggleIcon expanded />
@@ -1428,39 +1428,39 @@ function BundleGroupDetails({
 
       <div className="eb-fields-grid" style={S.topFieldsRow}>
         <FieldBlock label="Customer Mail">
-          {first.customerEmail ?? "—"}
+          {firstML.customerEmail ?? "—"}
         </FieldBlock>
         <FieldBlock label="Customer Phone">
-          {first.customerPhone ?? "—"}
+          {firstML.customerPhone ?? "—"}
         </FieldBlock>
         <FieldBlock label="Booking Type">
-          {TYPE_SHORT_LABELS[first.bookingType]}
+          {TYPE_SHORT_LABELS_ML[firstML.bookingType]}
         </FieldBlock>
-        <FieldBlock label="Location">{first.location ?? "—"}</FieldBlock>
+        <FieldBlock label="Location">{firstML.location ?? "—"}</FieldBlock>
       </div>
 
       <hr style={S.detailsDivider} />
 
       <div className="eb-fields-grid" style={S.topFieldsRow}>
-        <FieldBlock label="Booking Date">{when.date}</FieldBlock>
-        <FieldBlock label="Booking Time">{when.sub ?? "Whole day"}</FieldBlock>
-        <FieldBlock label="Quantity">{first.quantity}</FieldBlock>
-        <FieldBlock label="Customer Note">{first.note ?? "—"}</FieldBlock>
+        <FieldBlock label="Booking Date">{whenML.date}</FieldBlock>
+        <FieldBlock label="Booking Time">{whenML.sub ?? "Whole day"}</FieldBlock>
+        <FieldBlock label="Quantity">{firstML.quantity}</FieldBlock>
+        <FieldBlock label="Customer Note">{firstML.note ?? "—"}</FieldBlock>
       </div>
 
       <hr style={S.detailsDivider} />
 
       {Array.from(
-        { length: Math.ceil(Math.min(group.bookings.length, SLOT_LABELS.length) / 3) },
-        (_, rowIndex) => (
-          <Fragment key={rowIndex}>
+        { length: Math.ceil(Math.min(groupML.bookings.length, SLOT_LABELS_ML.length) / 3) },
+        (_, rowIndexML) => (
+          <Fragment key={rowIndexML}>
             <div className="eb-slot-row" style={S.fieldsRow}>
-              {group.bookings.slice(rowIndex * 3, rowIndex * 3 + 3).map((booking, i) => (
+              {groupML.bookings.slice(rowIndexML * 3, rowIndexML * 3 + 3).map((bookingML, iML) => (
                 <FieldBlock
-                  key={booking.id}
-                  label={SLOT_LABELS[rowIndex * 3 + i] ?? `Slot ${rowIndex * 3 + i + 1}`}
+                  key={bookingML.id}
+                  label={SLOT_LABELS_ML[rowIndexML * 3 + iML] ?? `Slot ${rowIndexML * 3 + iML + 1}`}
                 >
-                  {slotValueFor(booking)}
+                  {slotValueForML(bookingML)}
                 </FieldBlock>
               ))}
             </div>
@@ -1469,7 +1469,7 @@ function BundleGroupDetails({
         ),
       )}
 
-      {isRescheduling && rescheduleTarget && (
+      {isReschedulingML && rescheduleTargetML && (
         <>
           <div
             className="eb-reschedule-row eb-touch"
@@ -1483,12 +1483,12 @@ function BundleGroupDetails({
             <select
               aria-label="Session to reschedule"
               style={{ ...S.input, width: "200px" }}
-              value={rescheduleTarget.id}
-              onChange={(e) => pickSession(e.target.value)}
+              value={rescheduleTargetML.id}
+              onChange={(eML) => pickSessionML(eML.target.value)}
             >
-              {activeBookings.map((b, i) => (
-                <option key={b.id} value={b.id}>
-                  {`Slot ${group.bookings.indexOf(b) + 1} · ${formatDateDisplay(b.date)}`}
+              {activeBookingsML.map((bML, iML) => (
+                <option key={bML.id} value={bML.id}>
+                  {`Slot ${groupML.bookings.indexOf(bML) + 1} · ${formatDateDisplayML(bML.date)}`}
                 </option>
               ))}
             </select>
@@ -1496,38 +1496,38 @@ function BundleGroupDetails({
               type="date"
               aria-label="New date"
               style={{ ...S.input, width: "160px", cursor: "pointer" }}
-              value={newDate}
-              onClick={(e) => {
-                const el = e.currentTarget;
-                if (typeof el.showPicker === "function") {
-                  el.showPicker();
+              value={newDateML}
+              onClick={(eML) => {
+                const elML = eML.currentTarget;
+                if (typeof elML.showPicker === "function") {
+                  elML.showPicker();
                 }
               }}
-              onChange={(e) => setNewDate(e.target.value)}
+              onChange={(eML) => setNewDateML(eML.target.value)}
             />
             <select
               aria-label="New time"
               style={{ ...S.input, width: "240px" }}
-              value={newSlotStart}
-              disabled={isLoadingRescheduleSlots || rescheduleSlots.length === 0}
-              onChange={(e) => setNewSlotStart(e.target.value)}
+              value={newSlotStartML}
+              disabled={isLoadingRescheduleSlotsML || rescheduleSlotsML.length === 0}
+              onChange={(eML) => setNewSlotStartML(eML.target.value)}
             >
-              {isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+              {isLoadingRescheduleSlotsML && rescheduleSlotsML.length === 0 && (
                 <option value="">Loading times…</option>
               )}
-              {!isLoadingRescheduleSlots && rescheduleSlots.length === 0 && (
+              {!isLoadingRescheduleSlotsML && rescheduleSlotsML.length === 0 && (
                 <option value="">No times on this date</option>
               )}
-              {rescheduleSlots.map((slot) => (
+              {rescheduleSlotsML.map((slotML) => (
                 <option
-                  key={slot.startsAt}
-                  value={slot.start}
+                  key={slotML.startsAt}
+                  value={slotML.start}
                   disabled={
-                    !slot.available && slot.start !== rescheduleTarget.slotStart
+                    !slotML.available && slotML.start !== rescheduleTargetML.slotStart
                   }
                 >
-                  {formatTimeRangeDisplay(slot.start, slot.end)}
-                  {!slot.available && slot.start !== rescheduleTarget.slotStart
+                  {formatTimeRangeDisplayML(slotML.start, slotML.end)}
+                  {!slotML.available && slotML.start !== rescheduleTargetML.slotStart
                     ? " (booked)"
                     : ""}
                 </option>
@@ -1535,21 +1535,21 @@ function BundleGroupDetails({
             </select>
             <button
               type="button"
-              style={{ ...S.primaryButton, ...(!newSlotStart ? { opacity: 0.5 } : {}) }}
-              disabled={!newSlotStart || rescheduleFetcher.state !== "idle"}
-              onClick={handleRescheduleSession}
+              style={{ ...S.primaryButton, ...(!newSlotStartML ? { opacity: 0.5 } : {}) }}
+              disabled={!newSlotStartML || rescheduleFetcherML.state !== "idle"}
+              onClick={handleRescheduleSessionML}
             >
               Save
             </button>
             <button
               type="button"
               style={{ ...S.ghostButton }}
-              onClick={() => setIsRescheduling(false)}
+              onClick={() => setIsReschedulingML(false)}
             >
               Cancel edit
             </button>
           </div>
-          {rescheduleError && <div style={S.errorBanner}>{rescheduleError}</div>}
+          {rescheduleErrorML && <div style={S.errorBanner}>{rescheduleErrorML}</div>}
           <hr style={S.detailsDivider} />
         </>
       )}
@@ -1557,34 +1557,34 @@ function BundleGroupDetails({
       <div className="eb-action-row" style={S.actionRow}>
         <FieldBlock label="Note" style={S.actionRowField} className="eb-action-note">
           <BookingNotes
-            responses={first.customFieldResponses}
-            labels={customFieldLabels}
+            responses={firstML.customFieldResponses}
+            labels={customFieldLabelsML}
           />
         </FieldBlock>
         <FieldBlock label="Booked at" style={S.actionRowFieldWide} className="eb-action-booked">
-          {formatInstantInTimezone(first.createdAt, first.locationTimezone)}
+          {formatInstantInTimezoneML(firstML.createdAt, firstML.locationTimezone)}
           {" · "}
-          {bookingSourceLabel(first.source)}
+          {bookingSourceLabelML(firstML.source)}
         </FieldBlock>
 
-        {!isCancelled && !isCompleted ? (
+        {!isCancelledML && !isCompletedML ? (
           <div className="eb-action-buttons eb-touch" style={S.cancelBookingWrap}>
-            {!isRescheduling && (
+            {!isReschedulingML && (
               <button
                 type="button"
                 style={S.rescheduleBookingBtn}
-                onClick={startRescheduling}
+                onClick={startReschedulingML}
               >
                 Reschedule
               </button>
             )}
             <button
               type="button"
-              style={{ ...S.cancelBookingBtn, ...(isCancelling ? { opacity: 0.5 } : {}) }}
-              disabled={isCancelling}
-              onClick={handleCancelAll}
+              style={{ ...S.cancelBookingBtn, ...(isCancellingML ? { opacity: 0.5 } : {}) }}
+              disabled={isCancellingML}
+              onClick={handleCancelAllML}
             >
-              {isCancelling ? "Cancelling…" : "Cancel Booking"}
+              {isCancellingML ? "Cancelling…" : "Cancel Booking"}
             </button>
           </div>
         ) : (
@@ -1596,17 +1596,17 @@ function BundleGroupDetails({
 }
 
 
-const COLUMN_COUNT = 6;
+const COLUMN_COUNT_ML = 6;
 
 function SingleRow({
-  booking,
-  customFieldLabels,
+  booking: bookingML,
+  customFieldLabels: customFieldLabelsML,
 }: {
   booking: BookingWithProductTitle;
   customFieldLabels: Record<string, string>;
 }) {
-  const [open, setOpen] = useState(false);
-  const when = whenLines(booking);
+  const [openML, setOpenML] = useState(false);
+  const whenML = whenLinesML(bookingML);
 
   return (
     <Fragment>
@@ -1614,63 +1614,63 @@ function SingleRow({
         <td
           className="eb-cell-primary"
           style={S.td}
-          title={booking.customerName ?? undefined}
+          title={bookingML.customerName ?? undefined}
         >
-          {booking.customerName ?? "—"}
+          {bookingML.customerName ?? "—"}
         </td>
-        <td data-label="Product" style={S.td} title={booking.productTitle}>
-          {booking.productTitle}
+        <td data-label="Product" style={S.td} title={bookingML.productTitle}>
+          {bookingML.productTitle}
         </td>
         <td data-label="Status" style={{ ...S.td, ...S.tdCenter }}>
-          <StatusPill status={booking.displayStatus} />
+          <StatusPill status={bookingML.displayStatus} />
         </td>
         <td data-label="Type" style={{ ...S.td, ...S.tdCenter }}>
-          {TYPE_SHORT_LABELS[booking.bookingType]}
+          {TYPE_SHORT_LABELS_ML[bookingML.bookingType]}
         </td>
         <td data-label="Date" style={{ ...S.td, ...S.tdCenter }}>
           <div className="eb-cell-value">
-            {booking.bookingType === "MULTI_DAY" ? (
+            {bookingML.bookingType === "MULTI_DAY" ? (
               <>
-                <div>{formatDateDisplay(booking.date)}</div>
+                <div>{formatDateDisplayML(bookingML.date)}</div>
                 <div
                   aria-hidden="true"
                   style={{
                     fontSize: "12px",
                     lineHeight: "12px",
-                    color: TEXT_MUTED,
+                    color: TEXT_MUTED_ML,
                   }}
                 >
                   ↓
                 </div>
                 <div>
-                  {booking.endDate ? formatDateDisplay(booking.endDate) : "—"}
+                  {bookingML.endDate ? formatDateDisplayML(bookingML.endDate) : "—"}
                 </div>
               </>
             ) : (
               <>
-                {when.date}
-                {when.sub && <span style={S.subLine}>{when.sub}</span>}
+                {whenML.date}
+                {whenML.sub && <span style={S.subLine}>{whenML.sub}</span>}
               </>
             )}
           </div>
         </td>
         <td className="eb-cell-action" style={{ ...S.td, ...S.tdAction }}>
           <EyeButton
-            expanded={open}
-            onClick={() => setOpen((v) => !v)}
-            label={`${open ? "Hide" : "View"} details for ${
-              booking.customerName ?? "booking"
+            expanded={openML}
+            onClick={() => setOpenML((vML) => !vML)}
+            label={`${openML ? "Hide" : "View"} details for ${
+              bookingML.customerName ?? "booking"
             }`}
           />
         </td>
       </tr>
-      {open && (
+      {openML && (
         <tr className="eb-expanded-row">
-          <td colSpan={COLUMN_COUNT} style={{ ...S.td, ...S.tdExpanded }}>
+          <td colSpan={COLUMN_COUNT_ML} style={{ ...S.td, ...S.tdExpanded }}>
             <BookingDetails
-              booking={booking}
-              customFieldLabels={customFieldLabels}
-              onToggle={() => setOpen(false)}
+              booking={bookingML}
+              customFieldLabels={customFieldLabelsML}
+              onToggle={() => setOpenML(false)}
             />
           </td>
         </tr>
@@ -1684,60 +1684,60 @@ type BookingGroup = {
   bookings: BookingWithProductTitle[];
 };
 
-function groupBookings(bookings: BookingWithProductTitle[]): BookingGroup[] {
-  const order: string[] = [];
-  const byKey = new Map<string, BookingWithProductTitle[]>();
+function groupBookingsML(bookingsML: BookingWithProductTitle[]): BookingGroup[] {
+  const orderML: string[] = [];
+  const byKeyML = new Map<string, BookingWithProductTitle[]>();
 
-  for (const booking of bookings) {
-    const key = booking.groupId
-      ? `g:${booking.groupId}`
-      : booking.orderId
-        ? `o:${booking.orderId}`
-        : `b:${booking.id}`;
-    const existing = byKey.get(key);
-    if (existing) {
-      existing.push(booking);
+  for (const bookingML of bookingsML) {
+    const keyML = bookingML.groupId
+      ? `g:${bookingML.groupId}`
+      : bookingML.orderId
+        ? `o:${bookingML.orderId}`
+        : `b:${bookingML.id}`;
+    const existingML = byKeyML.get(keyML);
+    if (existingML) {
+      existingML.push(bookingML);
     } else {
-      byKey.set(key, [booking]);
-      order.push(key);
+      byKeyML.set(keyML, [bookingML]);
+      orderML.push(keyML);
     }
   }
 
-  return order.map((key) => ({ key, bookings: byKey.get(key)! }));
+  return orderML.map((keyML) => ({ key: keyML, bookings: byKeyML.get(keyML)! }));
 }
 
 function GroupChild({
-  booking,
-  customFieldLabels,
+  booking: bookingML,
+  customFieldLabels: customFieldLabelsML,
 }: {
   booking: BookingWithProductTitle;
   customFieldLabels: Record<string, string>;
 }) {
-  const [open, setOpen] = useState(false);
-  const when = whenLines(booking);
+  const [openML, setOpenML] = useState(false);
+  const whenML = whenLinesML(bookingML);
 
   return (
     <div style={S.childBox}>
       <div style={S.childHeader}>
         <span>
-          <strong style={{ fontWeight: 600 }}>{when.date}</strong>
-          {when.sub ? ` · ${when.sub}` : ""}
+          <strong style={{ fontWeight: 600 }}>{whenML.date}</strong>
+          {whenML.sub ? ` · ${whenML.sub}` : ""}
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-          <StatusPill status={booking.displayStatus} />
+          <StatusPill status={bookingML.displayStatus} />
           <EyeButton
-            expanded={open}
-            onClick={() => setOpen((v) => !v)}
-            label={`${open ? "Hide" : "View"} details`}
+            expanded={openML}
+            onClick={() => setOpenML((vML) => !vML)}
+            label={`${openML ? "Hide" : "View"} details`}
           />
         </span>
       </div>
-      {open && (
+      {openML && (
         <div style={{ padding: "0 8px 8px" }}>
           <BookingDetails
-            booking={booking}
-            customFieldLabels={customFieldLabels}
-            onToggle={() => setOpen(false)}
+            booking={bookingML}
+            customFieldLabels={customFieldLabelsML}
+            onToggle={() => setOpenML(false)}
           />
         </div>
       )}
@@ -1746,19 +1746,19 @@ function GroupChild({
 }
 
 function GroupRow({
-  group,
-  customFieldLabels,
+  group: groupML,
+  customFieldLabels: customFieldLabelsML,
 }: {
   group: BookingGroup;
   customFieldLabels: Record<string, string>;
 }) {
-  const [open, setOpen] = useState(false);
-  const first = group.bookings[0];
-  const productTitles = new Set(group.bookings.map((b) => b.productTitle));
-  const productLabel =
-    productTitles.size > 1 ? "Multiple products" : first.productTitle;
-  const statuses = new Set(group.bookings.map((b) => b.displayStatus));
-  const groupStatus = statuses.size > 1 ? "MIXED" : first.displayStatus;
+  const [openML, setOpenML] = useState(false);
+  const firstML = groupML.bookings[0];
+  const productTitlesML = new Set(groupML.bookings.map((bML) => bML.productTitle));
+  const productLabelML =
+    productTitlesML.size > 1 ? "Multiple products" : firstML.productTitle;
+  const statusesML = new Set(groupML.bookings.map((bML) => bML.displayStatus));
+  const groupStatusML = statusesML.size > 1 ? "MIXED" : firstML.displayStatus;
 
   return (
     <Fragment>
@@ -1766,48 +1766,48 @@ function GroupRow({
         <td
           className="eb-cell-primary"
           style={S.td}
-          title={first.customerName ?? undefined}
+          title={firstML.customerName ?? undefined}
         >
-          {first.customerName ?? "—"}
+          {firstML.customerName ?? "—"}
         </td>
-        <td data-label="Product" style={S.td} title={productLabel}>
-          {productLabel}
+        <td data-label="Product" style={S.td} title={productLabelML}>
+          {productLabelML}
         </td>
         <td data-label="Status" style={{ ...S.td, ...S.tdCenter }}>
-          <StatusPill status={groupStatus} />
+          <StatusPill status={groupStatusML} />
         </td>
         <td data-label="Type" style={{ ...S.td, ...S.tdCenter }}>
-          {TYPE_SHORT_LABELS[first.bookingType]}
+          {TYPE_SHORT_LABELS_ML[firstML.bookingType]}
         </td>
         <td data-label="Date" style={{ ...S.td, ...S.tdCenter }}>
-          {group.bookings.length} slots
+          {groupML.bookings.length} slots
         </td>
         <td className="eb-cell-action" style={{ ...S.td, ...S.tdAction }}>
           <EyeButton
-            expanded={open}
-            onClick={() => setOpen((v) => !v)}
-            label={`${open ? "Hide" : "View"} ${group.bookings.length} bookings for ${
-              first.customerName ?? "customer"
+            expanded={openML}
+            onClick={() => setOpenML((vML) => !vML)}
+            label={`${openML ? "Hide" : "View"} ${groupML.bookings.length} bookings for ${
+              firstML.customerName ?? "customer"
             }`}
           />
         </td>
       </tr>
-      {open && (
+      {openML && (
         <tr className="eb-expanded-row">
-          <td colSpan={COLUMN_COUNT} style={{ ...S.td, ...S.tdExpanded }}>
-            {first.bookingType === "BUNDLE" ? (
+          <td colSpan={COLUMN_COUNT_ML} style={{ ...S.td, ...S.tdExpanded }}>
+            {firstML.bookingType === "BUNDLE" ? (
               <BundleGroupDetails
-                group={group}
-                customFieldLabels={customFieldLabels}
-                onToggle={() => setOpen(false)}
+                group={groupML}
+                customFieldLabels={customFieldLabelsML}
+                onToggle={() => setOpenML(false)}
               />
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {group.bookings.map((booking) => (
+                {groupML.bookings.map((bookingML) => (
                   <GroupChild
-                    key={booking.id}
-                    booking={booking}
-                    customFieldLabels={customFieldLabels}
+                    key={bookingML.id}
+                    booking={bookingML}
+                    customFieldLabels={customFieldLabelsML}
                   />
                 ))}
               </div>
@@ -1820,104 +1820,104 @@ function GroupRow({
 }
 
 function BookingsEmptyState({
-  message,
-  title,
+  message: messageML,
+  title: titleML,
 }: {
   message: string;
   title: string;
 }) {
   return (
     <div style={S.emptyWrap}>
-      <p style={S.emptyTitle}>{title}</p>
-      <p style={S.emptyText}>{message}</p>
+      <p style={S.emptyTitle}>{titleML}</p>
+      <p style={S.emptyText}>{messageML}</p>
     </div>
   );
 }
 
 
-function matchesQuery(booking: BookingWithProductTitle, term: string): boolean {
-  const haystack = [
-    booking.customerName,
-    booking.customerEmail,
-    booking.productTitle,
-    booking.orderName,
-    booking.date,
-    formatDateDisplay(booking.date),
-    booking.endDate,
-    booking.endDate ? formatDateDisplay(booking.endDate) : null,
+function matchesQueryML(bookingML: BookingWithProductTitle, termML: string): boolean {
+  const haystackML = [
+    bookingML.customerName,
+    bookingML.customerEmail,
+    bookingML.productTitle,
+    bookingML.orderName,
+    bookingML.date,
+    formatDateDisplayML(bookingML.date),
+    bookingML.endDate,
+    bookingML.endDate ? formatDateDisplayML(bookingML.endDate) : null,
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
-  return haystack.includes(term);
+  return haystackML.includes(termML);
 }
 
 function BookingsListPage({
-  bookings: initialBookings,
-  products,
-  customFieldLabels,
-  filters,
+  bookings: initialBookingsML,
+  products: productsML,
+  customFieldLabels: customFieldLabelsML,
+  filters: filtersML,
 }: {
   bookings: BookingWithProductTitle[];
   products: { id: string; title: string }[];
   customFieldLabels: Record<string, string>;
   filters: BookingsListFilters;
 }) {
-  const heading = "All Bookings";
-  const emptyMessage =
+  const headingML = "All Bookings";
+  const emptyMessageML =
     "No bookings yet — they'll show up here once customers start booking.";
-  const showProductFilter = true;
+  const showProductFilterML = true;
 
-  const navigate = useNavigate();
-  const listRevalidator = useRevalidator();
+  const navigateML = useNavigate();
+  const listRevalidatorML = useRevalidator();
 
-  const bookings = initialBookings;
-  const isRefreshingBookings = listRevalidator.state !== "idle";
+  const bookingsML = initialBookingsML;
+  const isRefreshingBookingsML = listRevalidatorML.state !== "idle";
 
-  const refreshBookings = () => {
-    listRevalidator.revalidate();
+  const refreshBookingsML = () => {
+    listRevalidatorML.revalidate();
   };
 
-  const [query, setQuery] = useState(filters.search);
-  const [status, setStatus] = useState(filters.status);
-  const [productId, setProductId] = useState(filters.bookableProductId);
-  const [dateFrom, setDateFrom] = useState(filters.dateFrom);
-  const [dateTo, setDateTo] = useState(filters.dateTo);
+  const [queryML, setQueryML] = useState(filtersML.search);
+  const [statusML, setStatusML] = useState(filtersML.status);
+  const [productIdML, setProductIdML] = useState(filtersML.bookableProductId);
+  const [dateFromML, setDateFromML] = useState(filtersML.dateFrom);
+  const [dateToML, setDateToML] = useState(filtersML.dateTo);
 
-  const hasActiveFilters = Boolean(
-    filters.status ||
-      filters.bookableProductId ||
-      filters.dateFrom ||
-      filters.dateTo,
+  const hasActiveFiltersML = Boolean(
+    filtersML.status ||
+      filtersML.bookableProductId ||
+      filtersML.dateFrom ||
+      filtersML.dateTo,
   );
-  const [filtersOpen, setFiltersOpen] = useState(hasActiveFilters);
+  const [filtersOpenML, setFiltersOpenML] = useState(hasActiveFiltersML);
 
-  const applyFilters = () => {
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("search", query.trim());
-    if (status) params.set("status", status);
-    if (productId) params.set("productId", productId);
-    if (dateFrom) params.set("dateFrom", dateFrom);
-    if (dateTo) params.set("dateTo", dateTo);
-    navigate({ search: params.toString() });
+  const applyFiltersML = () => {
+    const paramsML = new URLSearchParams();
+    if (queryML.trim()) paramsML.set("search", queryML.trim());
+    if (statusML) paramsML.set("status", statusML);
+    if (productIdML) paramsML.set("productId", productIdML);
+    if (dateFromML) paramsML.set("dateFrom", dateFromML);
+    if (dateToML) paramsML.set("dateTo", dateToML);
+    navigateML({ search: paramsML.toString() });
   };
 
-  const clearFilters = () => {
-    navigate({ search: "" });
+  const clearFiltersML = () => {
+    navigateML({ search: "" });
   };
 
-  const visibleBookings = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return bookings;
-    return bookings.filter((b) => matchesQuery(b, term));
-  }, [bookings, query]);
+  const visibleBookingsML = useMemo(() => {
+    const termML = queryML.trim().toLowerCase();
+    if (!termML) return bookingsML;
+    return bookingsML.filter((bML) => matchesQueryML(bML, termML));
+  }, [bookingsML, queryML]);
 
-  const bookingGroups = useMemo(
-    () => groupBookings(visibleBookings),
-    [visibleBookings],
+  const bookingGroupsML = useMemo(
+    () => groupBookingsML(visibleBookingsML),
+    [visibleBookingsML],
   );
 
-  const isFiltering = hasActiveFilters || query.trim().length > 0;
+  const isFilteringML = hasActiveFiltersML || queryML.trim().length > 0;
 
   return (
     <s-page heading="Bookings" inlineSize="950px" style={{ fontFamily: "Inter" }}>
@@ -1940,16 +1940,16 @@ function BookingsListPage({
 
         <div style={S.listCard}>
           <div style={S.listHeaderRow}>
-            <p style={S.listTitle}>{heading}</p>
+            <p style={S.listTitle}>{headingML}</p>
             <div style={S.headerActions}>
               <div style={S.searchBox}>
                 <SearchIcon />
                 <input
                   type="text"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") applyFilters();
+                  value={queryML}
+                  onChange={(eventML) => setQueryML(eventML.target.value)}
+                  onKeyDown={(eventML) => {
+                    if (eventML.key === "Enter") applyFiltersML();
                   }}
                   placeholder="Search by email and date"
                   aria-label="Search bookings"
@@ -1961,13 +1961,13 @@ function BookingsListPage({
                 className="eb-tap"
                 style={{
                   ...S.squareIconButton,
-                  ...(filtersOpen || hasActiveFilters
+                  ...(filtersOpenML || hasActiveFiltersML
                     ? S.squareIconButtonActive
                     : {}),
                 }}
-                onClick={() => setFiltersOpen((open) => !open)}
-                aria-expanded={filtersOpen}
-                aria-label={filtersOpen ? "Hide filters" : "Show filters"}
+                onClick={() => setFiltersOpenML((openML) => !openML)}
+                aria-expanded={filtersOpenML}
+                aria-label={filtersOpenML ? "Hide filters" : "Show filters"}
                 title="Filters"
               >
                 <FilterIcon />
@@ -1977,10 +1977,10 @@ function BookingsListPage({
                 className="eb-tap"
                 style={{
                   ...S.squareIconButton,
-                  ...(isRefreshingBookings ? { opacity: 0.5 } : {}),
+                  ...(isRefreshingBookingsML ? { opacity: 0.5 } : {}),
                 }}
-                onClick={refreshBookings}
-                disabled={isRefreshingBookings}
+                onClick={refreshBookingsML}
+                disabled={isRefreshingBookingsML}
                 aria-label="Refresh bookings"
                 title="Refresh"
               >
@@ -1989,34 +1989,34 @@ function BookingsListPage({
             </div>
           </div>
 
-          {filtersOpen && (
+          {filtersOpenML && (
             <div className="eb-touch" style={S.filterPanel}>
               <label style={S.filterField}>
                 <span style={S.fieldLabel}>Status</span>
                 <select
                   style={S.input}
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  value={statusML}
+                  onChange={(eML) => setStatusML(eML.target.value)}
                 >
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s ? s.charAt(0) + s.slice(1).toLowerCase() : "All"}
+                  {STATUS_OPTIONS_ML.map((sML) => (
+                    <option key={sML} value={sML}>
+                      {sML ? sML.charAt(0) + sML.slice(1).toLowerCase() : "All"}
                     </option>
                   ))}
                 </select>
               </label>
-              {showProductFilter && (
+              {showProductFilterML && (
                 <label style={S.filterField}>
                   <span style={S.fieldLabel}>Product</span>
                   <select
                     style={S.input}
-                    value={productId}
-                    onChange={(e) => setProductId(e.target.value)}
+                    value={productIdML}
+                    onChange={(eML) => setProductIdML(eML.target.value)}
                   >
                     <option value="">All</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.title}
+                    {productsML.map((pML) => (
+                      <option key={pML.id} value={pML.id}>
+                        {pML.title}
                       </option>
                     ))}
                   </select>
@@ -2027,9 +2027,9 @@ function BookingsListPage({
                 <input
                   type="date"
                   style={S.input}
-                  value={dateFrom}
-                  max={dateTo || undefined}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  value={dateFromML}
+                  max={dateToML || undefined}
+                  onChange={(eML) => setDateFromML(eML.target.value)}
                 />
               </label>
               <label style={S.filterField}>
@@ -2037,17 +2037,17 @@ function BookingsListPage({
                 <input
                   type="date"
                   style={S.input}
-                  value={dateTo}
-                  min={dateFrom || undefined}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  value={dateToML}
+                  min={dateFromML || undefined}
+                  onChange={(eML) => setDateToML(eML.target.value)}
                 />
               </label>
               <div style={{ display: "flex", gap: "8px" }}>
-                <button type="button" style={S.primaryButton} onClick={applyFilters}>
+                <button type="button" style={S.primaryButton} onClick={applyFiltersML}>
                   Apply
                 </button>
-                {(hasActiveFilters || filters.search) && (
-                  <button type="button" style={S.ghostButton} onClick={clearFilters}>
+                {(hasActiveFiltersML || filtersML.search) && (
+                  <button type="button" style={S.ghostButton} onClick={clearFiltersML}>
                     Clear
                   </button>
                 )}
@@ -2057,20 +2057,20 @@ function BookingsListPage({
 
           <hr style={S.divider} />
 
-          {bookingGroups.length === 0 ? (
+          {bookingGroupsML.length === 0 ? (
             <BookingsEmptyState
-              title={isFiltering ? "No matching bookings" : "You're all caught up"}
+              title={isFilteringML ? "No matching bookings" : "You're all caught up"}
               message={
-                isFiltering
+                isFilteringML
                   ? "No bookings match your search or filters. Try adjusting or clearing them to see more."
-                  : emptyMessage
+                  : emptyMessageML
               }
             />
           ) : (
             <div
               style={{
                 ...S.tableWrap,
-                ...(isRefreshingBookings ? { opacity: 0.6 } : {}),
+                ...(isRefreshingBookingsML ? { opacity: 0.6 } : {}),
               }}
             >
               <table className="eb-table" style={S.table}>
@@ -2093,18 +2093,18 @@ function BookingsListPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {bookingGroups.map((group) =>
-                    group.bookings.length === 1 ? (
+                  {bookingGroupsML.map((groupML) =>
+                    groupML.bookings.length === 1 ? (
                       <SingleRow
-                        key={group.key}
-                        booking={group.bookings[0]}
-                        customFieldLabels={customFieldLabels}
+                        key={groupML.key}
+                        booking={groupML.bookings[0]}
+                        customFieldLabels={customFieldLabelsML}
                       />
                     ) : (
                       <GroupRow
-                        key={group.key}
-                        group={group}
-                        customFieldLabels={customFieldLabels}
+                        key={groupML.key}
+                        group={groupML}
+                        customFieldLabels={customFieldLabelsML}
                       />
                     ),
                   )}

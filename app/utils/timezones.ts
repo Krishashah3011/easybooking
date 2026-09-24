@@ -1,4 +1,4 @@
-export const COMMON_TIMEZONES: string[] = [
+export const COMMON_TIMEZONES_ML: string[] = [
   "UTC",
   "America/Los_Angeles",
   "America/Denver",
@@ -45,19 +45,19 @@ export const COMMON_TIMEZONES: string[] = [
   "Pacific/Auckland",
 ];
 
-export function isValidTimezone(timeZone: string): boolean {
-  if (!timeZone) return false;
+export function isValidTimezoneML(timeZoneML: string): boolean {
+  if (!timeZoneML) return false;
   try {
-    new Intl.DateTimeFormat("en-US", { timeZone }).format(new Date());
+    new Intl.DateTimeFormat("en-US", { timeZone: timeZoneML }).format(new Date());
     return true;
   } catch {
     return false;
   }
 }
 
-function offsetMinutesAt(instant: Date, timeZone: string): number {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
+function offsetMinutesAtML(instantML: Date, timeZoneML: string): number {
+  const dtfML = new Intl.DateTimeFormat("en-US", {
+    timeZone: timeZoneML,
     hourCycle: "h23",
     year: "numeric",
     month: "2-digit",
@@ -66,91 +66,91 @@ function offsetMinutesAt(instant: Date, timeZone: string): number {
     minute: "2-digit",
     second: "2-digit",
   });
-  const parts = dtf.formatToParts(instant);
-  const get = (type: string) =>
-    Number(parts.find((p) => p.type === type)?.value ?? "0");
+  const partsML = dtfML.formatToParts(instantML);
+  const getML = (typeML: string) =>
+    Number(partsML.find((pML) => pML.type === typeML)?.value ?? "0");
 
-  const asUtc = Date.UTC(
-    get("year"),
-    get("month") - 1,
-    get("day"),
-    get("hour"),
-    get("minute"),
-    get("second"),
+  const asUtcML = Date.UTC(
+    getML("year"),
+    getML("month") - 1,
+    getML("day"),
+    getML("hour"),
+    getML("minute"),
+    getML("second"),
   );
-  return (asUtc - instant.getTime()) / 60000;
+  return (asUtcML - instantML.getTime()) / 60000;
 }
 
-export function zonedTimeToUtc(
-  dateStr: string,
-  timeStr: string,
-  timeZone: string | null | undefined,
+export function zonedTimeToUtcML(
+  dateStrML: string,
+  timeStrML: string,
+  timeZoneML: string | null | undefined,
 ): Date {
-  const naiveUtc = new Date(`${dateStr}T${timeStr}:00Z`);
-  if (!timeZone || !isValidTimezone(timeZone)) return naiveUtc;
+  const naiveUtcML = new Date(`${dateStrML}T${timeStrML}:00Z`);
+  if (!timeZoneML || !isValidTimezoneML(timeZoneML)) return naiveUtcML;
 
-  let guess = naiveUtc;
-  for (let i = 0; i < 2; i++) {
-    const offset = offsetMinutesAt(guess, timeZone);
-    guess = new Date(naiveUtc.getTime() - offset * 60000);
+  let guessML = naiveUtcML;
+  for (let iML = 0; iML < 2; iML++) {
+    const offsetML = offsetMinutesAtML(guessML, timeZoneML);
+    guessML = new Date(naiveUtcML.getTime() - offsetML * 60000);
   }
-  return guess;
+  return guessML;
 }
 
-export function dateStrInTimezone(
-  instant: Date,
-  timeZone: string | null | undefined,
+export function dateStrInTimezoneML(
+  instantML: Date,
+  timeZoneML: string | null | undefined,
 ): string {
-  const zone = timeZone && isValidTimezone(timeZone) ? timeZone : "UTC";
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: zone,
+  const zoneML = timeZoneML && isValidTimezoneML(timeZoneML) ? timeZoneML : "UTC";
+  const partsML = new Intl.DateTimeFormat("en-US", {
+    timeZone: zoneML,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(instant);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")}`;
+  }).formatToParts(instantML);
+  const getML = (typeML: string) => partsML.find((pML) => pML.type === typeML)?.value ?? "";
+  return `${getML("year")}-${getML("month")}-${getML("day")}`;
 }
 
-function addDaysToDateStr(dateStr: string, days: number): string {
-  const d = new Date(`${dateStr}T00:00:00.000Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
+function addDaysToDateStrML(dateStrML: string, daysML: number): string {
+  const dML = new Date(`${dateStrML}T00:00:00.000Z`);
+  dML.setUTCDate(dML.getUTCDate() + daysML);
+  return dML.toISOString().slice(0, 10);
 }
 
-export function localDayRangeUtc(
-  dateStr: string,
-  timeZone: string | null | undefined,
+export function localDayRangeUtcML(
+  dateStrML: string,
+  timeZoneML: string | null | undefined,
 ): { start: Date; end: Date } {
-  const start = zonedTimeToUtc(dateStr, "00:00", timeZone);
-  const nextDayStart = zonedTimeToUtc(addDaysToDateStr(dateStr, 1), "00:00", timeZone);
-  return { start, end: new Date(nextDayStart.getTime() - 1) };
+  const startML = zonedTimeToUtcML(dateStrML, "00:00", timeZoneML);
+  const nextDayStartML = zonedTimeToUtcML(addDaysToDateStrML(dateStrML, 1), "00:00", timeZoneML);
+  return { start: startML, end: new Date(nextDayStartML.getTime() - 1) };
 }
 
-export function localMonthRangeUtc(
-  year: number,
-  month: number,
-  timeZone: string | null | undefined,
+export function localMonthRangeUtcML(
+  yearML: number,
+  monthML: number,
+  timeZoneML: string | null | undefined,
 ): { start: Date; end: Date } {
-  const first = `${year}-${String(month).padStart(2, "0")}-01`;
-  const nextYear = month === 12 ? year + 1 : year;
-  const nextMonth = month === 12 ? 1 : month + 1;
-  const nextFirst = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
-  const start = zonedTimeToUtc(first, "00:00", timeZone);
-  const nextStart = zonedTimeToUtc(nextFirst, "00:00", timeZone);
-  return { start, end: new Date(nextStart.getTime() - 1) };
+  const firstML = `${yearML}-${String(monthML).padStart(2, "0")}-01`;
+  const nextYearML = monthML === 12 ? yearML + 1 : yearML;
+  const nextMonthML = monthML === 12 ? 1 : monthML + 1;
+  const nextFirstML = `${nextYearML}-${String(nextMonthML).padStart(2, "0")}-01`;
+  const startML = zonedTimeToUtcML(firstML, "00:00", timeZoneML);
+  const nextStartML = zonedTimeToUtcML(nextFirstML, "00:00", timeZoneML);
+  return { start: startML, end: new Date(nextStartML.getTime() - 1) };
 }
 
-export function formatInstantInTimezone(
-  value: string | Date,
-  timeZone: string | null | undefined,
+export function formatInstantInTimezoneML(
+  valueML: string | Date,
+  timeZoneML: string | null | undefined,
 ): string {
-  const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return String(value);
+  const dateML = typeof valueML === "string" ? new Date(valueML) : valueML;
+  if (Number.isNaN(dateML.getTime())) return String(valueML);
 
-  const zone = timeZone && isValidTimezone(timeZone) ? timeZone : "UTC";
-  const dtf = new Intl.DateTimeFormat("en-GB", {
-    timeZone: zone,
+  const zoneML = timeZoneML && isValidTimezoneML(timeZoneML) ? timeZoneML : "UTC";
+  const dtfML = new Intl.DateTimeFormat("en-GB", {
+    timeZone: zoneML,
     hourCycle: "h23",
     year: "numeric",
     month: "2-digit",
@@ -158,23 +158,23 @@ export function formatInstantInTimezone(
     hour: "2-digit",
     minute: "2-digit",
   });
-  const parts = dtf.formatToParts(date);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const partsML = dtfML.formatToParts(dateML);
+  const getML = (typeML: string) => partsML.find((pML) => pML.type === typeML)?.value ?? "";
 
-  const hour24 = Number(get("hour")) % 24;
-  const period = hour24 >= 12 ? "PM" : "AM";
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  const hour24ML = Number(getML("hour")) % 24;
+  const periodML = hour24ML >= 12 ? "PM" : "AM";
+  const hour12ML = hour24ML % 12 === 0 ? 12 : hour24ML % 12;
 
-  return `${get("day")}-${get("month")}-${get("year")}, ${hour12}:${get("minute")} ${period}`;
+  return `${getML("day")}-${getML("month")}-${getML("year")}, ${hour12ML}:${getML("minute")} ${periodML}`;
 }
 
-export function timezoneOffsetLabel(timeZone: string): string {
+export function timezoneOffsetLabelML(timeZoneML: string): string {
   try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone,
+    const partsML = new Intl.DateTimeFormat("en-US", {
+      timeZone: timeZoneML,
       timeZoneName: "shortOffset",
     }).formatToParts(new Date());
-    return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+    return partsML.find((pML) => pML.type === "timeZoneName")?.value ?? "";
   } catch {
     return "";
   }

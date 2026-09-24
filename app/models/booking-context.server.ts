@@ -1,16 +1,16 @@
-import { getBookingSettings } from "./bookingSettings.server";
+import { getBookingSettingsML } from "./bookingSettings.server";
 import {
-  getBookableProduct,
-  getBookableProductById,
-  resolveEffectiveSettings,
+  getBookableProductML,
+  getBookableProductByIdML,
+  resolveEffectiveSettingsML,
   type EffectiveBookingSettings,
 } from "./bookableProduct.server";
 import {
-  listProductBlackoutDates,
-  listProductBlackoutExclusions,
-  listShopBlackoutDates,
+  listProductBlackoutDatesML,
+  listProductBlackoutExclusionsML,
+  listShopBlackoutDatesML,
 } from "./blackoutDate.server";
-import { getLocationById } from "./bookingLocation.server";
+import { getLocationByIdML } from "./bookingLocation.server";
 import type { BookableProduct, BookingSettings } from "@prisma/client";
 import type { LocationHoursOverride } from "./bookableProduct.server";
 
@@ -26,72 +26,72 @@ export type BookingContext = {
   location: { id: string; name: string; timezone: string } | null;
 };
 
-async function buildBookingContext(
-  shop: string,
-  shopSettings: BookingSettings,
-  bookableProduct: BookableProduct | null,
-  location: (LocationHoursOverride & { id: string; name: string; timezone: string }) | null,
+async function buildBookingContextML(
+  shopML: string,
+  shopSettingsML: BookingSettings,
+  bookableProductML: BookableProduct | null,
+  locationML: (LocationHoursOverride & { id: string; name: string; timezone: string }) | null,
 ): Promise<BookingContext | null> {
-  if (!bookableProduct || !bookableProduct.isEnabled) {
+  if (!bookableProductML || !bookableProductML.isEnabled) {
     return null;
   }
 
-  const [shopBlackouts, productBlackouts, productExclusions] = await Promise.all([
-    listShopBlackoutDates(shop),
-    listProductBlackoutDates(shop, bookableProduct.id),
-    listProductBlackoutExclusions(shop, bookableProduct.id),
+  const [shopBlackoutsML, productBlackoutsML, productExclusionsML] = await Promise.all([
+    listShopBlackoutDatesML(shopML),
+    listProductBlackoutDatesML(shopML, bookableProductML.id),
+    listProductBlackoutExclusionsML(shopML, bookableProductML.id),
   ]);
 
-  const blackoutDates = new Set<string>([
-    ...shopBlackouts
-      .map((b) => b.date.toISOString().slice(0, 10))
-      .filter((dateStr) => !productExclusions.has(dateStr)),
-    ...productBlackouts.map((b) => b.date.toISOString().slice(0, 10)),
+  const blackoutDatesML = new Set<string>([
+    ...shopBlackoutsML
+      .map((bML) => bML.date.toISOString().slice(0, 10))
+      .filter((dateStrML) => !productExclusionsML.has(dateStrML)),
+    ...productBlackoutsML.map((bML) => bML.date.toISOString().slice(0, 10)),
   ]);
 
   return {
-    bookableProductId: bookableProduct.id,
-    bookingType: bookableProduct.bookingType,
-    minNights: bookableProduct.minNights,
-    maxNights: bookableProduct.maxNights,
-    bundleSessionCount: bookableProduct.bundleSessionCount,
-    bundleValidityDays: bookableProduct.bundleValidityDays,
-    effectiveSettings: resolveEffectiveSettings(
-      shopSettings,
-      bookableProduct,
-      location,
+    bookableProductId: bookableProductML.id,
+    bookingType: bookableProductML.bookingType,
+    minNights: bookableProductML.minNights,
+    maxNights: bookableProductML.maxNights,
+    bundleSessionCount: bookableProductML.bundleSessionCount,
+    bundleValidityDays: bookableProductML.bundleValidityDays,
+    effectiveSettings: resolveEffectiveSettingsML(
+      shopSettingsML,
+      bookableProductML,
+      locationML,
     ),
-    blackoutDates,
-    location: location
-      ? { id: location.id, name: location.name, timezone: location.timezone }
+    blackoutDates: blackoutDatesML,
+    location: locationML
+      ? { id: locationML.id, name: locationML.name, timezone: locationML.timezone }
       : null,
   };
 }
 
-export async function resolveBookingContext(
-  shop: string,
-  productId: string,
-  locationId?: string | null,
+export async function resolveBookingContextML(
+  shopML: string,
+  productIdML: string,
+  locationIdML?: string | null,
 ): Promise<BookingContext | null> {
-  const [shopSettings, bookableProduct, location] = await Promise.all([
-    getBookingSettings(shop),
-    getBookableProduct(shop, productId),
-    locationId ? getLocationById(shop, locationId) : Promise.resolve(null),
+  const [shopSettingsML, bookableProductML, locationML] = await Promise.all([
+    getBookingSettingsML(shopML),
+    getBookableProductML(shopML, productIdML),
+    locationIdML ? getLocationByIdML(shopML, locationIdML) : Promise.resolve(null),
   ]);
 
-  return buildBookingContext(shop, shopSettings, bookableProduct, location);
+  return buildBookingContextML(shopML, shopSettingsML, bookableProductML, locationML);
 }
 
-export async function resolveBookingContextById(
-  shop: string,
-  bookableProductId: string,
-  locationId?: string | null,
+export async function resolveBookingContextByIdML(
+  shopML: string,
+  bookableProductIdML: string,
+  locationIdML?: string | null,
 ): Promise<BookingContext | null> {
-  const [shopSettings, bookableProduct, location] = await Promise.all([
-    getBookingSettings(shop),
-    getBookableProductById(shop, bookableProductId),
-    locationId ? getLocationById(shop, locationId) : Promise.resolve(null),
+  const [shopSettingsML, bookableProductML, locationML] = await Promise.all([
+    getBookingSettingsML(shopML),
+    getBookableProductByIdML(shopML, bookableProductIdML),
+    locationIdML ? getLocationByIdML(shopML, locationIdML) : Promise.resolve(null),
   ]);
 
-  return buildBookingContext(shop, shopSettings, bookableProduct, location);
+  return buildBookingContextML(shopML, shopSettingsML, bookableProductML, locationML);
 }

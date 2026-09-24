@@ -9,39 +9,39 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
-  createCustomField,
-  deleteCustomField,
-  listCustomFields,
-  parseCustomFieldForm,
-  reorderCustomFields,
-  updateCustomField,
+  createCustomFieldML,
+  deleteCustomFieldML,
+  listCustomFieldsML,
+  parseCustomFieldFormML,
+  reorderCustomFieldsML,
+  updateCustomFieldML,
   type CustomFieldFieldErrors,
   type CustomFieldFormValues,
 } from "../models/customBookingField.server";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-const EMPTY_FORM: CustomFieldFormValues = {
+const EMPTY_FORM_ML: CustomFieldFormValues = {
   label: "",
   type: "TEXT",
   required: false,
   options: "",
 };
 
-const TYPE_LABELS: Record<CustomFieldFormValues["type"], string> = {
+const TYPE_LABELS_ML: Record<CustomFieldFormValues["type"], string> = {
   TEXT: "Short text",
   TEXTAREA: "Long text",
   NUMBER: "Number",
   SELECT: "Dropdown",
 };
 
-const ACCENT = "#073E74";
-const LINE_BORDER = "#DBDBDB";
-const INPUT_BORDER = "#E9E9EA";
-const LABEL_GREY = "#373737";
-const TEXT_BLACK = "#000000";
+const ACCENT_ML = "#073E74";
+const LINE_BORDER_ML = "#DBDBDB";
+const INPUT_BORDER_ML = "#E9E9EA";
+const LABEL_GREY_ML = "#373737";
+const TEXT_BLACK_ML = "#000000";
 
-const ChevronIcon = ({ open }: { open: boolean }) => (
+const ChevronIcon = ({ open: openML }: { open: boolean }) => (
   <svg
     width="11"
     height="6"
@@ -49,13 +49,13 @@ const ChevronIcon = ({ open }: { open: boolean }) => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     style={{
-      transform: open ? "rotate(180deg)" : "rotate(0deg)",
+      transform: openML ? "rotate(180deg)" : "rotate(0deg)",
       transition: "transform 0.2s ease",
     }}
   >
     <path
       d="M1 1L5.5 5L10 1"
-      stroke={ACCENT}
+      stroke={ACCENT_ML}
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -69,7 +69,7 @@ const PlusIcon = () => (
   </svg>
 );
 
-const styles: Record<string, React.CSSProperties> = {
+const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
     display: "flex",
@@ -80,7 +80,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     maxWidth: "886px",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
   },
   body: {
@@ -111,7 +111,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   descText: {
@@ -119,7 +119,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   chevronButton: {
@@ -136,7 +136,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${LINE_BORDER}`,
+    borderTop: `1px solid ${LINE_BORDER_ML}`,
     margin: 0,
     width: "100%",
     alignSelf: "stretch",
@@ -179,7 +179,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: LABEL_GREY,
+    color: LABEL_GREY_ML,
     margin: 0,
   },
   inputBox: {
@@ -192,7 +192,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
   },
   textInput: {
@@ -205,7 +205,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
   },
   selectInput: {
@@ -218,7 +218,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
     cursor: "pointer",
     appearance: "none",
@@ -238,7 +238,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "24px",
     height: "24px",
     borderRadius: "4px",
-    border: `1.5px solid ${ACCENT}`,
+    border: `1.5px solid ${ACCENT_ML}`,
     background: "#FFFFFF",
     cursor: "pointer",
     display: "flex",
@@ -251,14 +251,14 @@ const styles: Record<string, React.CSSProperties> = {
     width: "14px",
     height: "14px",
     borderRadius: "50%",
-    background: ACCENT,
+    background: ACCENT_ML,
   },
   requiredLabel: {
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
     cursor: "pointer",
   },
@@ -272,7 +272,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "6px",
     width: "auto",
     height: "36px",
-    background: ACCENT,
+    background: ACCENT_ML,
     borderRadius: "8px",
     border: "none",
     cursor: "pointer",
@@ -309,7 +309,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: "36px",
     background: "transparent",
     borderRadius: "8px",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
@@ -318,7 +318,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     whiteSpace: "nowrap",
   },
   buttonRow: {
@@ -333,7 +333,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "16px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
     padding: "10px 10px 13px",
     marginTop: "16px",
@@ -358,7 +358,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   columnHeaderRow: {
@@ -375,7 +375,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   rowWrap: {
@@ -394,7 +394,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   actionsCell: {
@@ -435,92 +435,92 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: LABEL_GREY,
+    color: LABEL_GREY_ML,
     margin: 0,
   },
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const fields = await listCustomFields(session.shop);
-  return { fields };
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const fieldsML = await listCustomFieldsML(sessionML.shop);
+  return { fields: fieldsML };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "") as
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
+  const intentML = String(formDataML.get("intent") ?? "") as
     "create" | "update" | "delete" | "reorder" | "";
 
-  if (intent === "reorder") {
-    let orderedIds: string[] = [];
+  if (intentML === "reorder") {
+    let orderedIdsML: string[] = [];
     try {
-      orderedIds = JSON.parse(String(formData.get("orderedIds") ?? "[]"));
+      orderedIdsML = JSON.parse(String(formDataML.get("orderedIds") ?? "[]"));
     } catch {
-      orderedIds = [];
+      orderedIdsML = [];
     }
-    await reorderCustomFields(session.shop, orderedIds);
-    return { intent, ok: true as const };
+    await reorderCustomFieldsML(sessionML.shop, orderedIdsML);
+    return { intent: intentML, ok: true as const };
   }
 
-  if (intent === "delete") {
-    const id = String(formData.get("id") ?? "");
-    const result = await deleteCustomField(session.shop, id);
-    return { intent, ...result };
+  if (intentML === "delete") {
+    const idML = String(formDataML.get("id") ?? "");
+    const resultML = await deleteCustomFieldML(sessionML.shop, idML);
+    return { intent: intentML, ...resultML };
   }
 
-  const { values, errors } = parseCustomFieldForm(formData);
-  if (Object.keys(errors).length > 0) {
-    return { intent, ok: false as const, errors, values };
+  const { values: valuesML, errors: errorsML } = parseCustomFieldFormML(formDataML);
+  if (Object.keys(errorsML).length > 0) {
+    return { intent: intentML, ok: false as const, errors: errorsML, values: valuesML };
   }
 
-  if (intent === "update") {
-    const id = String(formData.get("id") ?? "");
-    const result = await updateCustomField(session.shop, id, values);
-    return { intent, ...result, values };
+  if (intentML === "update") {
+    const idML = String(formDataML.get("id") ?? "");
+    const resultML = await updateCustomFieldML(sessionML.shop, idML, valuesML);
+    return { intent: intentML, ...resultML, values: valuesML };
   }
 
-  await createCustomField(session.shop, values);
-  return { intent: "create" as const, ok: true as const, values: EMPTY_FORM };
+  await createCustomFieldML(sessionML.shop, valuesML);
+  return { intent: "create" as const, ok: true as const, values: EMPTY_FORM_ML };
 };
 
 function Checkbox({
-  checked,
-  onChange,
-  label,
+  checked: checkedML,
+  onChange: onChangeML,
+  label: labelML,
 }: {
   checked: boolean;
   onChange: () => void;
   label: string;
 }) {
   return (
-    <div style={styles.requiredRow}>
+    <div style={stylesML.requiredRow}>
       <button
         type="button"
         role="checkbox"
-        aria-checked={checked}
-        aria-label={label}
-        style={styles.checkbox}
-        onClick={onChange}
+        aria-checked={checkedML}
+        aria-label={labelML}
+        style={stylesML.checkbox}
+        onClick={onChangeML}
       >
-        {checked && <span style={styles.checkboxDot} />}
+        {checkedML && <span style={stylesML.checkboxDot} />}
       </button>
-      <p style={styles.requiredLabel} onClick={onChange}>
-        {label}
+      <p style={stylesML.requiredLabel} onClick={onChangeML}>
+        {labelML}
       </p>
     </div>
   );
 }
 
 function FieldEditor({
-  initial,
-  onCancel,
-  submitLabel,
-  fieldId,
-  open,
-  onToggleOpen,
-  title,
-  description,
+  initial: initialML,
+  onCancel: onCancelML,
+  submitLabel: submitLabelML,
+  fieldId: fieldIdML,
+  open: openML,
+  onToggleOpen: onToggleOpenML,
+  title: titleML,
+  description: descriptionML,
 }: {
   initial: CustomFieldFormValues;
   onCancel?: () => void;
@@ -531,112 +531,112 @@ function FieldEditor({
   title?: string;
   description?: string;
 }) {
-  const fetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
-  const [values, setValues] = useState<CustomFieldFormValues>(initial);
+  const fetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
+  const [valuesML, setValuesML] = useState<CustomFieldFormValues>(initialML);
 
-  const isEdit = Boolean(fieldId);
-  const errors: CustomFieldFieldErrors =
-    fetcher.data && "errors" in fetcher.data ? fetcher.data.errors ?? {} : {};
+  const isEditML = Boolean(fieldIdML);
+  const errorsML: CustomFieldFieldErrors =
+    fetcherML.data && "errors" in fetcherML.data ? fetcherML.data.errors ?? {} : {};
 
   useEffect(() => {
-    if (fetcher.data?.ok) {
-      shopify.toast.show(isEdit ? "Field updated" : "Field added");
-      if (!isEdit) {
-        setValues(EMPTY_FORM);
+    if (fetcherML.data?.ok) {
+      shopifyML.toast.show(isEditML ? "Field updated" : "Field added");
+      if (!isEditML) {
+        setValuesML(EMPTY_FORM_ML);
       }
-      onCancel?.();
+      onCancelML?.();
     }
-  }, [fetcher.data]);
+  }, [fetcherML.data]);
 
-  const isSaving = fetcher.state !== "idle";
+  const isSavingML = fetcherML.state !== "idle";
 
-  const handleSubmit = () => {
-    fetcher.submit(
+  const handleSubmitML = () => {
+    fetcherML.submit(
       {
-        intent: isEdit ? "update" : "create",
-        ...(fieldId ? { id: fieldId } : {}),
-        label: values.label,
-        type: values.type,
-        required: String(values.required),
-        options: values.options,
+        intent: isEditML ? "update" : "create",
+        ...(fieldIdML ? { id: fieldIdML } : {}),
+        label: valuesML.label,
+        type: valuesML.type,
+        required: String(valuesML.required),
+        options: valuesML.options,
       },
       { method: "POST" },
     );
   };
 
-  const showChrome = title !== undefined;
+  const showChromeML = titleML !== undefined;
 
   return (
-    <div style={{ ...styles.card, height: "auto" }}>
-      <div style={styles.body}>
-        {showChrome && (
+    <div style={{ ...stylesML.card, height: "auto" }}>
+      <div style={stylesML.body}>
+        {showChromeML && (
           <div
             style={{
-              ...styles.headerRow,
-              cursor: onToggleOpen ? "pointer" : undefined,
+              ...stylesML.headerRow,
+              cursor: onToggleOpenML ? "pointer" : undefined,
             }}
-            onClick={onToggleOpen}
+            onClick={onToggleOpenML}
           >
-            <div style={styles.headerLeft}>
-              <p style={styles.title}>{title}</p>
-              {description && <p style={styles.descText}>{description}</p>}
+            <div style={stylesML.headerLeft}>
+              <p style={stylesML.title}>{titleML}</p>
+              {descriptionML && <p style={stylesML.descText}>{descriptionML}</p>}
             </div>
-            {onToggleOpen && (
+            {onToggleOpenML && (
               <button
                 type="button"
-                style={styles.chevronButton}
-                aria-label={open ? "Collapse" : "Expand"}
+                style={stylesML.chevronButton}
+                aria-label={openML ? "Collapse" : "Expand"}
               >
-                <ChevronIcon open={Boolean(open)} />
+                <ChevronIcon open={Boolean(openML)} />
               </button>
             )}
           </div>
         )}
 
-        {(open ?? true) && (
+        {(openML ?? true) && (
           <>
-            {showChrome && <hr style={styles.divider} />}
+            {showChromeML && <hr style={stylesML.divider} />}
 
-            <div style={styles.fieldsRow}>
-              <div style={styles.fieldGroupHalf}>
-                <p style={styles.fieldLabel}>Question / field label</p>
-                <div style={styles.inputBox}>
+            <div style={stylesML.fieldsRow}>
+              <div style={stylesML.fieldGroupHalf}>
+                <p style={stylesML.fieldLabel}>Question / field label</p>
+                <div style={stylesML.inputBox}>
                   <input
                     type="text"
-                    style={styles.textInput}
+                    style={stylesML.textInput}
                     placeholder="Number of guests"
-                    value={values.label}
-                    onChange={(e: FieldChangeEvent) => {
-                      const value = e.currentTarget.value;
-                      setValues((prev) => ({ ...prev, label: value }));
+                    value={valuesML.label}
+                    onChange={(eML: FieldChangeEvent) => {
+                      const valueML = eML.currentTarget.value;
+                      setValuesML((prevML) => ({ ...prevML, label: valueML }));
                     }}
                   />
                 </div>
-                {errors.label && (
+                {errorsML.label && (
                   <p
                     style={{
-                      ...styles.fieldLabel,
+                      ...stylesML.fieldLabel,
                       color: "#D82C0D",
                       fontWeight: 400,
                       fontSize: "12px",
                     }}
                   >
-                    {errors.label}
+                    {errorsML.label}
                   </p>
                 )}
               </div>
 
-              <div style={styles.fieldGroupHalf}>
-                <p style={styles.fieldLabel}>Field type</p>
-                <div style={styles.inputBox}>
+              <div style={stylesML.fieldGroupHalf}>
+                <p style={stylesML.fieldLabel}>Field type</p>
+                <div style={stylesML.inputBox}>
                   <select
-                    style={styles.selectInput}
-                    value={values.type}
-                    onChange={(e: FieldChangeEvent) => {
-                      const value = e.currentTarget
+                    style={stylesML.selectInput}
+                    value={valuesML.type}
+                    onChange={(eML: FieldChangeEvent) => {
+                      const valueML = eML.currentTarget
                         .value as CustomFieldFormValues["type"];
-                      setValues((prev) => ({ ...prev, type: value }));
+                      setValuesML((prevML) => ({ ...prevML, type: valueML }));
                     }}
                   >
                     <option value="TEXT">Short text</option>
@@ -650,68 +650,68 @@ function FieldEditor({
             </div>
 
             <Checkbox
-              checked={values.required}
+              checked={valuesML.required}
               onChange={() =>
-                setValues((prev) => ({ ...prev, required: !prev.required }))
+                setValuesML((prevML) => ({ ...prevML, required: !prevML.required }))
               }
               label="Required"
             />
 
-            {values.type === "SELECT" && (
-              <div style={styles.fieldGroupOptions}>
-                <p style={styles.fieldLabel}>Options</p>
-                <div style={styles.inputBox}>
+            {valuesML.type === "SELECT" && (
+              <div style={stylesML.fieldGroupOptions}>
+                <p style={stylesML.fieldLabel}>Options</p>
+                <div style={stylesML.inputBox}>
                   <input
                     type="text"
-                    style={styles.textInput}
+                    style={stylesML.textInput}
                     placeholder="Small, Medium, Large"
-                    value={values.options}
-                    onChange={(e: FieldChangeEvent) => {
-                      const value = e.currentTarget.value;
-                      setValues((prev) => ({ ...prev, options: value }));
+                    value={valuesML.options}
+                    onChange={(eML: FieldChangeEvent) => {
+                      const valueML = eML.currentTarget.value;
+                      setValuesML((prevML) => ({ ...prevML, options: valueML }));
                     }}
                   />
                 </div>
-                {errors.options && (
+                {errorsML.options && (
                   <p
                     style={{
-                      ...styles.fieldLabel,
+                      ...stylesML.fieldLabel,
                       color: "#D82C0D",
                       fontWeight: 400,
                       fontSize: "12px",
                     }}
                   >
-                    {errors.options}
+                    {errorsML.options}
                   </p>
                 )}
               </div>
             )}
 
-            {showChrome && <hr style={styles.divider} />}
+            {showChromeML && <hr style={stylesML.divider} />}
 
-            <div style={styles.buttonRow}>
-              {onCancel && (
+            <div style={stylesML.buttonRow}>
+              {onCancelML && (
                 <button
                   type="button"
-                  style={styles.cancelButton}
-                  onClick={onCancel}
-                  disabled={isSaving}
+                  style={stylesML.cancelButton}
+                  onClick={onCancelML}
+                  disabled={isSavingML}
                 >
-                  <span style={styles.cancelButtonLabel}>Cancel</span>
+                  <span style={stylesML.cancelButtonLabel}>Cancel</span>
                 </button>
               )}
               <button
                 type="button"
                 style={{
-                  ...styles.addButton,
-                  ...(isSaving ? styles.addButtonDisabled : {}),
+                  ...stylesML.addButton,
+                  ...(isSavingML ? stylesML.addButtonDisabled : {}),
                 }}
-                onClick={handleSubmit}
-                disabled={isSaving}
+                onClick={handleSubmitML}
+                disabled={isSavingML}
               >
-                <span style={styles.addButtonLabel}>{submitLabel}</span>
-                {!isEdit && (
-                  <span style={styles.plusWrap}>
+                <span style={stylesML.addButtonLabel}>{submitLabelML}</span>
+                {!isEditML && (
+                  <span style={stylesML.plusWrap}>
                     <PlusIcon />
                   </span>
                 )}
@@ -725,12 +725,12 @@ function FieldEditor({
 }
 
 function FieldRow({
-  field,
-  onMoveUp,
-  onMoveDown,
-  isFirst,
-  isLast,
-  isReordering,
+  field: fieldML,
+  onMoveUp: onMoveUpML,
+  onMoveDown: onMoveDownML,
+  isFirst: isFirstML,
+  isLast: isLastML,
+  isReordering: isReorderingML,
 }: {
   field: {
     id: string;
@@ -745,62 +745,62 @@ function FieldRow({
   isLast: boolean;
   isReordering: boolean;
 }) {
-  const deleteFetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
-  const [isEditing, setIsEditing] = useState(false);
-  const isDeleting = deleteFetcher.state !== "idle";
-  const isBusy = isDeleting || isReordering;
+  const deleteFetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
+  const [isEditingML, setIsEditingML] = useState(false);
+  const isDeletingML = deleteFetcherML.state !== "idle";
+  const isBusyML = isDeletingML || isReorderingML;
 
   useEffect(() => {
-    if (deleteFetcher.data?.intent === "delete" && deleteFetcher.data.ok) {
-      shopify.toast.show("Field removed");
+    if (deleteFetcherML.data?.intent === "delete" && deleteFetcherML.data.ok) {
+      shopifyML.toast.show("Field removed");
     }
-  }, [deleteFetcher.data, shopify]);
+  }, [deleteFetcherML.data, shopifyML]);
 
-  const handleDelete = () => {
-    deleteFetcher.submit(
-      { intent: "delete", id: field.id },
+  const handleDeleteML = () => {
+    deleteFetcherML.submit(
+      { intent: "delete", id: fieldML.id },
       { method: "POST" },
     );
   };
 
-  if (isEditing) {
+  if (isEditingML) {
     return (
       <div>
         <FieldEditor
-          fieldId={field.id}
+          fieldId={fieldML.id}
           submitLabel="Save"
-          onCancel={() => setIsEditing(false)}
+          onCancel={() => setIsEditingML(false)}
           initial={{
-            label: field.label,
-            type: field.type as CustomFieldFormValues["type"],
-            required: field.required,
-            options: field.options ?? "",
+            label: fieldML.label,
+            type: fieldML.type as CustomFieldFormValues["type"],
+            required: fieldML.required,
+            options: fieldML.options ?? "",
           }}
         />
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
       </div>
     );
   }
 
   return (
     <div>
-      <div style={styles.rowWrap}>
-        <p style={styles.rowCell}>{field.label}</p>
-        <p style={styles.rowCell}>
-          {TYPE_LABELS[field.type as CustomFieldFormValues["type"]] ?? field.type}
+      <div style={stylesML.rowWrap}>
+        <p style={stylesML.rowCell}>{fieldML.label}</p>
+        <p style={stylesML.rowCell}>
+          {TYPE_LABELS_ML[fieldML.type as CustomFieldFormValues["type"]] ?? fieldML.type}
         </p>
-        <p style={styles.rowCell}>{field.required ? "Yes" : "No"}</p>
-        <div style={styles.actionsCell}>
+        <p style={stylesML.rowCell}>{fieldML.required ? "Yes" : "No"}</p>
+        <div style={stylesML.actionsCell}>
           <button
             type="button"
             style={{
-              ...styles.iconButton,
-              ...(isFirst || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+              ...stylesML.iconButton,
+              ...(isFirstML || isBusyML ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
-            onClick={onMoveUp}
-            disabled={isBusy}
-            aria-label={`Move ${field.label} up`}
+            onClick={onMoveUpML}
+            disabled={isBusyML}
+            aria-label={`Move ${fieldML.label} up`}
           >
             <img src="/arrow-up.svg" 
             width={44} 
@@ -810,12 +810,12 @@ function FieldRow({
           <button
             type="button"
             style={{
-              ...styles.iconButton,
-              ...(isLast || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+              ...stylesML.iconButton,
+              ...(isLastML || isBusyML ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
-            onClick={onMoveDown}
-            disabled={isBusy}
-            aria-label={`Move ${field.label} down`}
+            onClick={onMoveDownML}
+            disabled={isBusyML}
+            aria-label={`Move ${fieldML.label} down`}
           >
             <img src="/arrow-down.svg" 
               width={44} 
@@ -824,10 +824,10 @@ function FieldRow({
           </button>
           <button
             type="button"
-            style={styles.iconButton}
-            onClick={() => setIsEditing(true)}
-            disabled={isBusy}
-            aria-label={`Edit ${field.label}`}
+            style={stylesML.iconButton}
+            onClick={() => setIsEditingML(true)}
+            disabled={isBusyML}
+            aria-label={`Edit ${fieldML.label}`}
           >
             <img 
               src="/edit-icon.svg" 
@@ -837,10 +837,10 @@ function FieldRow({
           </button>
           <button
             type="button"
-            style={styles.deleteButton}
-            onClick={handleDelete}
-            disabled={isReordering}
-            aria-label={`Delete ${field.label}`}
+            style={stylesML.deleteButton}
+            onClick={handleDeleteML}
+            disabled={isReorderingML}
+            aria-label={`Delete ${fieldML.label}`}
           >
             <img
               src="/delete-icon.svg"
@@ -849,98 +849,98 @@ function FieldRow({
               alt="Delete"
               style={{
                 display: "block",
-                ...(isDeleting ? { opacity: 0.5 } : {}),
+                ...(isDeletingML ? { opacity: 0.5 } : {}),
               }}
             />
           </button>
         </div>
       </div>
-      <hr style={styles.divider} />
+      <hr style={stylesML.divider} />
     </div>
   );
 }
 
 export default function CustomFieldsPage() {
-  const { fields: loaderFields } = useLoaderData<typeof loader>();
-  const reorderFetcher = useFetcher<typeof action>();
-  const [fields, setFields] = useState(loaderFields);
-  const [open, setOpen] = useState(false);
-  const isReordering = reorderFetcher.state !== "idle";
+  const { fields: loaderFieldsML } = useLoaderData<typeof loader>();
+  const reorderFetcherML = useFetcher<typeof action>();
+  const [fieldsML, setFieldsML] = useState(loaderFieldsML);
+  const [openML, setOpenML] = useState(false);
+  const isReorderingML = reorderFetcherML.state !== "idle";
 
   useEffect(() => {
-    setFields(loaderFields);
-  }, [loaderFields]);
+    setFieldsML(loaderFieldsML);
+  }, [loaderFieldsML]);
 
-  const persistOrder = (ordered: typeof fields) => {
-    reorderFetcher.submit(
+  const persistOrderML = (orderedML: typeof fieldsML) => {
+    reorderFetcherML.submit(
       {
         intent: "reorder",
-        orderedIds: JSON.stringify(ordered.map((f) => f.id)),
+        orderedIds: JSON.stringify(orderedML.map((fML) => fML.id)),
       },
       { method: "POST" },
     );
   };
 
-  const moveField = (index: number, direction: -1 | 1) => {
-    const targetIndex = (index + direction + fields.length) % fields.length;
+  const moveFieldML = (indexML: number, directionML: -1 | 1) => {
+    const targetIndexML = (indexML + directionML + fieldsML.length) % fieldsML.length;
 
-    const reordered = [...fields];
-    const [moved] = reordered.splice(index, 1);
-    reordered.splice(targetIndex, 0, moved);
+    const reorderedML = [...fieldsML];
+    const [movedML] = reorderedML.splice(indexML, 1);
+    reorderedML.splice(targetIndexML, 0, movedML);
 
-    setFields(reordered);
-    persistOrder(reordered);
+    setFieldsML(reorderedML);
+    persistOrderML(reorderedML);
   };
 
   return (
     <div style={{ fontFamily: "Inter" }}>
       <FieldEditor
-        initial={EMPTY_FORM}
+        initial={EMPTY_FORM_ML}
         submitLabel="Add field"
-        open={open}
-        onToggleOpen={() => setOpen(!open)}
+        open={openML}
+        onToggleOpen={() => setOpenML(!openML)}
         title="Add a field"
         description={
           'Extra questions customers answer on the booking widget- e.g. "Number of guests" or "Special requests". Applies to every bookable product.'
         }
       />
 
-      <div style={styles.listCard}>
-        <div style={styles.listHeaderRow}>
-          <div style={styles.listHeaderLeft}>
-            <p style={styles.listTitle}>Current fields</p>
-            <p style={styles.descText}>
+      <div style={stylesML.listCard}>
+        <div style={stylesML.listHeaderRow}>
+          <div style={stylesML.listHeaderLeft}>
+            <p style={stylesML.listTitle}>Current fields</p>
+            <p style={stylesML.descText}>
               Use the arrows to change the order these questions appear in on
               the storefront.
             </p>
           </div>
         </div>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        <div style={styles.columnHeaderRow}>
-          <p style={styles.columnHeaderCell}>Label</p>
-          <p style={styles.columnHeaderCell}>Type</p>
-          <p style={styles.columnHeaderCell}>Required</p>
-          <p style={{ ...styles.columnHeaderCell, textAlign: "left" }}>
+        <div style={stylesML.columnHeaderRow}>
+          <p style={stylesML.columnHeaderCell}>Label</p>
+          <p style={stylesML.columnHeaderCell}>Type</p>
+          <p style={stylesML.columnHeaderCell}>Required</p>
+          <p style={{ ...stylesML.columnHeaderCell, textAlign: "left" }}>
             Actions
           </p>
         </div>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        {fields.length === 0 ? (
-          <p style={styles.emptyText}>No custom fields yet.</p>
+        {fieldsML.length === 0 ? (
+          <p style={stylesML.emptyText}>No custom fields yet.</p>
         ) : (
-          fields.map((field, index) => (
+          fieldsML.map((fieldML, indexML) => (
             <FieldRow
-              key={field.id}
-              field={field}
-              isFirst={index === 0}
-              isLast={index === fields.length - 1}
-              onMoveUp={() => moveField(index, -1)}
-              onMoveDown={() => moveField(index, 1)}
-              isReordering={isReordering}
+              key={fieldML.id}
+              field={fieldML}
+              isFirst={indexML === 0}
+              isLast={indexML === fieldsML.length - 1}
+              onMoveUp={() => moveFieldML(indexML, -1)}
+              onMoveDown={() => moveFieldML(indexML, 1)}
+              isReordering={isReorderingML}
             />
           ))
         )}
@@ -949,6 +949,6 @@ export default function CustomFieldsPage() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

@@ -1,5 +1,5 @@
 import type { SmtpSettings } from "@prisma/client";
-import prisma from "../db.server";
+import prismaML from "../db.server";
 
 export type SmtpSettingsFormValues = {
   host: string;
@@ -13,79 +13,79 @@ export type SmtpSettingsFieldErrors = Partial<
   Record<keyof SmtpSettingsFormValues, string>
 >;
 
-export async function getSmtpSettings(
-  shop: string,
+export async function getSmtpSettingsML(
+  shopML: string,
 ): Promise<SmtpSettings | null> {
-  return prisma.smtpSettings.findUnique({ where: { shop } });
+  return prismaML.smtpSettings.findUnique({ where: { shop: shopML } });
 }
 
-export function toFormValues(
-  settings: SmtpSettings | null,
+export function toFormValuesML(
+  settingsML: SmtpSettings | null,
 ): SmtpSettingsFormValues {
   return {
-    host: settings?.host ?? "",
-    port: settings?.port != null ? String(settings.port) : "",
-    username: settings?.username ?? "",
-    password: settings?.password ?? "",
-    fromEmail: settings?.fromEmail ?? "",
+    host: settingsML?.host ?? "",
+    port: settingsML?.port != null ? String(settingsML.port) : "",
+    username: settingsML?.username ?? "",
+    password: settingsML?.password ?? "",
+    fromEmail: settingsML?.fromEmail ?? "",
   };
 }
 
-const PORT_RE = /^\d+$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PORT_RE_ML = /^\d+$/;
+const EMAIL_RE_ML = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function parseSmtpSettingsForm(formData: FormData): {
+export function parseSmtpSettingsFormML(formDataML: FormData): {
   values: SmtpSettingsFormValues;
   errors: SmtpSettingsFieldErrors;
 } {
-  const errors: SmtpSettingsFieldErrors = {};
+  const errorsML: SmtpSettingsFieldErrors = {};
 
-  const host = String(formData.get("host") ?? "").trim();
-  if (!host) {
-    errors.host = "SMTP host is required.";
+  const hostML = String(formDataML.get("host") ?? "").trim();
+  if (!hostML) {
+    errorsML.host = "SMTP host is required.";
   }
 
-  const port = String(formData.get("port") ?? "").trim();
-  if (!port || !PORT_RE.test(port) || Number(port) < 1 || Number(port) > 65535) {
-    errors.port = "Enter a valid port number.";
+  const portML = String(formDataML.get("port") ?? "").trim();
+  if (!portML || !PORT_RE_ML.test(portML) || Number(portML) < 1 || Number(portML) > 65535) {
+    errorsML.port = "Enter a valid port number.";
   }
 
-  const username = String(formData.get("username") ?? "").trim();
-  if (!username) {
-    errors.username = "SMTP username is required.";
+  const usernameML = String(formDataML.get("username") ?? "").trim();
+  if (!usernameML) {
+    errorsML.username = "SMTP username is required.";
   }
 
-  const password = String(formData.get("password") ?? "");
-  if (!password) {
-    errors.password = "SMTP password is required.";
+  const passwordML = String(formDataML.get("password") ?? "");
+  if (!passwordML) {
+    errorsML.password = "SMTP password is required.";
   }
 
-  const fromEmail = String(formData.get("fromEmail") ?? "").trim();
-  if (!fromEmail || !EMAIL_RE.test(fromEmail)) {
-    errors.fromEmail = "Enter a valid \"from\" email address.";
+  const fromEmailML = String(formDataML.get("fromEmail") ?? "").trim();
+  if (!fromEmailML || !EMAIL_RE_ML.test(fromEmailML)) {
+    errorsML.fromEmail = "Enter a valid \"from\" email address.";
   }
 
   return {
-    values: { host, port, username, password, fromEmail },
-    errors,
+    values: { host: hostML, port: portML, username: usernameML, password: passwordML, fromEmail: fromEmailML },
+    errors: errorsML,
   };
 }
 
-export async function upsertSmtpSettings(
-  shop: string,
-  values: SmtpSettingsFormValues,
+export async function upsertSmtpSettingsML(
+  shopML: string,
+  valuesML: SmtpSettingsFormValues,
 ): Promise<SmtpSettings> {
-  const data = {
-    host: values.host,
-    port: Number(values.port),
-    username: values.username,
-    password: values.password,
-    fromEmail: values.fromEmail,
+  const dataML = {
+    host: valuesML.host,
+    port: Number(valuesML.port),
+    username: valuesML.username,
+    password: valuesML.password,
+    fromEmail: valuesML.fromEmail,
   };
 
-  return prisma.smtpSettings.upsert({
-    where: { shop },
-    create: { shop, ...data },
-    update: data,
+  return prismaML.smtpSettings.upsert({
+    where: { shop: shopML },
+    create: { shop: shopML, ...dataML },
+    update: dataML,
   });
 }

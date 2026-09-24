@@ -1,13 +1,13 @@
 import type { BookingSettings } from "@prisma/client";
-import prisma from "../db.server";
+import prismaML from "../db.server";
 import {
-  dayTimeMapFromLegacy,
-  parseDayTimesFormValue,
-  parseDayTimesJson,
+  dayTimeMapFromLegacyML,
+  parseDayTimesFormValueML,
+  parseDayTimesJsonML,
   type DayTimeMap,
 } from "../utils/dayTimes";
 
-export const DEFAULT_BOOKING_SETTINGS = {
+export const DEFAULT_BOOKING_SETTINGS_ML = {
   workingDays: "1,2,3,4,5",
   dailyStartTime: "09:00",
   dailyEndTime: "17:00",
@@ -38,188 +38,188 @@ export type BookingSettingsFieldErrors = Partial<
   Record<keyof BookingSettingsFormValues, string>
 >;
 
-export async function getBookingSettings(
-  shop: string,
+export async function getBookingSettingsML(
+  shopML: string,
 ): Promise<BookingSettings> {
-  const existing = await prisma.bookingSettings.findUnique({
-    where: { shop },
+  const existingML = await prismaML.bookingSettings.findUnique({
+    where: { shop: shopML },
   });
 
-  if (existing) {
-    return existing;
+  if (existingML) {
+    return existingML;
   }
 
-  return prisma.bookingSettings.create({
-    data: { shop, ...DEFAULT_BOOKING_SETTINGS },
+  return prismaML.bookingSettings.create({
+    data: { shop: shopML, ...DEFAULT_BOOKING_SETTINGS_ML },
   });
 }
 
-export function toFormValues(
-  settings: BookingSettings,
+export function toFormValuesML(
+  settingsML: BookingSettings,
 ): BookingSettingsFormValues {
-  const dayTimes =
-    parseDayTimesJson(settings.dayTimes) ??
-    dayTimeMapFromLegacy(
-      parseWorkingDays(settings.workingDays),
-      settings.dailyStartTime,
-      settings.dailyEndTime,
+  const dayTimesML =
+    parseDayTimesJsonML(settingsML.dayTimes) ??
+    dayTimeMapFromLegacyML(
+      parseWorkingDaysML(settingsML.workingDays),
+      settingsML.dailyStartTime,
+      settingsML.dailyEndTime,
     );
 
   return {
-    workingDays: parseWorkingDays(settings.workingDays),
-    dailyStartTime: settings.dailyStartTime,
-    dailyEndTime: settings.dailyEndTime,
-    dayTimes,
-    slotDurationMinutes: settings.slotDurationMinutes,
-    bufferMinutes: settings.bufferMinutes,
-    minAdvanceHours: settings.minAdvanceHours,
-    maxAdvanceDays: settings.maxAdvanceDays,
-    maxBookingsPerSlot: settings.maxBookingsPerSlot,
-    bookingStartDate: toDateInputValue(settings.bookingStartDate),
-    bookingEndDate: toDateInputValue(settings.bookingEndDate),
+    workingDays: parseWorkingDaysML(settingsML.workingDays),
+    dailyStartTime: settingsML.dailyStartTime,
+    dailyEndTime: settingsML.dailyEndTime,
+    dayTimes: dayTimesML,
+    slotDurationMinutes: settingsML.slotDurationMinutes,
+    bufferMinutes: settingsML.bufferMinutes,
+    minAdvanceHours: settingsML.minAdvanceHours,
+    maxAdvanceDays: settingsML.maxAdvanceDays,
+    maxBookingsPerSlot: settingsML.maxBookingsPerSlot,
+    bookingStartDate: toDateInputValueML(settingsML.bookingStartDate),
+    bookingEndDate: toDateInputValueML(settingsML.bookingEndDate),
   };
 }
 
-export function parseWorkingDays(csv: string): number[] {
-  return csv
+export function parseWorkingDaysML(csvML: string): number[] {
+  return csvML
     .split(",")
-    .map((part) => Number(part.trim()))
-    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
+    .map((partML) => Number(partML.trim()))
+    .filter((nML) => Number.isInteger(nML) && nML >= 0 && nML <= 6);
 }
 
-function toDateInputValue(date: Date | null): string | null {
-  if (!date) return null;
-  return date.toISOString().slice(0, 10);
+function toDateInputValueML(dateML: Date | null): string | null {
+  if (!dateML) return null;
+  return dateML.toISOString().slice(0, 10);
 }
 
-export const MAX_FROM_NAME_LENGTH = 60;
+export const MAX_FROM_NAME_LENGTH_ML = 60;
 
-export function parseEmailFromName(formData: FormData): {
+export function parseEmailFromNameML(formDataML: FormData): {
   value: string | null;
   error?: string;
 } {
-  const raw = String(formData.get("emailFromName") ?? "").trim();
-  if (raw.length > MAX_FROM_NAME_LENGTH) {
-    return { value: raw, error: `Keep it under ${MAX_FROM_NAME_LENGTH} characters.` };
+  const rawML = String(formDataML.get("emailFromName") ?? "").trim();
+  if (rawML.length > MAX_FROM_NAME_LENGTH_ML) {
+    return { value: rawML, error: `Keep it under ${MAX_FROM_NAME_LENGTH_ML} characters.` };
   }
-  return { value: raw || null };
+  return { value: rawML || null };
 }
 
-export async function updateEmailFromName(
-  shop: string,
-  emailFromName: string | null,
+export async function updateEmailFromNameML(
+  shopML: string,
+  emailFromNameML: string | null,
 ): Promise<void> {
-  await prisma.bookingSettings.upsert({
-    where: { shop },
-    create: { shop, ...DEFAULT_BOOKING_SETTINGS, emailFromName },
-    update: { emailFromName },
+  await prismaML.bookingSettings.upsert({
+    where: { shop: shopML },
+    create: { shop: shopML, ...DEFAULT_BOOKING_SETTINGS_ML, emailFromName: emailFromNameML },
+    update: { emailFromName: emailFromNameML },
   });
 }
 
-export function parseBookingSettingsForm(formData: FormData): {
+export function parseBookingSettingsFormML(formDataML: FormData): {
   values: BookingSettingsFormValues;
   errors: BookingSettingsFieldErrors;
 } {
-  const errors: BookingSettingsFieldErrors = {};
+  const errorsML: BookingSettingsFieldErrors = {};
 
-  const dayTimesRaw = String(formData.get("dayTimesJson") ?? "");
-  const dayTimesResult = parseDayTimesFormValue(dayTimesRaw);
-  if (!dayTimesResult.map) {
-    errors.dayTimes =
-      dayTimesResult.error ?? "Select at least one working day and set its hours.";
+  const dayTimesRawML = String(formDataML.get("dayTimesJson") ?? "");
+  const dayTimesResultML = parseDayTimesFormValueML(dayTimesRawML);
+  if (!dayTimesResultML.map) {
+    errorsML.dayTimes =
+      dayTimesResultML.error ?? "Select at least one working day and set its hours.";
   }
-  const dayTimes: DayTimeMap = dayTimesResult.map ?? {};
+  const dayTimesML: DayTimeMap = dayTimesResultML.map ?? {};
 
-  const workingDays = Object.keys(dayTimes)
+  const workingDaysML = Object.keys(dayTimesML)
     .map(Number)
-    .sort((a, b) => a - b);
+    .sort((aML, bML) => aML - bML);
 
-  const dayEntries = Object.values(dayTimes) as { start: string; end: string }[];
-  const dailyStartTime =
-    dayEntries.length > 0
-      ? dayEntries.reduce((min, e) => (e.start < min ? e.start : min), dayEntries[0].start)
+  const dayEntriesML = Object.values(dayTimesML) as { start: string; end: string }[];
+  const dailyStartTimeML =
+    dayEntriesML.length > 0
+      ? dayEntriesML.reduce((minML, eML) => (eML.start < minML ? eML.start : minML), dayEntriesML[0].start)
       : "09:00";
-  const dailyEndTime =
-    dayEntries.length > 0
-      ? dayEntries.reduce((max, e) => (e.end > max ? e.end : max), dayEntries[0].end)
+  const dailyEndTimeML =
+    dayEntriesML.length > 0
+      ? dayEntriesML.reduce((maxML, eML) => (eML.end > maxML ? eML.end : maxML), dayEntriesML[0].end)
       : "17:00";
 
-  const slotDurationMinutes = Number(formData.get("slotDurationMinutes"));
-  if (!Number.isInteger(slotDurationMinutes) || slotDurationMinutes < 5) {
-    errors.slotDurationMinutes = "Slot duration must be at least 5 minutes.";
+  const slotDurationMinutesML = Number(formDataML.get("slotDurationMinutes"));
+  if (!Number.isInteger(slotDurationMinutesML) || slotDurationMinutesML < 5) {
+    errorsML.slotDurationMinutes = "Slot duration must be at least 5 minutes.";
   }
 
-  const bufferMinutes = Number(formData.get("bufferMinutes"));
-  if (!Number.isInteger(bufferMinutes) || bufferMinutes < 0) {
-    errors.bufferMinutes = "Buffer time can't be negative.";
+  const bufferMinutesML = Number(formDataML.get("bufferMinutes"));
+  if (!Number.isInteger(bufferMinutesML) || bufferMinutesML < 0) {
+    errorsML.bufferMinutes = "Buffer time can't be negative.";
   }
 
-  const minAdvanceHours = Number(formData.get("minAdvanceHours"));
-  if (!Number.isInteger(minAdvanceHours) || minAdvanceHours < 0) {
-    errors.minAdvanceHours = "Minimum advance time can't be negative.";
+  const minAdvanceHoursML = Number(formDataML.get("minAdvanceHours"));
+  if (!Number.isInteger(minAdvanceHoursML) || minAdvanceHoursML < 0) {
+    errorsML.minAdvanceHours = "Minimum advance time can't be negative.";
   }
 
-  const maxAdvanceDays = Number(formData.get("maxAdvanceDays"));
-  if (!Number.isInteger(maxAdvanceDays) || maxAdvanceDays < 1) {
-    errors.maxAdvanceDays = "Maximum advance days must be at least 1.";
+  const maxAdvanceDaysML = Number(formDataML.get("maxAdvanceDays"));
+  if (!Number.isInteger(maxAdvanceDaysML) || maxAdvanceDaysML < 1) {
+    errorsML.maxAdvanceDays = "Maximum advance days must be at least 1.";
   }
 
-  const maxBookingsPerSlot = Number(formData.get("maxBookingsPerSlot"));
-  if (!Number.isInteger(maxBookingsPerSlot) || maxBookingsPerSlot < 1) {
-    errors.maxBookingsPerSlot = "Capacity per slot must be at least 1.";
+  const maxBookingsPerSlotML = Number(formDataML.get("maxBookingsPerSlot"));
+  if (!Number.isInteger(maxBookingsPerSlotML) || maxBookingsPerSlotML < 1) {
+    errorsML.maxBookingsPerSlot = "Capacity per slot must be at least 1.";
   }
 
-  const bookingStartDateRaw = String(formData.get("bookingStartDate") ?? "");
-  const bookingEndDateRaw = String(formData.get("bookingEndDate") ?? "");
-  const bookingStartDate = bookingStartDateRaw || null;
-  const bookingEndDate = bookingEndDateRaw || null;
-  if (bookingStartDate && bookingEndDate && bookingEndDate < bookingStartDate) {
-    errors.bookingEndDate = "End date must be after start date.";
+  const bookingStartDateRawML = String(formDataML.get("bookingStartDate") ?? "");
+  const bookingEndDateRawML = String(formDataML.get("bookingEndDate") ?? "");
+  const bookingStartDateML = bookingStartDateRawML || null;
+  const bookingEndDateML = bookingEndDateRawML || null;
+  if (bookingStartDateML && bookingEndDateML && bookingEndDateML < bookingStartDateML) {
+    errorsML.bookingEndDate = "End date must be after start date.";
   }
 
   return {
     values: {
-      workingDays,
-      dailyStartTime,
-      dailyEndTime,
-      dayTimes,
-      slotDurationMinutes,
-      bufferMinutes,
-      minAdvanceHours,
-      maxAdvanceDays,
-      maxBookingsPerSlot,
-      bookingStartDate,
-      bookingEndDate,
+      workingDays: workingDaysML,
+      dailyStartTime: dailyStartTimeML,
+      dailyEndTime: dailyEndTimeML,
+      dayTimes: dayTimesML,
+      slotDurationMinutes: slotDurationMinutesML,
+      bufferMinutes: bufferMinutesML,
+      minAdvanceHours: minAdvanceHoursML,
+      maxAdvanceDays: maxAdvanceDaysML,
+      maxBookingsPerSlot: maxBookingsPerSlotML,
+      bookingStartDate: bookingStartDateML,
+      bookingEndDate: bookingEndDateML,
     },
-    errors,
+    errors: errorsML,
   };
 }
 
-export async function upsertBookingSettings(
-  shop: string,
-  values: BookingSettingsFormValues,
+export async function upsertBookingSettingsML(
+  shopML: string,
+  valuesML: BookingSettingsFormValues,
 ): Promise<BookingSettings> {
-  const data = {
-    workingDays: values.workingDays.join(","),
-    dailyStartTime: values.dailyStartTime,
-    dailyEndTime: values.dailyEndTime,
-    dayTimes: values.dayTimes,
-    slotDurationMinutes: values.slotDurationMinutes,
-    bufferMinutes: values.bufferMinutes,
-    minAdvanceHours: values.minAdvanceHours,
-    maxAdvanceDays: values.maxAdvanceDays,
-    maxBookingsPerSlot: values.maxBookingsPerSlot,
-    bookingStartDate: values.bookingStartDate
-      ? new Date(values.bookingStartDate)
+  const dataML = {
+    workingDays: valuesML.workingDays.join(","),
+    dailyStartTime: valuesML.dailyStartTime,
+    dailyEndTime: valuesML.dailyEndTime,
+    dayTimes: valuesML.dayTimes,
+    slotDurationMinutes: valuesML.slotDurationMinutes,
+    bufferMinutes: valuesML.bufferMinutes,
+    minAdvanceHours: valuesML.minAdvanceHours,
+    maxAdvanceDays: valuesML.maxAdvanceDays,
+    maxBookingsPerSlot: valuesML.maxBookingsPerSlot,
+    bookingStartDate: valuesML.bookingStartDate
+      ? new Date(valuesML.bookingStartDate)
       : null,
-    bookingEndDate: values.bookingEndDate
-      ? new Date(values.bookingEndDate)
+    bookingEndDate: valuesML.bookingEndDate
+      ? new Date(valuesML.bookingEndDate)
       : null,
   };
 
-  return prisma.bookingSettings.upsert({
-    where: { shop },
-    create: { shop, ...data },
-    update: data,
+  return prismaML.bookingSettings.upsert({
+    where: { shop: shopML },
+    create: { shop: shopML, ...dataML },
+    update: dataML,
   });
 }

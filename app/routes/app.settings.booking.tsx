@@ -8,13 +8,13 @@ import { useFetcher, useLoaderData, useOutletContext } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { WEEKDAY_LABELS } from "../models/weekday-labels";
+import { WEEKDAY_LABELS_ML } from "../models/weekday-labels";
 import { TimeField12h } from "../components/TimeField12h";
 import {
-  getBookingSettings,
-  parseBookingSettingsForm,
-  toFormValues,
-  upsertBookingSettings,
+  getBookingSettingsML,
+  parseBookingSettingsFormML,
+  toFormValuesML,
+  upsertBookingSettingsML,
   type BookingSettingsFieldErrors,
   type BookingSettingsFormValues,
 } from "../models/bookingSettings.server";
@@ -22,13 +22,13 @@ import type { RegisterSave } from "./app.settings";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-const ACCENT = "#073E74";
-const LINE_BORDER = "#DBDBDB";
-const INPUT_BORDER = "#E9E9EA";
-const LABEL_GREY = "#373737";
-const TEXT_BLACK = "#000000";
+const ACCENT_ML = "#073E74";
+const LINE_BORDER_ML = "#DBDBDB";
+const INPUT_BORDER_ML = "#E9E9EA";
+const LABEL_GREY_ML = "#373737";
+const TEXT_BLACK_ML = "#000000";
 
-const styles: Record<string, React.CSSProperties> = {
+const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
     display: "flex",
@@ -38,7 +38,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "12px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
   },
   headerLeft: {
@@ -54,7 +54,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   descText: {
@@ -62,12 +62,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${LINE_BORDER}`,
+    borderTop: `1px solid ${LINE_BORDER_ML}`,
     margin: 0,
     width: "100%",
   },
@@ -100,7 +100,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "24px",
     height: "24px",
     borderRadius: "4px",
-    border: `1.5px solid ${ACCENT}`,
+    border: `1.5px solid ${ACCENT_ML}`,
     background: "#FFFFFF",
     cursor: "pointer",
     display: "flex",
@@ -113,14 +113,14 @@ const styles: Record<string, React.CSSProperties> = {
     width: "14px",
     height: "14px",
     borderRadius: "50%",
-    background: ACCENT,
+    background: ACCENT_ML,
   },
   dayLabel: {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
     cursor: "pointer",
   },
@@ -154,7 +154,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   textInput: {
@@ -167,7 +167,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
   },
   hintText: {
@@ -175,7 +175,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: LABEL_GREY,
+    color: LABEL_GREY_ML,
     margin: 0,
   },
   dayGrid: {
@@ -217,7 +217,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "84px",
     height: "30px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
   },
   smallTextInput: {
@@ -230,7 +230,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
   },
   selectBox: {
@@ -244,7 +244,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
   },
   dateBox: {
@@ -257,7 +257,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
     position: "relative",
     cursor: "pointer",
@@ -272,7 +272,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
     cursor: "pointer",
   },
@@ -315,7 +315,7 @@ function ChevronDownIcon() {
     >
       <path
         d="M1 1l3.15 3.433c.395.431.593.647.837.694.093.018.189.018.282 0 .244-.047.442-.263.837-.694L9.25 1"
-        stroke={ACCENT}
+        stroke={ACCENT_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -325,10 +325,10 @@ function ChevronDownIcon() {
 }
 
 function NumberStepper({
-  onIncrement,
-  onDecrement,
-  incrementLabel,
-  decrementLabel,
+  onIncrement: onIncrementML,
+  onDecrement: onDecrementML,
+  incrementLabel: incrementLabelML,
+  decrementLabel: decrementLabelML,
 }: {
   onIncrement: () => void;
   onDecrement: () => void;
@@ -336,12 +336,12 @@ function NumberStepper({
   decrementLabel: string;
 }) {
   return (
-    <div style={styles.stepperWrap}>
+    <div style={stylesML.stepperWrap}>
       <button
         type="button"
-        style={styles.stepperBtn}
-        onClick={onIncrement}
-        aria-label={incrementLabel}
+        style={stylesML.stepperBtn}
+        onClick={onIncrementML}
+        aria-label={incrementLabelML}
         tabIndex={-1}
       >
         <span style={{ display: "flex", transform: "rotate(180deg)" }}>
@@ -350,9 +350,9 @@ function NumberStepper({
       </button>
       <button
         type="button"
-        style={styles.stepperBtn}
-        onClick={onDecrement}
-        aria-label={decrementLabel}
+        style={stylesML.stepperBtn}
+        onClick={onDecrementML}
+        aria-label={decrementLabelML}
         tabIndex={-1}
       >
         <ChevronDownIcon />
@@ -362,171 +362,171 @@ function NumberStepper({
 }
 
 function Checkbox({
-  checked,
-  onChange,
-  label,
+  checked: checkedML,
+  onChange: onChangeML,
+  label: labelML,
 }: {
   checked: boolean;
   onChange: () => void;
   label: string;
 }) {
   return (
-    <div style={styles.dayItem}>
+    <div style={stylesML.dayItem}>
       <button
         type="button"
         role="checkbox"
-        aria-checked={checked}
-        aria-label={label}
-        style={styles.checkbox}
-        onClick={onChange}
+        aria-checked={checkedML}
+        aria-label={labelML}
+        style={stylesML.checkbox}
+        onClick={onChangeML}
       >
-        {checked && <span style={styles.checkboxDot} />}
+        {checkedML && <span style={stylesML.checkboxDot} />}
       </button>
-      <p style={styles.dayLabel} onClick={onChange}>
-        {label}
+      <p style={stylesML.dayLabel} onClick={onChangeML}>
+        {labelML}
       </p>
     </div>
   );
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const settings = await getBookingSettings(session.shop);
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const settingsML = await getBookingSettingsML(sessionML.shop);
   return {
-    values: toFormValues(settings),
+    values: toFormValuesML(settingsML),
   };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const { values, errors } = parseBookingSettingsForm(formData);
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
+  const { values: valuesML, errors: errorsML } = parseBookingSettingsFormML(formDataML);
 
-  if (Object.keys(errors).length > 0) {
-    return { ok: false as const, errors, values };
+  if (Object.keys(errorsML).length > 0) {
+    return { ok: false as const, errors: errorsML, values: valuesML };
   }
 
-  const saved = await upsertBookingSettings(session.shop, values);
-  return { ok: true as const, errors: {}, values: toFormValues(saved) };
+  const savedML = await upsertBookingSettingsML(sessionML.shop, valuesML);
+  return { ok: true as const, errors: {}, values: toFormValuesML(savedML) };
 };
 
 export default function BookingSettingsPage() {
-  const { values: initialValues } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
-  const { registerSave } = useOutletContext<{ registerSave: RegisterSave }>();
+  const { values: initialValuesML } = useLoaderData<typeof loader>();
+  const fetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
+  const { registerSave: registerSaveML } = useOutletContext<{ registerSave: RegisterSave }>();
 
-  const [values, setValues] =
-    useState<BookingSettingsFormValues>(initialValues);
+  const [valuesML, setValuesML] =
+    useState<BookingSettingsFormValues>(initialValuesML);
 
-  const bookingStartDateRef = useRef<HTMLInputElement>(null);
-  const bookingEndDateRef = useRef<HTMLInputElement>(null);
+  const bookingStartDateRefML = useRef<HTMLInputElement>(null);
+  const bookingEndDateRefML = useRef<HTMLInputElement>(null);
 
-  const openDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
-    const el = ref.current;
-    if (!el) return;
-    if (typeof el.showPicker === "function") {
-      el.showPicker();
+  const openDatePickerML = (refML: React.RefObject<HTMLInputElement | null>) => {
+    const elML = refML.current;
+    if (!elML) return;
+    if (typeof elML.showPicker === "function") {
+      elML.showPicker();
     } else {
-      el.focus();
+      elML.focus();
     }
   };
 
-  const errors: BookingSettingsFieldErrors = fetcher.data?.errors ?? {};
-  const isSaving =
-    fetcher.state === "submitting" || fetcher.state === "loading";
+  const errorsML: BookingSettingsFieldErrors = fetcherML.data?.errors ?? {};
+  const isSavingML =
+    fetcherML.state === "submitting" || fetcherML.state === "loading";
 
   useEffect(() => {
-    if (fetcher.data?.ok) {
-      setValues(fetcher.data.values);
-      shopify.toast.show("Booking settings saved");
+    if (fetcherML.data?.ok) {
+      setValuesML(fetcherML.data.values);
+      shopifyML.toast.show("Booking settings saved");
     }
-  }, [fetcher.data, shopify]);
+  }, [fetcherML.data, shopifyML]);
 
-  const setField = <K extends keyof BookingSettingsFormValues>(
-    key: K,
-    value: BookingSettingsFormValues[K],
+  const setFieldML = <K extends keyof BookingSettingsFormValues>(
+    keyML: K,
+    valueML: BookingSettingsFormValues[K],
   ) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    setValuesML((prevML) => ({ ...prevML, [keyML]: valueML }));
   };
 
-  const handleNumericChange = <K extends keyof BookingSettingsFormValues>(
-    key: K,
-    raw: string,
-    maxDigits: number,
+  const handleNumericChangeML = <K extends keyof BookingSettingsFormValues>(
+    keyML: K,
+    rawML: string,
+    maxDigitsML: number,
   ) => {
-    const digits = raw.replace(/\D/g, "").slice(0, maxDigits);
-    setField(key, (digits === "" ? 0 : Number(digits)) as BookingSettingsFormValues[K]);
+    const digitsML = rawML.replace(/\D/g, "").slice(0, maxDigitsML);
+    setFieldML(keyML, (digitsML === "" ? 0 : Number(digitsML)) as BookingSettingsFormValues[K]);
   };
 
-  const selectAllOnFocus = (e: { currentTarget: HTMLInputElement }) =>
-    e.currentTarget.select();
+  const selectAllOnFocusML = (eML: { currentTarget: HTMLInputElement }) =>
+    eML.currentTarget.select();
 
-  const toggleWorkingDay = (day: number) => {
-    setValues((prev) => {
-      const current = { ...(prev.dayTimes ?? {}) };
-      if (current[day]) {
-        delete current[day];
+  const toggleWorkingDayML = (dayML: number) => {
+    setValuesML((prevML) => {
+      const currentML = { ...(prevML.dayTimes ?? {}) };
+      if (currentML[dayML]) {
+        delete currentML[dayML];
       } else {
-        current[day] = { start: "09:00", end: "17:00" };
+        currentML[dayML] = { start: "09:00", end: "17:00" };
       }
-      return { ...prev, dayTimes: current };
+      return { ...prevML, dayTimes: currentML };
     });
   };
 
-  const setDayTime = (
-    day: number,
-    field: "start" | "end",
-    next: string | null,
+  const setDayTimeML = (
+    dayML: number,
+    fieldML: "start" | "end",
+    nextML: string | null,
   ) => {
-    if (!next) return;
-    setValues((prev) => {
-      const existing = prev.dayTimes?.[day] ?? { start: "09:00", end: "17:00" };
+    if (!nextML) return;
+    setValuesML((prevML) => {
+      const existingML = prevML.dayTimes?.[dayML] ?? { start: "09:00", end: "17:00" };
       return {
-        ...prev,
+        ...prevML,
         dayTimes: {
-          ...(prev.dayTimes ?? {}),
-          [day]: { ...existing, [field]: next },
+          ...(prevML.dayTimes ?? {}),
+          [dayML]: { ...existingML, [fieldML]: nextML },
         },
       };
     });
   };
 
-  const allWeekdaysSelected = WEEKDAY_LABELS.every(
-    (day) => values.dayTimes?.[day.value] != null,
+  const allWeekdaysSelectedML = WEEKDAY_LABELS_ML.every(
+    (dayML) => valuesML.dayTimes?.[dayML.value] != null,
   );
 
-  const toggleSelectAllWorkingDays = () => {
-    setValues((prev) => {
-      if (allWeekdaysSelected) return { ...prev, dayTimes: {} };
-      const next = { ...(prev.dayTimes ?? {}) };
-      for (const day of WEEKDAY_LABELS) {
-        if (!next[day.value]) next[day.value] = { start: "09:00", end: "17:00" };
+  const toggleSelectAllWorkingDaysML = () => {
+    setValuesML((prevML) => {
+      if (allWeekdaysSelectedML) return { ...prevML, dayTimes: {} };
+      const nextML = { ...(prevML.dayTimes ?? {}) };
+      for (const dayML of WEEKDAY_LABELS_ML) {
+        if (!nextML[dayML.value]) nextML[dayML.value] = { start: "09:00", end: "17:00" };
       }
-      return { ...prev, dayTimes: next };
+      return { ...prevML, dayTimes: nextML };
     });
   };
 
-  const handleSave = () => {
-    fetcher.submit(
+  const handleSaveML = () => {
+    fetcherML.submit(
       {
-        dayTimesJson: JSON.stringify(values.dayTimes ?? {}),
-        slotDurationMinutes: String(values.slotDurationMinutes),
-        bufferMinutes: String(values.bufferMinutes),
-        minAdvanceHours: String(values.minAdvanceHours),
-        maxAdvanceDays: String(values.maxAdvanceDays),
-        maxBookingsPerSlot: String(values.maxBookingsPerSlot),
-        bookingStartDate: values.bookingStartDate ?? "",
-        bookingEndDate: values.bookingEndDate ?? "",
+        dayTimesJson: JSON.stringify(valuesML.dayTimes ?? {}),
+        slotDurationMinutes: String(valuesML.slotDurationMinutes),
+        bufferMinutes: String(valuesML.bufferMinutes),
+        minAdvanceHours: String(valuesML.minAdvanceHours),
+        maxAdvanceDays: String(valuesML.maxAdvanceDays),
+        maxBookingsPerSlot: String(valuesML.maxBookingsPerSlot),
+        bookingStartDate: valuesML.bookingStartDate ?? "",
+        bookingEndDate: valuesML.bookingEndDate ?? "",
       },
       { method: "POST" }, 
     );
   };
 
   useEffect(() => {
-    registerSave(handleSave, isSaving);
-    return () => registerSave(null, false);
-  }, [registerSave, values, isSaving]);
+    registerSaveML(handleSaveML, isSavingML);
+    return () => registerSaveML(null, false);
+  }, [registerSaveML, valuesML, isSavingML]);
 
   return (
     <>
@@ -550,46 +550,46 @@ export default function BookingSettingsPage() {
         }
       `}</style>
 
-      <div style={styles.card}>
-        <div style={styles.headerLeft}>
-          <p style={styles.title}>Working Days & Hours</p>
-          <p style={styles.descText}>
+      <div style={stylesML.card}>
+        <div style={stylesML.headerLeft}>
+          <p style={stylesML.title}>Working Days & Hours</p>
+          <p style={stylesML.descText}>
             Choose which days customers can book, and set each day's own
             booking window. A day with no hours set isn't bookable.
           </p>
         </div>
-        <hr style={styles.divider} />
-        <div style={styles.daysGroup}>
-          <div style={styles.daysRow}>
+        <hr style={stylesML.divider} />
+        <div style={stylesML.daysGroup}>
+          <div style={stylesML.daysRow}>
             <Checkbox
-              checked={allWeekdaysSelected}
-              onChange={toggleSelectAllWorkingDays}
+              checked={allWeekdaysSelectedML}
+              onChange={toggleSelectAllWorkingDaysML}
               label="Select All"
             />
           </div>
-          <div style={styles.dayGrid}>
-          {WEEKDAY_LABELS.map((day) => {
-            const dayTime = values.dayTimes?.[day.value];
-            const isChecked = dayTime != null;
-            const isOutOfOrder =
-              isChecked && dayTime.start != null && dayTime.end != null
-                ? dayTime.end <= dayTime.start
+          <div style={stylesML.dayGrid}>
+          {WEEKDAY_LABELS_ML.map((dayML) => {
+            const dayTimeML = valuesML.dayTimes?.[dayML.value];
+            const isCheckedML = dayTimeML != null;
+            const isOutOfOrderML =
+              isCheckedML && dayTimeML.start != null && dayTimeML.end != null
+                ? dayTimeML.end <= dayTimeML.start
                 : false;
             return (
               <div
-                key={day.value}
+                key={dayML.value}
                 style={{
-                  ...styles.dayTimeRow,
-                  ...(isChecked ? styles.dayTimeRowActive : {}),
+                  ...stylesML.dayTimeRow,
+                  ...(isCheckedML ? stylesML.dayTimeRowActive : {}),
                 }}
               >
                 <Checkbox
-                    checked={isChecked}
-                    onChange={() => toggleWorkingDay(day.value)}
-                    label={day.label}
+                    checked={isCheckedML}
+                    onChange={() => toggleWorkingDayML(dayML.value)}
+                    label={dayML.label}
                   />
-                {!isChecked && <p style={styles.hintText}>Closed</p>}
-                {isChecked && (
+                {!isCheckedML && <p style={stylesML.hintText}>Closed</p>}
+                {isCheckedML && (
                   <div
                     style={{
                       display: "flex",
@@ -598,27 +598,27 @@ export default function BookingSettingsPage() {
                       gap: "4px",
                     }}
                   >
-                    <div style={styles.dayTimeInputs}>
+                    <div style={stylesML.dayTimeInputs}>
                       <TimeField12h
-                        value={dayTime.start}
-                        onChange={(next) => setDayTime(day.value, "start", next)}
-                        inputBoxStyle={{ ...styles.smallInputBox, width: "128px" }}
-                        inputStyle={styles.smallTextInput}
-                        borderColor={INPUT_BORDER}
-                        textColor={TEXT_BLACK}
+                        value={dayTimeML.start}
+                        onChange={(nextML) => setDayTimeML(dayML.value, "start", nextML)}
+                        inputBoxStyle={{ ...stylesML.smallInputBox, width: "128px" }}
+                        inputStyle={stylesML.smallTextInput}
+                        borderColor={INPUT_BORDER_ML}
+                        textColor={TEXT_BLACK_ML}
                       />
-                      <span style={styles.hintText}>to</span>
+                      <span style={stylesML.hintText}>to</span>
                       <TimeField12h
-                        value={dayTime.end}
-                        onChange={(next) => setDayTime(day.value, "end", next)}
-                        inputBoxStyle={{ ...styles.smallInputBox, width: "128px" }}
-                        inputStyle={styles.smallTextInput}
-                        borderColor={INPUT_BORDER}
-                        textColor={TEXT_BLACK}
+                        value={dayTimeML.end}
+                        onChange={(nextML) => setDayTimeML(dayML.value, "end", nextML)}
+                        inputBoxStyle={{ ...stylesML.smallInputBox, width: "128px" }}
+                        inputStyle={stylesML.smallTextInput}
+                        borderColor={INPUT_BORDER_ML}
+                        textColor={TEXT_BLACK_ML}
                       />
                     </div>
-                    {isOutOfOrder && (
-                      <p style={{ ...styles.hintText, color: "#D82C0D" }}>
+                    {isOutOfOrderML && (
+                      <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
                         End time must be after start time
                       </p>
                     )}
@@ -629,37 +629,37 @@ export default function BookingSettingsPage() {
           })}
           </div>
         </div>
-        {errors.dayTimes && (
-          <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-            {errors.dayTimes}
+        {errorsML.dayTimes && (
+          <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+            {errorsML.dayTimes}
           </p>
         )}
       </div>
 
-      <div style={{ ...styles.card, marginTop: "16px" }}>
-        <div style={styles.headerLeft}>
-          <p style={styles.title}>Slot Configuration</p>
-          <p style={styles.descText}>
+      <div style={{ ...stylesML.card, marginTop: "16px" }}>
+        <div style={stylesML.headerLeft}>
+          <p style={stylesML.title}>Slot Configuration</p>
+          <p style={stylesML.descText}>
             Only applies to bookable products set to Slot or Bundle.
           </p>
         </div>
-        <hr style={styles.divider} />
-        <div style={styles.fieldsRow}>
-          <div style={styles.fieldGroupThird}>
-            <p style={styles.fieldLabelBlack}>Slot Duration (minutes)</p>
-            <div style={styles.selectBox}>
+        <hr style={stylesML.divider} />
+        <div style={stylesML.fieldsRow}>
+          <div style={stylesML.fieldGroupThird}>
+            <p style={stylesML.fieldLabelBlack}>Slot Duration (minutes)</p>
+            <div style={stylesML.selectBox}>
               <input
                 type="text"
                 inputMode="numeric"
                 maxLength={4}
                 className="no-spinner-input"
-                style={styles.textInput}
-                value={values.slotDurationMinutes}
-                onFocus={selectAllOnFocus}
-                onChange={(e: FieldChangeEvent) =>
-                  handleNumericChange(
+                style={stylesML.textInput}
+                value={valuesML.slotDurationMinutes}
+                onFocus={selectAllOnFocusML}
+                onChange={(eML: FieldChangeEvent) =>
+                  handleNumericChangeML(
                     "slotDurationMinutes",
-                    e.currentTarget.value,
+                    eML.currentTarget.value,
                     4,
                   )
                 }
@@ -668,71 +668,71 @@ export default function BookingSettingsPage() {
                 incrementLabel="Increase slot duration"
                 decrementLabel="Decrease slot duration"
                 onIncrement={() =>
-                  setField("slotDurationMinutes", values.slotDurationMinutes + 5)
+                  setFieldML("slotDurationMinutes", valuesML.slotDurationMinutes + 5)
                 }
                 onDecrement={() =>
-                  setField(
+                  setFieldML(
                     "slotDurationMinutes",
-                    Math.max(5, values.slotDurationMinutes - 5),
+                    Math.max(5, valuesML.slotDurationMinutes - 5),
                   )
                 }
               />
             </div>
-            {errors.slotDurationMinutes && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.slotDurationMinutes}
+            {errorsML.slotDurationMinutes && (
+              <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                {errorsML.slotDurationMinutes}
               </p>
             )}
           </div>
-          <div style={styles.fieldGroupThird}>
-            <p style={styles.fieldLabelBlack}>
+          <div style={stylesML.fieldGroupThird}>
+            <p style={stylesML.fieldLabelBlack}>
               Buffer Time Between Slots (minutes)
             </p>
-            <div style={styles.selectBox}>
+            <div style={stylesML.selectBox}>
               <input
                 type="text"
                 inputMode="numeric"
                 maxLength={4}
                 className="no-spinner-input"
-                style={styles.textInput}
-                value={values.bufferMinutes}
-                onFocus={selectAllOnFocus}
-                onChange={(e: FieldChangeEvent) =>
-                  handleNumericChange("bufferMinutes", e.currentTarget.value, 4)
+                style={stylesML.textInput}
+                value={valuesML.bufferMinutes}
+                onFocus={selectAllOnFocusML}
+                onChange={(eML: FieldChangeEvent) =>
+                  handleNumericChangeML("bufferMinutes", eML.currentTarget.value, 4)
                 }
               />
               <NumberStepper
                 incrementLabel="Increase buffer time"
                 decrementLabel="Decrease buffer time"
                 onIncrement={() =>
-                  setField("bufferMinutes", values.bufferMinutes + 5)
+                  setFieldML("bufferMinutes", valuesML.bufferMinutes + 5)
                 }
                 onDecrement={() =>
-                  setField("bufferMinutes", Math.max(0, values.bufferMinutes - 5))
+                  setFieldML("bufferMinutes", Math.max(0, valuesML.bufferMinutes - 5))
                 }
               />
             </div>
-            {errors.bufferMinutes && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.bufferMinutes}
+            {errorsML.bufferMinutes && (
+              <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                {errorsML.bufferMinutes}
               </p>
             )}
           </div>
-          <div style={styles.fieldGroupThird}>
-            <p style={styles.fieldLabelBlack}>Max Bookings Per Slot</p>
-            <div style={styles.selectBox}>
+          <div style={stylesML.fieldGroupThird}>
+            <p style={stylesML.fieldLabelBlack}>Max Bookings Per Slot</p>
+            <div style={stylesML.selectBox}>
               <input
                 type="text"
                 inputMode="numeric"
                 maxLength={3}
                 className="no-spinner-input"
-                style={styles.textInput}
-                value={values.maxBookingsPerSlot}
-                onFocus={selectAllOnFocus}
-                onChange={(e: FieldChangeEvent) =>
-                  handleNumericChange(
+                style={stylesML.textInput}
+                value={valuesML.maxBookingsPerSlot}
+                onFocus={selectAllOnFocusML}
+                onChange={(eML: FieldChangeEvent) =>
+                  handleNumericChangeML(
                     "maxBookingsPerSlot",
-                    e.currentTarget.value,
+                    eML.currentTarget.value,
                     3,
                   )
                 }
@@ -741,52 +741,52 @@ export default function BookingSettingsPage() {
                 incrementLabel="Increase max bookings per slot"
                 decrementLabel="Decrease max bookings per slot"
                 onIncrement={() =>
-                  setField("maxBookingsPerSlot", values.maxBookingsPerSlot + 1)
+                  setFieldML("maxBookingsPerSlot", valuesML.maxBookingsPerSlot + 1)
                 }
                 onDecrement={() =>
-                  setField(
+                  setFieldML(
                     "maxBookingsPerSlot",
-                    Math.max(1, values.maxBookingsPerSlot - 1),
+                    Math.max(1, valuesML.maxBookingsPerSlot - 1),
                   )
                 }
               />
             </div>
-            {errors.maxBookingsPerSlot && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.maxBookingsPerSlot}
+            {errorsML.maxBookingsPerSlot && (
+              <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                {errorsML.maxBookingsPerSlot}
               </p>
             )}
           </div>
         </div>
       </div>
 
-      <div style={{ ...styles.card, marginTop: "16px" }}>
-        <div style={styles.headerLeft}>
-          <p style={styles.title}>Advance Booking Rules</p>
-          <p style={styles.descText}>
+      <div style={{ ...stylesML.card, marginTop: "16px" }}>
+        <div style={stylesML.headerLeft}>
+          <p style={stylesML.title}>Advance Booking Rules</p>
+          <p style={stylesML.descText}>
             Control how soon and how far ahead customers are allowed to
             make a booking.
           </p>
         </div>
-        <hr style={styles.divider} />
-        <div style={styles.fieldsRow}>
-          <div style={styles.fieldGroupHalf}>
-            <p style={styles.fieldLabelBlack}>
+        <hr style={stylesML.divider} />
+        <div style={stylesML.fieldsRow}>
+          <div style={stylesML.fieldGroupHalf}>
+            <p style={stylesML.fieldLabelBlack}>
               Minimum Advance Booking Time (hours)
             </p>
-            <div style={styles.selectBox}>
+            <div style={stylesML.selectBox}>
               <input
                 type="text"
                 inputMode="numeric"
                 maxLength={4}
                 className="no-spinner-input"
-                style={styles.textInput}
-                value={values.minAdvanceHours}
-                onFocus={selectAllOnFocus}
-                onChange={(e: FieldChangeEvent) =>
-                  handleNumericChange(
+                style={stylesML.textInput}
+                value={valuesML.minAdvanceHours}
+                onFocus={selectAllOnFocusML}
+                onChange={(eML: FieldChangeEvent) =>
+                  handleNumericChangeML(
                     "minAdvanceHours",
-                    e.currentTarget.value,
+                    eML.currentTarget.value,
                     4,
                   )
                 }
@@ -795,39 +795,39 @@ export default function BookingSettingsPage() {
                 incrementLabel="Increase minimum advance booking time"
                 decrementLabel="Decrease minimum advance booking time"
                 onIncrement={() =>
-                  setField("minAdvanceHours", values.minAdvanceHours + 1)
+                  setFieldML("minAdvanceHours", valuesML.minAdvanceHours + 1)
                 }
                 onDecrement={() =>
-                  setField(
+                  setFieldML(
                     "minAdvanceHours",
-                    Math.max(0, values.minAdvanceHours - 1),
+                    Math.max(0, valuesML.minAdvanceHours - 1),
                   )
                 }
               />
             </div>
-            {errors.minAdvanceHours && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.minAdvanceHours}
+            {errorsML.minAdvanceHours && (
+              <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                {errorsML.minAdvanceHours}
               </p>
             )}
           </div>
-          <div style={styles.fieldGroupHalf}>
-            <p style={styles.fieldLabelBlack}>
+          <div style={stylesML.fieldGroupHalf}>
+            <p style={stylesML.fieldLabelBlack}>
               Maximum Advance Booking (days)
             </p>
-            <div style={styles.selectBox}>
+            <div style={stylesML.selectBox}>
               <input
                 type="text"
                 inputMode="numeric"
                 maxLength={4}
                 className="no-spinner-input"
-                style={styles.textInput}
-                value={values.maxAdvanceDays}
-                onFocus={selectAllOnFocus}
-                onChange={(e: FieldChangeEvent) =>
-                  handleNumericChange(
+                style={stylesML.textInput}
+                value={valuesML.maxAdvanceDays}
+                onFocus={selectAllOnFocusML}
+                onChange={(eML: FieldChangeEvent) =>
+                  handleNumericChangeML(
                     "maxAdvanceDays",
-                    e.currentTarget.value,
+                    eML.currentTarget.value,
                     4,
                   )
                 }
@@ -836,83 +836,83 @@ export default function BookingSettingsPage() {
                 incrementLabel="Increase maximum advance booking days"
                 decrementLabel="Decrease maximum advance booking days"
                 onIncrement={() =>
-                  setField("maxAdvanceDays", values.maxAdvanceDays + 1)
+                  setFieldML("maxAdvanceDays", valuesML.maxAdvanceDays + 1)
                 }
                 onDecrement={() =>
-                  setField(
+                  setFieldML(
                     "maxAdvanceDays",
-                    Math.max(1, values.maxAdvanceDays - 1),
+                    Math.max(1, valuesML.maxAdvanceDays - 1),
                   )
                 }
               />
             </div>
-            {errors.maxAdvanceDays && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.maxAdvanceDays}
+            {errorsML.maxAdvanceDays && (
+              <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                {errorsML.maxAdvanceDays}
               </p>
             )}
           </div>
         </div>
       </div>
 
-      <div style={{ ...styles.card, marginTop: "16px" }}>
-        <div style={styles.headerLeft}>
-          <p style={styles.title}>Booking Start and End Date</p>
-          <p style={styles.descText}>
+      <div style={{ ...stylesML.card, marginTop: "16px" }}>
+        <div style={stylesML.headerLeft}>
+          <p style={stylesML.title}>Booking Start and End Date</p>
+          <p style={stylesML.descText}>
             Set the overall window in which bookings are accepted (leave blank to accept bookings anytime).
           </p>
         </div>
-        <hr style={styles.divider} />
-        <div style={styles.fieldsRow}>
-          <div style={styles.fieldGroupHalf}>
-            <p style={styles.fieldLabelBlack}>Booking Start Date</p>
+        <hr style={stylesML.divider} />
+        <div style={stylesML.fieldsRow}>
+          <div style={stylesML.fieldGroupHalf}>
+            <p style={stylesML.fieldLabelBlack}>Booking Start Date</p>
             <div
-              style={styles.dateBox}
-              onClick={() => openDatePicker(bookingStartDateRef)}
+              style={stylesML.dateBox}
+              onClick={() => openDatePickerML(bookingStartDateRefML)}
             >
               <img src="/date-icon.svg" width={18} height={20} alt="" />
               <input
-                ref={bookingStartDateRef}
+                ref={bookingStartDateRefML}
                 type="date"
                 className="booking-date-input"
-                style={styles.dateInput}
-                value={values.bookingStartDate ?? ""}
-                onChange={(e: FieldChangeEvent) =>
-                  setField("bookingStartDate", e.currentTarget.value || null)
+                style={stylesML.dateInput}
+                value={valuesML.bookingStartDate ?? ""}
+                onChange={(eML: FieldChangeEvent) =>
+                  setFieldML("bookingStartDate", eML.currentTarget.value || null)
                 }
-                onClick={(e) => e.stopPropagation()}
+                onClick={(eML) => eML.stopPropagation()}
                 aria-label="Booking Start Date"
               />
             </div>
-            {errors.bookingStartDate && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.bookingStartDate}
+            {errorsML.bookingStartDate && (
+              <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                {errorsML.bookingStartDate}
               </p>
             )}
           </div>
-          <div style={styles.fieldGroupHalf}>
-            <p style={styles.fieldLabelBlack}>Booking End Date</p>
+          <div style={stylesML.fieldGroupHalf}>
+            <p style={stylesML.fieldLabelBlack}>Booking End Date</p>
             <div
-              style={styles.dateBox}
-              onClick={() => openDatePicker(bookingEndDateRef)}
+              style={stylesML.dateBox}
+              onClick={() => openDatePickerML(bookingEndDateRefML)}
             >
               <img src="/date-icon.svg" width={18} height={20} alt="" />
               <input
-                ref={bookingEndDateRef}
+                ref={bookingEndDateRefML}
                 type="date"
                 className="booking-date-input"
-                style={styles.dateInput}
-                value={values.bookingEndDate ?? ""}
-                onChange={(e: FieldChangeEvent) =>
-                  setField("bookingEndDate", e.currentTarget.value || null)
+                style={stylesML.dateInput}
+                value={valuesML.bookingEndDate ?? ""}
+                onChange={(eML: FieldChangeEvent) =>
+                  setFieldML("bookingEndDate", eML.currentTarget.value || null)
                 }
-                onClick={(e) => e.stopPropagation()}
+                onClick={(eML) => eML.stopPropagation()}
                 aria-label="Booking End Date"
               />
             </div>
-            {errors.bookingEndDate && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.bookingEndDate}
+            {errorsML.bookingEndDate && (
+              <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                {errorsML.bookingEndDate}
               </p>
             )}
           </div>
@@ -922,6 +922,6 @@ export default function BookingSettingsPage() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

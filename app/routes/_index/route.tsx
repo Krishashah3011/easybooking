@@ -5,18 +5,18 @@ import { login } from "../../shopify.server";
 
 import styles from "./styles.module.css";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const url = new URL(request.url);
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const urlML = new URL(requestML.url);
 
-  if (url.searchParams.get("shop")) {
-    throw redirect(`/app?${url.searchParams.toString()}`);
+  if (urlML.searchParams.get("shop")) {
+    throw redirect(`/app?${urlML.searchParams.toString()}`);
   }
 
   return { showForm: Boolean(login) };
 };
 
 export default function App() {
-  const { showForm } = useLoaderData<typeof loader>();
+  const { showForm: showFormML } = useLoaderData<typeof loader>();
 
   return (
     <div className={styles.index}>
@@ -25,7 +25,7 @@ export default function App() {
         <p className={styles.text}>
           A tagline about [your app] that describes your value proposition.
         </p>
-        {showForm && (
+        {showFormML && (
           <Form className={styles.form} method="post" action="/auth/login">
             <label className={styles.label}>
               <span>Shop domain</span>

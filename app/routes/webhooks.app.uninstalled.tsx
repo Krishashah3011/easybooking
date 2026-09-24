@@ -2,13 +2,13 @@ import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { shop, session, topic } = await authenticate.webhook(request);
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { shop: shopML, session: sessionML, topic: topicML } = await authenticate.webhook(requestML);
 
-  console.log(`Received ${topic} webhook for ${shop}`);
+  console.log(`Received ${topicML} webhook for ${shopML}`);
 
-  if (session) {
-    await db.session.deleteMany({ where: { shop } });
+  if (sessionML) {
+    await db.session.deleteMany({ where: { shop: shopML } });
   }
 
   return new Response();

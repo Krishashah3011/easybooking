@@ -1,4 +1,4 @@
-import { zonedTimeToUtc } from "./timezones";
+import { zonedTimeToUtcML } from "./timezones";
 
 type CompletionInput = {
   bookingType: string;
@@ -8,41 +8,41 @@ type CompletionInput = {
   locationTimezone?: string | null;
 };
 
-export function isBookingCompleted(
-  booking: CompletionInput,
-  now: Date = new Date(),
+export function isBookingCompletedML(
+  bookingML: CompletionInput,
+  nowML: Date = new Date(),
 ): boolean {
-  const endDateStr =
-    booking.bookingType === "MULTI_DAY"
-      ? booking.endDate || booking.date
-      : booking.date;
-  const endTime = booking.bookingType === "MULTI_DAY" ? "23:59" : booking.slotEnd || "23:59";
+  const endDateStrML =
+    bookingML.bookingType === "MULTI_DAY"
+      ? bookingML.endDate || bookingML.date
+      : bookingML.date;
+  const endTimeML = bookingML.bookingType === "MULTI_DAY" ? "23:59" : bookingML.slotEnd || "23:59";
 
-  if (Number.isNaN(new Date(`${endDateStr}T${endTime}:00Z`).getTime())) {
+  if (Number.isNaN(new Date(`${endDateStrML}T${endTimeML}:00Z`).getTime())) {
     return false;
   }
-  const endsAt = zonedTimeToUtc(endDateStr, endTime, booking.locationTimezone);
-  if (Number.isNaN(endsAt.getTime())) return false;
-  return now.getTime() >= endsAt.getTime();
+  const endsAtML = zonedTimeToUtcML(endDateStrML, endTimeML, bookingML.locationTimezone);
+  if (Number.isNaN(endsAtML.getTime())) return false;
+  return nowML.getTime() >= endsAtML.getTime();
 }
-const COMPLETABLE_STATUSES = new Set(["CONFIRMED", "RESCHEDULED", "OVERBOOKED"]);
+const COMPLETABLE_STATUSES_ML = new Set(["CONFIRMED", "RESCHEDULED", "OVERBOOKED"]);
 
-export function getDisplayStatus(
-  booking: CompletionInput & { status: string },
-  now: Date = new Date(),
+export function getDisplayStatusML(
+  bookingML: CompletionInput & { status: string },
+  nowML: Date = new Date(),
 ): string {
-  if (COMPLETABLE_STATUSES.has(booking.status) && isBookingCompleted(booking, now)) {
+  if (COMPLETABLE_STATUSES_ML.has(bookingML.status) && isBookingCompletedML(bookingML, nowML)) {
     return "COMPLETED";
   }
-  return booking.status;
+  return bookingML.status;
 }
 
-export function belongsInCompletedTab(
-  booking: CompletionInput & { status: string },
-  now: Date = new Date(),
+export function belongsInCompletedTabML(
+  bookingML: CompletionInput & { status: string },
+  nowML: Date = new Date(),
 ): boolean {
-  if (booking.status === "CANCELLED") {
-    return isBookingCompleted(booking, now);
+  if (bookingML.status === "CANCELLED") {
+    return isBookingCompletedML(bookingML, nowML);
   }
-  return getDisplayStatus(booking, now) === "COMPLETED";
+  return getDisplayStatusML(bookingML, nowML) === "COMPLETED";
 }

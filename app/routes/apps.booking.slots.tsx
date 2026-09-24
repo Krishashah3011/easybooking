@@ -1,67 +1,67 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
-import { resolveBookingContext } from "../models/booking-context.server";
-import { computeSlotsForDate } from "../models/slotAvailability.server";
-import { getBookedCountsInRange } from "../models/booking.server";
-import { getOrCreateShopSettings } from "../models/shopSettings.server";
-import { localDayRangeUtc } from "../utils/timezones";
+import { resolveBookingContextML } from "../models/booking-context.server";
+import { computeSlotsForDateML } from "../models/slotAvailability.server";
+import { getBookedCountsInRangeML } from "../models/booking.server";
+import { getOrCreateShopSettingsML } from "../models/shopSettings.server";
+import { localDayRangeUtcML } from "../utils/timezones";
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_RE_ML = /^\d{4}-\d{2}-\d{2}$/;
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.public.appProxy(request);
-  if (!session) {
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.public.appProxy(requestML);
+  if (!sessionML) {
     return Response.json({ error: "Unknown shop" }, { status: 401 });
   }
 
-  const shopSettings = await getOrCreateShopSettings(session.shop);
-  if (!shopSettings.isAppEnabled) {
+  const shopSettingsML = await getOrCreateShopSettingsML(sessionML.shop);
+  if (!shopSettingsML.isAppEnabled) {
     return Response.json({ error: "Booking is currently unavailable" }, { status: 403 });
   }
 
-  const url = new URL(request.url);
-  const productId = url.searchParams.get("productId");
-  const date = url.searchParams.get("date");
-  const locationId = url.searchParams.get("locationId");
+  const urlML = new URL(requestML.url);
+  const productIdML = urlML.searchParams.get("productId");
+  const dateML = urlML.searchParams.get("date");
+  const locationIdML = urlML.searchParams.get("locationId");
 
-  if (!productId || !date) {
+  if (!productIdML || !dateML) {
     return Response.json(
       { error: "productId and date are required" },
       { status: 400 },
     );
   }
-  if (!DATE_RE.test(date)) {
+  if (!DATE_RE_ML.test(dateML)) {
     return Response.json(
       { error: "date must be in YYYY-MM-DD format" },
       { status: 400 },
     );
   }
 
-  const context = await resolveBookingContext(session.shop, productId, locationId);
-  if (!context) {
+  const contextML = await resolveBookingContextML(sessionML.shop, productIdML, locationIdML);
+  if (!contextML) {
     return Response.json({ slots: [] });
   }
 
-  const { start: dayStart, end: dayEnd } = localDayRangeUtc(
-    date,
-    context.location?.timezone ?? null,
+  const { start: dayStartML, end: dayEndML } = localDayRangeUtcML(
+    dateML,
+    contextML.location?.timezone ?? null,
   );
-  const bookedCounts = await getBookedCountsInRange(
-    session.shop,
-    context.bookableProductId,
-    dayStart,
-    dayEnd,
-    context.location?.id,
+  const bookedCountsML = await getBookedCountsInRangeML(
+    sessionML.shop,
+    contextML.bookableProductId,
+    dayStartML,
+    dayEndML,
+    contextML.location?.id,
   );
 
-  const slots = computeSlotsForDate(
-    context.effectiveSettings,
-    date,
-    context.blackoutDates,
+  const slotsML = computeSlotsForDateML(
+    contextML.effectiveSettings,
+    dateML,
+    contextML.blackoutDates,
     new Date(),
-    bookedCounts,
-    context.location?.timezone ?? null,
+    bookedCountsML,
+    contextML.location?.timezone ?? null,
   );
 
-  return Response.json({ slots });
+  return Response.json({ slots: slotsML });
 };

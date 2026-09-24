@@ -5,7 +5,7 @@ export type EmailTemplateType =
   | "cancellation"
   | "rescheduled";
 
-export const EMAIL_TEMPLATE_TYPES: EmailTemplateType[] = [
+export const EMAIL_TEMPLATE_TYPES_ML: EmailTemplateType[] = [
   "confirmation",
   "bundleConfirmation",
   "reminder",

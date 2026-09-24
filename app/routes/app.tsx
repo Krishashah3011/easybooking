@@ -4,7 +4,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate } from "../shopify.server";
-import { getOrCreateShopSettings } from "../models/shopSettings.server";
+import { getOrCreateShopSettingsML } from "../models/shopSettings.server";
 import { AppTopNav } from "../components/AppTopNav";
 
 import navStyles from "../components/AppTopNav.css?url";
@@ -13,37 +13,37 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: navStyles },
 ];
 
-const BLUE = "#073E74";
-const BORDER = "#DBDBDB";
-const TEXT_DARK = "#000000";
-const TEXT_MUTED = "#373737";
+const BLUE_ML = "#073E74";
+const BORDER_ML = "#DBDBDB";
+const TEXT_DARK_ML = "#000000";
+const TEXT_MUTED_ML = "#373737";
 
-const UNGATED_PATHS = new Set(["/app", "/app/"]);
+const UNGATED_PATHS_ML = new Set(["/app", "/app/"]);
 
-function isGatedPath(pathname: string) {
-  return !UNGATED_PATHS.has(pathname) && !pathname.startsWith("/app/account");
+function isGatedPathML(pathnameML: string) {
+  return !UNGATED_PATHS_ML.has(pathnameML) && !pathnameML.startsWith("/app/account");
 }
 
-function sectionLabel(pathname: string) {
-  if (pathname.startsWith("/app/settings")) return "Settings";
-  if (pathname.startsWith("/app/products")) return "Products";
-  if (pathname.startsWith("/app/bookings")) return "Bookings";
+function sectionLabelML(pathnameML: string) {
+  if (pathnameML.startsWith("/app/settings")) return "Settings";
+  if (pathnameML.startsWith("/app/products")) return "Products";
+  if (pathnameML.startsWith("/app/bookings")) return "Bookings";
   return "this page";
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const shopSettings = await getOrCreateShopSettings(session.shop);
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const shopSettingsML = await getOrCreateShopSettingsML(sessionML.shop);
 
   return {
     apiKey: process.env.SHOPIFY_API_KEY || "",
-    registered: shopSettings.registered,
+    registered: shopSettingsML.registered,
   };
 };
 
-const lockStyles: Record<string, React.CSSProperties> = {
+const lockStylesML: Record<string, React.CSSProperties> = {
   outerCard: {
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
     background: "#fff",
     padding: "16px",
@@ -61,14 +61,14 @@ const lockStyles: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "18px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   lockDescription: {
     fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     margin: 0,
     maxWidth: "360px",
   },
@@ -77,7 +77,7 @@ const lockStyles: Record<string, React.CSSProperties> = {
     display: "inline-flex",
     alignItems: "center",
     padding: "10px 20px",
-    background: BLUE,
+    background: BLUE_ML,
     borderRadius: "8px",
     color: "#FFFFFF",
     fontFamily: "Inter",
@@ -90,26 +90,26 @@ const lockStyles: Record<string, React.CSSProperties> = {
 function LockIcon() {
   return (
     <svg width="32" height="36" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="15" width="30" height="20" rx="3" stroke={BLUE} strokeWidth="1.8" />
-      <path d="M7 15V9C7 4.58172 10.5817 1 15 1H17C21.4183 1 25 4.58172 25 9V15" stroke={BLUE} strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="16" cy="24" r="2.4" fill={BLUE} />
-      <path d="M16 26.4V29.4" stroke={BLUE} strokeWidth="1.8" strokeLinecap="round" />
+      <rect x="1" y="15" width="30" height="20" rx="3" stroke={BLUE_ML} strokeWidth="1.8" />
+      <path d="M7 15V9C7 4.58172 10.5817 1 15 1H17C21.4183 1 25 4.58172 25 9V15" stroke={BLUE_ML} strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="16" cy="24" r="2.4" fill={BLUE_ML} />
+      <path d="M16 26.4V29.4" stroke={BLUE_ML} strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
 
-function RegisterRequired({ section }: { section: string }) {
+function RegisterRequired({ section: sectionML }: { section: string }) {
   return (
     <s-page inlineSize="large">
-      <div style={lockStyles.outerCard}>
-        <div style={lockStyles.lockWrap}>
+      <div style={lockStylesML.outerCard}>
+        <div style={lockStylesML.lockWrap}>
           <LockIcon />
-          <p style={lockStyles.lockTitle}>Login Required</p>
-          <p style={lockStyles.lockDescription}>
-            Create your account to access {section} and manage your bookings
+          <p style={lockStylesML.lockTitle}>Login Required</p>
+          <p style={lockStylesML.lockDescription}>
+            Create your account to access {sectionML} and manage your bookings
             with EasyBooking.
           </p>
-          <Link to="/app/account" style={lockStyles.lockButton}>
+          <Link to="/app/account" style={lockStylesML.lockButton}>
             Go to Account
           </Link>
         </div>
@@ -119,15 +119,15 @@ function RegisterRequired({ section }: { section: string }) {
 }
 
 export default function App() {
-  const { apiKey, registered } = useLoaderData<typeof loader>();
-  const { pathname } = useLocation();
-  const locked = !registered && isGatedPath(pathname);
+  const { apiKey: apiKeyML, registered: registeredML } = useLoaderData<typeof loader>();
+  const { pathname: pathnameML } = useLocation();
+  const lockedML = !registeredML && isGatedPathML(pathnameML);
 
   return (
-    <AppProvider apiKey={apiKey} embedded>
+    <AppProvider apiKey={apiKeyML} embedded>
       <div style={{ maxWidth: "950px", width: "100%", margin: "0 auto" }}>
         <AppTopNav />
-        {locked ? <RegisterRequired section={sectionLabel(pathname)} /> : <Outlet />}
+        {lockedML ? <RegisterRequired section={sectionLabelML(pathnameML)} /> : <Outlet />}
       </div>
     </AppProvider>
   );
@@ -137,6 +137,6 @@ export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

@@ -9,12 +9,12 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
-  listBookableProducts,
-  setAllBookableProductsEnabled,
-  setBookableProductEnabled,
+  listBookableProductsML,
+  setAllBookableProductsEnabledML,
+  setBookableProductEnabledML,
 } from "../models/bookableProduct.server";
-import { listEnabledLocations } from "../models/bookingLocation.server";
-import { styles as settingsStyles } from "../components/SettingsUI";
+import { listEnabledLocationsML } from "../models/bookingLocation.server";
+import { stylesML as settingsStyles } from "../components/SettingsUI";
 
 type ProductListItem = {
   id: string;
@@ -23,10 +23,10 @@ type ProductListItem = {
   isEnabled: boolean;
 };
 
-const ACCENT = "#073E74";
-const LINE_BORDER = "#DBDBDB";
-const INPUT_BORDER = "#E9E9EA";
-const TEXT_BLACK = "#000000";
+const ACCENT_ML = "#073E74";
+const LINE_BORDER_ML = "#DBDBDB";
+const INPUT_BORDER_ML = "#E9E9EA";
+const TEXT_BLACK_ML = "#000000";
 
 const SearchIcon = () => (
   <svg
@@ -38,7 +38,7 @@ const SearchIcon = () => (
   >
     <path
       d="M19 19L14.657 14.657M16.778 8.889C16.778 11.246 15.841 13.507 14.174 15.174C12.507 16.841 10.246 17.778 7.889 17.778C5.531 17.778 3.27 16.841 1.603 15.174C-0.063 13.507 -1 11.246 -1 8.889C-1 6.531 -0.063 4.27 1.603 2.603C3.27 0.937 5.531 0 7.889 0C10.246 0 12.507 0.937 14.174 2.603C15.841 4.27 16.778 6.531 16.778 8.889Z"
-      stroke={ACCENT}
+      stroke={ACCENT_ML}
       strokeWidth="1.5"
       strokeMiterlimit="10"
       strokeLinecap="round"
@@ -48,7 +48,7 @@ const SearchIcon = () => (
   </svg>
 );
 
-const styles: Record<string, React.CSSProperties> = {
+const stylesML: Record<string, React.CSSProperties> = {
   outerCard: {
     boxSizing: "border-box",
     width: "100%",
@@ -57,7 +57,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "16px",
     padding: "16px",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "8px",
   },
   headerActions: {
@@ -78,7 +78,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     whiteSpace: "nowrap",
   },
   listCard: {
@@ -88,7 +88,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "16px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
     padding: "16px",
   },
@@ -107,7 +107,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   searchBox: {
@@ -121,7 +121,7 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
   },
   searchInput: {
@@ -134,12 +134,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${LINE_BORDER}`,
+    borderTop: `1px solid ${LINE_BORDER_ML}`,
     margin: 0,
     width: "100%",
   },
@@ -158,7 +158,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: "0 8px 12px",
     whiteSpace: "nowrap",
   },
@@ -173,9 +173,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "16px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: "6px 8px",
-    borderTop: `1px solid ${LINE_BORDER}`,
+    borderTop: `1px solid ${LINE_BORDER_ML}`,
     verticalAlign: "middle",
   },
   tdCenter: {
@@ -214,7 +214,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: "24px",
     borderRadius: "12px",
     background: "#E4E4E4",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
   },
   toggleKnob: {
     position: "absolute",
@@ -246,16 +246,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
     padding: "16px 8px",
   },
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { admin: adminML, session: sessionML } = await authenticate.admin(requestML);
 
-  const response = await admin.graphql(
+  const responseML = await adminML.graphql(
     `#graphql
       query BookingProductsList {
         products(first: 50, sortKey: TITLE) {
@@ -269,39 +269,39 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         }
       }`,
   );
-  const responseJson = await response.json();
-  const productEdges = responseJson.data?.products?.edges ?? [];
+  const responseJsonML = await responseML.json();
+  const productEdgesML = responseJsonML.data?.products?.edges ?? [];
 
-  const bookableProducts = await listBookableProducts(session.shop);
-  const enabledByProductId = new Map(
-    bookableProducts.map((p) => [p.productId, p.isEnabled]),
+  const bookableProductsML = await listBookableProductsML(sessionML.shop);
+  const enabledByProductIdML = new Map(
+    bookableProductsML.map((pML) => [pML.productId, pML.isEnabled]),
   );
 
-  const products: ProductListItem[] = productEdges.map(
-    (edge: { node: { id: string; title: string; status: string } }) => ({
-      id: edge.node.id,
-      title: edge.node.title,
-      status: edge.node.status,
-      isEnabled: enabledByProductId.get(edge.node.id) ?? false,
+  const productsML: ProductListItem[] = productEdgesML.map(
+    (edgeML: { node: { id: string; title: string; status: string } }) => ({
+      id: edgeML.node.id,
+      title: edgeML.node.title,
+      status: edgeML.node.status,
+      isEnabled: enabledByProductIdML.get(edgeML.node.id) ?? false,
     }),
   );
 
-  const enabledLocations = await listEnabledLocations(session.shop);
+  const enabledLocationsML = await listEnabledLocationsML(sessionML.shop);
 
-  return { products, hasLocations: enabledLocations.length > 0 };
+  return { products: productsML, hasLocations: enabledLocationsML.length > 0 };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
 
-  const intent = String(formData.get("intent") ?? "toggle");
-  const isEnabled = formData.get("isEnabled") === "true";
+  const intentML = String(formDataML.get("intent") ?? "toggle");
+  const isEnabledML = formDataML.get("isEnabled") === "true";
 
-  if (intent === "bulkToggle") {
-    if (isEnabled) {
-      const enabledLocations = await listEnabledLocations(session.shop);
-      if (enabledLocations.length === 0) {
+  if (intentML === "bulkToggle") {
+    if (isEnabledML) {
+      const enabledLocationsML = await listEnabledLocationsML(sessionML.shop);
+      if (enabledLocationsML.length === 0) {
         return {
           ok: false as const,
           error:
@@ -310,32 +310,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    const productsRaw = String(formData.get("products") ?? "[]");
-    let products: { id: string; title: string }[] = [];
+    const productsRawML = String(formDataML.get("products") ?? "[]");
+    let productsML: { id: string; title: string }[] = [];
     try {
-      products = JSON.parse(productsRaw);
+      productsML = JSON.parse(productsRawML);
     } catch {
-      products = [];
+      productsML = [];
     }
 
-    if (products.length === 0) {
+    if (productsML.length === 0) {
       return { ok: false as const };
     }
 
-    await setAllBookableProductsEnabled(session.shop, products, isEnabled);
+    await setAllBookableProductsEnabledML(sessionML.shop, productsML, isEnabledML);
     return { ok: true as const };
   }
 
-  const productId = String(formData.get("productId") ?? "");
-  const productTitle = String(formData.get("productTitle") ?? "");
+  const productIdML = String(formDataML.get("productId") ?? "");
+  const productTitleML = String(formDataML.get("productTitle") ?? "");
 
-  if (!productId || !productTitle) {
+  if (!productIdML || !productTitleML) {
     return { ok: false as const };
   }
 
-  if (isEnabled) {
-    const enabledLocations = await listEnabledLocations(session.shop);
-    if (enabledLocations.length === 0) {
+  if (isEnabledML) {
+    const enabledLocationsML = await listEnabledLocationsML(sessionML.shop);
+    if (enabledLocationsML.length === 0) {
       return {
         ok: false as const,
         error:
@@ -344,61 +344,61 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
-  await setBookableProductEnabled(
-    session.shop,
-    productId,
-    productTitle,
-    isEnabled,
+  await setBookableProductEnabledML(
+    sessionML.shop,
+    productIdML,
+    productTitleML,
+    isEnabledML,
   );
 
   return { ok: true as const };
 };
 
 export default function BookingProductsPage() {
-  const { products, hasLocations } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
-  const [query, setQuery] = useState("");
+  const { products: productsML, hasLocations: hasLocationsML } = useLoaderData<typeof loader>();
+  const fetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
+  const [queryML, setQueryML] = useState("");
 
-  const isSubmitting = fetcher.state !== "idle";
-  const pendingIntent = isSubmitting
-    ? String(fetcher.formData?.get("intent") ?? "toggle")
+  const isSubmittingML = fetcherML.state !== "idle";
+  const pendingIntentML = isSubmittingML
+    ? String(fetcherML.formData?.get("intent") ?? "toggle")
     : "";
-  const isBulkSubmitting = pendingIntent === "bulkToggle";
-  const pendingProductId =
-    isSubmitting && !isBulkSubmitting
-      ? String(fetcher.formData?.get("productId") ?? "")
+  const isBulkSubmittingML = pendingIntentML === "bulkToggle";
+  const pendingProductIdML =
+    isSubmittingML && !isBulkSubmittingML
+      ? String(fetcherML.formData?.get("productId") ?? "")
       : "";
 
   useEffect(() => {
-    if (fetcher.data && !fetcher.data.ok && "error" in fetcher.data) {
-      shopify.toast.show(fetcher.data.error, { isError: true });
+    if (fetcherML.data && !fetcherML.data.ok && "error" in fetcherML.data) {
+      shopifyML.toast.show(fetcherML.data.error, { isError: true });
     }
-  }, [fetcher.data, shopify]);
+  }, [fetcherML.data, shopifyML]);
 
-  const toggle = (product: ProductListItem) => {
-    fetcher.submit(
+  const toggleML = (productML: ProductListItem) => {
+    fetcherML.submit(
       {
-        productId: product.id,
-        productTitle: product.title,
-        isEnabled: String(!product.isEnabled),
+        productId: productML.id,
+        productTitle: productML.title,
+        isEnabled: String(!productML.isEnabled),
       },
       { method: "POST" },
     );
   };
 
-  const allEnabled =
-    products.length > 0 && products.every((product) => product.isEnabled);
+  const allEnabledML =
+    productsML.length > 0 && productsML.every((productML) => productML.isEnabled);
 
-  const toggleAll = () => {
-    fetcher.submit(
+  const toggleAllML = () => {
+    fetcherML.submit(
       {
         intent: "bulkToggle",
-        isEnabled: String(!allEnabled),
+        isEnabled: String(!allEnabledML),
         products: JSON.stringify(
-          products.map((product) => ({
-            id: product.id,
-            title: product.title,
+          productsML.map((productML) => ({
+            id: productML.id,
+            title: productML.title,
           })),
         ),
       },
@@ -406,17 +406,17 @@ export default function BookingProductsPage() {
     );
   };
 
-  const filteredProducts = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return products;
-    return products.filter((product) =>
-      product.title.toLowerCase().includes(term),
+  const filteredProductsML = useMemo(() => {
+    const termML = queryML.trim().toLowerCase();
+    if (!termML) return productsML;
+    return productsML.filter((productML) =>
+      productML.title.toLowerCase().includes(termML),
     );
-  }, [products, query]);
+  }, [productsML, queryML]);
 
   return (
     <s-page inlineSize="700px">
-      <div style={styles.outerCard}>
+      <div style={stylesML.outerCard}>
         <div>
           <h1 style={settingsStyles.heading}>Products</h1>
           <p style={settingsStyles.pageSubtitle}>
@@ -426,7 +426,7 @@ export default function BookingProductsPage() {
           </p>
         </div>
 
-        {!hasLocations && (
+        {!hasLocationsML && (
           <s-banner tone="warning" heading="No locations configured">
             <s-paragraph>
               Add at least one location before enabling booking on a
@@ -438,124 +438,124 @@ export default function BookingProductsPage() {
           </s-banner>
         )}
 
-        <div style={styles.listCard}>
-          <div style={styles.listHeaderRow}>
-            <p style={styles.listTitle}>All Products</p>
-            <div style={styles.headerActions}>
-              {products.length > 0 && (
-                <div style={styles.enableAllWrap}>
-                  <span style={styles.enableAllLabel}>
-                    {isBulkSubmitting ? "Updating..." : "Enable all"}
+        <div style={stylesML.listCard}>
+          <div style={stylesML.listHeaderRow}>
+            <p style={stylesML.listTitle}>All Products</p>
+            <div style={stylesML.headerActions}>
+              {productsML.length > 0 && (
+                <div style={stylesML.enableAllWrap}>
+                  <span style={stylesML.enableAllLabel}>
+                    {isBulkSubmittingML ? "Updating..." : "Enable all"}
                   </span>
                   <button
                     type="button"
                     role="switch"
-                    aria-checked={allEnabled}
+                    aria-checked={allEnabledML}
                     aria-label="Enable booking for all products"
-                    onClick={toggleAll}
-                    disabled={isSubmitting || (!hasLocations && !allEnabled)}
+                    onClick={toggleAllML}
+                    disabled={isSubmittingML || (!hasLocationsML && !allEnabledML)}
                     style={{
-                      ...styles.toggleButton,
-                      ...(isSubmitting || (!hasLocations && !allEnabled)
+                      ...stylesML.toggleButton,
+                      ...(isSubmittingML || (!hasLocationsML && !allEnabledML)
                         ? { opacity: 0.5, cursor: "not-allowed" }
                         : {}),
                     }}
                   >
-                    {allEnabled ? (
+                    {allEnabledML ? (
                       <img src="/enable.svg" width={46} height={24} alt="" />
                     ) : (
-                      <span style={styles.toggleOff}>
-                        <span style={styles.toggleKnob} />
+                      <span style={stylesML.toggleOff}>
+                        <span style={stylesML.toggleKnob} />
                       </span>
                     )}
                   </button>
                 </div>
               )}
-              <div style={styles.searchBox}>
+              <div style={stylesML.searchBox}>
                 <SearchIcon />
                 <input
                   type="text"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  value={queryML}
+                  onChange={(eventML) => setQueryML(eventML.target.value)}
                   placeholder="Search by product name"
-                  style={styles.searchInput}
+                  style={stylesML.searchInput}
                 />
               </div>
             </div>
           </div>
 
-          <hr style={styles.divider} />
+          <hr style={stylesML.divider} />
 
-          {products.length === 0 ? (
-            <p style={styles.emptyText}>No products found in this store yet.</p>
-          ) : filteredProducts.length === 0 ? (
-            <p style={styles.emptyText}>
-              No products match &ldquo;{query}&rdquo;.
+          {productsML.length === 0 ? (
+            <p style={stylesML.emptyText}>No products found in this store yet.</p>
+          ) : filteredProductsML.length === 0 ? (
+            <p style={stylesML.emptyText}>
+              No products match &ldquo;{queryML}&rdquo;.
             </p>
           ) : (
-            <div style={styles.tableWrap}>
-              <table className="eb-table" style={styles.table}>
+            <div style={stylesML.tableWrap}>
+              <table className="eb-table" style={stylesML.table}>
                 <thead>
                   <tr>
-                    <th style={styles.th}>Product</th>
-                    <th style={{ ...styles.th, ...styles.thCenter }}>
+                    <th style={stylesML.th}>Product</th>
+                    <th style={{ ...stylesML.th, ...stylesML.thCenter }}>
                       Status
                     </th>
-                    <th style={{ ...styles.th, ...styles.thCenter }}>
+                    <th style={{ ...stylesML.th, ...stylesML.thCenter }}>
                       Booking enabled
                     </th>
-                    <th style={{ ...styles.th, ...styles.thAction }}>
+                    <th style={{ ...stylesML.th, ...stylesML.thAction }}>
                       Configure
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((product) => {
-                    const isActive = product.status === "ACTIVE";
-                    const isPending = pendingProductId === product.id;
-                    const toggleDisabled =
-                      isPending || (!hasLocations && !product.isEnabled);
+                  {filteredProductsML.map((productML) => {
+                    const isActiveML = productML.status === "ACTIVE";
+                    const isPendingML = pendingProductIdML === productML.id;
+                    const toggleDisabledML =
+                      isPendingML || (!hasLocationsML && !productML.isEnabled);
 
                     return (
-                      <tr key={product.id} className="eb-row">
-                        <td className="eb-cell-primary" style={styles.td}>
-                          {product.title}
+                      <tr key={productML.id} className="eb-row">
+                        <td className="eb-cell-primary" style={stylesML.td}>
+                          {productML.title}
                         </td>
                         <td
                           data-label="Status"
-                          style={{ ...styles.td, ...styles.tdCenter }}
+                          style={{ ...stylesML.td, ...stylesML.tdCenter }}
                         >
                           <span
                             style={{
-                              ...styles.statusBadge,
-                              background: isActive ? "#BEFFBA" : "#F1F1F1",
-                              color: isActive ? "#000000" : "#666666",
+                              ...stylesML.statusBadge,
+                              background: isActiveML ? "#BEFFBA" : "#F1F1F1",
+                              color: isActiveML ? "#000000" : "#666666",
                             }}
                           >
-                            {product.status}
+                            {productML.status}
                           </span>
                         </td>
                         <td
                           data-label="Booking enabled"
-                          style={{ ...styles.td, ...styles.tdCenter }}
+                          style={{ ...stylesML.td, ...stylesML.tdCenter }}
                         >
                           <button
                             type="button"
                             role="switch"
-                            aria-checked={product.isEnabled}
+                            aria-checked={productML.isEnabled}
                             aria-label={`${
-                              product.isEnabled ? "Disable" : "Enable"
-                            } booking for ${product.title}`}
-                            onClick={() => toggle(product)}
-                            disabled={toggleDisabled}
+                              productML.isEnabled ? "Disable" : "Enable"
+                            } booking for ${productML.title}`}
+                            onClick={() => toggleML(productML)}
+                            disabled={toggleDisabledML}
                             style={{
-                              ...styles.toggleButton,
-                              ...(toggleDisabled
+                              ...stylesML.toggleButton,
+                              ...(toggleDisabledML
                                 ? { opacity: 0.5, cursor: "not-allowed" }
                                 : {}),
                             }}
                           >
-                            {product.isEnabled ? (
+                            {productML.isEnabled ? (
                               <img
                                 src="/enable.svg"
                                 width={46}
@@ -563,20 +563,20 @@ export default function BookingProductsPage() {
                                 alt=""
                               />
                             ) : (
-                              <span style={styles.toggleOff}>
-                                <span style={styles.toggleKnob} />
+                              <span style={stylesML.toggleOff}>
+                                <span style={stylesML.toggleKnob} />
                               </span>
                             )}
                           </button>
                         </td>
                         <td
                           className="eb-cell-action"
-                          style={{ ...styles.td, ...styles.tdAction }}
+                          style={{ ...stylesML.td, ...stylesML.tdAction }}
                         >
                           <Link
-                            to={`/app/products/${product.id.split("/").pop()}`}
-                            style={styles.iconButton}
-                            aria-label={`Configure ${product.title}`}
+                            to={`/app/products/${productML.id.split("/").pop()}`}
+                            style={stylesML.iconButton}
+                            aria-label={`Configure ${productML.title}`}
                           >
                             <img
                               src="/edit-icon.svg"
@@ -599,6 +599,6 @@ export default function BookingProductsPage() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

@@ -1,11 +1,11 @@
-import prisma from "../db.server";
-import { dayOfWeek } from "./slotAvailability.server";
+import prismaML from "../db.server";
+import { dayOfWeekML } from "./slotAvailability.server";
 
-const DAY_NAMES = [
+const DAY_NAMES_ML = [
   "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
 ];
 
-const MONTH_NAMES = [
+const MONTH_NAMES_ML = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
@@ -28,88 +28,88 @@ export type BookingReportData = {
   bookingsByMonth: { month: string; count: number }[];
 };
 
-const REPORT_ROW_CAP = 5000;
+const REPORT_ROW_CAP_ML = 5000;
 
-export async function getBookingReportData(
-  shop: string,
-  filters: ReportFilters = {},
+export async function getBookingReportDataML(
+  shopML: string,
+  filtersML: ReportFilters = {},
 ): Promise<BookingReportData> {
-  const bookings = await prisma.booking.findMany({
+  const bookingsML = await prismaML.booking.findMany({
     where: {
-      shop,
-      bookableProductId: filters.bookableProductId,
+      shop: shopML,
+      bookableProductId: filtersML.bookableProductId,
       date: {
-        gte: filters.dateFrom || undefined,
-        lte: filters.dateTo || undefined,
+        gte: filtersML.dateFrom || undefined,
+        lte: filtersML.dateTo || undefined,
       },
     },
     include: { bookableProduct: { select: { productTitle: true } } },
-    take: REPORT_ROW_CAP,
+    take: REPORT_ROW_CAP_ML,
   });
 
-  const totalBookings = bookings.length;
-  const confirmedCount = bookings.filter(
-    (b: { status: string }) => b.status === "CONFIRMED",
+  const totalBookingsML = bookingsML.length;
+  const confirmedCountML = bookingsML.filter(
+    (bML: { status: string }) => bML.status === "CONFIRMED",
   ).length;
-  const cancelledCount = bookings.filter(
-    (b: { status: string }) => b.status === "CANCELLED",
+  const cancelledCountML = bookingsML.filter(
+    (bML: { status: string }) => bML.status === "CANCELLED",
   ).length;
-  const overbookedCount = bookings.filter(
-    (b: { status: string }) => b.status === "OVERBOOKED",
+  const overbookedCountML = bookingsML.filter(
+    (bML: { status: string }) => bML.status === "OVERBOOKED",
   ).length;
-  const cancellationRatePercent =
-    totalBookings === 0 ? 0 : Math.round((cancelledCount / totalBookings) * 1000) / 10;
+  const cancellationRatePercentML =
+    totalBookingsML === 0 ? 0 : Math.round((cancelledCountML / totalBookingsML) * 1000) / 10;
 
-  const byProduct = new Map<string, number>();
-  const byHour = new Map<string, number>();
-  const byDay = new Map<number, number>();
-  const byMonth = new Map<number, number>();
+  const byProductML = new Map<string, number>();
+  const byHourML = new Map<string, number>();
+  const byDayML = new Map<number, number>();
+  const byMonthML = new Map<number, number>();
 
-  for (const booking of bookings) {
-    if (booking.status === "CANCELLED") continue;
+  for (const bookingML of bookingsML) {
+    if (bookingML.status === "CANCELLED") continue;
 
-    const productTitle = booking.bookableProduct.productTitle;
-    byProduct.set(productTitle, (byProduct.get(productTitle) ?? 0) + 1);
+    const productTitleML = bookingML.bookableProduct.productTitle;
+    byProductML.set(productTitleML, (byProductML.get(productTitleML) ?? 0) + 1);
 
-    const hour = booking.slotStart.split(":")[0] + ":00";
-    byHour.set(hour, (byHour.get(hour) ?? 0) + 1);
+    const hourML = bookingML.slotStart.split(":")[0] + ":00";
+    byHourML.set(hourML, (byHourML.get(hourML) ?? 0) + 1);
 
-    const dow = dayOfWeek(booking.date);
-    byDay.set(dow, (byDay.get(dow) ?? 0) + 1);
+    const dowML = dayOfWeekML(bookingML.date);
+    byDayML.set(dowML, (byDayML.get(dowML) ?? 0) + 1);
 
-    const monthIndex = Number(booking.date.slice(5, 7)) - 1;
-    if (monthIndex >= 0 && monthIndex < 12) {
-      byMonth.set(monthIndex, (byMonth.get(monthIndex) ?? 0) + 1);
+    const monthIndexML = Number(bookingML.date.slice(5, 7)) - 1;
+    if (monthIndexML >= 0 && monthIndexML < 12) {
+      byMonthML.set(monthIndexML, (byMonthML.get(monthIndexML) ?? 0) + 1);
     }
   }
 
-  const bookingsByProduct = Array.from(byProduct.entries())
-    .map(([productTitle, count]) => ({ productTitle, count }))
-    .sort((a, b) => b.count - a.count);
+  const bookingsByProductML = Array.from(byProductML.entries())
+    .map(([productTitleML, countML]) => ({ productTitle: productTitleML, count: countML }))
+    .sort((aML, bML) => bML.count - aML.count);
 
-  const bookingsByHour = Array.from(byHour.entries())
-    .map(([hour, count]) => ({ hour, count }))
-    .sort((a, b) => a.hour.localeCompare(b.hour));
+  const bookingsByHourML = Array.from(byHourML.entries())
+    .map(([hourML, countML]) => ({ hour: hourML, count: countML }))
+    .sort((aML, bML) => aML.hour.localeCompare(bML.hour));
 
-  const bookingsByDayOfWeek = DAY_NAMES.map((day, index) => ({
-    day,
-    count: byDay.get(index) ?? 0,
+  const bookingsByDayOfWeekML = DAY_NAMES_ML.map((dayML, indexML) => ({
+    day: dayML,
+    count: byDayML.get(indexML) ?? 0,
   }));
 
-  const bookingsByMonth = MONTH_NAMES.map((month, index) => ({
-    month,
-    count: byMonth.get(index) ?? 0,
+  const bookingsByMonthML = MONTH_NAMES_ML.map((monthML, indexML) => ({
+    month: monthML,
+    count: byMonthML.get(indexML) ?? 0,
   }));
 
   return {
-    totalBookings,
-    confirmedCount,
-    cancelledCount,
-    overbookedCount,
-    cancellationRatePercent,
-    bookingsByProduct,
-    bookingsByHour,
-    bookingsByDayOfWeek,
-    bookingsByMonth,
+    totalBookings: totalBookingsML,
+    confirmedCount: confirmedCountML,
+    cancelledCount: cancelledCountML,
+    overbookedCount: overbookedCountML,
+    cancellationRatePercent: cancellationRatePercentML,
+    bookingsByProduct: bookingsByProductML,
+    bookingsByHour: bookingsByHourML,
+    bookingsByDayOfWeek: bookingsByDayOfWeekML,
+    bookingsByMonth: bookingsByMonthML,
   };
 }

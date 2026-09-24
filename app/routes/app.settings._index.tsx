@@ -9,19 +9,19 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
-  checkAppEmbedStatus,
-  getOrCreateShopSettings,
-  setAppEnabled,
+  checkAppEmbedStatusML,
+  getOrCreateShopSettingsML,
+  setAppEnabledML,
 } from "../models/shopSettings.server";
-import { styles, BLUE } from "../components/SettingsUI";
+import { stylesML, BLUE_ML } from "../components/SettingsUI";
 
-const GRAY_OFF = "#E4E4E4";
+const GRAY_OFF_ML = "#E4E4E4";
 
 function ToggleSwitch({
-  checked,
-  onChange,
-  disabled,
-  label,
+  checked: checkedML,
+  onChange: onChangeML,
+  disabled: disabledML,
+  label: labelML,
 }: {
   checked: boolean;
   onChange: () => void;
@@ -32,10 +32,10 @@ function ToggleSwitch({
     <button
       type="button"
       role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onChange}
+      aria-checked={checkedML}
+      aria-label={labelML}
+      disabled={disabledML}
+      onClick={onChangeML}
       style={{
         width: "46px",
         height: "24px",
@@ -43,9 +43,9 @@ function ToggleSwitch({
         border: "none",
         padding: 0,
         position: "relative",
-        background: checked ? BLUE : GRAY_OFF,
-        cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.5 : 1,
+        background: checkedML ? BLUE_ML : GRAY_OFF_ML,
+        cursor: disabledML ? "default" : "pointer",
+        opacity: disabledML ? 0.5 : 1,
         transition: "background 0.15s ease",
         flexShrink: 0,
       }}
@@ -54,7 +54,7 @@ function ToggleSwitch({
         style={{
           position: "absolute",
           top: "3.5px",
-          left: checked ? "25px" : "4px",
+          left: checkedML ? "25px" : "4px",
           width: "17px",
           height: "17px",
           borderRadius: "50%",
@@ -66,95 +66,95 @@ function ToggleSwitch({
   );
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
-  const shopSettings = await getOrCreateShopSettings(session.shop);
-  const embedStatus = await checkAppEmbedStatus(admin);
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { admin: adminML, session: sessionML } = await authenticate.admin(requestML);
+  const shopSettingsML = await getOrCreateShopSettingsML(sessionML.shop);
+  const embedStatusML = await checkAppEmbedStatusML(adminML);
 
   return {
-    serialKey: shopSettings.serialKey,
-    isAppEnabled: shopSettings.isAppEnabled,
-    embedStatus,
-    shop: session.shop,
+    serialKey: shopSettingsML.serialKey,
+    isAppEnabled: shopSettingsML.isAppEnabled,
+    embedStatus: embedStatusML,
+    shop: sessionML.shop,
   };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const isAppEnabled = formData.get("isAppEnabled") === "true";
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
+  const isAppEnabledML = formDataML.get("isAppEnabled") === "true";
 
-  await setAppEnabled(session.shop, isAppEnabled);
+  await setAppEnabledML(sessionML.shop, isAppEnabledML);
 
-  return { ok: true as const, isAppEnabled };
+  return { ok: true as const, isAppEnabled: isAppEnabledML };
 };
 
 export default function GeneralSettingsTab() {
-  const { serialKey, isAppEnabled, embedStatus, shop } =
+  const { serialKey: serialKeyML, isAppEnabled: isAppEnabledML, embedStatus: embedStatusML, shop: shopML } =
     useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
+  const fetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
 
-  const currentEnabled =
-    fetcher.formData?.get("isAppEnabled") != null
-      ? fetcher.formData.get("isAppEnabled") === "true"
-      : isAppEnabled;
-  const isSubmitting = fetcher.state !== "idle";
+  const currentEnabledML =
+    fetcherML.formData?.get("isAppEnabled") != null
+      ? fetcherML.formData.get("isAppEnabled") === "true"
+      : isAppEnabledML;
+  const isSubmittingML = fetcherML.state !== "idle";
 
   useEffect(() => {
-    if (fetcher.data?.ok) {
-      shopify.toast.show(
-        fetcher.data.isAppEnabled ? "Booking app enabled" : "Booking app disabled",
+    if (fetcherML.data?.ok) {
+      shopifyML.toast.show(
+        fetcherML.data.isAppEnabled ? "Booking app enabled" : "Booking app disabled",
       );
     }
-  }, [fetcher.data, shopify]);
+  }, [fetcherML.data, shopifyML]);
 
-  const toggleApp = () => {
-    fetcher.submit(
-      { isAppEnabled: String(!currentEnabled) },
+  const toggleAppML = () => {
+    fetcherML.submit(
+      { isAppEnabled: String(!currentEnabledML) },
       { method: "POST" },
     );
   };
 
-  const themeEditorUrl = `https://${shop}/admin/themes/current/editor?context=apps`;
+  const themeEditorUrlML = `https://${shopML}/admin/themes/current/editor?context=apps`;
 
   return (
-    <div style={styles.innerCard}>
-      <div style={styles.licenseBox}>
-        <div style={styles.licenseTitle}>License</div>
-        <hr style={styles.divider} />
+    <div style={stylesML.innerCard}>
+      <div style={stylesML.licenseBox}>
+        <div style={stylesML.licenseTitle}>License</div>
+        <hr style={stylesML.divider} />
 
-        <div style={styles.rowBetween}>
-          <div style={styles.label}>Serial Key</div>
-          <div style={styles.serialPill}>{serialKey}</div>
+        <div style={stylesML.rowBetween}>
+          <div style={stylesML.label}>Serial Key</div>
+          <div style={stylesML.serialPill}>{serialKeyML}</div>
         </div>
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        <div style={styles.rowBetween}>
+        <div style={stylesML.rowBetween}>
           <div>
-            <div style={styles.label}>Booking App Status</div>
-            <div style={styles.subLabel}>
+            <div style={stylesML.label}>Booking App Status</div>
+            <div style={stylesML.subLabel}>
               Turn the whole booking app on or off across your storefront.
             </div>
           </div>
           <ToggleSwitch
-            checked={currentEnabled}
-            onChange={toggleApp}
-            disabled={isSubmitting}
-            label={currentEnabled ? "Disable booking app" : "Enable booking app"}
+            checked={currentEnabledML}
+            onChange={toggleAppML}
+            disabled={isSubmittingML}
+            label={currentEnabledML ? "Disable booking app" : "Enable booking app"}
           />
         </div>
       </div>
 
-      {embedStatus !== "enabled" && (
+      {embedStatusML !== "enabled" && (
         <div>
-          <div style={styles.subLabel}>
+          <div style={stylesML.subLabel}>
             {
               "Check your theme editor to make sure the app embed is turned on. If it's off, the booking widget won't show up on your storefront."
             }
           </div>
           <a
-            href={themeEditorUrl}
+            href={themeEditorUrlML}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -175,6 +175,6 @@ export default function GeneralSettingsTab() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

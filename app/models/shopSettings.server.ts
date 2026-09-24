@@ -1,30 +1,30 @@
 import type { ShopSettings } from "@prisma/client";
 import crypto from "crypto";
-import prisma from "../db.server";
+import prismaML from "../db.server";
 
-function generateSerialKey(): string {
-  const rand = crypto.randomBytes(4).toString("hex").toUpperCase();
-  return `EB-${Date.now()}-${rand}`;
+function generateSerialKeyML(): string {
+  const randML = crypto.randomBytes(4).toString("hex").toUpperCase();
+  return `EB-${Date.now()}-${randML}`;
 }
 
-export async function setAppEnabled(
-  shop: string,
-  isAppEnabled: boolean,
+export async function setAppEnabledML(
+  shopML: string,
+  isAppEnabledML: boolean,
 ): Promise<ShopSettings> {
-  return prisma.shopSettings.upsert({
-    where: { shop },
-    create: { shop, serialKey: generateSerialKey(), isAppEnabled },
-    update: { isAppEnabled },
+  return prismaML.shopSettings.upsert({
+    where: { shop: shopML },
+    create: { shop: shopML, serialKey: generateSerialKeyML(), isAppEnabled: isAppEnabledML },
+    update: { isAppEnabled: isAppEnabledML },
   });
 }
 
 export type AppEmbedStatus = "enabled" | "disabled" | "unknown";
 
-export async function checkAppEmbedStatus(
-  admin: { graphql: (query: string) => Promise<Response> },
+export async function checkAppEmbedStatusML(
+  adminML: { graphql: (query: string) => Promise<Response> },
 ): Promise<AppEmbedStatus> {
   try {
-    const response = await admin.graphql(
+    const responseML = await adminML.graphql(
       `#graphql
         query MainThemeEmbedCheck {
           themes(first: 1, roles: [MAIN]) {
@@ -42,40 +42,40 @@ export async function checkAppEmbedStatus(
           }
         }`,
     );
-    const json = await response.json();
-    const content =
-      json?.data?.themes?.nodes?.[0]?.files?.nodes?.[0]?.body?.content;
-    if (!content) return "unknown";
+    const jsonML = await responseML.json();
+    const contentML =
+      jsonML?.data?.themes?.nodes?.[0]?.files?.nodes?.[0]?.body?.content;
+    if (!contentML) return "unknown";
 
-    const parsed = JSON.parse(content);
-    const blocks = parsed?.current?.blocks ?? {};
-    const match = Object.values(blocks).find(
-      (block: any) =>
-        typeof block?.type === "string" && block.type.includes("/booking-widget/"),
+    const parsedML = JSON.parse(contentML);
+    const blocksML = parsedML?.current?.blocks ?? {};
+    const matchML = Object.values(blocksML).find(
+      (blockML: any) =>
+        typeof blockML?.type === "string" && blockML.type.includes("/booking-widget/"),
     ) as { disabled?: boolean } | undefined;
 
-    if (!match) return "disabled";
-    return match.disabled === true ? "disabled" : "enabled";
+    if (!matchML) return "disabled";
+    return matchML.disabled === true ? "disabled" : "enabled";
   } catch {
     return "unknown";
   }
 }
 
-export async function getOrCreateShopSettings(
-  shop: string,
+export async function getOrCreateShopSettingsML(
+  shopML: string,
 ): Promise<ShopSettings> {
-  let settings = await prisma.shopSettings.upsert({
-    where: { shop },
-    create: { shop, serialKey: generateSerialKey() },
+  let settingsML = await prismaML.shopSettings.upsert({
+    where: { shop: shopML },
+    create: { shop: shopML, serialKey: generateSerialKeyML() },
     update: {},
   });
 
-  if (!settings.serialKey) {
-    settings = await prisma.shopSettings.update({
-      where: { shop },
-      data: { serialKey: generateSerialKey() },
+  if (!settingsML.serialKey) {
+    settingsML = await prismaML.shopSettings.update({
+      where: { shop: shopML },
+      data: { serialKey: generateSerialKeyML() },
     });
   }
 
-  return settings;
+  return settingsML;
 }

@@ -9,24 +9,24 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
-  createLocation,
-  deleteLocation,
-  listLocations,
-  parseLocationForm,
-  reorderLocations,
-  updateLocation,
+  createLocationML,
+  deleteLocationML,
+  listLocationsML,
+  parseLocationFormML,
+  reorderLocationsML,
+  updateLocationML,
   type LocationFieldErrors,
   type LocationFormValues,
 } from "../models/bookingLocation.server";
-import { timezoneOffsetLabel } from "../utils/timezones";
-import { COUNTRIES, findCountryByTimezone, type Country } from "../utils/countries";
-import { WEEKDAY_LABELS } from "../models/weekday-labels";
+import { timezoneOffsetLabelML } from "../utils/timezones";
+import { COUNTRIES_ML, findCountryByTimezoneML, type Country } from "../utils/countries";
+import { WEEKDAY_LABELS_ML } from "../models/weekday-labels";
 import { TimeField12h } from "../components/TimeField12h";
-import { parseWorkingDays } from "../utils/workingDays";
+import { parseWorkingDaysML } from "../utils/workingDays";
 
 type FieldChangeEvent = { currentTarget: { value: string } };
 
-const EMPTY_FORM: LocationFormValues = {
+const EMPTY_FORM_ML: LocationFormValues = {
   name: "",
   timezone: "UTC",
   isEnabled: true,
@@ -35,17 +35,17 @@ const EMPTY_FORM: LocationFormValues = {
   dailyEndTime: null,
 };
 
-const ACCENT = "#073E74";
-const LINE_BORDER = "#DBDBDB";
-const INPUT_BORDER = "#E9E9EA";
-const LABEL_GREY = "#373737";
-const TEXT_BLACK = "#000000";
+const ACCENT_ML = "#073E74";
+const LINE_BORDER_ML = "#DBDBDB";
+const INPUT_BORDER_ML = "#E9E9EA";
+const LABEL_GREY_ML = "#373737";
+const TEXT_BLACK_ML = "#000000";
 
-const SORTED_COUNTRIES = [...COUNTRIES].sort((a, b) =>
-  a.name.localeCompare(b.name),
+const SORTED_COUNTRIES_ML = [...COUNTRIES_ML].sort((aML, bML) =>
+  aML.name.localeCompare(bML.name),
 );
 
-const ChevronIcon = ({ open }: { open: boolean }) => (
+const ChevronIcon = ({ open: openML }: { open: boolean }) => (
   <svg
     width="11"
     height="6"
@@ -53,13 +53,13 @@ const ChevronIcon = ({ open }: { open: boolean }) => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     style={{
-      transform: open ? "rotate(180deg)" : "rotate(0deg)",
+      transform: openML ? "rotate(180deg)" : "rotate(0deg)",
       transition: "transform 0.2s ease",
     }}
   >
     <path
       d="M1 1L5.5 5L10 1"
-      stroke={ACCENT}
+      stroke={ACCENT_ML}
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -73,7 +73,7 @@ const PlusIcon = () => (
   </svg>
 );
 
-const styles: Record<string, React.CSSProperties> = {
+const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
     display: "flex",
@@ -83,7 +83,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "16px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
   },
   body: {
@@ -114,7 +114,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   descText: {
@@ -122,7 +122,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   chevronButton: {
@@ -139,7 +139,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${LINE_BORDER}`,
+    borderTop: `1px solid ${LINE_BORDER_ML}`,
     margin: 0,
     width: "100%",
   },
@@ -189,7 +189,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: LABEL_GREY,
+    color: LABEL_GREY_ML,
     margin: 0,
   },
   inputBox: {
@@ -202,7 +202,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "34px",
     background: "#FFFFFF",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     borderRadius: "4px",
   },
   textInput: {
@@ -215,7 +215,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
   },
   selectInput: {
@@ -228,7 +228,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     padding: 0,
     cursor: "pointer",
     appearance: "none",
@@ -240,7 +240,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: LABEL_GREY,
+    color: LABEL_GREY_ML,
     margin: 0,
   },
   daysGroup: {
@@ -293,7 +293,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "24px",
     height: "24px",
     borderRadius: "4px",
-    border: `1.5px solid ${ACCENT}`,
+    border: `1.5px solid ${ACCENT_ML}`,
     background: "#FFFFFF",
     cursor: "pointer",
     display: "flex",
@@ -306,14 +306,14 @@ const styles: Record<string, React.CSSProperties> = {
     width: "14px",
     height: "14px",
     borderRadius: "50%",
-    background: ACCENT,
+    background: ACCENT_ML,
   },
   dayLabel: {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
     cursor: "pointer",
   },
@@ -322,7 +322,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
     cursor: "pointer",
   },
@@ -344,7 +344,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "4px",
     width: "fit-content",
     height: "42px",
-    background: ACCENT,
+    background: ACCENT_ML,
     borderRadius: "10px",
     border: "none",
     cursor: "pointer",
@@ -382,7 +382,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: "42px",
     background: "transparent",
     borderRadius: "10px",
-    border: `1px solid ${INPUT_BORDER}`,
+    border: `1px solid ${INPUT_BORDER_ML}`,
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
@@ -391,7 +391,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     whiteSpace: "nowrap",
   },
   buttonRow: {
@@ -406,7 +406,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "16px",
     width: "100%",
     background: "#FFFFFF",
-    border: `1px solid ${LINE_BORDER}`,
+    border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
     padding: "10px 10px 13px",
     marginTop: "16px",
@@ -431,7 +431,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     lineHeight: "19px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   columnHeaderRow: {
@@ -448,7 +448,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   rowWrap: {
@@ -467,7 +467,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   actionsCell: {
@@ -508,68 +508,68 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "14px",
     lineHeight: "17px",
-    color: LABEL_GREY,
+    color: LABEL_GREY_ML,
     margin: 0,
   },
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const locations = await listLocations(session.shop);
-  return { locations };
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const locationsML = await listLocationsML(sessionML.shop);
+  return { locations: locationsML };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "") as
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
+  const intentML = String(formDataML.get("intent") ?? "") as
     "create" | "update" | "delete" | "reorder" | "";
 
-  if (intent === "reorder") {
-    let orderedIds: string[] = [];
+  if (intentML === "reorder") {
+    let orderedIdsML: string[] = [];
     try {
-      orderedIds = JSON.parse(String(formData.get("orderedIds") ?? "[]"));
+      orderedIdsML = JSON.parse(String(formDataML.get("orderedIds") ?? "[]"));
     } catch {
-      orderedIds = [];
+      orderedIdsML = [];
     }
-    await reorderLocations(session.shop, orderedIds);
-    return { intent, ok: true as const };
+    await reorderLocationsML(sessionML.shop, orderedIdsML);
+    return { intent: intentML, ok: true as const };
   }
 
-  if (intent === "delete") {
-    const id = String(formData.get("id") ?? "");
-    const result = await deleteLocation(session.shop, id);
-    return { intent, ...result };
+  if (intentML === "delete") {
+    const idML = String(formDataML.get("id") ?? "");
+    const resultML = await deleteLocationML(sessionML.shop, idML);
+    return { intent: intentML, ...resultML };
   }
 
-  const { values, errors } = parseLocationForm(formData);
-  if (Object.keys(errors).length > 0) {
-    return { intent, ok: false as const, errors, values };
+  const { values: valuesML, errors: errorsML } = parseLocationFormML(formDataML);
+  if (Object.keys(errorsML).length > 0) {
+    return { intent: intentML, ok: false as const, errors: errorsML, values: valuesML };
   }
 
-  if (intent === "update") {
-    const id = String(formData.get("id") ?? "");
-    const result = await updateLocation(session.shop, id, values);
-    return { intent, ...result, values };
+  if (intentML === "update") {
+    const idML = String(formDataML.get("id") ?? "");
+    const resultML = await updateLocationML(sessionML.shop, idML, valuesML);
+    return { intent: intentML, ...resultML, values: valuesML };
   }
 
-  const result = await createLocation(session.shop, values);
-  if (!result.ok) {
+  const resultML = await createLocationML(sessionML.shop, valuesML);
+  if (!resultML.ok) {
     return {
       intent: "create" as const,
       ok: false as const,
-      errors: { name: result.error },
-      values,
+      errors: { name: resultML.error },
+      values: valuesML,
     };
   }
-  return { intent: "create" as const, ok: true as const, values: EMPTY_FORM };
+  return { intent: "create" as const, ok: true as const, values: EMPTY_FORM_ML };
 };
 
 function Checkbox({
-  checked,
-  onChange,
-  label,
-  labelStyle,
+  checked: checkedML,
+  onChange: onChangeML,
+  label: labelML,
+  labelStyle: labelStyleML,
 }: {
   checked: boolean;
   onChange: () => void;
@@ -577,47 +577,47 @@ function Checkbox({
   labelStyle?: React.CSSProperties;
 }) {
   return (
-    <div style={styles.dayItem}>
+    <div style={stylesML.dayItem}>
       <button
         type="button"
         role="checkbox"
-        aria-checked={checked}
-        aria-label={label}
-        style={styles.checkbox}
-        onClick={onChange}
+        aria-checked={checkedML}
+        aria-label={labelML}
+        style={stylesML.checkbox}
+        onClick={onChangeML}
       >
-        {checked && <span style={styles.checkboxDot} />}
+        {checkedML && <span style={stylesML.checkboxDot} />}
       </button>
-      <p style={labelStyle ?? styles.dayLabel} onClick={onChange}>
-        {label}
+      <p style={labelStyleML ?? stylesML.dayLabel} onClick={onChangeML}>
+        {labelML}
       </p>
     </div>
   );
 }
 
 function CountrySelect({
-  value,
-  extraOption,
-  onChange,
+  value: valueML,
+  extraOption: extraOptionML,
+  onChange: onChangeML,
 }: {
   value: string;
   extraOption: { code: string; name: string } | null;
   onChange: (code: string) => void;
 }) {
   return (
-    <div style={styles.inputBox}>
+    <div style={stylesML.inputBox}>
       <select
-        style={styles.selectInput}
-        value={value}
-        onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
+        style={stylesML.selectInput}
+        value={valueML}
+        onChange={(eML: FieldChangeEvent) => onChangeML(eML.currentTarget.value)}
       >
         <option value="">Select a country</option>
-        {extraOption && (
-          <option value={extraOption.code}>{extraOption.name}</option>
+        {extraOptionML && (
+          <option value={extraOptionML.code}>{extraOptionML.name}</option>
         )}
-        {SORTED_COUNTRIES.map((country) => (
-          <option key={country.code} value={country.code}>
-            {country.name}
+        {SORTED_COUNTRIES_ML.map((countryML) => (
+          <option key={countryML.code} value={countryML.code}>
+            {countryML.name}
           </option>
         ))}
       </select>
@@ -626,24 +626,24 @@ function CountrySelect({
 }
 
 function RegionSelect({
-  country,
-  value,
-  onChange,
+  country: countryML,
+  value: valueML,
+  onChange: onChangeML,
 }: {
   country: Country;
   value: string;
   onChange: (tz: string) => void;
 }) {
   return (
-    <div style={styles.inputBox}>
+    <div style={stylesML.inputBox}>
       <select
-        style={styles.selectInput}
-        value={value}
-        onChange={(e: FieldChangeEvent) => onChange(e.currentTarget.value)}
+        style={stylesML.selectInput}
+        value={valueML}
+        onChange={(eML: FieldChangeEvent) => onChangeML(eML.currentTarget.value)}
       >
-        {country.timezones.map((zone) => (
-          <option key={zone.tz} value={zone.tz}>
-            {zone.label} ({timezoneOffsetLabel(zone.tz)})
+        {countryML.timezones.map((zoneML) => (
+          <option key={zoneML.tz} value={zoneML.tz}>
+            {zoneML.label} ({timezoneOffsetLabelML(zoneML.tz)})
           </option>
         ))}
       </select>
@@ -652,14 +652,14 @@ function RegionSelect({
 }
 
 function LocationEditor({
-  initial,
-  onCancel,
-  submitLabel,
-  locationId,
-  open,
-  onToggleOpen,
-  title,
-  description,
+  initial: initialML,
+  onCancel: onCancelML,
+  submitLabel: submitLabelML,
+  locationId: locationIdML,
+  open: openML,
+  onToggleOpen: onToggleOpenML,
+  title: titleML,
+  description: descriptionML,
 }: {
   initial: LocationFormValues;
   onCancel?: () => void;
@@ -670,287 +670,287 @@ function LocationEditor({
   title?: string;
   description?: string;
 }) {
-  const fetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
-  const [values, setValues] = useState<LocationFormValues>(initial);
+  const fetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
+  const [valuesML, setValuesML] = useState<LocationFormValues>(initialML);
 
-  const matchedCountry = findCountryByTimezone(initial.timezone);
-  const [countryCode, setCountryCode] = useState<string>(
-    matchedCountry?.code ?? (initial.timezone ? "__custom__" : ""),
+  const matchedCountryML = findCountryByTimezoneML(initialML.timezone);
+  const [countryCodeML, setCountryCodeML] = useState<string>(
+    matchedCountryML?.code ?? (initialML.timezone ? "__custom__" : ""),
   );
-  const customOption =
-    !matchedCountry && initial.timezone
-      ? { code: "__custom__", name: `Custom (${initial.timezone})` }
+  const customOptionML =
+    !matchedCountryML && initialML.timezone
+      ? { code: "__custom__", name: `Custom (${initialML.timezone})` }
       : null;
-  const selectedCountry =
-    SORTED_COUNTRIES.find((c) => c.code === countryCode) ?? null;
+  const selectedCountryML =
+    SORTED_COUNTRIES_ML.find((cML) => cML.code === countryCodeML) ?? null;
 
-  const isEdit = Boolean(locationId);
-  const errors: LocationFieldErrors =
-    fetcher.data && "errors" in fetcher.data ? fetcher.data.errors ?? {} : {};
+  const isEditML = Boolean(locationIdML);
+  const errorsML: LocationFieldErrors =
+    fetcherML.data && "errors" in fetcherML.data ? fetcherML.data.errors ?? {} : {};
 
   useEffect(() => {
-    if (fetcher.data?.ok) {
-      shopify.toast.show(isEdit ? "Location updated" : "Location added");
-      if (!isEdit) {
-        setValues(EMPTY_FORM);
-        setCountryCode("");
+    if (fetcherML.data?.ok) {
+      shopifyML.toast.show(isEditML ? "Location updated" : "Location added");
+      if (!isEditML) {
+        setValuesML(EMPTY_FORM_ML);
+        setCountryCodeML("");
       }
-      onCancel?.();
+      onCancelML?.();
     }
-  }, [fetcher.data]);
+  }, [fetcherML.data]);
 
-  const isSaving = fetcher.state !== "idle";
+  const isSavingML = fetcherML.state !== "idle";
 
-  const handleCountryChange = (code: string) => {
-    setCountryCode(code);
-    if (code === "__custom__") return;
-    const country = SORTED_COUNTRIES.find((c) => c.code === code);
-    if (country) {
-      setValues((prev) => ({ ...prev, timezone: country.timezones[0].tz }));
+  const handleCountryChangeML = (codeML: string) => {
+    setCountryCodeML(codeML);
+    if (codeML === "__custom__") return;
+    const countryML = SORTED_COUNTRIES_ML.find((cML) => cML.code === codeML);
+    if (countryML) {
+      setValuesML((prevML) => ({ ...prevML, timezone: countryML.timezones[0].tz }));
     }
   };
 
-  const toggleWorkingDay = (day: number) => {
-    setValues((prev) => {
-      const current = prev.workingDays ?? [];
-      const has = current.includes(day);
-      const workingDays = has
-        ? current.filter((d) => d !== day)
-        : [...current, day].sort((a, b) => a - b);
-      return { ...prev, workingDays };
+  const toggleWorkingDayML = (dayML: number) => {
+    setValuesML((prevML) => {
+      const currentML = prevML.workingDays ?? [];
+      const hasML = currentML.includes(dayML);
+      const workingDaysML = hasML
+        ? currentML.filter((dML) => dML !== dayML)
+        : [...currentML, dayML].sort((aML, bML) => aML - bML);
+      return { ...prevML, workingDays: workingDaysML };
     });
   };
 
-  const allWeekdaysSelected = WEEKDAY_LABELS.every((day) =>
-    (values.workingDays ?? []).includes(day.value),
+  const allWeekdaysSelectedML = WEEKDAY_LABELS_ML.every((dayML) =>
+    (valuesML.workingDays ?? []).includes(dayML.value),
   );
 
-  const toggleSelectAllWorkingDays = () => {
-    setValues((prev) => ({
-      ...prev,
-      workingDays: allWeekdaysSelected
+  const toggleSelectAllWorkingDaysML = () => {
+    setValuesML((prevML) => ({
+      ...prevML,
+      workingDays: allWeekdaysSelectedML
         ? []
-        : WEEKDAY_LABELS.map((day) => day.value),
+        : WEEKDAY_LABELS_ML.map((dayML) => dayML.value),
     }));
   };
 
-  const handleSubmit = () => {
-    fetcher.submit(
+  const handleSubmitML = () => {
+    fetcherML.submit(
       {
-        intent: isEdit ? "update" : "create",
-        ...(locationId ? { id: locationId } : {}),
-        name: values.name,
-        timezone: values.timezone,
-        isEnabled: String(values.isEnabled),
-        workingDays: values.workingDays ? values.workingDays.join(",") : "",
-        dailyStartTime: values.dailyStartTime ?? "",
-        dailyEndTime: values.dailyEndTime ?? "",
+        intent: isEditML ? "update" : "create",
+        ...(locationIdML ? { id: locationIdML } : {}),
+        name: valuesML.name,
+        timezone: valuesML.timezone,
+        isEnabled: String(valuesML.isEnabled),
+        workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : "",
+        dailyStartTime: valuesML.dailyStartTime ?? "",
+        dailyEndTime: valuesML.dailyEndTime ?? "",
       },
       { method: "POST" },
     );
   };
 
-  const showChrome = title !== undefined;
+  const showChromeML = titleML !== undefined;
 
   return (
-    <div style={{ ...styles.card, height: "auto" }}>
-      <div style={styles.body}>
-        {showChrome && (
+    <div style={{ ...stylesML.card, height: "auto" }}>
+      <div style={stylesML.body}>
+        {showChromeML && (
           <div
             style={{
-              ...styles.headerRow,
-              cursor: onToggleOpen ? "pointer" : undefined,
+              ...stylesML.headerRow,
+              cursor: onToggleOpenML ? "pointer" : undefined,
             }}
-            onClick={onToggleOpen}
+            onClick={onToggleOpenML}
           >
-            <div style={styles.headerLeft}>
-              <p style={styles.title}>{title}</p>
-              {description && <p style={styles.descText}>{description}</p>}
+            <div style={stylesML.headerLeft}>
+              <p style={stylesML.title}>{titleML}</p>
+              {descriptionML && <p style={stylesML.descText}>{descriptionML}</p>}
             </div>
-            {onToggleOpen && (
+            {onToggleOpenML && (
               <button
                 type="button"
-                style={styles.chevronButton}
-                aria-label={open ? "Collapse" : "Expand"}
+                style={stylesML.chevronButton}
+                aria-label={openML ? "Collapse" : "Expand"}
               >
-                <ChevronIcon open={Boolean(open)} />
+                <ChevronIcon open={Boolean(openML)} />
               </button>
             )}
           </div>
         )}
 
-        {(open ?? true) && (
+        {(openML ?? true) && (
           <>
-            {showChrome && <hr style={styles.divider} />}
+            {showChromeML && <hr style={stylesML.divider} />}
 
-            <div style={styles.fieldsRow}>
-              <div style={styles.fieldGroupThirty}>
-                <p style={styles.fieldLabel}>Location name</p>
-                <div style={styles.inputBox}>
+            <div style={stylesML.fieldsRow}>
+              <div style={stylesML.fieldGroupThirty}>
+                <p style={stylesML.fieldLabel}>Location name</p>
+                <div style={stylesML.inputBox}>
                   <input
                     type="text"
-                    style={styles.textInput}
+                    style={stylesML.textInput}
                     placeholder="California"
-                    value={values.name}
-                    onChange={(e: FieldChangeEvent) => {
-                      const value = e.currentTarget.value;
-                      setValues((prev) => ({ ...prev, name: value }));
+                    value={valuesML.name}
+                    onChange={(eML: FieldChangeEvent) => {
+                      const valueML = eML.currentTarget.value;
+                      setValuesML((prevML) => ({ ...prevML, name: valueML }));
                     }}
                   />
                 </div>
-                {errors.name && (
-                  <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                    {errors.name}
+                {errorsML.name && (
+                  <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                    {errorsML.name}
                   </p>
                 )}
               </div>
 
-              <div style={styles.fieldGroupSeventy}>
-                <p style={styles.fieldLabel}>Country</p>
+              <div style={stylesML.fieldGroupSeventy}>
+                <p style={stylesML.fieldLabel}>Country</p>
                 <CountrySelect
-                  value={countryCode}
-                  extraOption={customOption}
-                  onChange={handleCountryChange}
+                  value={countryCodeML}
+                  extraOption={customOptionML}
+                  onChange={handleCountryChangeML}
                 />
               </div>
             </div>
 
-            {selectedCountry && selectedCountry.timezones.length > 1 && (
-              <div style={styles.fieldGroupFull}>
-                <p style={styles.fieldLabel}>Region</p>
+            {selectedCountryML && selectedCountryML.timezones.length > 1 && (
+              <div style={stylesML.fieldGroupFull}>
+                <p style={stylesML.fieldLabel}>Region</p>
                 <RegionSelect
-                  country={selectedCountry}
-                  value={values.timezone}
-                  onChange={(tz) =>
-                    setValues((prev) => ({ ...prev, timezone: tz }))
+                  country={selectedCountryML}
+                  value={valuesML.timezone}
+                  onChange={(tzML) =>
+                    setValuesML((prevML) => ({ ...prevML, timezone: tzML }))
                   }
                 />
-                <p style={styles.hintText}>
+                <p style={stylesML.hintText}>
                   Booking hours and slot times use this time zone.
                 </p>
               </div>
             )}
 
-            {errors.timezone && (
-              <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                {errors.timezone}
+            {errorsML.timezone && (
+              <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                {errorsML.timezone}
               </p>
             )}
 
-            <hr style={styles.divider} />
+            <hr style={stylesML.divider} />
 
-            <div style={styles.daysGroup}>
-              <div style={styles.daysRow}>
+            <div style={stylesML.daysGroup}>
+              <div style={stylesML.daysRow}>
                 <Checkbox
-                  checked={allWeekdaysSelected}
-                  onChange={toggleSelectAllWorkingDays}
+                  checked={allWeekdaysSelectedML}
+                  onChange={toggleSelectAllWorkingDaysML}
                   label="Select All"
                 />
               </div>
-              <div style={styles.dayGrid}>
-                {WEEKDAY_LABELS.map((day) => {
-                  const isChecked = (values.workingDays ?? []).includes(
-                    day.value,
+              <div style={stylesML.dayGrid}>
+                {WEEKDAY_LABELS_ML.map((dayML) => {
+                  const isCheckedML = (valuesML.workingDays ?? []).includes(
+                    dayML.value,
                   );
                   return (
                     <div
-                      key={day.value}
+                      key={dayML.value}
                       style={{
-                        ...styles.dayTile,
-                        ...(isChecked ? styles.dayTileActive : {}),
+                        ...stylesML.dayTile,
+                        ...(isCheckedML ? stylesML.dayTileActive : {}),
                       }}
                     >
                       <Checkbox
-                        checked={isChecked}
-                        onChange={() => toggleWorkingDay(day.value)}
-                        label={day.label}
+                        checked={isCheckedML}
+                        onChange={() => toggleWorkingDayML(dayML.value)}
+                        label={dayML.label}
                       />
                     </div>
                   );
                 })}
               </div>
-              <p style={styles.descText}>
+              <p style={stylesML.descText}>
                 Leave blank to use the shop default. Only set these if
                 this location's hours differ.
               </p>
             </div>
 
-            <div style={styles.fieldsRow}>
-              <div style={styles.fieldGroupHalf}>
-                <p style={styles.fieldLabel}>Start time</p>
+            <div style={stylesML.fieldsRow}>
+              <div style={stylesML.fieldGroupHalf}>
+                <p style={stylesML.fieldLabel}>Start time</p>
                 <TimeField12h
-                  value={values.dailyStartTime}
-                  onChange={(next) =>
-                    setValues((prev) => ({ ...prev, dailyStartTime: next }))
+                  value={valuesML.dailyStartTime}
+                  onChange={(nextML) =>
+                    setValuesML((prevML) => ({ ...prevML, dailyStartTime: nextML }))
                   }
-                  inputBoxStyle={styles.inputBox}
-                  inputStyle={styles.textInput}
-                  borderColor={INPUT_BORDER}
-                  textColor={TEXT_BLACK}
+                  inputBoxStyle={stylesML.inputBox}
+                  inputStyle={stylesML.textInput}
+                  borderColor={INPUT_BORDER_ML}
+                  textColor={TEXT_BLACK_ML}
                 />
-                <p style={styles.hintText}>12-hour format, hh:mm AM/PM</p>
-                {errors.dailyStartTime && (
-                  <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                    {errors.dailyStartTime}
+                <p style={stylesML.hintText}>12-hour format, hh:mm AM/PM</p>
+                {errorsML.dailyStartTime && (
+                  <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                    {errorsML.dailyStartTime}
                   </p>
                 )}
               </div>
-              <div style={styles.fieldGroupHalf}>
-                <p style={styles.fieldLabel}>End time</p>
+              <div style={stylesML.fieldGroupHalf}>
+                <p style={stylesML.fieldLabel}>End time</p>
                 <TimeField12h
-                  value={values.dailyEndTime}
-                  onChange={(next) =>
-                    setValues((prev) => ({ ...prev, dailyEndTime: next }))
+                  value={valuesML.dailyEndTime}
+                  onChange={(nextML) =>
+                    setValuesML((prevML) => ({ ...prevML, dailyEndTime: nextML }))
                   }
-                  inputBoxStyle={styles.inputBox}
-                  inputStyle={styles.textInput}
-                  borderColor={INPUT_BORDER}
-                  textColor={TEXT_BLACK}
+                  inputBoxStyle={stylesML.inputBox}
+                  inputStyle={stylesML.textInput}
+                  borderColor={INPUT_BORDER_ML}
+                  textColor={TEXT_BLACK_ML}
                 />
-                <p style={styles.hintText}>12-hour format, hh:mm AM/PM</p>
-                {errors.dailyEndTime && (
-                  <p style={{ ...styles.hintText, color: "#D82C0D" }}>
-                    {errors.dailyEndTime}
+                <p style={stylesML.hintText}>12-hour format, hh:mm AM/PM</p>
+                {errorsML.dailyEndTime && (
+                  <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
+                    {errorsML.dailyEndTime}
                   </p>
                 )}
               </div>
             </div>
 
             <Checkbox
-              checked={values.isEnabled}
+              checked={valuesML.isEnabled}
               onChange={() =>
-                setValues((prev) => ({ ...prev, isEnabled: !prev.isEnabled }))
+                setValuesML((prevML) => ({ ...prevML, isEnabled: !prevML.isEnabled }))
               }
               label="Visible to shoppers"
-              labelStyle={styles.requiredLabel}
+              labelStyle={stylesML.requiredLabel}
             />
 
-            {showChrome && <hr style={styles.divider} />}
+            {showChromeML && <hr style={stylesML.divider} />}
 
-            <div style={styles.buttonRow}>
-              {onCancel && (
+            <div style={stylesML.buttonRow}>
+              {onCancelML && (
                 <button
                   type="button"
-                  style={styles.cancelButton}
-                  onClick={onCancel}
-                  disabled={isSaving}
+                  style={stylesML.cancelButton}
+                  onClick={onCancelML}
+                  disabled={isSavingML}
                 >
-                  <span style={styles.cancelButtonLabel}>Cancel</span>
+                  <span style={stylesML.cancelButtonLabel}>Cancel</span>
                 </button>
               )}
               <button
                 type="button"
                 style={{
-                  ...styles.addButton,
-                  ...(isSaving ? styles.addButtonDisabled : {}),
+                  ...stylesML.addButton,
+                  ...(isSavingML ? stylesML.addButtonDisabled : {}),
                 }}
-                onClick={handleSubmit}
-                disabled={isSaving}
+                onClick={handleSubmitML}
+                disabled={isSavingML}
               >
-                <span style={styles.addButtonLabel}>{submitLabel}</span>
-                {!isEdit && (
-                  <span style={styles.plusWrap}>
+                <span style={stylesML.addButtonLabel}>{submitLabelML}</span>
+                {!isEditML && (
+                  <span style={stylesML.plusWrap}>
                     <PlusIcon />
                   </span>
                 )}
@@ -964,12 +964,12 @@ function LocationEditor({
 }
 
 function LocationRow({
-  location,
-  onMoveUp,
-  onMoveDown,
-  isFirst,
-  isLast,
-  isReordering,
+  location: locationML,
+  onMoveUp: onMoveUpML,
+  onMoveDown: onMoveDownML,
+  isFirst: isFirstML,
+  isLast: isLastML,
+  isReordering: isReorderingML,
 }: {
   location: {
     id: string;
@@ -986,109 +986,109 @@ function LocationRow({
   isLast: boolean;
   isReordering: boolean;
 }) {
-  const deleteFetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
-  const [isEditing, setIsEditing] = useState(false);
-  const isDeleting = deleteFetcher.state !== "idle";
-  const isBusy = isDeleting || isReordering;
+  const deleteFetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
+  const [isEditingML, setIsEditingML] = useState(false);
+  const isDeletingML = deleteFetcherML.state !== "idle";
+  const isBusyML = isDeletingML || isReorderingML;
 
   useEffect(() => {
-    if (deleteFetcher.data?.intent !== "delete") return;
-    if (deleteFetcher.data.ok) {
-      shopify.toast.show("Location removed");
+    if (deleteFetcherML.data?.intent !== "delete") return;
+    if (deleteFetcherML.data.ok) {
+      shopifyML.toast.show("Location removed");
     } else {
-      shopify.toast.show(deleteFetcher.data.error || "Couldn't delete location.", {
+      shopifyML.toast.show(deleteFetcherML.data.error || "Couldn't delete location.", {
         isError: true,
       });
     }
-  }, [deleteFetcher.data, shopify]);
+  }, [deleteFetcherML.data, shopifyML]);
 
-  const handleDelete = () => {
-    deleteFetcher.submit(
-      { intent: "delete", id: location.id },
+  const handleDeleteML = () => {
+    deleteFetcherML.submit(
+      { intent: "delete", id: locationML.id },
       { method: "POST" },
     );
   };
 
-  if (isEditing) {
+  if (isEditingML) {
     return (
       <div>
         <LocationEditor
-          locationId={location.id}
+          locationId={locationML.id}
           submitLabel="Save"
-          onCancel={() => setIsEditing(false)}
+          onCancel={() => setIsEditingML(false)}
           initial={{
-            name: location.name,
-            timezone: location.timezone,
-            isEnabled: location.isEnabled,
-            workingDays: location.workingDays
-              ? parseWorkingDays(location.workingDays)
+            name: locationML.name,
+            timezone: locationML.timezone,
+            isEnabled: locationML.isEnabled,
+            workingDays: locationML.workingDays
+              ? parseWorkingDaysML(locationML.workingDays)
               : null,
-            dailyStartTime: location.dailyStartTime,
-            dailyEndTime: location.dailyEndTime,
+            dailyStartTime: locationML.dailyStartTime,
+            dailyEndTime: locationML.dailyEndTime,
           }}
         />
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
       </div>
     );
   }
 
-  const offset = timezoneOffsetLabel(location.timezone);
+  const offsetML = timezoneOffsetLabelML(locationML.timezone);
 
   return (
     <div>
-      <div style={styles.rowWrap}>
-        <p style={styles.rowCell}>{location.name}</p>
-        <p style={styles.rowCell}>
-          {location.timezone}
-          {offset ? ` (${offset})` : ""}
+      <div style={stylesML.rowWrap}>
+        <p style={stylesML.rowCell}>{locationML.name}</p>
+        <p style={stylesML.rowCell}>
+          {locationML.timezone}
+          {offsetML ? ` (${offsetML})` : ""}
         </p>
-        <p style={styles.rowCell}>
-          {location.workingDays || location.dailyStartTime || location.dailyEndTime
+        <p style={stylesML.rowCell}>
+          {locationML.workingDays || locationML.dailyStartTime || locationML.dailyEndTime
             ? "Custom"
             : "Shop default"}
         </p>
-        <p style={styles.rowCell}>{location.isEnabled ? "Visible" : "Hidden"}</p>
-        <div style={styles.actionsCell}>
+        <p style={stylesML.rowCell}>{locationML.isEnabled ? "Visible" : "Hidden"}</p>
+        <div style={stylesML.actionsCell}>
           <button
             type="button"
             style={{
-              ...styles.iconButton,
-              ...(isFirst || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+              ...stylesML.iconButton,
+              ...(isFirstML || isBusyML ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
-            onClick={onMoveUp}
-            disabled={isBusy}
-            aria-label={`Move ${location.name} up`}
+            onClick={onMoveUpML}
+            disabled={isBusyML}
+            aria-label={`Move ${locationML.name} up`}
           >
             <img src="/arrow-up.svg" width={44} height={40} alt="" />
           </button>
           <button
             type="button"
             style={{
-              ...styles.iconButton,
-              ...(isLast || isBusy ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+              ...stylesML.iconButton,
+              ...(isLastML || isBusyML ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
-            onClick={onMoveDown}
-            disabled={isBusy}
-            aria-label={`Move ${location.name} down`}
+            onClick={onMoveDownML}
+            disabled={isBusyML}
+            aria-label={`Move ${locationML.name} down`}
           >
             <img src="/arrow-down.svg" width={44} height={40} alt="" />
           </button>
           <button
             type="button"
-            style={styles.iconButton}
-            onClick={() => setIsEditing(true)}
-            disabled={isBusy}
-            aria-label={`Edit ${location.name}`}
+            style={stylesML.iconButton}
+            onClick={() => setIsEditingML(true)}
+            disabled={isBusyML}
+            aria-label={`Edit ${locationML.name}`}
           >
             <img src="/edit-icon.svg" width={44} height={40} alt="" />
           </button>
           <button
             type="button"
-            style={styles.deleteButton}
-            onClick={handleDelete}
-            disabled={isReordering}
-            aria-label={`Delete ${location.name}`}
+            style={stylesML.deleteButton}
+            onClick={handleDeleteML}
+            disabled={isReorderingML}
+            aria-label={`Delete ${locationML.name}`}
           >
             <img
               src="/delete-icon.svg"
@@ -1097,96 +1097,96 @@ function LocationRow({
               alt="Delete"
               style={{
                 display: "block",
-                ...(isDeleting ? { opacity: 0.5 } : {}),
+                ...(isDeletingML ? { opacity: 0.5 } : {}),
               }}
             />
           </button>
         </div>
       </div>
-      <hr style={styles.divider} />
+      <hr style={stylesML.divider} />
     </div>
   );
 }
 
 export default function LocationsPage() {
-  const { locations: loaderLocations } = useLoaderData<typeof loader>();
-  const reorderFetcher = useFetcher<typeof action>();
-  const [locations, setLocations] = useState(loaderLocations);
-  const [open, setOpen] = useState(false);
-  const isReordering = reorderFetcher.state !== "idle";
+  const { locations: loaderLocationsML } = useLoaderData<typeof loader>();
+  const reorderFetcherML = useFetcher<typeof action>();
+  const [locationsML, setLocationsML] = useState(loaderLocationsML);
+  const [openML, setOpenML] = useState(false);
+  const isReorderingML = reorderFetcherML.state !== "idle";
 
   useEffect(() => {
-    setLocations(loaderLocations);
-  }, [loaderLocations]);
+    setLocationsML(loaderLocationsML);
+  }, [loaderLocationsML]);
 
-  const persistOrder = (ordered: typeof locations) => {
-    reorderFetcher.submit(
+  const persistOrderML = (orderedML: typeof locationsML) => {
+    reorderFetcherML.submit(
       {
         intent: "reorder",
-        orderedIds: JSON.stringify(ordered.map((l) => l.id)),
+        orderedIds: JSON.stringify(orderedML.map((lML) => lML.id)),
       },
       { method: "POST" },
     );
   };
 
-  const moveLocation = (index: number, direction: -1 | 1) => {
-    const targetIndex = (index + direction + locations.length) % locations.length;
+  const moveLocationML = (indexML: number, directionML: -1 | 1) => {
+    const targetIndexML = (indexML + directionML + locationsML.length) % locationsML.length;
 
-    const reordered = [...locations];
-    const [moved] = reordered.splice(index, 1);
-    reordered.splice(targetIndex, 0, moved);
+    const reorderedML = [...locationsML];
+    const [movedML] = reorderedML.splice(indexML, 1);
+    reorderedML.splice(targetIndexML, 0, movedML);
 
-    setLocations(reordered);
-    persistOrder(reordered);
+    setLocationsML(reorderedML);
+    persistOrderML(reorderedML);
   };
 
   return (
     <div style={{ fontFamily: "Inter" }}>
       <LocationEditor
-        initial={EMPTY_FORM}
+        initial={EMPTY_FORM_ML}
         submitLabel="Add Location"
-        open={open}
-        onToggleOpen={() => setOpen(!open)}
+        open={openML}
+        onToggleOpen={() => setOpenML(!openML)}
         title="Add a Locations"
         description="Locations shoppers pick before choosing a date and time- Each has its own timezone, so slot times are always local."
       />
 
-      <div style={styles.listCard}>
-        <div style={styles.listHeaderRow}>
-          <div style={styles.listHeaderLeft}>
-            <p style={styles.listTitle}>Current locations</p>
-            <p style={styles.descText}>
+      <div style={stylesML.listCard}>
+        <div style={stylesML.listHeaderRow}>
+          <div style={stylesML.listHeaderLeft}>
+            <p style={stylesML.listTitle}>Current locations</p>
+            <p style={stylesML.descText}>
               Use the arrows to reorder how these appear on the storefront.
             </p>
           </div>
         </div>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        <div style={styles.columnHeaderRow}>
-          <p style={styles.columnHeaderCell}>Location Name</p>
-          <p style={styles.columnHeaderCell}>Timezone</p>
-          <p style={styles.columnHeaderCell}>Hours</p>
-          <p style={styles.columnHeaderCell}>Visibility</p>
-          <p style={{ ...styles.columnHeaderCell, textAlign: "left" }}>
+        <div style={stylesML.columnHeaderRow}>
+          <p style={stylesML.columnHeaderCell}>Location Name</p>
+          <p style={stylesML.columnHeaderCell}>Timezone</p>
+          <p style={stylesML.columnHeaderCell}>Hours</p>
+          <p style={stylesML.columnHeaderCell}>Visibility</p>
+          <p style={{ ...stylesML.columnHeaderCell, textAlign: "left" }}>
             Actions
           </p>
         </div>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        {locations.length === 0 ? (
-          <p style={styles.emptyText}>No locations yet.</p>
+        {locationsML.length === 0 ? (
+          <p style={stylesML.emptyText}>No locations yet.</p>
         ) : (
-          locations.map((location, index) => (
+          locationsML.map((locationML, indexML) => (
             <LocationRow
-              key={location.id}
-              location={location}
-              isFirst={index === 0}
-              isLast={index === locations.length - 1}
-              onMoveUp={() => moveLocation(index, -1)}
-              onMoveDown={() => moveLocation(index, 1)}
-              isReordering={isReordering}
+              key={locationML.id}
+              location={locationML}
+              isFirst={indexML === 0}
+              isLast={indexML === locationsML.length - 1}
+              onMoveUp={() => moveLocationML(indexML, -1)}
+              onMoveDown={() => moveLocationML(indexML, 1)}
+              isReordering={isReorderingML}
             />
           ))
         )}
@@ -1195,6 +1195,6 @@ export default function LocationsPage() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

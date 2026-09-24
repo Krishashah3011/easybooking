@@ -1,35 +1,35 @@
 import type { Booking, BookingType } from "@prisma/client";
-import prisma from "../db.server";
+import prismaML from "../db.server";
 import {
-  getBookableProduct,
-  resolveEffectiveSettings,
+  getBookableProductML,
+  resolveEffectiveSettingsML,
 } from "./bookableProduct.server";
-import { getBookingSettings } from "./bookingSettings.server";
+import { getBookingSettingsML } from "./bookingSettings.server";
 import {
-  computeSlotsForDate,
-  computeFullDayAvailability,
-  computeMultiDayNightAvailability,
+  computeSlotsForDateML,
+  computeFullDayAvailabilityML,
+  computeMultiDayNightAvailabilityML,
 } from "./slotAvailability.server";
-import { resolveBookingContextById } from "./booking-context.server";
-import { sendEmail } from "../utils/mailer.server";
+import { resolveBookingContextByIdML } from "./booking-context.server";
+import { sendEmailML } from "../utils/mailer.server";
 import {
-  confirmationEmail,
-  bundleConfirmationEmail,
-  reminderEmail,
-  cancellationEmail,
-  rescheduledEmail,
+  confirmationEmailML,
+  bundleConfirmationEmailML,
+  reminderEmailML,
+  cancellationEmailML,
+  rescheduledEmailML,
 } from "./emailTemplate.server";
-import { listCustomFields } from "./customBookingField.server";
-import { getLocationById } from "./bookingLocation.server";
+import { listCustomFieldsML } from "./customBookingField.server";
+import { getLocationByIdML } from "./bookingLocation.server";
 import {
-  dateStrInTimezone,
-  localDayRangeUtc,
-  zonedTimeToUtc,
+  dateStrInTimezoneML,
+  localDayRangeUtcML,
+  zonedTimeToUtcML,
 } from "../utils/timezones";
-import { formatDateDisplay } from "../utils/format";
-import { getDisplayStatus, belongsInCompletedTab } from "../utils/bookingStatus";
+import { formatDateDisplayML } from "../utils/format";
+import { getDisplayStatusML, belongsInCompletedTabML } from "../utils/bookingStatus";
 
-const ACTIVE_BOOKING_STATUSES = ["CONFIRMED", "RESCHEDULED"] as const;
+const ACTIVE_BOOKING_STATUSES_ML = ["CONFIRMED", "RESCHEDULED"] as const;
 
 export type OrderLineItem = {
   id: number | string;
@@ -53,49 +53,49 @@ export type OrderPayload = {
   line_items?: OrderLineItem[];
 };
 
-const BOOKING_DATE_PROPERTY = "Booking Date";
-const BOOKING_TIME_PROPERTY = "Booking Time";
-const BOOKING_LOCATION_PROPERTY = "Location";
-const BOOKING_LOCATION_ID_PROPERTY = "_Location Id";
-const BOOKING_CHECKOUT_DATE_PROPERTY = "Checkout Date";
-const BOOKING_NOTE_PROPERTY = "Note";
+const BOOKING_DATE_PROPERTY_ML = "Booking Date";
+const BOOKING_TIME_PROPERTY_ML = "Booking Time";
+const BOOKING_LOCATION_PROPERTY_ML = "Location";
+const BOOKING_LOCATION_ID_PROPERTY_ML = "_Location Id";
+const BOOKING_CHECKOUT_DATE_PROPERTY_ML = "Checkout Date";
+const BOOKING_NOTE_PROPERTY_ML = "Note";
 
-function toProductGid(productId: number | string): string {
-  return `gid://shopify/Product/${productId}`;
+function toProductGidML(productIdML: number | string): string {
+  return `gid://shopify/Product/${productIdML}`;
 }
 
-export function extractBookingSelection(
-  lineItem: OrderLineItem,
+export function extractBookingSelectionML(
+  lineItemML: OrderLineItem,
 ): { date: string; time: string; checkoutDate: string | null } | null {
-  const properties = lineItem.properties ?? [];
-  const date = properties.find((p) => p.name === BOOKING_DATE_PROPERTY)?.value;
-  const time = properties.find((p) => p.name === BOOKING_TIME_PROPERTY)?.value;
-  const checkoutDate =
-    properties.find((p) => p.name === BOOKING_CHECKOUT_DATE_PROPERTY)?.value ??
+  const propertiesML = lineItemML.properties ?? [];
+  const dateML = propertiesML.find((pML) => pML.name === BOOKING_DATE_PROPERTY_ML)?.value;
+  const timeML = propertiesML.find((pML) => pML.name === BOOKING_TIME_PROPERTY_ML)?.value;
+  const checkoutDateML =
+    propertiesML.find((pML) => pML.name === BOOKING_CHECKOUT_DATE_PROPERTY_ML)?.value ??
     null;
-  if (!date || !time) return null;
-  return { date, time, checkoutDate };
+  if (!dateML || !timeML) return null;
+  return { date: dateML, time: timeML, checkoutDate: checkoutDateML };
 }
 
-export function extractBookingLocation(lineItem: OrderLineItem): string | null {
-  const properties = lineItem.properties ?? [];
-  const location = properties.find(
-    (p) => p.name === BOOKING_LOCATION_PROPERTY,
+export function extractBookingLocationML(lineItemML: OrderLineItem): string | null {
+  const propertiesML = lineItemML.properties ?? [];
+  const locationML = propertiesML.find(
+    (pML) => pML.name === BOOKING_LOCATION_PROPERTY_ML,
   )?.value;
-  return location || null;
+  return locationML || null;
 }
 
-export function extractBookingLocationId(lineItem: OrderLineItem): string | null {
-  const properties = lineItem.properties ?? [];
-  const locationId = properties.find(
-    (p) => p.name === BOOKING_LOCATION_ID_PROPERTY,
+export function extractBookingLocationIdML(lineItemML: OrderLineItem): string | null {
+  const propertiesML = lineItemML.properties ?? [];
+  const locationIdML = propertiesML.find(
+    (pML) => pML.name === BOOKING_LOCATION_ID_PROPERTY_ML,
   )?.value;
-  return locationId || null;
+  return locationIdML || null;
 }
 
-async function resolveBookingLocation(
-  shop: string,
-  lineItem: OrderLineItem,
+async function resolveBookingLocationML(
+  shopML: string,
+  lineItemML: OrderLineItem,
 ): Promise<{
   id: string;
   name: string;
@@ -104,704 +104,704 @@ async function resolveBookingLocation(
   dailyStartTime: string | null;
   dailyEndTime: string | null;
 } | null> {
-  const locationId = extractBookingLocationId(lineItem);
-  if (!locationId) return null;
-  const location = await getLocationById(shop, locationId);
-  if (!location) {
+  const locationIdML = extractBookingLocationIdML(lineItemML);
+  if (!locationIdML) return null;
+  const locationML = await getLocationByIdML(shopML, locationIdML);
+  if (!locationML) {
     console.warn(
-      `Line item ${lineItem.id}: Location Id "${locationId}" from cart properties doesn't match any BookingLocation for ${shop} (deleted, or belongs to another shop?) — falling back to UTC for this booking's times.`,
+      `Line item ${lineItemML.id}: Location Id "${locationIdML}" from cart properties doesn't match any BookingLocation for ${shopML} (deleted, or belongs to another shop?) — falling back to UTC for this booking's times.`,
     );
     return null;
   }
   return {
-    id: location.id,
-    name: location.name,
-    timezone: location.timezone,
-    workingDays: location.workingDays,
-    dailyStartTime: location.dailyStartTime,
-    dailyEndTime: location.dailyEndTime,
+    id: locationML.id,
+    name: locationML.name,
+    timezone: locationML.timezone,
+    workingDays: locationML.workingDays,
+    dailyStartTime: locationML.dailyStartTime,
+    dailyEndTime: locationML.dailyEndTime,
   };
 }
 
-export function extractBundleSessions(
-  lineItem: OrderLineItem,
-  sessionCount: number,
+export function extractBundleSessionsML(
+  lineItemML: OrderLineItem,
+  sessionCountML: number,
 ): { date: string; time: string }[] {
-  const properties = lineItem.properties ?? [];
-  const sessions: { date: string; time: string }[] = [];
+  const propertiesML = lineItemML.properties ?? [];
+  const sessionsML: { date: string; time: string }[] = [];
 
-  const firstDate = properties.find((p) => p.name === BOOKING_DATE_PROPERTY)?.value;
-  const firstTime = properties.find((p) => p.name === BOOKING_TIME_PROPERTY)?.value;
-  if (firstDate && firstTime) sessions.push({ date: firstDate, time: firstTime });
+  const firstDateML = propertiesML.find((pML) => pML.name === BOOKING_DATE_PROPERTY_ML)?.value;
+  const firstTimeML = propertiesML.find((pML) => pML.name === BOOKING_TIME_PROPERTY_ML)?.value;
+  if (firstDateML && firstTimeML) sessionsML.push({ date: firstDateML, time: firstTimeML });
 
-  for (let i = 2; i <= sessionCount; i++) {
-    const date = properties.find((p) => p.name === `Session ${i} Date`)?.value;
-    const time = properties.find((p) => p.name === `Session ${i} Time`)?.value;
-    if (date && time) sessions.push({ date, time });
+  for (let iML = 2; iML <= sessionCountML; iML++) {
+    const dateML = propertiesML.find((pML) => pML.name === `Session ${iML} Date`)?.value;
+    const timeML = propertiesML.find((pML) => pML.name === `Session ${iML} Time`)?.value;
+    if (dateML && timeML) sessionsML.push({ date: dateML, time: timeML });
   }
 
-  return sessions;
+  return sessionsML;
 }
 
-export function extractBookingNote(lineItem: OrderLineItem): string | null {
-  const properties = lineItem.properties ?? [];
-  const note = properties.find((p) => p.name === BOOKING_NOTE_PROPERTY)?.value;
-  return note && note.trim() ? note.trim() : null;
+export function extractBookingNoteML(lineItemML: OrderLineItem): string | null {
+  const propertiesML = lineItemML.properties ?? [];
+  const noteML = propertiesML.find((pML) => pML.name === BOOKING_NOTE_PROPERTY_ML)?.value;
+  return noteML && noteML.trim() ? noteML.trim() : null;
 }
 
-function extractCustomFieldResponses(
-  lineItem: OrderLineItem,
-  fields: { fieldKey: string; label: string }[],
+function extractCustomFieldResponsesML(
+  lineItemML: OrderLineItem,
+  fieldsML: { fieldKey: string; label: string }[],
 ): Record<string, string> | null {
-  if (fields.length === 0) return null;
+  if (fieldsML.length === 0) return null;
 
-  const properties = lineItem.properties ?? [];
-  const responses: Record<string, string> = {};
+  const propertiesML = lineItemML.properties ?? [];
+  const responsesML: Record<string, string> = {};
 
-  for (const field of fields) {
-    const value = properties.find((p) => p.name === field.label)?.value;
-    if (value) {
-      responses[field.fieldKey] = value;
+  for (const fieldML of fieldsML) {
+    const valueML = propertiesML.find((pML) => pML.name === fieldML.label)?.value;
+    if (valueML) {
+      responsesML[fieldML.fieldKey] = valueML;
     }
   }
 
-  return Object.keys(responses).length > 0 ? responses : null;
+  return Object.keys(responsesML).length > 0 ? responsesML : null;
 }
 
-function resolveCustomerInfo(order: OrderPayload) {
-  const name = [order.customer?.first_name, order.customer?.last_name]
+function resolveCustomerInfoML(orderML: OrderPayload) {
+  const nameML = [orderML.customer?.first_name, orderML.customer?.last_name]
     .filter(Boolean)
     .join(" ")
     .trim();
   return {
-    customerName: name || null,
-    customerEmail: order.email ?? order.customer?.email ?? null,
-    customerPhone: order.phone ?? order.customer?.phone ?? null,
-    isGuest: !order.customer,
+    customerName: nameML || null,
+    customerEmail: orderML.email ?? orderML.customer?.email ?? null,
+    customerPhone: orderML.phone ?? orderML.customer?.phone ?? null,
+    isGuest: !orderML.customer,
   };
 }
 
-function locationCapacityScope(locationId?: string | null) {
-  return locationId ? { OR: [{ locationId }, { locationId: null }] } : {};
+function locationCapacityScopeML(locationIdML?: string | null) {
+  return locationIdML ? { OR: [{ locationId: locationIdML }, { locationId: null }] } : {};
 }
 
-async function countConfirmedBookingsForSlot(
-  shop: string,
-  bookableProductId: string,
-  slotStartsAt: Date,
-  locationId?: string | null,
+async function countConfirmedBookingsForSlotML(
+  shopML: string,
+  bookableProductIdML: string,
+  slotStartsAtML: Date,
+  locationIdML?: string | null,
 ): Promise<number> {
-  const result = await prisma.booking.aggregate({
+  const resultML = await prismaML.booking.aggregate({
     where: {
-      shop,
-      bookableProductId,
-      slotStartsAt,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
-      ...locationCapacityScope(locationId),
+      shop: shopML,
+      bookableProductId: bookableProductIdML,
+      slotStartsAt: slotStartsAtML,
+      status: { in: [...ACTIVE_BOOKING_STATUSES_ML] },
+      ...locationCapacityScopeML(locationIdML),
     },
     _sum: { quantity: true },
   });
-  return result._sum.quantity ?? 0;
+  return resultML._sum.quantity ?? 0;
 }
 
-export async function getBookedCountsInRange(
-  shop: string,
-  bookableProductId: string,
-  rangeStart: Date,
-  rangeEnd: Date,
-  locationId?: string | null,
+export async function getBookedCountsInRangeML(
+  shopML: string,
+  bookableProductIdML: string,
+  rangeStartML: Date,
+  rangeEndML: Date,
+  locationIdML?: string | null,
 ): Promise<Map<string, number>> {
-  const grouped = await prisma.booking.groupBy({
+  const groupedML = await prismaML.booking.groupBy({
     by: ["slotStartsAt"],
     where: {
-      shop,
-      bookableProductId,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
-      slotStartsAt: { gte: rangeStart, lte: rangeEnd },
-      ...locationCapacityScope(locationId),
+      shop: shopML,
+      bookableProductId: bookableProductIdML,
+      status: { in: [...ACTIVE_BOOKING_STATUSES_ML] },
+      slotStartsAt: { gte: rangeStartML, lte: rangeEndML },
+      ...locationCapacityScopeML(locationIdML),
     },
     _sum: { quantity: true },
   });
 
-  const counts = new Map<string, number>();
-  for (const row of grouped) {
-    counts.set(row.slotStartsAt.toISOString(), row._sum.quantity ?? 0);
+  const countsML = new Map<string, number>();
+  for (const rowML of groupedML) {
+    countsML.set(rowML.slotStartsAt.toISOString(), rowML._sum.quantity ?? 0);
   }
-  return counts;
+  return countsML;
 }
 
-export async function getBookedNightCountsInRange(
-  shop: string,
-  bookableProductId: string,
-  rangeStart: Date,
-  rangeEnd: Date,
-  locationId?: string | null,
+export async function getBookedNightCountsInRangeML(
+  shopML: string,
+  bookableProductIdML: string,
+  rangeStartML: Date,
+  rangeEndML: Date,
+  locationIdML?: string | null,
 ): Promise<Map<string, number>> {
-  const rangeStartStr = rangeStart.toISOString().slice(0, 10);
-  const rangeEndStr = rangeEnd.toISOString().slice(0, 10);
+  const rangeStartStrML = rangeStartML.toISOString().slice(0, 10);
+  const rangeEndStrML = rangeEndML.toISOString().slice(0, 10);
 
-  const overlapping = await prisma.booking.findMany({
+  const overlappingML = await prismaML.booking.findMany({
     where: {
-      shop,
-      bookableProductId,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
-      date: { lte: rangeEndStr },
-      endDate: { gte: rangeStartStr },
-      ...locationCapacityScope(locationId),
+      shop: shopML,
+      bookableProductId: bookableProductIdML,
+      status: { in: [...ACTIVE_BOOKING_STATUSES_ML] },
+      date: { lte: rangeEndStrML },
+      endDate: { gte: rangeStartStrML },
+      ...locationCapacityScopeML(locationIdML),
     },
     select: { date: true, endDate: true, quantity: true },
   });
 
-  const counts = new Map<string, number>();
-  for (const booking of overlapping) {
-    if (!booking.endDate) continue;
-    let cursor = booking.date < rangeStartStr ? rangeStartStr : booking.date;
-    const stop = booking.endDate > rangeEndStr ? rangeEndStr : booking.endDate;
-    while (cursor < stop) {
-      counts.set(cursor, (counts.get(cursor) ?? 0) + booking.quantity);
-      const d = new Date(`${cursor}T00:00:00.000Z`);
-      d.setUTCDate(d.getUTCDate() + 1);
-      cursor = d.toISOString().slice(0, 10);
+  const countsML = new Map<string, number>();
+  for (const bookingML of overlappingML) {
+    if (!bookingML.endDate) continue;
+    let cursorML = bookingML.date < rangeStartStrML ? rangeStartStrML : bookingML.date;
+    const stopML = bookingML.endDate > rangeEndStrML ? rangeEndStrML : bookingML.endDate;
+    while (cursorML < stopML) {
+      countsML.set(cursorML, (countsML.get(cursorML) ?? 0) + bookingML.quantity);
+      const dML = new Date(`${cursorML}T00:00:00.000Z`);
+      dML.setUTCDate(dML.getUTCDate() + 1);
+      cursorML = dML.toISOString().slice(0, 10);
     }
   }
-  return counts;
+  return countsML;
 }
 
-async function countOverlappingMultiDayBookings(
-  shop: string,
-  bookableProductId: string,
-  checkin: string,
-  checkout: string,
-  options: { excludeBookingId?: string; locationId?: string | null } = {},
+async function countOverlappingMultiDayBookingsML(
+  shopML: string,
+  bookableProductIdML: string,
+  checkinML: string,
+  checkoutML: string,
+  optionsML: { excludeBookingId?: string; locationId?: string | null } = {},
 ): Promise<number> {
-  const { excludeBookingId, locationId } = options;
-  const overlapping = await prisma.booking.findMany({
+  const { excludeBookingId: excludeBookingIdML, locationId: locationIdML } = optionsML;
+  const overlappingML = await prismaML.booking.findMany({
     where: {
-      shop,
-      bookableProductId,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
-      date: { lt: checkout },
-      endDate: { gt: checkin },
-      ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
-      ...locationCapacityScope(locationId),
+      shop: shopML,
+      bookableProductId: bookableProductIdML,
+      status: { in: [...ACTIVE_BOOKING_STATUSES_ML] },
+      date: { lt: checkoutML },
+      endDate: { gt: checkinML },
+      ...(excludeBookingIdML ? { id: { not: excludeBookingIdML } } : {}),
+      ...locationCapacityScopeML(locationIdML),
     },
     select: { quantity: true },
   });
-  return overlapping.reduce((sum, b) => sum + b.quantity, 0);
+  return overlappingML.reduce((sumML, bML) => sumML + bML.quantity, 0);
 }
 
-async function getShopEmailSettings(
-  shop: string,
+async function getShopEmailSettingsML(
+  shopML: string,
 ): Promise<{ fromName: string | null }> {
   try {
-    const settings = await getBookingSettings(shop);
-    return { fromName: settings.emailFromName };
+    const settingsML = await getBookingSettingsML(shopML);
+    return { fromName: settingsML.emailFromName };
   } catch {
     return { fromName: null };
   }
 }
 
-async function sendBookingConfirmation(
-  booking: Booking,
-  productTitle: string,
-  shop: string,
+async function sendBookingConfirmationML(
+  bookingML: Booking,
+  productTitleML: string,
+  shopML: string,
 ): Promise<void> {
-  if (!booking.customerEmail) return;
+  if (!bookingML.customerEmail) return;
 
-  const { fromName } = await getShopEmailSettings(shop);
-  const { subject, text, html } = await confirmationEmail(shop, {
-    productTitle,
-    customerName: booking.customerName,
-    date: formatDateDisplay(booking.date),
-    slotStart: booking.slotStart,
-    slotEnd: booking.slotEnd,
-    shopName: shop,
+  const { fromName: fromNameML } = await getShopEmailSettingsML(shopML);
+  const { subject: subjectML, text: textML, html: htmlML } = await confirmationEmailML(shopML, {
+    productTitle: productTitleML,
+    customerName: bookingML.customerName,
+    date: formatDateDisplayML(bookingML.date),
+    slotStart: bookingML.slotStart,
+    slotEnd: bookingML.slotEnd,
+    shopName: shopML,
   });
 
-  const sent = await sendEmail({
-    shop,
-    to: booking.customerEmail,
-    subject,
-    text,
-    html,
-    fromName,
+  const sentML = await sendEmailML({
+    shop: shopML,
+    to: bookingML.customerEmail,
+    subject: subjectML,
+    text: textML,
+    html: htmlML,
+    fromName: fromNameML,
   });
-  if (sent) {
-    await prisma.booking.update({
-      where: { id: booking.id },
+  if (sentML) {
+    await prismaML.booking.update({
+      where: { id: bookingML.id },
       data: { confirmationSentAt: new Date() },
     });
   }
 }
 
-async function sendBundleBookingConfirmation(
-  bookings: Booking[],
-  productTitle: string,
-  shop: string,
+async function sendBundleBookingConfirmationML(
+  bookingsML: Booking[],
+  productTitleML: string,
+  shopML: string,
 ): Promise<void> {
-  if (bookings.length === 0) return;
-  const first = bookings[0];
-  if (!first.customerEmail) return;
+  if (bookingsML.length === 0) return;
+  const firstML = bookingsML[0];
+  if (!firstML.customerEmail) return;
 
-  const { fromName } = await getShopEmailSettings(shop);
-  const { subject, text, html } = await bundleConfirmationEmail(shop, {
-    productTitle,
-    customerName: first.customerName,
-    sessions: bookings.map((b) => ({
-      date: formatDateDisplay(b.date),
-      slotStart: b.slotStart,
-      slotEnd: b.slotEnd,
+  const { fromName: fromNameML } = await getShopEmailSettingsML(shopML);
+  const { subject: subjectML, text: textML, html: htmlML } = await bundleConfirmationEmailML(shopML, {
+    productTitle: productTitleML,
+    customerName: firstML.customerName,
+    sessions: bookingsML.map((bML) => ({
+      date: formatDateDisplayML(bML.date),
+      slotStart: bML.slotStart,
+      slotEnd: bML.slotEnd,
     })),
-    shopName: shop,
+    shopName: shopML,
   });
 
-  const sent = await sendEmail({
-    shop,
-    to: first.customerEmail,
-    subject,
-    text,
-    html,
-    fromName,
+  const sentML = await sendEmailML({
+    shop: shopML,
+    to: firstML.customerEmail,
+    subject: subjectML,
+    text: textML,
+    html: htmlML,
+    fromName: fromNameML,
   });
-  if (sent) {
-    await prisma.booking.updateMany({
-      where: { id: { in: bookings.map((b) => b.id) } },
+  if (sentML) {
+    await prismaML.booking.updateMany({
+      where: { id: { in: bookingsML.map((bML) => bML.id) } },
       data: { confirmationSentAt: new Date() },
     });
   }
 }
 
-async function sendBookingCancellation(
-  booking: Booking,
-  productTitle: string,
-  shop: string,
+async function sendBookingCancellationML(
+  bookingML: Booking,
+  productTitleML: string,
+  shopML: string,
 ): Promise<void> {
-  if (!booking.customerEmail) return;
+  if (!bookingML.customerEmail) return;
 
-  const { fromName } = await getShopEmailSettings(shop);
-  const { subject, text, html } = await cancellationEmail(shop, {
-    productTitle,
-    customerName: booking.customerName,
-    date: formatDateDisplay(booking.date),
-    slotStart: booking.slotStart,
-    slotEnd: booking.slotEnd,
-    shopName: shop,
+  const { fromName: fromNameML } = await getShopEmailSettingsML(shopML);
+  const { subject: subjectML, text: textML, html: htmlML } = await cancellationEmailML(shopML, {
+    productTitle: productTitleML,
+    customerName: bookingML.customerName,
+    date: formatDateDisplayML(bookingML.date),
+    slotStart: bookingML.slotStart,
+    slotEnd: bookingML.slotEnd,
+    shopName: shopML,
   });
 
-  await sendEmail({
-    shop,
-    to: booking.customerEmail,
-    subject,
-    text,
-    html,
-    fromName,
+  await sendEmailML({
+    shop: shopML,
+    to: bookingML.customerEmail,
+    subject: subjectML,
+    text: textML,
+    html: htmlML,
+    fromName: fromNameML,
   });
 }
 
-async function sendBookingRescheduled(
-  booking: Booking,
-  productTitle: string,
-  shop: string,
-  previousDate: string,
-  previousSlotStart: string,
-  previousSlotEnd: string,
+async function sendBookingRescheduledML(
+  bookingML: Booking,
+  productTitleML: string,
+  shopML: string,
+  previousDateML: string,
+  previousSlotStartML: string,
+  previousSlotEndML: string,
 ): Promise<void> {
-  if (!booking.customerEmail) return;
+  if (!bookingML.customerEmail) return;
 
-  const { fromName } = await getShopEmailSettings(shop);
-  const { subject, text, html } = await rescheduledEmail(shop, {
-    productTitle,
-    customerName: booking.customerName,
-    date: formatDateDisplay(booking.date),
-    slotStart: booking.slotStart,
-    slotEnd: booking.slotEnd,
-    shopName: shop,
-    previousDate: formatDateDisplay(previousDate),
-    previousSlotStart,
-    previousSlotEnd,
+  const { fromName: fromNameML } = await getShopEmailSettingsML(shopML);
+  const { subject: subjectML, text: textML, html: htmlML } = await rescheduledEmailML(shopML, {
+    productTitle: productTitleML,
+    customerName: bookingML.customerName,
+    date: formatDateDisplayML(bookingML.date),
+    slotStart: bookingML.slotStart,
+    slotEnd: bookingML.slotEnd,
+    shopName: shopML,
+    previousDate: formatDateDisplayML(previousDateML),
+    previousSlotStart: previousSlotStartML,
+    previousSlotEnd: previousSlotEndML,
   });
 
-  const sent = await sendEmail({
-    shop,
-    to: booking.customerEmail,
-    subject,
-    text,
-    html,
-    fromName,
+  const sentML = await sendEmailML({
+    shop: shopML,
+    to: bookingML.customerEmail,
+    subject: subjectML,
+    text: textML,
+    html: htmlML,
+    fromName: fromNameML,
   });
-  if (sent) {
-    await prisma.booking.update({
-      where: { id: booking.id },
+  if (sentML) {
+    await prismaML.booking.update({
+      where: { id: bookingML.id },
       data: { confirmationSentAt: new Date() },
     });
   }
 }
 
-function nightsInRange(checkin: string, checkout: string): string[] {
-  const nights: string[] = [];
-  const start = Date.parse(`${checkin}T00:00:00Z`);
-  const end = Date.parse(`${checkout}T00:00:00Z`);
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return nights;
-  for (let t = start; t < end && nights.length < 366; t += 86400000) {
-    nights.push(new Date(t).toISOString().slice(0, 10));
+function nightsInRangeML(checkinML: string, checkoutML: string): string[] {
+  const nightsML: string[] = [];
+  const startML = Date.parse(`${checkinML}T00:00:00Z`);
+  const endML = Date.parse(`${checkoutML}T00:00:00Z`);
+  if (!Number.isFinite(startML) || !Number.isFinite(endML)) return nightsML;
+  for (let tML = startML; tML < endML && nightsML.length < 366; tML += 86400000) {
+    nightsML.push(new Date(tML).toISOString().slice(0, 10));
   }
-  return nights;
+  return nightsML;
 }
 
-export async function createBookingsFromOrder(
-  shop: string,
-  order: OrderPayload,
+export async function createBookingsFromOrderML(
+  shopML: string,
+  orderML: OrderPayload,
 ): Promise<Booking[]> {
-  const created: Booking[] = [];
-  const shopSettings = await getBookingSettings(shop);
-  const customerInfo = resolveCustomerInfo(order);
-  const customFields = await listCustomFields(shop);
+  const createdML: Booking[] = [];
+  const shopSettingsML = await getBookingSettingsML(shopML);
+  const customerInfoML = resolveCustomerInfoML(orderML);
+  const customFieldsML = await listCustomFieldsML(shopML);
 
-  for (const lineItem of order.line_items ?? []) {
-    const selection = extractBookingSelection(lineItem);
-    if (!selection || lineItem.product_id == null) {
+  for (const lineItemML of orderML.line_items ?? []) {
+    const selectionML = extractBookingSelectionML(lineItemML);
+    if (!selectionML || lineItemML.product_id == null) {
       continue;
     }
 
-    const existing = await prisma.booking.findFirst({
+    const existingML = await prismaML.booking.findFirst({
       where: {
-        shop,
-        orderId: String(order.id),
-        lineItemId: String(lineItem.id),
+        shop: shopML,
+        orderId: String(orderML.id),
+        lineItemId: String(lineItemML.id),
       },
     });
-    if (existing) {
+    if (existingML) {
       continue;
     }
 
-    const productGid = toProductGid(lineItem.product_id);
-    const bookableProduct = await getBookableProduct(shop, productGid);
-    if (!bookableProduct || !bookableProduct.isEnabled) {
+    const productGidML = toProductGidML(lineItemML.product_id);
+    const bookableProductML = await getBookableProductML(shopML, productGidML);
+    if (!bookableProductML || !bookableProductML.isEnabled) {
       continue;
     }
 
-    const resolvedLocation = await resolveBookingLocation(shop, lineItem);
-    if (!resolvedLocation) {
+    const resolvedLocationML = await resolveBookingLocationML(shopML, lineItemML);
+    if (!resolvedLocationML) {
       console.warn(
-        `Order ${order.id} line item ${lineItem.id}: no valid location resolved — this booking's date/time will be computed in raw UTC, not a real business timezone.`,
+        `Order ${orderML.id} line item ${lineItemML.id}: no valid location resolved — this booking's date/time will be computed in raw UTC, not a real business timezone.`,
       );
     }
 
-    const effectiveSettings = resolveEffectiveSettings(
-      shopSettings,
-      bookableProduct,
-      resolvedLocation,
+    const effectiveSettingsML = resolveEffectiveSettingsML(
+      shopSettingsML,
+      bookableProductML,
+      resolvedLocationML,
     );
 
-    const bookingContext = await resolveBookingContextById(
-      shop,
-      bookableProduct.id,
-      resolvedLocation?.id ?? null,
+    const bookingContextML = await resolveBookingContextByIdML(
+      shopML,
+      bookableProductML.id,
+      resolvedLocationML?.id ?? null,
     );
-    const blackoutDates = bookingContext?.blackoutDates ?? new Set<string>();
-    const checkSettings = {
-      ...effectiveSettings,
+    const blackoutDatesML = bookingContextML?.blackoutDates ?? new Set<string>();
+    const checkSettingsML = {
+      ...effectiveSettingsML,
       minAdvanceHours: 0,
       maxAdvanceDays: 36500,
     };
-    const checkNow = new Date();
-    const todayInLocation = dateStrInTimezone(
-      checkNow,
-      resolvedLocation?.timezone ?? null,
+    const checkNowML = new Date();
+    const todayInLocationML = dateStrInTimezoneML(
+      checkNowML,
+      resolvedLocationML?.timezone ?? null,
     );
-    const flagInvalid = (reason: string): true => {
+    const flagInvalidML = (reasonML: string): true => {
       console.warn(
-        `Order ${order.id} line item ${lineItem.id}: ${reason} — marked OVERBOOKED for merchant review.`,
+        `Order ${orderML.id} line item ${lineItemML.id}: ${reasonML} — marked OVERBOOKED for merchant review.`,
       );
       return true;
     };
 
-    const customFieldResponses = extractCustomFieldResponses(
-      lineItem,
-      customFields,
+    const customFieldResponsesML = extractCustomFieldResponsesML(
+      lineItemML,
+      customFieldsML,
     );
-    const customerNote = extractBookingNote(lineItem);
-    const quantity = (() => {
-      const n = Number(lineItem.quantity);
-      return Number.isInteger(n) && n > 0 ? n : 1;
+    const customerNoteML = extractBookingNoteML(lineItemML);
+    const quantityML = (() => {
+      const nML = Number(lineItemML.quantity);
+      return Number.isInteger(nML) && nML > 0 ? nML : 1;
     })();
 
-    if (bookableProduct.bookingType === "BUNDLE") {
-      const sessionCount = bookableProduct.bundleSessionCount ?? 1;
-      const sessions = extractBundleSessions(lineItem, sessionCount);
-      if (sessions.length === 0) {
+    if (bookableProductML.bookingType === "BUNDLE") {
+      const sessionCountML = bookableProductML.bundleSessionCount ?? 1;
+      const sessionsML = extractBundleSessionsML(lineItemML, sessionCountML);
+      if (sessionsML.length === 0) {
         continue;
       }
 
-      let bundleValidityDeadlineStr: string | null = null;
-      if (bookableProduct.bundleValidityDays != null) {
-        const firstSessionDate = sessions.map((session) => session.date).sort()[0];
-        const deadline = new Date(`${firstSessionDate}T00:00:00.000Z`);
-        deadline.setUTCDate(deadline.getUTCDate() + bookableProduct.bundleValidityDays);
-        bundleValidityDeadlineStr = deadline.toISOString().slice(0, 10);
+      let bundleValidityDeadlineStrML: string | null = null;
+      if (bookableProductML.bundleValidityDays != null) {
+        const firstSessionDateML = sessionsML.map((sessionML) => sessionML.date).sort()[0];
+        const deadlineML = new Date(`${firstSessionDateML}T00:00:00.000Z`);
+        deadlineML.setUTCDate(deadlineML.getUTCDate() + bookableProductML.bundleValidityDays);
+        bundleValidityDeadlineStrML = deadlineML.toISOString().slice(0, 10);
       }
 
-      const groupId = `${order.id}-${lineItem.id}`;
-      const bundleBookings: Booking[] = [];
-      for (const session of sessions) {
-        const slotsForDate = computeSlotsForDate(
-          checkSettings,
-          session.date,
-          blackoutDates,
-          checkNow,
+      const groupIdML = `${orderML.id}-${lineItemML.id}`;
+      const bundleBookingsML: Booking[] = [];
+      for (const sessionML of sessionsML) {
+        const slotsForDateML = computeSlotsForDateML(
+          checkSettingsML,
+          sessionML.date,
+          blackoutDatesML,
+          checkNowML,
           new Map(),
-          resolvedLocation?.timezone ?? null,
+          resolvedLocationML?.timezone ?? null,
         );
-        const matchedSlot = slotsForDate.find((s) => s.start === session.time);
-        const sessionInvalid = !matchedSlot
-          ? flagInvalid(
-              `session ${session.date} ${session.time} isn't a bookable slot (already started, blackout date, non-working day, or time not offered)`,
+        const matchedSlotML = slotsForDateML.find((sML) => sML.start === sessionML.time);
+        const sessionInvalidML = !matchedSlotML
+          ? flagInvalidML(
+              `session ${sessionML.date} ${sessionML.time} isn't a bookable slot (already started, blackout date, non-working day, or time not offered)`,
             )
           : false;
-        const sessionSlotStartsAt = matchedSlot
-          ? new Date(matchedSlot.startsAt)
-          : zonedTimeToUtc(
-              session.date,
-              session.time,
-              resolvedLocation?.timezone ?? null,
+        const sessionSlotStartsAtML = matchedSlotML
+          ? new Date(matchedSlotML.startsAt)
+          : zonedTimeToUtcML(
+              sessionML.date,
+              sessionML.time,
+              resolvedLocationML?.timezone ?? null,
             );
-        const sessionSlotEnd =
-          matchedSlot?.end ??
-          addMinutes(session.time, effectiveSettings.slotDurationMinutes);
-        const sessionAlreadyBooked = await countConfirmedBookingsForSlot(
-          shop,
-          bookableProduct.id,
-          sessionSlotStartsAt,
-          resolvedLocation?.id,
+        const sessionSlotEndML =
+          matchedSlotML?.end ??
+          addMinutesML(sessionML.time, effectiveSettingsML.slotDurationMinutes);
+        const sessionAlreadyBookedML = await countConfirmedBookingsForSlotML(
+          shopML,
+          bookableProductML.id,
+          sessionSlotStartsAtML,
+          resolvedLocationML?.id,
         );
-        const outsideValidityWindow =
-          bundleValidityDeadlineStr !== null && session.date > bundleValidityDeadlineStr;
-        const sessionStatus =
-          outsideValidityWindow ||
-          sessionInvalid ||
-          sessionAlreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot
+        const outsideValidityWindowML =
+          bundleValidityDeadlineStrML !== null && sessionML.date > bundleValidityDeadlineStrML;
+        const sessionStatusML =
+          outsideValidityWindowML ||
+          sessionInvalidML ||
+          sessionAlreadyBookedML + quantityML > effectiveSettingsML.maxBookingsPerSlot
             ? "OVERBOOKED"
             : "CONFIRMED";
-        if (outsideValidityWindow) {
+        if (outsideValidityWindowML) {
           console.warn(
-            `Order ${order.id} line item ${lineItem.id}: session on ${session.date} falls outside the ${bookableProduct.bundleValidityDays}-day validity window (deadline ${bundleValidityDeadlineStr}) — marked OVERBOOKED for merchant review.`,
+            `Order ${orderML.id} line item ${lineItemML.id}: session on ${sessionML.date} falls outside the ${bookableProductML.bundleValidityDays}-day validity window (deadline ${bundleValidityDeadlineStrML}) — marked OVERBOOKED for merchant review.`,
           );
         }
 
-        const booking = await prisma.booking.create({
+        const bookingML = await prismaML.booking.create({
           data: {
-            shop,
-            bookableProductId: bookableProduct.id,
-            orderId: String(order.id),
-            orderName: order.name ?? null,
-            lineItemId: String(lineItem.id),
-            groupId,
-            customerName: customerInfo.customerName,
-            customerEmail: customerInfo.customerEmail,
-            customerPhone: customerInfo.customerPhone,
-            isGuest: customerInfo.isGuest,
-            location: extractBookingLocation(lineItem) ?? resolvedLocation?.name ?? null,
-            locationId: resolvedLocation?.id ?? null,
-            date: session.date,
-            slotStart: session.time,
-            slotEnd: sessionSlotEnd,
-            slotStartsAt: sessionSlotStartsAt,
-            quantity,
-            status: sessionStatus,
+            shop: shopML,
+            bookableProductId: bookableProductML.id,
+            orderId: String(orderML.id),
+            orderName: orderML.name ?? null,
+            lineItemId: String(lineItemML.id),
+            groupId: groupIdML,
+            customerName: customerInfoML.customerName,
+            customerEmail: customerInfoML.customerEmail,
+            customerPhone: customerInfoML.customerPhone,
+            isGuest: customerInfoML.isGuest,
+            location: extractBookingLocationML(lineItemML) ?? resolvedLocationML?.name ?? null,
+            locationId: resolvedLocationML?.id ?? null,
+            date: sessionML.date,
+            slotStart: sessionML.time,
+            slotEnd: sessionSlotEndML,
+            slotStartsAt: sessionSlotStartsAtML,
+            quantity: quantityML,
+            status: sessionStatusML,
             source: "STOREFRONT_ORDER",
-            note: customerNote ?? undefined,
-            customFieldResponses: customFieldResponses ?? undefined,
+            note: customerNoteML ?? undefined,
+            customFieldResponses: customFieldResponsesML ?? undefined,
           },
         });
-        created.push(booking);
-        bundleBookings.push(booking);
+        createdML.push(bookingML);
+        bundleBookingsML.push(bookingML);
       }
 
-      const confirmedBundleBookings = bundleBookings.filter(
-        (b) => b.status === "CONFIRMED",
+      const confirmedBundleBookingsML = bundleBookingsML.filter(
+        (bML) => bML.status === "CONFIRMED",
       );
-      if (confirmedBundleBookings.length > 0) {
-        await sendBundleBookingConfirmation(
-          confirmedBundleBookings,
-          bookableProduct.productTitle,
-          shop,
+      if (confirmedBundleBookingsML.length > 0) {
+        await sendBundleBookingConfirmationML(
+          confirmedBundleBookingsML,
+          bookableProductML.productTitle,
+          shopML,
         );
       }
       continue;
     }
 
-    let slotStartsAt: Date;
-    let slotEnd: string;
-    let alreadyBooked: number;
-    let bookingEndDateField: string | null = null;
-    let invalidSelection = false;
+    let slotStartsAtML: Date;
+    let slotEndML: string;
+    let alreadyBookedML: number;
+    let bookingEndDateFieldML: string | null = null;
+    let invalidSelectionML = false;
 
-    if (bookableProduct.bookingType === "MULTI_DAY") {
-      const checkout = selection.checkoutDate ?? selection.date;
-      bookingEndDateField = checkout;
-      slotStartsAt = new Date(`${selection.date}T00:00:00.000Z`);
-      slotEnd = "00:00";
-      alreadyBooked = await countOverlappingMultiDayBookings(
-        shop,
-        bookableProduct.id,
-        selection.date,
-        checkout,
-        { locationId: resolvedLocation?.id },
+    if (bookableProductML.bookingType === "MULTI_DAY") {
+      const checkoutML = selectionML.checkoutDate ?? selectionML.date;
+      bookingEndDateFieldML = checkoutML;
+      slotStartsAtML = new Date(`${selectionML.date}T00:00:00.000Z`);
+      slotEndML = "00:00";
+      alreadyBookedML = await countOverlappingMultiDayBookingsML(
+        shopML,
+        bookableProductML.id,
+        selectionML.date,
+        checkoutML,
+        { locationId: resolvedLocationML?.id },
       );
 
-      const nights = nightsInRange(selection.date, checkout);
-      if (checkout <= selection.date) {
-        invalidSelection = flagInvalid("check-out isn't after check-in");
-      } else if (selection.date < todayInLocation) {
-        invalidSelection = flagInvalid(`check-in ${selection.date} is in the past`);
+      const nightsML = nightsInRangeML(selectionML.date, checkoutML);
+      if (checkoutML <= selectionML.date) {
+        invalidSelectionML = flagInvalidML("check-out isn't after check-in");
+      } else if (selectionML.date < todayInLocationML) {
+        invalidSelectionML = flagInvalidML(`check-in ${selectionML.date} is in the past`);
       } else if (
-        bookableProduct.minNights !== null &&
-        nights.length < bookableProduct.minNights
+        bookableProductML.minNights !== null &&
+        nightsML.length < bookableProductML.minNights
       ) {
-        invalidSelection = flagInvalid(
-          `stay of ${nights.length} night(s) is below the ${bookableProduct.minNights}-night minimum`,
+        invalidSelectionML = flagInvalidML(
+          `stay of ${nightsML.length} night(s) is below the ${bookableProductML.minNights}-night minimum`,
         );
       } else if (
-        bookableProduct.maxNights !== null &&
-        nights.length > bookableProduct.maxNights
+        bookableProductML.maxNights !== null &&
+        nightsML.length > bookableProductML.maxNights
       ) {
-        invalidSelection = flagInvalid(
-          `stay of ${nights.length} night(s) is above the ${bookableProduct.maxNights}-night maximum`,
+        invalidSelectionML = flagInvalidML(
+          `stay of ${nightsML.length} night(s) is above the ${bookableProductML.maxNights}-night maximum`,
         );
       } else if (
-        nights.some(
-          (night) =>
-            !computeMultiDayNightAvailability(checkSettings, night, blackoutDates, checkNow, 0)
+        nightsML.some(
+          (nightML) =>
+            !computeMultiDayNightAvailabilityML(checkSettingsML, nightML, blackoutDatesML, checkNowML, 0)
               .available,
         )
       ) {
-        invalidSelection = flagInvalid(
+        invalidSelectionML = flagInvalidML(
           "one or more nights are unavailable (blackout date or outside the bookable window)",
         );
       }
-    } else if (bookableProduct.bookingType === "FULL_DAY") {
-      slotStartsAt = new Date(`${selection.date}T00:00:00.000Z`);
-      slotEnd = effectiveSettings.dailyEndTime;
-      alreadyBooked = await countConfirmedBookingsForSlot(
-        shop,
-        bookableProduct.id,
-        slotStartsAt,
-        resolvedLocation?.id,
+    } else if (bookableProductML.bookingType === "FULL_DAY") {
+      slotStartsAtML = new Date(`${selectionML.date}T00:00:00.000Z`);
+      slotEndML = effectiveSettingsML.dailyEndTime;
+      alreadyBookedML = await countConfirmedBookingsForSlotML(
+        shopML,
+        bookableProductML.id,
+        slotStartsAtML,
+        resolvedLocationML?.id,
       );
 
-      if (selection.date < todayInLocation) {
-        invalidSelection = flagInvalid(`date ${selection.date} is in the past`);
+      if (selectionML.date < todayInLocationML) {
+        invalidSelectionML = flagInvalidML(`date ${selectionML.date} is in the past`);
       } else if (
-        !computeFullDayAvailability(checkSettings, selection.date, blackoutDates, checkNow, 0)
+        !computeFullDayAvailabilityML(checkSettingsML, selectionML.date, blackoutDatesML, checkNowML, 0)
           .available
       ) {
-        invalidSelection = flagInvalid(
-          `date ${selection.date} isn't bookable (blackout date, non-working day, or outside the bookable window)`,
+        invalidSelectionML = flagInvalidML(
+          `date ${selectionML.date} isn't bookable (blackout date, non-working day, or outside the bookable window)`,
         );
       }
     } else {
-      const slotsForDate = computeSlotsForDate(
-        checkSettings,
-        selection.date,
-        blackoutDates,
-        checkNow,
+      const slotsForDateML = computeSlotsForDateML(
+        checkSettingsML,
+        selectionML.date,
+        blackoutDatesML,
+        checkNowML,
         new Map(),
-        resolvedLocation?.timezone ?? null,
+        resolvedLocationML?.timezone ?? null,
       );
-      const matchedSlot = slotsForDate.find((s) => s.start === selection.time);
-      if (!matchedSlot) {
-        invalidSelection = flagInvalid(
-          `${selection.date} ${selection.time} isn't a bookable slot (already started, blackout date, non-working day, or time not offered)`,
+      const matchedSlotML = slotsForDateML.find((sML) => sML.start === selectionML.time);
+      if (!matchedSlotML) {
+        invalidSelectionML = flagInvalidML(
+          `${selectionML.date} ${selectionML.time} isn't a bookable slot (already started, blackout date, non-working day, or time not offered)`,
         );
       }
-      slotStartsAt = matchedSlot
-        ? new Date(matchedSlot.startsAt)
-        : zonedTimeToUtc(
-            selection.date,
-            selection.time,
-            resolvedLocation?.timezone ?? null,
+      slotStartsAtML = matchedSlotML
+        ? new Date(matchedSlotML.startsAt)
+        : zonedTimeToUtcML(
+            selectionML.date,
+            selectionML.time,
+            resolvedLocationML?.timezone ?? null,
           );
-      slotEnd =
-        matchedSlot?.end ??
-        addMinutes(selection.time, effectiveSettings.slotDurationMinutes);
-      alreadyBooked = await countConfirmedBookingsForSlot(
-        shop,
-        bookableProduct.id,
-        slotStartsAt,
-        resolvedLocation?.id,
+      slotEndML =
+        matchedSlotML?.end ??
+        addMinutesML(selectionML.time, effectiveSettingsML.slotDurationMinutes);
+      alreadyBookedML = await countConfirmedBookingsForSlotML(
+        shopML,
+        bookableProductML.id,
+        slotStartsAtML,
+        resolvedLocationML?.id,
       );
     }
 
-    const status =
-      !invalidSelection &&
-      alreadyBooked + quantity <= effectiveSettings.maxBookingsPerSlot
+    const statusML =
+      !invalidSelectionML &&
+      alreadyBookedML + quantityML <= effectiveSettingsML.maxBookingsPerSlot
         ? "CONFIRMED"
         : "OVERBOOKED";
 
-    const booking = await prisma.booking.create({
+    const bookingML = await prismaML.booking.create({
       data: {
-        shop,
-        bookableProductId: bookableProduct.id,
-        orderId: String(order.id),
-        orderName: order.name ?? null,
-        lineItemId: String(lineItem.id),
-        customerName: customerInfo.customerName,
-        customerEmail: customerInfo.customerEmail,
-        customerPhone: customerInfo.customerPhone,
-        isGuest: customerInfo.isGuest,
-        location: extractBookingLocation(lineItem) ?? resolvedLocation?.name ?? null,
-        locationId: resolvedLocation?.id ?? null,
-        date: selection.date,
-        endDate: bookingEndDateField,
-        slotStart: selection.time,
-        slotEnd,
-        slotStartsAt,
-        quantity,
-        status,
+        shop: shopML,
+        bookableProductId: bookableProductML.id,
+        orderId: String(orderML.id),
+        orderName: orderML.name ?? null,
+        lineItemId: String(lineItemML.id),
+        customerName: customerInfoML.customerName,
+        customerEmail: customerInfoML.customerEmail,
+        customerPhone: customerInfoML.customerPhone,
+        isGuest: customerInfoML.isGuest,
+        location: extractBookingLocationML(lineItemML) ?? resolvedLocationML?.name ?? null,
+        locationId: resolvedLocationML?.id ?? null,
+        date: selectionML.date,
+        endDate: bookingEndDateFieldML,
+        slotStart: selectionML.time,
+        slotEnd: slotEndML,
+        slotStartsAt: slotStartsAtML,
+        quantity: quantityML,
+        status: statusML,
         source: "STOREFRONT_ORDER",
-        note: customerNote ?? undefined,
-        customFieldResponses: customFieldResponses ?? undefined,
+        note: customerNoteML ?? undefined,
+        customFieldResponses: customFieldResponsesML ?? undefined,
       },
     });
-    created.push(booking);
-    if (status === "CONFIRMED") {
-      await sendBookingConfirmation(
-        booking,
-        bookableProduct.productTitle,
-        shop,
+    createdML.push(bookingML);
+    if (statusML === "CONFIRMED") {
+      await sendBookingConfirmationML(
+        bookingML,
+        bookableProductML.productTitle,
+        shopML,
       );
     }
   }
 
-  return created;
+  return createdML;
 }
 
-function addMinutes(time: string, minutes: number): string {
-  const [h, m] = time.split(":").map(Number);
-  const total = h * 60 + m + minutes;
-  const hh = Math.floor(total / 60) % 24;
-  const mm = total % 60;
-  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+function addMinutesML(timeML: string, minutesML: number): string {
+  const [hML, mML] = timeML.split(":").map(Number);
+  const totalML = hML * 60 + mML + minutesML;
+  const hhML = Math.floor(totalML / 60) % 24;
+  const mmML = totalML % 60;
+  return `${String(hhML).padStart(2, "0")}:${String(mmML).padStart(2, "0")}`;
 }
 
-export async function cancelBookingsForOrder(
-  shop: string,
-  orderId: number | string,
+export async function cancelBookingsForOrderML(
+  shopML: string,
+  orderIdML: number | string,
 ): Promise<void> {
-  const bookings = await prisma.booking.findMany({
-    where: { shop, orderId: String(orderId), status: { not: "CANCELLED" } },
+  const bookingsML = await prismaML.booking.findMany({
+    where: { shop: shopML, orderId: String(orderIdML), status: { not: "CANCELLED" } },
     include: { bookableProduct: { select: { productTitle: true } } },
   });
 
-  for (const booking of bookings) {
-    await prisma.booking.update({
-      where: { id: booking.id },
+  for (const bookingML of bookingsML) {
+    await prismaML.booking.update({
+      where: { id: bookingML.id },
       data: { status: "CANCELLED" },
     });
-    await sendBookingCancellation(
-      booking,
-      booking.bookableProduct.productTitle,
-      shop,
+    await sendBookingCancellationML(
+      bookingML,
+      bookingML.bookableProduct.productTitle,
+      shopML,
     );
   }
 }
@@ -825,183 +825,183 @@ export type ManualBookingResult =
   | { ok: true; booking: Booking; productTitle: string; bookingType: BookingType }
   | { ok: false; error: string };
 
-export function sendManualBookingEmailsInBackground(
-  shop: string,
-  created: { booking: Booking; productTitle: string; bookingType: BookingType }[],
+export function sendManualBookingEmailsInBackgroundML(
+  shopML: string,
+  createdML: { booking: Booking; productTitle: string; bookingType: BookingType }[],
 ): void {
   void (async () => {
-    const bundleGroups = new Map<string, Booking[]>();
-    const titles = new Map<string, string>();
-    const singles: { booking: Booking; productTitle: string }[] = [];
+    const bundleGroupsML = new Map<string, Booking[]>();
+    const titlesML = new Map<string, string>();
+    const singlesML: { booking: Booking; productTitle: string }[] = [];
 
-    for (const entry of created) {
-      if (entry.bookingType === "BUNDLE") {
-        const key = entry.booking.bookableProductId;
-        bundleGroups.set(key, [...(bundleGroups.get(key) ?? []), entry.booking]);
-        titles.set(key, entry.productTitle);
+    for (const entryML of createdML) {
+      if (entryML.bookingType === "BUNDLE") {
+        const keyML = entryML.booking.bookableProductId;
+        bundleGroupsML.set(keyML, [...(bundleGroupsML.get(keyML) ?? []), entryML.booking]);
+        titlesML.set(keyML, entryML.productTitle);
       } else {
-        singles.push(entry);
+        singlesML.push(entryML);
       }
     }
 
     await Promise.all([
-      ...[...bundleGroups.entries()].map(([productId, bookings]) =>
-        sendBundleBookingConfirmation(bookings, titles.get(productId) ?? "", shop),
+      ...[...bundleGroupsML.entries()].map(([productIdML, bookingsML]) =>
+        sendBundleBookingConfirmationML(bookingsML, titlesML.get(productIdML) ?? "", shopML),
       ),
-      ...singles.map((entry) =>
-        sendBookingConfirmation(entry.booking, entry.productTitle, shop),
+      ...singlesML.map((entryML) =>
+        sendBookingConfirmationML(entryML.booking, entryML.productTitle, shopML),
       ),
     ]);
-  })().catch((error) => {
-    console.error("Failed to send manual booking emails:", error);
+  })().catch((errorML) => {
+    console.error("Failed to send manual booking emails:", errorML);
   });
 }
 
-export async function createManualBooking(
-  shop: string,
-  input: ManualBookingInput,
+export async function createManualBookingML(
+  shopML: string,
+  inputML: ManualBookingInput,
 ): Promise<ManualBookingResult> {
-  const bookableProduct = await prisma.bookableProduct.findFirst({
-    where: { id: input.bookableProductId, shop },
+  const bookableProductML = await prismaML.bookableProduct.findFirst({
+    where: { id: inputML.bookableProductId, shop: shopML },
   });
-  if (!bookableProduct || !bookableProduct.isEnabled) {
+  if (!bookableProductML || !bookableProductML.isEnabled) {
     return { ok: false, error: "This product isn't enabled for booking." };
   }
 
-  const resolvedLocation = input.locationId
-    ? await getLocationById(shop, input.locationId)
+  const resolvedLocationML = inputML.locationId
+    ? await getLocationByIdML(shopML, inputML.locationId)
     : null;
 
-  const shopSettings = await getBookingSettings(shop);
-  const effectiveSettings = resolveEffectiveSettings(
-    shopSettings,
-    bookableProduct,
-    resolvedLocation,
+  const shopSettingsML = await getBookingSettingsML(shopML);
+  const effectiveSettingsML = resolveEffectiveSettingsML(
+    shopSettingsML,
+    bookableProductML,
+    resolvedLocationML,
   );
-  const quantity =
-    Number.isInteger(input.quantity) && (input.quantity as number) > 0
-      ? (input.quantity as number)
+  const quantityML =
+    Number.isInteger(inputML.quantity) && (inputML.quantity as number) > 0
+      ? (inputML.quantity as number)
       : 1;
 
-  const customFields = await listCustomFields(shop);
-  const responses = input.customFieldResponses ?? {};
-  for (const field of customFields) {
-    if (field.required && !responses[field.fieldKey]?.trim()) {
-      return { ok: false, error: `"${field.label}" is required.` };
+  const customFieldsML = await listCustomFieldsML(shopML);
+  const responsesML = inputML.customFieldResponses ?? {};
+  for (const fieldML of customFieldsML) {
+    if (fieldML.required && !responsesML[fieldML.fieldKey]?.trim()) {
+      return { ok: false, error: `"${fieldML.label}" is required.` };
     }
   }
 
-  let slotStartsAt: Date;
-  let slotEnd: string;
-  let bookingEndDateField: string | null = null;
+  let slotStartsAtML: Date;
+  let slotEndML: string;
+  let bookingEndDateFieldML: string | null = null;
 
-  if (bookableProduct.bookingType === "FULL_DAY") {
-    slotStartsAt = new Date(`${input.date}T00:00:00.000Z`);
-    slotEnd = effectiveSettings.dailyEndTime;
-    const alreadyBooked = await countConfirmedBookingsForSlot(
-      shop,
-      bookableProduct.id,
-      slotStartsAt,
-      resolvedLocation?.id,
+  if (bookableProductML.bookingType === "FULL_DAY") {
+    slotStartsAtML = new Date(`${inputML.date}T00:00:00.000Z`);
+    slotEndML = effectiveSettingsML.dailyEndTime;
+    const alreadyBookedML = await countConfirmedBookingsForSlotML(
+      shopML,
+      bookableProductML.id,
+      slotStartsAtML,
+      resolvedLocationML?.id,
     );
-    if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
+    if (alreadyBookedML + quantityML > effectiveSettingsML.maxBookingsPerSlot) {
       return { ok: false, error: "That day is already fully booked." };
     }
-  } else if (bookableProduct.bookingType === "MULTI_DAY") {
-    if (!input.endDate) {
+  } else if (bookableProductML.bookingType === "MULTI_DAY") {
+    if (!inputML.endDate) {
       return { ok: false, error: "Pick a check-out date." };
     }
-    if (input.endDate <= input.date) {
+    if (inputML.endDate <= inputML.date) {
       return { ok: false, error: "Check-out must be after check-in." };
     }
-    const nights = Math.round(
-      (new Date(`${input.endDate}T00:00:00.000Z`).getTime() -
-        new Date(`${input.date}T00:00:00.000Z`).getTime()) /
+    const nightsML = Math.round(
+      (new Date(`${inputML.endDate}T00:00:00.000Z`).getTime() -
+        new Date(`${inputML.date}T00:00:00.000Z`).getTime()) /
         86400000,
     );
-    if (bookableProduct.minNights !== null && nights < bookableProduct.minNights) {
+    if (bookableProductML.minNights !== null && nightsML < bookableProductML.minNights) {
       return {
         ok: false,
-        error: `Minimum stay is ${bookableProduct.minNights} night${bookableProduct.minNights === 1 ? "" : "s"}.`,
+        error: `Minimum stay is ${bookableProductML.minNights} night${bookableProductML.minNights === 1 ? "" : "s"}.`,
       };
     }
-    if (bookableProduct.maxNights !== null && nights > bookableProduct.maxNights) {
+    if (bookableProductML.maxNights !== null && nightsML > bookableProductML.maxNights) {
       return {
         ok: false,
-        error: `Maximum stay is ${bookableProduct.maxNights} night${bookableProduct.maxNights === 1 ? "" : "s"}.`,
+        error: `Maximum stay is ${bookableProductML.maxNights} night${bookableProductML.maxNights === 1 ? "" : "s"}.`,
       };
     }
-    bookingEndDateField = input.endDate;
-    slotStartsAt = new Date(`${input.date}T00:00:00.000Z`);
-    slotEnd = "00:00";
-    const alreadyBooked = await countOverlappingMultiDayBookings(
-      shop,
-      bookableProduct.id,
-      input.date,
-      input.endDate,
-      { locationId: resolvedLocation?.id },
+    bookingEndDateFieldML = inputML.endDate;
+    slotStartsAtML = new Date(`${inputML.date}T00:00:00.000Z`);
+    slotEndML = "00:00";
+    const alreadyBookedML = await countOverlappingMultiDayBookingsML(
+      shopML,
+      bookableProductML.id,
+      inputML.date,
+      inputML.endDate,
+      { locationId: resolvedLocationML?.id },
     );
-    if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
+    if (alreadyBookedML + quantityML > effectiveSettingsML.maxBookingsPerSlot) {
       return { ok: false, error: "Those dates overlap an existing booking." };
     }
   } else {
-    const slotsForDate = computeSlotsForDate(
-      effectiveSettings,
-      input.date,
+    const slotsForDateML = computeSlotsForDateML(
+      effectiveSettingsML,
+      inputML.date,
       new Set(),
       new Date(),
       new Map(),
-      resolvedLocation?.timezone ?? null,
+      resolvedLocationML?.timezone ?? null,
     );
-    const matchedSlot = slotsForDate.find((s) => s.start === input.slotStart);
-    if (!matchedSlot) {
+    const matchedSlotML = slotsForDateML.find((sML) => sML.start === inputML.slotStart);
+    if (!matchedSlotML) {
       return {
         ok: false,
         error: "That date/time isn't a valid slot for this product.",
       };
     }
-    slotStartsAt = new Date(matchedSlot.startsAt);
-    slotEnd = matchedSlot.end;
-    const alreadyBooked = await countConfirmedBookingsForSlot(
-      shop,
-      bookableProduct.id,
-      slotStartsAt,
-      resolvedLocation?.id,
+    slotStartsAtML = new Date(matchedSlotML.startsAt);
+    slotEndML = matchedSlotML.end;
+    const alreadyBookedML = await countConfirmedBookingsForSlotML(
+      shopML,
+      bookableProductML.id,
+      slotStartsAtML,
+      resolvedLocationML?.id,
     );
-    if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
+    if (alreadyBookedML + quantityML > effectiveSettingsML.maxBookingsPerSlot) {
       return { ok: false, error: "That slot is already fully booked." };
     }
   }
 
-  const booking = await prisma.booking.create({
+  const bookingML = await prismaML.booking.create({
     data: {
-      shop,
-      bookableProductId: bookableProduct.id,
-      customerName: input.customerName,
-      customerEmail: input.customerEmail,
-      customerPhone: input.customerPhone,
+      shop: shopML,
+      bookableProductId: bookableProductML.id,
+      customerName: inputML.customerName,
+      customerEmail: inputML.customerEmail,
+      customerPhone: inputML.customerPhone,
       isGuest: true,
-      location: input.location || null,
-      locationId: resolvedLocation?.id ?? null,
-      date: input.date,
-      endDate: bookingEndDateField,
-      slotStart: bookableProduct.bookingType === "FULL_DAY" ? effectiveSettings.dailyStartTime : input.slotStart,
-      slotEnd,
-      slotStartsAt,
-      quantity,
+      location: inputML.location || null,
+      locationId: resolvedLocationML?.id ?? null,
+      date: inputML.date,
+      endDate: bookingEndDateFieldML,
+      slotStart: bookableProductML.bookingType === "FULL_DAY" ? effectiveSettingsML.dailyStartTime : inputML.slotStart,
+      slotEnd: slotEndML,
+      slotStartsAt: slotStartsAtML,
+      quantity: quantityML,
       status: "CONFIRMED",
       source: "ADMIN_MANUAL",
-      groupId: input.groupId,
+      groupId: inputML.groupId,
       customFieldResponses:
-        Object.keys(responses).length > 0 ? responses : undefined,
+        Object.keys(responsesML).length > 0 ? responsesML : undefined,
     },
   });
 
   return {
     ok: true,
-    booking,
-    productTitle: bookableProduct.productTitle,
-    bookingType: bookableProduct.bookingType,
+    booking: bookingML,
+    productTitle: bookableProductML.productTitle,
+    bookingType: bookableProductML.bookingType,
   };
 }
 
@@ -1022,35 +1022,35 @@ export type ListBookingsFilters = {
   completed?: boolean;
 };
 
-export async function listBookings(
-  shop: string,
-  filters: ListBookingsFilters = {},
+export async function listBookingsML(
+  shopML: string,
+  filtersML: ListBookingsFilters = {},
 ): Promise<BookingWithProductTitle[]> {
-  const bookings = await prisma.booking.findMany({
+  const bookingsML = await prismaML.booking.findMany({
     where: {
-      shop,
-      status: filters.status,
-      bookableProductId: filters.bookableProductId,
+      shop: shopML,
+      status: filtersML.status,
+      bookableProductId: filtersML.bookableProductId,
       date: {
-        gte: filters.dateFrom || undefined,
-        lte: filters.dateTo || undefined,
+        gte: filtersML.dateFrom || undefined,
+        lte: filtersML.dateTo || undefined,
       },
-      ...(filters.bookingType
-        ? { bookableProduct: { bookingType: filters.bookingType } }
+      ...(filtersML.bookingType
+        ? { bookableProduct: { bookingType: filtersML.bookingType } }
         : {}),
-      ...(filters.search
+      ...(filtersML.search
         ? {
             OR: [
               {
-                customerName: { contains: filters.search, mode: "insensitive" },
+                customerName: { contains: filtersML.search, mode: "insensitive" },
               },
               {
                 customerEmail: {
-                  contains: filters.search,
+                  contains: filtersML.search,
                   mode: "insensitive",
                 },
               },
-              { orderName: { contains: filters.search, mode: "insensitive" } },
+              { orderName: { contains: filtersML.search, mode: "insensitive" } },
             ],
           }
         : {}),
@@ -1063,38 +1063,38 @@ export async function listBookings(
     take: 100,
   });
 
-  const withDisplayStatus = bookings
+  const withDisplayStatusML = bookingsML
     .map(
       ({
-        bookableProduct,
-        bookingLocation,
-        ...booking
+        bookableProduct: bookableProductML,
+        bookingLocation: bookingLocationML,
+        ...bookingML
       }: Booking & {
         bookableProduct: { productTitle: string; bookingType: BookingType };
         bookingLocation: { timezone: string } | null;
       }) => {
-        const withType = {
-          ...booking,
-          productTitle: bookableProduct.productTitle,
-          bookingType: bookableProduct.bookingType,
-          locationTimezone: bookingLocation?.timezone ?? null,
+        const withTypeML = {
+          ...bookingML,
+          productTitle: bookableProductML.productTitle,
+          bookingType: bookableProductML.bookingType,
+          locationTimezone: bookingLocationML?.timezone ?? null,
         };
-        return { ...withType, displayStatus: getDisplayStatus(withType) };
+        return { ...withTypeML, displayStatus: getDisplayStatusML(withTypeML) };
       },
     )
-    .sort((a, b) => {
-      const aCancelled = a.status === "CANCELLED" ? 1 : 0;
-      const bCancelled = b.status === "CANCELLED" ? 1 : 0;
-      return aCancelled - bCancelled;
+    .sort((aML, bML) => {
+      const aCancelledML = aML.status === "CANCELLED" ? 1 : 0;
+      const bCancelledML = bML.status === "CANCELLED" ? 1 : 0;
+      return aCancelledML - bCancelledML;
     });
 
-  if (filters.completed === true) {
-    return withDisplayStatus.filter((b) => belongsInCompletedTab(b));
+  if (filtersML.completed === true) {
+    return withDisplayStatusML.filter((bML) => belongsInCompletedTabML(bML));
   }
-  if (filters.completed === false) {
-    return withDisplayStatus.filter((b) => !belongsInCompletedTab(b));
+  if (filtersML.completed === false) {
+    return withDisplayStatusML.filter((bML) => !belongsInCompletedTabML(bML));
   }
-  return withDisplayStatus;
+  return withDisplayStatusML;
 }
 
 export type CountBookingsFilters = {
@@ -1103,80 +1103,80 @@ export type CountBookingsFilters = {
   dateTo?: string;
 };
 
-export async function countBookings(
-  shop: string,
-  filters: CountBookingsFilters = {},
+export async function countBookingsML(
+  shopML: string,
+  filtersML: CountBookingsFilters = {},
 ): Promise<number> {
-  return prisma.booking.count({
+  return prismaML.booking.count({
     where: {
-      shop,
-      status: filters.status,
+      shop: shopML,
+      status: filtersML.status,
       date: {
-        gte: filters.dateFrom || undefined,
-        lte: filters.dateTo || undefined,
+        gte: filtersML.dateFrom || undefined,
+        lte: filtersML.dateTo || undefined,
       },
     },
   });
 }
 
-export async function cancelBooking(
-  shop: string,
-  id: string,
+export async function cancelBookingML(
+  shopML: string,
+  idML: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const booking = await prisma.booking.findFirst({
-    where: { id, shop },
+  const bookingML = await prismaML.booking.findFirst({
+    where: { id: idML, shop: shopML },
     include: { bookableProduct: { select: { productTitle: true } } },
   });
-  if (!booking) {
+  if (!bookingML) {
     return { ok: false, error: "Booking not found." };
   }
-  if (booking.status !== "CANCELLED") {
-    await prisma.booking.update({
-      where: { id },
+  if (bookingML.status !== "CANCELLED") {
+    await prismaML.booking.update({
+      where: { id: idML },
       data: { status: "CANCELLED" },
     });
-    await sendBookingCancellation(
-      booking,
-      booking.bookableProduct.productTitle,
-      shop,
+    await sendBookingCancellationML(
+      bookingML,
+      bookingML.bookableProduct.productTitle,
+      shopML,
     );
   }
   return { ok: true };
 }
 
-export async function rescheduleBooking(
-  shop: string,
-  id: string,
-  newDate: string,
-  newSlotStart: string,
-  newEndDate?: string | null,
+export async function rescheduleBookingML(
+  shopML: string,
+  idML: string,
+  newDateML: string,
+  newSlotStartML: string,
+  newEndDateML?: string | null,
 ): Promise<{ ok: true; booking: Booking } | { ok: false; error: string }> {
-  const booking = await prisma.booking.findFirst({
-    where: { id, shop },
+  const bookingML = await prismaML.booking.findFirst({
+    where: { id: idML, shop: shopML },
     include: { bookableProduct: true },
   });
-  if (!booking) {
+  if (!bookingML) {
     return { ok: false, error: "Booking not found." };
   }
-  if (booking.status === "CANCELLED") {
+  if (bookingML.status === "CANCELLED") {
     return { ok: false, error: "A cancelled booking can't be rescheduled." };
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDateML)) {
     return { ok: false, error: "Pick a valid date." };
   }
 
-  const bookingType = booking.bookableProduct.bookingType;
-  const shopSettings = await getBookingSettings(shop);
-  const rescheduleLocation = booking.locationId
-    ? await getLocationById(shop, booking.locationId)
+  const bookingTypeML = bookingML.bookableProduct.bookingType;
+  const shopSettingsML = await getBookingSettingsML(shopML);
+  const rescheduleLocationML = bookingML.locationId
+    ? await getLocationByIdML(shopML, bookingML.locationId)
     : null;
-  const effectiveSettings = resolveEffectiveSettings(
-    shopSettings,
-    booking.bookableProduct,
-    rescheduleLocation,
+  const effectiveSettingsML = resolveEffectiveSettingsML(
+    shopSettingsML,
+    bookingML.bookableProduct,
+    rescheduleLocationML,
   );
 
-  let nextData: {
+  let nextDataML: {
     date: string;
     endDate?: string | null;
     slotStart?: string;
@@ -1184,268 +1184,268 @@ export async function rescheduleBooking(
     slotStartsAt: Date;
   };
 
-  if (bookingType === "FULL_DAY") {
-    if (newDate < new Date().toISOString().slice(0, 10)) {
+  if (bookingTypeML === "FULL_DAY") {
+    if (newDateML < new Date().toISOString().slice(0, 10)) {
       return { ok: false, error: "Pick a date that isn't in the past." };
     }
-    const slotStartsAt = new Date(`${newDate}T00:00:00.000Z`);
-    const others = await prisma.booking.aggregate({
+    const slotStartsAtML = new Date(`${newDateML}T00:00:00.000Z`);
+    const othersML = await prismaML.booking.aggregate({
       where: {
-        shop,
-        bookableProductId: booking.bookableProductId,
-        slotStartsAt,
-        status: { in: [...ACTIVE_BOOKING_STATUSES] },
-        id: { not: id },
-        ...locationCapacityScope(booking.locationId),
+        shop: shopML,
+        bookableProductId: bookingML.bookableProductId,
+        slotStartsAt: slotStartsAtML,
+        status: { in: [...ACTIVE_BOOKING_STATUSES_ML] },
+        id: { not: idML },
+        ...locationCapacityScopeML(bookingML.locationId),
       },
       _sum: { quantity: true },
     });
     if (
-      (others._sum.quantity ?? 0) + booking.quantity >
-      effectiveSettings.maxBookingsPerSlot
+      (othersML._sum.quantity ?? 0) + bookingML.quantity >
+      effectiveSettingsML.maxBookingsPerSlot
     ) {
       return { ok: false, error: "That day is already fully booked." };
     }
-    nextData = { date: newDate, slotStartsAt };
-  } else if (bookingType === "MULTI_DAY") {
-    if (!newEndDate) {
+    nextDataML = { date: newDateML, slotStartsAt: slotStartsAtML };
+  } else if (bookingTypeML === "MULTI_DAY") {
+    if (!newEndDateML) {
       return { ok: false, error: "Pick a check-out date." };
     }
-    if (newEndDate <= newDate) {
+    if (newEndDateML <= newDateML) {
       return { ok: false, error: "Check-out must be after check-in." };
     }
-    if (newDate < new Date().toISOString().slice(0, 10)) {
+    if (newDateML < new Date().toISOString().slice(0, 10)) {
       return { ok: false, error: "Pick a check-in date that isn't in the past." };
     }
-    const nights = Math.round(
-      (new Date(`${newEndDate}T00:00:00.000Z`).getTime() -
-        new Date(`${newDate}T00:00:00.000Z`).getTime()) /
+    const nightsML = Math.round(
+      (new Date(`${newEndDateML}T00:00:00.000Z`).getTime() -
+        new Date(`${newDateML}T00:00:00.000Z`).getTime()) /
         86400000,
     );
-    const { minNights, maxNights } = booking.bookableProduct;
-    if (minNights !== null && nights < minNights) {
+    const { minNights: minNightsML, maxNights: maxNightsML } = bookingML.bookableProduct;
+    if (minNightsML !== null && nightsML < minNightsML) {
       return {
         ok: false,
-        error: `Minimum stay is ${minNights} night${minNights === 1 ? "" : "s"}.`,
+        error: `Minimum stay is ${minNightsML} night${minNightsML === 1 ? "" : "s"}.`,
       };
     }
-    if (maxNights !== null && nights > maxNights) {
+    if (maxNightsML !== null && nightsML > maxNightsML) {
       return {
         ok: false,
-        error: `Maximum stay is ${maxNights} night${maxNights === 1 ? "" : "s"}.`,
+        error: `Maximum stay is ${maxNightsML} night${maxNightsML === 1 ? "" : "s"}.`,
       };
     }
-    const overlapping = await countOverlappingMultiDayBookings(
-      shop,
-      booking.bookableProductId,
-      newDate,
-      newEndDate,
-      { excludeBookingId: id, locationId: booking.locationId },
+    const overlappingML = await countOverlappingMultiDayBookingsML(
+      shopML,
+      bookingML.bookableProductId,
+      newDateML,
+      newEndDateML,
+      { excludeBookingId: idML, locationId: bookingML.locationId },
     );
-    if (overlapping + booking.quantity > effectiveSettings.maxBookingsPerSlot) {
+    if (overlappingML + bookingML.quantity > effectiveSettingsML.maxBookingsPerSlot) {
       return { ok: false, error: "Those dates overlap an existing booking." };
     }
-    nextData = {
-      date: newDate,
-      endDate: newEndDate,
-      slotStartsAt: new Date(`${newDate}T00:00:00.000Z`),
+    nextDataML = {
+      date: newDateML,
+      endDate: newEndDateML,
+      slotStartsAt: new Date(`${newDateML}T00:00:00.000Z`),
     };
   } else {
-    const slotsForDate = computeSlotsForDate(
-      effectiveSettings,
-      newDate,
+    const slotsForDateML = computeSlotsForDateML(
+      effectiveSettingsML,
+      newDateML,
       new Set(),
       new Date(),
       new Map(),
-      rescheduleLocation?.timezone ?? null,
+      rescheduleLocationML?.timezone ?? null,
     );
-    const matchedSlot = slotsForDate.find((s) => s.start === newSlotStart);
-    if (!matchedSlot) {
+    const matchedSlotML = slotsForDateML.find((sML) => sML.start === newSlotStartML);
+    if (!matchedSlotML) {
       return {
         ok: false,
         error: "That date/time isn't a valid slot for this product.",
       };
     }
 
-    const otherBookingsInSlot = await prisma.booking.aggregate({
+    const otherBookingsInSlotML = await prismaML.booking.aggregate({
       where: {
-        shop,
-        bookableProductId: booking.bookableProductId,
-        slotStartsAt: new Date(matchedSlot.startsAt),
-        status: { in: [...ACTIVE_BOOKING_STATUSES] },
-        id: { not: id },
-        ...locationCapacityScope(booking.locationId),
+        shop: shopML,
+        bookableProductId: bookingML.bookableProductId,
+        slotStartsAt: new Date(matchedSlotML.startsAt),
+        status: { in: [...ACTIVE_BOOKING_STATUSES_ML] },
+        id: { not: idML },
+        ...locationCapacityScopeML(bookingML.locationId),
       },
       _sum: { quantity: true },
     });
     if (
-      (otherBookingsInSlot._sum.quantity ?? 0) + booking.quantity >
-      effectiveSettings.maxBookingsPerSlot
+      (otherBookingsInSlotML._sum.quantity ?? 0) + bookingML.quantity >
+      effectiveSettingsML.maxBookingsPerSlot
     ) {
       return { ok: false, error: "That slot is already fully booked." };
     }
 
-    const validityDays = booking.bookableProduct.bundleValidityDays;
-    if (bookingType === "BUNDLE" && validityDays != null && booking.groupId) {
-      const siblings = await prisma.booking.findMany({
+    const validityDaysML = bookingML.bookableProduct.bundleValidityDays;
+    if (bookingTypeML === "BUNDLE" && validityDaysML != null && bookingML.groupId) {
+      const siblingsML = await prismaML.booking.findMany({
         where: {
-          shop,
-          groupId: booking.groupId,
+          shop: shopML,
+          groupId: bookingML.groupId,
           status: { not: "CANCELLED" },
-          id: { not: id },
+          id: { not: idML },
         },
         select: { date: true },
       });
-      const dates = [...siblings.map((b) => b.date), newDate].sort();
-      const spanDays = Math.round(
-        (new Date(`${dates[dates.length - 1]}T00:00:00.000Z`).getTime() -
-          new Date(`${dates[0]}T00:00:00.000Z`).getTime()) /
+      const datesML = [...siblingsML.map((bML) => bML.date), newDateML].sort();
+      const spanDaysML = Math.round(
+        (new Date(`${datesML[datesML.length - 1]}T00:00:00.000Z`).getTime() -
+          new Date(`${datesML[0]}T00:00:00.000Z`).getTime()) /
           86400000,
       );
-      if (spanDays > validityDays) {
+      if (spanDaysML > validityDaysML) {
         return {
           ok: false,
-          error: `All sessions must fall within ${validityDays} days of the first session.`,
+          error: `All sessions must fall within ${validityDaysML} days of the first session.`,
         };
       }
     }
 
-    nextData = {
-      date: newDate,
-      slotStart: matchedSlot.start,
-      slotEnd: matchedSlot.end,
-      slotStartsAt: new Date(matchedSlot.startsAt),
+    nextDataML = {
+      date: newDateML,
+      slotStart: matchedSlotML.start,
+      slotEnd: matchedSlotML.end,
+      slotStartsAt: new Date(matchedSlotML.startsAt),
     };
   }
 
-  const previousDate = booking.date;
-  const previousSlotStart = booking.slotStart;
-  const previousSlotEnd = booking.slotEnd;
+  const previousDateML = bookingML.date;
+  const previousSlotStartML = bookingML.slotStart;
+  const previousSlotEndML = bookingML.slotEnd;
 
-  const updated = await prisma.booking.update({
-    where: { id },
+  const updatedML = await prismaML.booking.update({
+    where: { id: idML },
     data: {
-      ...nextData,
+      ...nextDataML,
       status: "RESCHEDULED",
       reminderSentAt: null,
     },
   });
 
-  void sendBookingRescheduled(
-    updated,
-    booking.bookableProduct.productTitle,
-    shop,
-    previousDate,
-    previousSlotStart,
-    previousSlotEnd,
-  ).catch((error) => console.error("Failed to send reschedule email:", error));
+  void sendBookingRescheduledML(
+    updatedML,
+    bookingML.bookableProduct.productTitle,
+    shopML,
+    previousDateML,
+    previousSlotStartML,
+    previousSlotEndML,
+  ).catch((errorML) => console.error("Failed to send reschedule email:", errorML));
 
-  return { ok: true, booking: updated };
+  return { ok: true, booking: updatedML };
 }
 
-export async function listSlotsForReschedule(
-  shop: string,
-  bookingId: string,
-  date: string,
+export async function listSlotsForRescheduleML(
+  shopML: string,
+  bookingIdML: string,
+  dateML: string,
 ): Promise
   | { ok: true; slots: import("./slotAvailability.server").TimeSlot[] }
   | { ok: false; error: string }
   {
-  const booking = await prisma.booking.findFirst({
-    where: { id: bookingId, shop },
+  const bookingML = await prismaML.booking.findFirst({
+    where: { id: bookingIdML, shop: shopML },
     include: { bookableProduct: true },
   });
-  if (!booking) {
+  if (!bookingML) {
     return { ok: false, error: "Booking not found." };
   }
 
-  const shopSettings = await getBookingSettings(shop);
-  const rescheduleLocation = booking.locationId
-    ? await getLocationById(shop, booking.locationId)
+  const shopSettingsML = await getBookingSettingsML(shopML);
+  const rescheduleLocationML = bookingML.locationId
+    ? await getLocationByIdML(shopML, bookingML.locationId)
     : null;
-  const effectiveSettings = resolveEffectiveSettings(
-    shopSettings,
-    booking.bookableProduct,
-    rescheduleLocation,
+  const effectiveSettingsML = resolveEffectiveSettingsML(
+    shopSettingsML,
+    bookingML.bookableProduct,
+    rescheduleLocationML,
   );
 
-  const { start: dayStart, end: dayEnd } = localDayRangeUtc(
-    date,
-    rescheduleLocation?.timezone ?? null,
+  const { start: dayStartML, end: dayEndML } = localDayRangeUtcML(
+    dateML,
+    rescheduleLocationML?.timezone ?? null,
   );
-  const grouped = await prisma.booking.groupBy({
+  const groupedML = await prismaML.booking.groupBy({
     by: ["slotStartsAt"],
     where: {
-      shop,
-      bookableProductId: booking.bookableProductId,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
-      slotStartsAt: { gte: dayStart, lte: dayEnd },
-      id: { not: bookingId },
-      ...locationCapacityScope(booking.locationId),
+      shop: shopML,
+      bookableProductId: bookingML.bookableProductId,
+      status: { in: [...ACTIVE_BOOKING_STATUSES_ML] },
+      slotStartsAt: { gte: dayStartML, lte: dayEndML },
+      id: { not: bookingIdML },
+      ...locationCapacityScopeML(bookingML.locationId),
     },
     _sum: { quantity: true },
   });
-  const bookedCounts = new Map<string, number>();
-  for (const row of grouped) {
-    bookedCounts.set(row.slotStartsAt.toISOString(), row._sum.quantity ?? 0);
+  const bookedCountsML = new Map<string, number>();
+  for (const rowML of groupedML) {
+    bookedCountsML.set(rowML.slotStartsAt.toISOString(), rowML._sum.quantity ?? 0);
   }
 
-  const slots = computeSlotsForDate(
-    effectiveSettings,
-    date,
+  const slotsML = computeSlotsForDateML(
+    effectiveSettingsML,
+    dateML,
     new Set(),
     new Date(),
-    bookedCounts,
-    rescheduleLocation?.timezone ?? null,
+    bookedCountsML,
+    rescheduleLocationML?.timezone ?? null,
   );
 
-  return { ok: true, slots };
+  return { ok: true, slots: slotsML };
 }
 
-const REMINDER_MIN_GAP_MS = 6 * 60 * 60 * 1000;
+const REMINDER_MIN_GAP_MS_ML = 6 * 60 * 60 * 1000;
 
-const MAX_START_SKEW_BEFORE_MS = 36 * 60 * 60 * 1000;
-const MAX_START_SKEW_AFTER_MS = 14 * 60 * 60 * 1000;
+const MAX_START_SKEW_BEFORE_MS_ML = 36 * 60 * 60 * 1000;
+const MAX_START_SKEW_AFTER_MS_ML = 14 * 60 * 60 * 1000;
 
 type ReminderCandidate = Booking & {
   bookableProduct: { productTitle: string; bookingType: BookingType };
   bookingLocation: { timezone: string } | null;
 };
 
-function bookingStartInstant(booking: ReminderCandidate): Date {
-  const type = booking.bookableProduct.bookingType;
-  if (type !== "FULL_DAY" && type !== "MULTI_DAY") return booking.slotStartsAt;
-  const time = /^\d{2}:\d{2}$/.test(booking.slotStart) ? booking.slotStart : "00:00";
-  return zonedTimeToUtc(
-    booking.date,
-    time,
-    booking.bookingLocation?.timezone ?? null,
+function bookingStartInstantML(bookingML: ReminderCandidate): Date {
+  const typeML = bookingML.bookableProduct.bookingType;
+  if (typeML !== "FULL_DAY" && typeML !== "MULTI_DAY") return bookingML.slotStartsAt;
+  const timeML = /^\d{2}:\d{2}$/.test(bookingML.slotStart) ? bookingML.slotStart : "00:00";
+  return zonedTimeToUtcML(
+    bookingML.date,
+    timeML,
+    bookingML.bookingLocation?.timezone ?? null,
   );
 }
 
-function lastCustomerNoticeAt(booking: ReminderCandidate): Date {
+function lastCustomerNoticeAtML(bookingML: ReminderCandidate): Date {
   return new Date(
     Math.max(
-      booking.createdAt.getTime(),
-      booking.confirmationSentAt?.getTime() ?? 0,
+      bookingML.createdAt.getTime(),
+      bookingML.confirmationSentAt?.getTime() ?? 0,
     ),
   );
 }
 
-export async function sendDueReminders(
-  windowHours = 24,
+export async function sendDueRemindersML(
+  windowHoursML = 24,
 ): Promise<{ sent: number; skipped: number }> {
-  const now = new Date();
-  const windowMs = windowHours * 60 * 60 * 1000;
-  const windowEnd = new Date(now.getTime() + windowMs);
+  const nowML = new Date();
+  const windowMsML = windowHoursML * 60 * 60 * 1000;
+  const windowEndML = new Date(nowML.getTime() + windowMsML);
 
-  const candidates: ReminderCandidate[] = await prisma.booking.findMany({
+  const candidatesML: ReminderCandidate[] = await prismaML.booking.findMany({
     where: {
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      status: { in: [...ACTIVE_BOOKING_STATUSES_ML] },
       reminderSentAt: null,
       slotStartsAt: {
-        gte: new Date(now.getTime() - MAX_START_SKEW_BEFORE_MS),
-        lte: new Date(windowEnd.getTime() + MAX_START_SKEW_AFTER_MS),
+        gte: new Date(nowML.getTime() - MAX_START_SKEW_BEFORE_MS_ML),
+        lte: new Date(windowEndML.getTime() + MAX_START_SKEW_AFTER_MS_ML),
       },
     },
     include: {
@@ -1454,53 +1454,53 @@ export async function sendDueReminders(
     },
   });
 
-  let sent = 0;
-  let skipped = 0;
+  let sentML = 0;
+  let skippedML = 0;
 
-  for (const booking of candidates) {
-    const startsAt = bookingStartInstant(booking);
-    if (startsAt < now || startsAt > windowEnd) continue;
+  for (const bookingML of candidatesML) {
+    const startsAtML = bookingStartInstantML(bookingML);
+    if (startsAtML < nowML || startsAtML > windowEndML) continue;
 
-    if (!booking.customerEmail) {
-      skipped += 1;
+    if (!bookingML.customerEmail) {
+      skippedML += 1;
       continue;
     }
 
-    const noticeAt = lastCustomerNoticeAt(booking);
-    if (startsAt.getTime() - noticeAt.getTime() < windowMs) {
-      skipped += 1;
+    const noticeAtML = lastCustomerNoticeAtML(bookingML);
+    if (startsAtML.getTime() - noticeAtML.getTime() < windowMsML) {
+      skippedML += 1;
       continue;
     }
-    if (now.getTime() - noticeAt.getTime() < REMINDER_MIN_GAP_MS) continue;
+    if (nowML.getTime() - noticeAtML.getTime() < REMINDER_MIN_GAP_MS_ML) continue;
 
-    const { fromName } = await getShopEmailSettings(booking.shop);
-    const { subject, text, html } = await reminderEmail(booking.shop, {
-      productTitle: booking.bookableProduct.productTitle,
-      customerName: booking.customerName,
-      date: formatDateDisplay(booking.date),
-      slotStart: booking.slotStart,
-      slotEnd: booking.slotEnd,
-      shopName: booking.shop,
+    const { fromName: fromNameML } = await getShopEmailSettingsML(bookingML.shop);
+    const { subject: subjectML, text: textML, html: htmlML } = await reminderEmailML(bookingML.shop, {
+      productTitle: bookingML.bookableProduct.productTitle,
+      customerName: bookingML.customerName,
+      date: formatDateDisplayML(bookingML.date),
+      slotStart: bookingML.slotStart,
+      slotEnd: bookingML.slotEnd,
+      shopName: bookingML.shop,
     });
 
-    const ok = await sendEmail({
-      shop: booking.shop,
-      to: booking.customerEmail,
-      subject,
-      text,
-      html,
-      fromName,
+    const okML = await sendEmailML({
+      shop: bookingML.shop,
+      to: bookingML.customerEmail,
+      subject: subjectML,
+      text: textML,
+      html: htmlML,
+      fromName: fromNameML,
     });
-    if (ok) {
-      await prisma.booking.update({
-        where: { id: booking.id },
+    if (okML) {
+      await prismaML.booking.update({
+        where: { id: bookingML.id },
         data: { reminderSentAt: new Date() },
       });
-      sent += 1;
+      sentML += 1;
     } else {
-      skipped += 1;
+      skippedML += 1;
     }
   }
 
-  return { sent, skipped };
+  return { sent: sentML, skipped: skippedML };
 }

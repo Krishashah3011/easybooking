@@ -2,24 +2,24 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData, useNavigate } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { listBookableProducts } from "../models/bookableProduct.server";
-import { countBookings } from "../models/booking.server";
-import { getSmtpSettings } from "../models/smtpSettings.server";
-import { listEnabledLocations, maybePrefillFirstLocationFromShopTimezone } from "../models/bookingLocation.server";
-import { getOrCreateShopSettings } from "../models/shopSettings.server";
-import { getBookingReportData, type BookingReportData } from "../models/bookingReports.server";
+import { listBookableProductsML } from "../models/bookableProduct.server";
+import { countBookingsML } from "../models/booking.server";
+import { getSmtpSettingsML } from "../models/smtpSettings.server";
+import { listEnabledLocationsML, maybePrefillFirstLocationFromShopTimezoneML } from "../models/bookingLocation.server";
+import { getOrCreateShopSettingsML } from "../models/shopSettings.server";
+import { getBookingReportDataML, type BookingReportData } from "../models/bookingReports.server";
 import GetStartedGuide, { type GuideStep } from "../components/GetStartedGuide";
-import { to12Hour } from "../utils/format";
+import { to12HourML } from "../utils/format";
 import { useState, useRef, useEffect } from "react";
 
-const DIVIDER = "#DBDBDB";
-const TEXT_BLACK = "#000000";
+const DIVIDER_ML = "#DBDBDB";
+const TEXT_BLACK_ML = "#000000";
 
-const ANALYTICS_ACCENT = "#073E74";
-const TRACK_GREY = "#DBDBDB";
-const MUTED_GREY = "#898989";
+const ANALYTICS_ACCENT_ML = "#073E74";
+const TRACK_GREY_ML = "#DBDBDB";
+const MUTED_GREY_ML = "#898989";
 
-const analyticsStyles: Record<string, React.CSSProperties> = {
+const analyticsStylesML: Record<string, React.CSSProperties> = {
   outerCard: {
     boxSizing: "border-box",
     width: "100%",
@@ -28,7 +28,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     gap: "16px",
     padding: "16px",
     background: "#FFFFFF",
-    border: `1px solid ${DIVIDER}`,
+    border: `1px solid ${DIVIDER_ML}`,
     borderRadius: "8px",
   },
   card: {
@@ -105,7 +105,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     transition: "background 0.15s ease, color 0.15s ease",
   },
   donutToggleBtnActive: {
-    background: ANALYTICS_ACCENT,
+    background: ANALYTICS_ACCENT_ML,
     color: "#FFFFFF",
     fontWeight: 600,
   },
@@ -116,12 +116,12 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     fontSize: "18px",
     lineHeight: "normal",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${DIVIDER}`,
+    borderTop: `1px solid ${DIVIDER_ML}`,
     margin: 0,
     width: "100%",
   },
@@ -159,7 +159,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
   },
   selectInput: {
     height: "34px",
@@ -173,7 +173,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
   },
   dateFieldBox: {
     height: "34px",
@@ -201,7 +201,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     fontWeight: 400,
     fontSize: "16px",
     lineHeight: "19px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
   },
   applyButton: {
     width: "60px",
@@ -210,7 +210,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: ANALYTICS_ACCENT,
+    background: ANALYTICS_ACCENT_ML,
     color: "#FFFFFF",
     border: "none",
     borderRadius: "10px",
@@ -239,7 +239,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     height: "88px",
     boxSizing: "border-box",
     background: "#FFFFFF",
-    border: `1px solid ${TRACK_GREY}`,
+    border: `1px solid ${TRACK_GREY_ML}`,
     borderRadius: "8px",
     padding: "9px",
     display: "flex",
@@ -258,7 +258,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   statTileFooter: {
@@ -271,13 +271,13 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     fontSize: "28px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
   emptyState: {
     fontFamily: "Inter",
     fontSize: "14px",
-    color: MUTED_GREY,
+    color: MUTED_GREY_ML,
     textAlign: "center",
     padding: "8px 0",
     margin: 0,
@@ -323,7 +323,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "13px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -334,7 +334,7 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
     fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "12px",
-    color: MUTED_GREY,
+    color: MUTED_GREY_ML,
     margin: 0,
     whiteSpace: "nowrap",
   },
@@ -363,14 +363,14 @@ const analyticsStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-const DONUT_PALETTE = ["#073E74", "#2E6DA4", "#5B94C4", "#9EC3E0", "#C9DFF0", "#898989"];
+const DONUT_PALETTE_ML = ["#073E74", "#2E6DA4", "#5B94C4", "#9EC3E0", "#C9DFF0", "#898989"];
 
 function ChevronIcon() {
   return (
     <svg width="6" height="11" viewBox="0 0 6 11" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M1 1L5 5.5L1 10"
-        stroke={ANALYTICS_ACCENT}
+        stroke={ANALYTICS_ACCENT_ML}
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -380,11 +380,11 @@ function ChevronIcon() {
 }
 
 function StatTile({
-  label,
-  value,
-  href,
-  icon = "/abandoned-cart-icon.svg",
-  width,
+  label: labelML,
+  value: valueML,
+  href: hrefML,
+  icon: iconML = "/abandoned-cart-icon.svg",
+  width: widthML,
 }: {
   label: string;
   value: string | number;
@@ -395,16 +395,16 @@ function StatTile({
   return (
     <Link
       className="eb-stat-tile"
-      to={href}
+      to={hrefML}
       prefetch="intent"
-      style={width ? { ...analyticsStyles.statTile, width } : analyticsStyles.statTile}
+      style={widthML ? { ...analyticsStylesML.statTile, width: widthML } : analyticsStylesML.statTile}
     >
-      <div style={analyticsStyles.statTileHeader}>
-        <p style={analyticsStyles.statTileLabel}>{label}</p>
-        <img src={icon} alt="" width={20} height={20} />
+      <div style={analyticsStylesML.statTileHeader}>
+        <p style={analyticsStylesML.statTileLabel}>{labelML}</p>
+        <img src={iconML} alt="" width={20} height={20} />
       </div>
-      <div style={analyticsStyles.statTileFooter}>
-        <p style={analyticsStyles.statTileValue}>{value}</p>
+      <div style={analyticsStylesML.statTileFooter}>
+        <p style={analyticsStylesML.statTileValue}>{valueML}</p>
         <ChevronIcon />
       </div>
     </Link>
@@ -412,108 +412,108 @@ function StatTile({
 }
 
 function DonutChart({
-  rows,
-  labelKey,
-  countKey,
-  emptyLabel,
+  rows: rowsML,
+  labelKey: labelKeyML,
+  countKey: countKeyML,
+  emptyLabel: emptyLabelML,
 }: {
   rows: Record<string, string | number>[];
   labelKey: string;
   countKey: string;
   emptyLabel: string;
 }) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [hoveredIndexML, setHoveredIndexML] = useState<number | null>(null);
 
-  const total = rows.reduce((sum, r) => sum + Number(r[countKey]), 0);
-  const sorted = rows
-    .filter((r) => Number(r[countKey]) > 0)
-    .sort((a, b) => Number(b[countKey]) - Number(a[countKey]));
+  const totalML = rowsML.reduce((sumML, rML) => sumML + Number(rML[countKeyML]), 0);
+  const sortedML = rowsML
+    .filter((rML) => Number(rML[countKeyML]) > 0)
+    .sort((aML, bML) => Number(bML[countKeyML]) - Number(aML[countKeyML]));
 
-  const top = sorted.slice(0, 5);
-  const otherCount = sorted.slice(5).reduce((sum, r) => sum + Number(r[countKey]), 0);
-  const segments = [
-    ...top.map((r) => ({ label: String(r[labelKey]), count: Number(r[countKey]) })),
-    ...(otherCount > 0 ? [{ label: "Other", count: otherCount }] : []),
+  const topML = sortedML.slice(0, 5);
+  const otherCountML = sortedML.slice(5).reduce((sumML, rML) => sumML + Number(rML[countKeyML]), 0);
+  const segmentsML = [
+    ...topML.map((rML) => ({ label: String(rML[labelKeyML]), count: Number(rML[countKeyML]) })),
+    ...(otherCountML > 0 ? [{ label: "Other", count: otherCountML }] : []),
   ];
 
-  if (segments.length === 0) {
-    return <p style={analyticsStyles.emptyState}>{emptyLabel}</p>;
+  if (segmentsML.length === 0) {
+    return <p style={analyticsStylesML.emptyState}>{emptyLabelML}</p>;
   }
 
-  const size = 188;
-  const strokeWidth = 26;
-  const r = (size - strokeWidth) / 2;
-  const cx = size / 2;
-  const cy = size / 2;
-  const circumference = 2 * Math.PI * r;
+  const sizeML = 188;
+  const strokeWidthML = 26;
+  const rML = (sizeML - strokeWidthML) / 2;
+  const cxML = sizeML / 2;
+  const cyML = sizeML / 2;
+  const circumferenceML = 2 * Math.PI * rML;
 
-  let cumulativePercent = 0;
-  const segMeta = segments.map((seg) => {
-    const percent = total ? (seg.count / total) * 100 : 0;
-    const startAngleDeg = (cumulativePercent / 100) * 360 - 90;
-    const midAngleDeg = startAngleDeg + percent * 1.8;
-    cumulativePercent += percent;
-    return { ...seg, percent, startAngleDeg, midAngleDeg };
+  let cumulativePercentML = 0;
+  const segMetaML = segmentsML.map((segML) => {
+    const percentML = totalML ? (segML.count / totalML) * 100 : 0;
+    const startAngleDegML = (cumulativePercentML / 100) * 360 - 90;
+    const midAngleDegML = startAngleDegML + percentML * 1.8;
+    cumulativePercentML += percentML;
+    return { ...segML, percent: percentML, startAngleDeg: startAngleDegML, midAngleDeg: midAngleDegML };
   });
 
-  const activeIndex = hoveredIndex ?? 0;
-  const active = segMeta[activeIndex];
-  const activePercent = Math.round(active.percent);
+  const activeIndexML = hoveredIndexML ?? 0;
+  const activeML = segMetaML[activeIndexML];
+  const activePercentML = Math.round(activeML.percent);
 
-  const tooltipGap = 16;
-  const tooltipRadius = size / 2 + tooltipGap;
-  const angleRad = (active.midAngleDeg * Math.PI) / 180;
-  const dx = Math.cos(angleRad);
-  const dy = Math.sin(angleRad);
-  const tooltipLeft = cx + tooltipRadius * dx;
-  const tooltipTop = cy + tooltipRadius * dy;
+  const tooltipGapML = 16;
+  const tooltipRadiusML = sizeML / 2 + tooltipGapML;
+  const angleRadML = (activeML.midAngleDeg * Math.PI) / 180;
+  const dxML = Math.cos(angleRadML);
+  const dyML = Math.sin(angleRadML);
+  const tooltipLeftML = cxML + tooltipRadiusML * dxML;
+  const tooltipTopML = cyML + tooltipRadiusML * dyML;
 
-  const translateX = dx > 0.3 ? "0%" : dx < -0.3 ? "-100%" : "-50%";
-  const translateY = dy > 0.3 ? "0%" : dy < -0.3 ? "-100%" : "-50%";
+  const translateXML = dxML > 0.3 ? "0%" : dxML < -0.3 ? "-100%" : "-50%";
+  const translateYML = dyML > 0.3 ? "0%" : dyML < -0.3 ? "-100%" : "-50%";
 
   return (
-    <div className="eb-donut-wrap" style={analyticsStyles.donutWrap}>
+    <div className="eb-donut-wrap" style={analyticsStylesML.donutWrap}>
       <div
-        style={{ ...analyticsStyles.donutSvgBox, width: size, height: size }}
-        onMouseLeave={() => setHoveredIndex(null)}
+        style={{ ...analyticsStylesML.donutSvgBox, width: sizeML, height: sizeML }}
+        onMouseLeave={() => setHoveredIndexML(null)}
       >
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={TRACK_GREY} strokeWidth={strokeWidth} />
-          {segMeta.map((seg, i) => {
-            const dash = (seg.percent / 100) * circumference;
+        <svg width={sizeML} height={sizeML} viewBox={`0 0 ${sizeML} ${sizeML}`}>
+          <circle cx={cxML} cy={cyML} r={rML} fill="none" stroke={TRACK_GREY_ML} strokeWidth={strokeWidthML} />
+          {segMetaML.map((segML, iML) => {
+            const dashML = (segML.percent / 100) * circumferenceML;
             return (
               <circle
-                key={seg.label}
-                cx={cx}
-                cy={cy}
-                r={r}
+                key={segML.label}
+                cx={cxML}
+                cy={cyML}
+                r={rML}
                 fill="none"
-                stroke={DONUT_PALETTE[i % DONUT_PALETTE.length]}
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${dash} ${circumference - dash}`}
-                transform={`rotate(${seg.startAngleDeg} ${cx} ${cy})`}
+                stroke={DONUT_PALETTE_ML[iML % DONUT_PALETTE_ML.length]}
+                strokeWidth={strokeWidthML}
+                strokeDasharray={`${dashML} ${circumferenceML - dashML}`}
+                transform={`rotate(${segML.startAngleDeg} ${cxML} ${cyML})`}
                 style={{ cursor: "pointer" }}
-                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseEnter={() => setHoveredIndexML(iML)}
               />
             );
           })}
         </svg>
         <div
           style={{
-            ...analyticsStyles.donutTooltip,
-            left: `${tooltipLeft}px`,
-            top: `${tooltipTop}px`,
-            transform: `translate(${translateX}, ${translateY})`,
+            ...analyticsStylesML.donutTooltip,
+            left: `${tooltipLeftML}px`,
+            top: `${tooltipTopML}px`,
+            transform: `translate(${translateXML}, ${translateYML})`,
           }}
         >
-          <span style={analyticsStyles.donutTooltipLine1}>
+          <span style={analyticsStylesML.donutTooltipLine1}>
             <span
-              style={{ ...analyticsStyles.donutInfoSwatch, background: DONUT_PALETTE[activeIndex % DONUT_PALETTE.length] }}
+              style={{ ...analyticsStylesML.donutInfoSwatch, background: DONUT_PALETTE_ML[activeIndexML % DONUT_PALETTE_ML.length] }}
             />
-            <span style={analyticsStyles.donutInfoLabel}>{active.label}</span>
+            <span style={analyticsStylesML.donutInfoLabel}>{activeML.label}</span>
           </span>
-          <span style={analyticsStyles.donutInfoMeta}>
-            {active.count} {active.count === 1 ? "Booking" : "Bookings"} ({activePercent}%)
+          <span style={analyticsStylesML.donutInfoMeta}>
+            {activeML.count} {activeML.count === 1 ? "Booking" : "Bookings"} ({activePercentML}%)
           </span>
         </div>
       </div>
@@ -522,154 +522,154 @@ function DonutChart({
 }
 
 function ProductLineChart({
-  rows,
-  labelKey,
-  countKey,
-  emptyLabel,
+  rows: rowsML,
+  labelKey: labelKeyML,
+  countKey: countKeyML,
+  emptyLabel: emptyLabelML,
 }: {
   rows: Record<string, string | number>[];
   labelKey: string;
   countKey: string;
   emptyLabel: string;
 }) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [hoveredIndexML, setHoveredIndexML] = useState<number | null>(null);
+  const containerRefML = useRef<HTMLDivElement | null>(null);
+  const [containerWidthML, setContainerWidthML] = useState(0);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (width) setContainerWidth(width);
+    const elML = containerRefML.current;
+    if (!elML) return;
+    const observerML = new ResizeObserver((entriesML) => {
+      const widthML = entriesML[0]?.contentRect.width;
+      if (widthML) setContainerWidthML(widthML);
     });
-    observer.observe(el);
-    return () => observer.disconnect();
+    observerML.observe(elML);
+    return () => observerML.disconnect();
   }, []);
 
-  const total = rows.reduce((sum, r) => sum + Number(r[countKey]), 0);
-  const visibleRows = rows
-    .filter((r) => Number(r[countKey]) > 0)
-    .sort((a, b) => Number(b[countKey]) - Number(a[countKey]))
+  const totalML = rowsML.reduce((sumML, rML) => sumML + Number(rML[countKeyML]), 0);
+  const visibleRowsML = rowsML
+    .filter((rML) => Number(rML[countKeyML]) > 0)
+    .sort((aML, bML) => Number(bML[countKeyML]) - Number(aML[countKeyML]))
     .slice(0, 6);
 
-  if (visibleRows.length === 0) {
-    return <p style={analyticsStyles.emptyState}>{emptyLabel}</p>;
+  if (visibleRowsML.length === 0) {
+    return <p style={analyticsStylesML.emptyState}>{emptyLabelML}</p>;
   }
 
-  const maxCount = Math.max(...visibleRows.map((r) => Number(r[countKey])));
-  const plotAreaHeight = 130;
-  const topPadding = 28;
-  const baselineY = topPadding + plotAreaHeight;
-  const chartHeight = baselineY + 40;
-  const sidePadding = 24;
-  const lineColor = ANALYTICS_ACCENT;
+  const maxCountML = Math.max(...visibleRowsML.map((rML) => Number(rML[countKeyML])));
+  const plotAreaHeightML = 130;
+  const topPaddingML = 28;
+  const baselineYML = topPaddingML + plotAreaHeightML;
+  const chartHeightML = baselineYML + 40;
+  const sidePaddingML = 24;
+  const lineColorML = ANALYTICS_ACCENT_ML;
 
-  const viewBoxWidth = Math.max(containerWidth, 240);
-  const usablePlotWidth = Math.max(viewBoxWidth - sidePadding * 2, 0);
-  const step = visibleRows.length > 1 ? usablePlotWidth / (visibleRows.length - 1) : 0;
+  const viewBoxWidthML = Math.max(containerWidthML, 240);
+  const usablePlotWidthML = Math.max(viewBoxWidthML - sidePaddingML * 2, 0);
+  const stepML = visibleRowsML.length > 1 ? usablePlotWidthML / (visibleRowsML.length - 1) : 0;
 
-  const points = visibleRows.map((row, i) => {
-    const count = Number(row[countKey]);
-    const label = String(row[labelKey]);
-    const x = visibleRows.length > 1 ? sidePadding + i * step : viewBoxWidth / 2;
-    const y = maxCount ? baselineY - (count / maxCount) * plotAreaHeight : baselineY;
-    return { x, y, count, label };
+  const pointsML = visibleRowsML.map((rowML, iML) => {
+    const countML = Number(rowML[countKeyML]);
+    const labelML = String(rowML[labelKeyML]);
+    const xML = visibleRowsML.length > 1 ? sidePaddingML + iML * stepML : viewBoxWidthML / 2;
+    const yML = maxCountML ? baselineYML - (countML / maxCountML) * plotAreaHeightML : baselineYML;
+    return { x: xML, y: yML, count: countML, label: labelML };
   });
 
-  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${baselineY} L ${points[0].x} ${baselineY} Z`;
+  const linePathML = pointsML.map((pML, iML) => `${iML === 0 ? "M" : "L"} ${pML.x} ${pML.y}`).join(" ");
+  const areaPathML = `${linePathML} L ${pointsML[pointsML.length - 1].x} ${baselineYML} L ${pointsML[0].x} ${baselineYML} Z`;
 
-  const activeIndex = hoveredIndex;
-  const active = activeIndex !== null ? points[activeIndex] : null;
-  const activePercent = active && total ? Math.round((active.count / total) * 100) : 0;
-  const hitWidth = step > 0 ? step : viewBoxWidth;
+  const activeIndexML = hoveredIndexML;
+  const activeML = activeIndexML !== null ? pointsML[activeIndexML] : null;
+  const activePercentML = activeML && totalML ? Math.round((activeML.count / totalML) * 100) : 0;
+  const hitWidthML = stepML > 0 ? stepML : viewBoxWidthML;
 
-  const tooltipTranslateX = active
-    ? active.x < viewBoxWidth * 0.2
+  const tooltipTranslateXML = activeML
+    ? activeML.x < viewBoxWidthML * 0.2
       ? "0%"
-      : active.x > viewBoxWidth * 0.8
+      : activeML.x > viewBoxWidthML * 0.8
         ? "-100%"
         : "-50%"
     : "-50%";
 
   return (
-    <div ref={containerRef} style={analyticsStyles.lineChartWrap} onMouseLeave={() => setHoveredIndex(null)}>
-      {containerWidth > 0 && (
-        <svg width={viewBoxWidth} height={chartHeight} viewBox={`0 0 ${viewBoxWidth} ${chartHeight}`}>
+    <div ref={containerRefML} style={analyticsStylesML.lineChartWrap} onMouseLeave={() => setHoveredIndexML(null)}>
+      {containerWidthML > 0 && (
+        <svg width={viewBoxWidthML} height={chartHeightML} viewBox={`0 0 ${viewBoxWidthML} ${chartHeightML}`}>
           <defs>
             <linearGradient id="productLineFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={lineColor} stopOpacity="0.16" />
-              <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+              <stop offset="0%" stopColor={lineColorML} stopOpacity="0.16" />
+              <stop offset="100%" stopColor={lineColorML} stopOpacity="0" />
             </linearGradient>
           </defs>
-          <line x1={0} y1={baselineY} x2={viewBoxWidth} y2={baselineY} stroke={TRACK_GREY} strokeWidth={1} />
-          <path d={areaPath} fill="url(#productLineFill)" stroke="none" />
-          <path d={linePath} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-          {points.map((p, i) => (
-            <g key={p.label}>
+          <line x1={0} y1={baselineYML} x2={viewBoxWidthML} y2={baselineYML} stroke={TRACK_GREY_ML} strokeWidth={1} />
+          <path d={areaPathML} fill="url(#productLineFill)" stroke="none" />
+          <path d={linePathML} fill="none" stroke={lineColorML} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          {pointsML.map((pML, iML) => (
+            <g key={pML.label}>
               {}
               <rect
-                x={p.x - hitWidth / 2}
+                x={pML.x - hitWidthML / 2}
                 y={0}
-                width={hitWidth}
-                height={chartHeight}
+                width={hitWidthML}
+                height={chartHeightML}
                 fill="transparent"
                 style={{ cursor: "pointer" }}
-                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseEnter={() => setHoveredIndexML(iML)}
               />
               <circle
-                cx={p.x}
-                cy={p.y}
-                r={activeIndex === i ? 6 : 4}
+                cx={pML.x}
+                cy={pML.y}
+                r={activeIndexML === iML ? 6 : 4}
                 fill="#FFFFFF"
-                stroke={lineColor}
+                stroke={lineColorML}
                 strokeWidth={2}
                 style={{ pointerEvents: "none" }}
               />
               {}
               <circle
-                cx={p.x}
-                cy={baselineY + 22}
+                cx={pML.x}
+                cy={baselineYML + 22}
                 r={9}
-                fill={activeIndex === i ? lineColor : "#F1F3F5"}
+                fill={activeIndexML === iML ? lineColorML : "#F1F3F5"}
                 style={{ pointerEvents: "none" }}
               />
               <text
-                x={p.x}
-                y={baselineY + 22}
+                x={pML.x}
+                y={baselineYML + 22}
                 dy="0.35em"
                 textAnchor="middle"
                 fontSize="10"
                 fontFamily="Inter"
                 fontWeight={600}
-                fill={activeIndex === i ? "#FFFFFF" : MUTED_GREY}
+                fill={activeIndexML === iML ? "#FFFFFF" : MUTED_GREY_ML}
                 style={{ pointerEvents: "none" }}
               >
-                {i + 1}
+                {iML + 1}
               </text>
             </g>
           ))}
         </svg>
       )}
-      {active && (
+      {activeML && (
         <div
           style={{
-            ...analyticsStyles.donutTooltip,
-            ...analyticsStyles.productTooltip,
-            left: `${active.x}px`,
-            top: `${active.y}px`,
-            transform: `translate(${tooltipTranslateX}, calc(-100% - 12px))`,
+            ...analyticsStylesML.donutTooltip,
+            ...analyticsStylesML.productTooltip,
+            left: `${activeML.x}px`,
+            top: `${activeML.y}px`,
+            transform: `translate(${tooltipTranslateXML}, calc(-100% - 12px))`,
           }}
         >
-          <span style={analyticsStyles.donutTooltipLine1}>
-            <span style={{ ...analyticsStyles.donutInfoSwatch, background: lineColor }} />
-            <span style={{ ...analyticsStyles.donutInfoLabel, ...analyticsStyles.productTooltipLabel }}>
-              {active.label}
+          <span style={analyticsStylesML.donutTooltipLine1}>
+            <span style={{ ...analyticsStylesML.donutInfoSwatch, background: lineColorML }} />
+            <span style={{ ...analyticsStylesML.donutInfoLabel, ...analyticsStylesML.productTooltipLabel }}>
+              {activeML.label}
             </span>
           </span>
-          <span style={analyticsStyles.donutInfoMeta}>
-            {active.count} {active.count === 1 ? "Booking" : "Bookings"} ({activePercent}%)
+          <span style={analyticsStylesML.donutInfoMeta}>
+            {activeML.count} {activeML.count === 1 ? "Booking" : "Bookings"} ({activePercentML}%)
           </span>
         </div>
       )}
@@ -677,14 +677,14 @@ function ProductLineChart({
   );
 }
 
-const BOOKING_WIDGET_BLOCK_HANDLE = "booking-widget";
+const BOOKING_WIDGET_BLOCK_HANDLE_ML = "booking-widget";
 
-function buildGuideSteps(
-  shop: string,
-  apiKey: string,
-  registered: boolean,
+function buildGuideStepsML(
+  shopML: string,
+  apiKeyML: string,
+  registeredML: boolean,
 ): GuideStep[] {
-  const workingSteps: GuideStep[] = [
+  const workingStepsML: GuideStep[] = [
     {
       title: "Turn the booking app on",
       body: "In General Settings, switch on Booking App Status so the app is active across your storefront.",
@@ -695,7 +695,7 @@ function buildGuideSteps(
       title: "Turn on the booking widget",
       body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page (no manual placement needed).",
       cta: "Activate App Embed",
-      href: `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${apiKey}/${BOOKING_WIDGET_BLOCK_HANDLE}`,
+      href: `https://${shopML}/admin/themes/current/editor?context=apps&activateAppId=${apiKeyML}/${BOOKING_WIDGET_BLOCK_HANDLE_ML}`,
       external: true,
     },
     {
@@ -748,32 +748,32 @@ function buildGuideSteps(
       body: "Register with your name and email to unlock the rest of EasyBooking.",
       cta: "Register",
       href: "/app/account",
-      done: registered,
+      done: registeredML,
     },
-    ...workingSteps,
+    ...workingStepsML,
   ];
 }
 
-function todayISO(): string {
+function todayISOML(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function endOfWeekISO(): string {
-  const end = new Date();
-  end.setDate(end.getDate() + 7);
-  return end.toISOString().slice(0, 10);
+function endOfWeekISOML(): string {
+  const endML = new Date();
+  endML.setDate(endML.getDate() + 7);
+  return endML.toISOString().slice(0, 10);
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
-  const shopSettings = await getOrCreateShopSettings(session.shop);
-  const shared = {
-    shop: session.shop,
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { admin: adminML, session: sessionML } = await authenticate.admin(requestML);
+  const shopSettingsML = await getOrCreateShopSettingsML(sessionML.shop);
+  const sharedML = {
+    shop: sessionML.shop,
     apiKey: process.env.SHOPIFY_API_KEY ?? "",
-    registered: shopSettings.registered,
+    registered: shopSettingsML.registered,
   };
 
-  if (!shopSettings.registered) {
+  if (!shopSettingsML.registered) {
     return {
       stats: { todayCount: 0, weekCount: 0, overbookedCount: 0, enabledProductCount: 0 },
       smtpConfigured: false,
@@ -781,135 +781,135 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       report: null as BookingReportData | null,
       reportProducts: [] as { id: string; title: string }[],
       reportFilters: { bookableProductId: "", dateFrom: "", dateTo: "" },
-      ...shared,
+      ...sharedML,
     };
   }
 
-  const url = new URL(request.url);
-  const bookableProductId = url.searchParams.get("productId") || undefined;
-  const reportDateFrom = url.searchParams.get("dateFrom") || undefined;
-  const reportDateTo = url.searchParams.get("dateTo") || undefined;
+  const urlML = new URL(requestML.url);
+  const bookableProductIdML = urlML.searchParams.get("productId") || undefined;
+  const reportDateFromML = urlML.searchParams.get("dateFrom") || undefined;
+  const reportDateToML = urlML.searchParams.get("dateTo") || undefined;
 
-  const today = todayISO();
-  const weekEnd = endOfWeekISO();
+  const todayML = todayISOML();
+  const weekEndML = endOfWeekISOML();
 
   const [
     ,
-    products,
-    todayCount,
-    weekCount,
-    overbookedCount,
-    smtpSettings,
-    enabledLocations,
-    report,
+    productsML,
+    todayCountML,
+    weekCountML,
+    overbookedCountML,
+    smtpSettingsML,
+    enabledLocationsML,
+    reportML,
   ] = await Promise.all([
-    maybePrefillFirstLocationFromShopTimezone(session.shop, admin),
-    listBookableProducts(session.shop),
-    countBookings(session.shop, { dateFrom: today, dateTo: today }),
-    countBookings(session.shop, { dateFrom: today, dateTo: weekEnd }),
-    countBookings(session.shop, { status: "OVERBOOKED" }),
-    getSmtpSettings(session.shop),
-    listEnabledLocations(session.shop),
-    getBookingReportData(session.shop, {
-      bookableProductId,
-      dateFrom: reportDateFrom,
-      dateTo: reportDateTo,
+    maybePrefillFirstLocationFromShopTimezoneML(sessionML.shop, adminML),
+    listBookableProductsML(sessionML.shop),
+    countBookingsML(sessionML.shop, { dateFrom: todayML, dateTo: todayML }),
+    countBookingsML(sessionML.shop, { dateFrom: todayML, dateTo: weekEndML }),
+    countBookingsML(sessionML.shop, { status: "OVERBOOKED" }),
+    getSmtpSettingsML(sessionML.shop),
+    listEnabledLocationsML(sessionML.shop),
+    getBookingReportDataML(sessionML.shop, {
+      bookableProductId: bookableProductIdML,
+      dateFrom: reportDateFromML,
+      dateTo: reportDateToML,
     }),
   ]);
 
-  const enabledProductCount = products.filter((p: { isEnabled: boolean }) => p.isEnabled).length;
-  const smtpConfigured = Boolean(
-    smtpSettings?.host &&
-      smtpSettings.port &&
-      smtpSettings.username &&
-      smtpSettings.password &&
-      smtpSettings.fromEmail,
+  const enabledProductCountML = productsML.filter((pML: { isEnabled: boolean }) => pML.isEnabled).length;
+  const smtpConfiguredML = Boolean(
+    smtpSettingsML?.host &&
+      smtpSettingsML.port &&
+      smtpSettingsML.username &&
+      smtpSettingsML.password &&
+      smtpSettingsML.fromEmail,
   );
 
   return {
-    stats: { todayCount, weekCount, overbookedCount, enabledProductCount },
-    smtpConfigured,
-    hasLocations: enabledLocations.length > 0,
-    report,
-    reportProducts: products
-      .filter((p: { isEnabled: boolean }) => p.isEnabled)
-      .map((p: { id: string; productTitle: string }) => ({ id: p.id, title: p.productTitle })),
+    stats: { todayCount: todayCountML, weekCount: weekCountML, overbookedCount: overbookedCountML, enabledProductCount: enabledProductCountML },
+    smtpConfigured: smtpConfiguredML,
+    hasLocations: enabledLocationsML.length > 0,
+    report: reportML,
+    reportProducts: productsML
+      .filter((pML: { isEnabled: boolean }) => pML.isEnabled)
+      .map((pML: { id: string; productTitle: string }) => ({ id: pML.id, title: pML.productTitle })),
     reportFilters: {
-      bookableProductId: bookableProductId ?? "",
-      dateFrom: reportDateFrom ?? "",
-      dateTo: reportDateTo ?? "",
+      bookableProductId: bookableProductIdML ?? "",
+      dateFrom: reportDateFromML ?? "",
+      dateTo: reportDateToML ?? "",
     },
-    ...shared,
+    ...sharedML,
   };
 };
 
 export default function Dashboard() {
   const {
-    stats,
-    smtpConfigured,
-    hasLocations,
-    shop,
-    apiKey,
-    registered,
-    report,
-    reportProducts,
-    reportFilters,
+    stats: statsML,
+    smtpConfigured: smtpConfiguredML,
+    hasLocations: hasLocationsML,
+    shop: shopML,
+    apiKey: apiKeyML,
+    registered: registeredML,
+    report: reportML,
+    reportProducts: reportProductsML,
+    reportFilters: reportFiltersML,
   } = useLoaderData<typeof loader>();
-  const guideSteps = buildGuideSteps(shop, apiKey, registered);
-  const navigate = useNavigate();
+  const guideStepsML = buildGuideStepsML(shopML, apiKeyML, registeredML);
+  const navigateML = useNavigate();
 
-  const [productId, setProductId] = useState(reportFilters.bookableProductId);
-  const [donutView, setDonutView] = useState<"hours" | "days" | "months">("hours");
-  const [dateFrom, setDateFrom] = useState(reportFilters.dateFrom);
-  const [dateTo, setDateTo] = useState(reportFilters.dateTo);
+  const [productIdML, setProductIdML] = useState(reportFiltersML.bookableProductId);
+  const [donutViewML, setDonutViewML] = useState<"hours" | "days" | "months">("hours");
+  const [dateFromML, setDateFromML] = useState(reportFiltersML.dateFrom);
+  const [dateToML, setDateToML] = useState(reportFiltersML.dateTo);
 
-  const applyReportFilters = () => {
-    const params = new URLSearchParams();
-    if (productId) params.set("productId", productId);
-    if (dateFrom) params.set("dateFrom", dateFrom);
-    if (dateTo) params.set("dateTo", dateTo);
-    navigate({ search: params.toString() });
+  const applyReportFiltersML = () => {
+    const paramsML = new URLSearchParams();
+    if (productIdML) paramsML.set("productId", productIdML);
+    if (dateFromML) paramsML.set("dateFrom", dateFromML);
+    if (dateToML) paramsML.set("dateTo", dateToML);
+    navigateML({ search: paramsML.toString() });
   };
 
-  const setupSteps = [
+  const setupStepsML = [
     {
-      done: hasLocations,
+      done: hasLocationsML,
       label: "Add at least one location so booking times use the right timezone",
       href: "/app/settings/locations",
       cta: "Go to Locations",
     },
     {
-      done: stats.enabledProductCount > 0,
+      done: statsML.enabledProductCount > 0,
       label: "Enable at least one product for booking",
       href: "/app/products",
       cta: "Go to Products",
     },
     {
-      done: smtpConfigured,
+      done: smtpConfiguredML,
       label: "Configure Email Settings so booking emails can send",
       href: "/app/settings/email",
       cta: "Go to Email Settings",
     },
   ];
-  const remainingSteps = setupSteps.filter((s) => !s.done);
+  const remainingStepsML = setupStepsML.filter((sML) => !sML.done);
 
   return (
     <s-page heading="Dashboard" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <GetStartedGuide
         appName="EasyBooking"
         intro="A quick walkthrough of how to get bookings running end to end."
-        steps={guideSteps}
+        steps={guideStepsML}
       />
 
-      <div style={analyticsStyles.outerCard}>
-      {registered && (
+      <div style={analyticsStylesML.outerCard}>
+      {registeredML && (
         <>
-          {stats.overbookedCount > 0 && (
+          {statsML.overbookedCount > 0 && (
             <s-banner tone="critical" heading="Bookings need review">
               <s-paragraph>
-                {stats.overbookedCount === 1
+                {statsML.overbookedCount === 1
                   ? "1 booking landed in an already-full slot and needs a look."
-                  : `${stats.overbookedCount} bookings landed in already-full slots and need a look.`}
+                  : `${statsML.overbookedCount} bookings landed in already-full slots and need a look.`}
               </s-paragraph>
               <s-link href="/app/bookings?status=OVERBOOKED">
                 Review overbooked bookings
@@ -917,18 +917,18 @@ export default function Dashboard() {
             </s-banner>
           )}
 
-          {remainingSteps.length > 0 && (
+          {remainingStepsML.length > 0 && (
             <s-section heading="Get set up">
               <s-stack direction="block" gap="base">
-                {remainingSteps.map((step) => (
+                {remainingStepsML.map((stepML) => (
                   <s-stack
-                    key={step.label}
+                    key={stepML.label}
                     direction="inline"
                     gap="base"
                     alignItems="center"
                   >
-                    <s-paragraph>{step.label}</s-paragraph>
-                    <s-link href={step.href}>{step.cta}</s-link>
+                    <s-paragraph>{stepML.label}</s-paragraph>
+                    <s-link href={stepML.href}>{stepML.cta}</s-link>
                   </s-stack>
                 ))}
               </s-stack>
@@ -937,7 +937,7 @@ export default function Dashboard() {
         </>
       )}
 
-      {registered && report && (
+      {registeredML && reportML && (
         <>
           <style>{`
             .eb-date-input::-webkit-calendar-picker-indicator {
@@ -1011,104 +1011,104 @@ export default function Dashboard() {
               }
             }
           `}</style>
-          <div className="eb-analytics-card" style={analyticsStyles.card}>
-            <h2 style={analyticsStyles.heading}>Store Analytics</h2>
-            <div className="eb-analytics-filter-row" style={analyticsStyles.filterRow}>
-              <div style={analyticsStyles.productFilterField}>
-                <label style={analyticsStyles.filterLabel}>Products</label>
+          <div className="eb-analytics-card" style={analyticsStylesML.card}>
+            <h2 style={analyticsStylesML.heading}>Store Analytics</h2>
+            <div className="eb-analytics-filter-row" style={analyticsStylesML.filterRow}>
+              <div style={analyticsStylesML.productFilterField}>
+                <label style={analyticsStylesML.filterLabel}>Products</label>
                 <select
-                  value={productId}
-                  onChange={(e) => setProductId(e.target.value)}
-                  style={analyticsStyles.selectInput}
+                  value={productIdML}
+                  onChange={(eML) => setProductIdML(eML.target.value)}
+                  style={analyticsStylesML.selectInput}
                 >
                   <option value="">All Products</option>
-                  {reportProducts.map((p: { id: string; title: string }) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}
+                  {reportProductsML.map((pML: { id: string; title: string }) => (
+                    <option key={pML.id} value={pML.id}>
+                      {pML.title}
                     </option>
                   ))}
                 </select>
               </div>
-              <div style={analyticsStyles.filterField}>
-                <label style={analyticsStyles.filterLabel}>From</label>
-                <div style={analyticsStyles.dateFieldBox}>
+              <div style={analyticsStylesML.filterField}>
+                <label style={analyticsStylesML.filterLabel}>From</label>
+                <div style={analyticsStylesML.dateFieldBox}>
                   <img src="/date-icon.svg" alt="" width={20} height={20} />
                   <input
                     type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    style={analyticsStyles.dateInput}
+                    value={dateFromML}
+                    onChange={(eML) => setDateFromML(eML.target.value)}
+                    style={analyticsStylesML.dateInput}
                     className="eb-date-input"
                   />
                 </div>
               </div>
-              <div style={analyticsStyles.filterField}>
-                <label style={analyticsStyles.filterLabel}>To</label>
-                <div style={analyticsStyles.dateFieldBox}>
+              <div style={analyticsStylesML.filterField}>
+                <label style={analyticsStylesML.filterLabel}>To</label>
+                <div style={analyticsStylesML.dateFieldBox}>
                   <img src="/date-icon.svg" alt="" width={20} height={20} />
                   <input
                     type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    style={analyticsStyles.dateInput}
+                    value={dateToML}
+                    onChange={(eML) => setDateToML(eML.target.value)}
+                    style={analyticsStylesML.dateInput}
                     className="eb-date-input"
                   />
                 </div>
               </div>
-              <div style={analyticsStyles.applyButtonWrap}>
-                <button type="button" onClick={applyReportFilters} style={analyticsStyles.applyButton}>
+              <div style={analyticsStylesML.applyButtonWrap}>
+                <button type="button" onClick={applyReportFiltersML} style={analyticsStylesML.applyButton}>
                   Apply
                 </button>
               </div>
             </div>
-            <hr style={analyticsStyles.divider} />
-            <div className="eb-analytics-stats-row" style={analyticsStyles.statsRow}>
+            <hr style={analyticsStylesML.divider} />
+            <div className="eb-analytics-stats-row" style={analyticsStylesML.statsRow}>
               <StatTile
                 label="Bookings Today"
-                value={stats.todayCount}
-                href={`/app/bookings?dateFrom=${todayISO()}&dateTo=${todayISO()}`}
+                value={statsML.todayCount}
+                href={`/app/bookings?dateFrom=${todayISOML()}&dateTo=${todayISOML()}`}
               />
               <StatTile
                 label="Total Bookings"
-                value={report.totalBookings}
+                value={reportML.totalBookings}
                 href="/app/bookings"
                 icon="/cart-total.svg"
               />
               <StatTile
                 label="Overbooked (needs review)"
-                value={report.overbookedCount}
+                value={reportML.overbookedCount}
                 href="/app/bookings?status=OVERBOOKED"
                 icon="/msg-icon.svg"
               />
             </div>
-            <div className="eb-analytics-stats-row" style={analyticsStyles.statsRow}>
+            <div className="eb-analytics-stats-row" style={analyticsStylesML.statsRow}>
               <StatTile
                 label="Confirmed Bookings"
-                value={report.confirmedCount}
+                value={reportML.confirmedCount}
                 href="/app/bookings?status=CONFIRMED"
               />
               <StatTile
                 label="Cancellation Rate"
-                value={`${report.cancellationRatePercent}%`}
+                value={`${reportML.cancellationRatePercent}%`}
                 href="/app/bookings?status=CANCELLED"
               />
             </div>
           </div>
 
-          <div className="eb-reports-row" style={analyticsStyles.reportsRow}>
-            <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
-              <div className="eb-report-card-header" style={analyticsStyles.reportCardHeader}>
-                <h2 style={analyticsStyles.heading}>
-                  {donutView === "hours"
+          <div className="eb-reports-row" style={analyticsStylesML.reportsRow}>
+            <div className="eb-analytics-card eb-report-card" style={analyticsStylesML.reportCard}>
+              <div className="eb-report-card-header" style={analyticsStylesML.reportCardHeader}>
+                <h2 style={analyticsStylesML.heading}>
+                  {donutViewML === "hours"
                     ? "Peak Hours"
-                    : donutView === "days"
+                    : donutViewML === "days"
                       ? "Popular Days"
                       : "Popular Months"}
                 </h2>
                 <div
                   role="tablist"
                   aria-label="Choose chart view"
-                  style={analyticsStyles.donutToggle}
+                  style={analyticsStylesML.donutToggle}
                 >
                   {(
                     [
@@ -1116,39 +1116,39 @@ export default function Dashboard() {
                       { value: "days", label: "Days" },
                       { value: "months", label: "Months" },
                     ] as const
-                  ).map((opt) => (
+                  ).map((optML) => (
                     <button
-                      key={opt.value}
+                      key={optML.value}
                       type="button"
                       role="tab"
-                      aria-selected={donutView === opt.value}
-                      onClick={() => setDonutView(opt.value)}
+                      aria-selected={donutViewML === optML.value}
+                      onClick={() => setDonutViewML(optML.value)}
                       style={{
-                        ...analyticsStyles.donutToggleBtn,
-                        ...(donutView === opt.value
-                          ? analyticsStyles.donutToggleBtnActive
+                        ...analyticsStylesML.donutToggleBtn,
+                        ...(donutViewML === optML.value
+                          ? analyticsStylesML.donutToggleBtnActive
                           : {}),
                       }}
                     >
-                      {opt.label}
+                      {optML.label}
                     </button>
                   ))}
                 </div>
               </div>
-              <hr style={analyticsStyles.divider} />
-              <div style={analyticsStyles.reportCardBody}>
-                {donutView === "hours" ? (
+              <hr style={analyticsStylesML.divider} />
+              <div style={analyticsStylesML.reportCardBody}>
+                {donutViewML === "hours" ? (
                   <DonutChart
                     key="hours"
-                    rows={report.bookingsByHour.map((r) => ({ ...r, hour: to12Hour(r.hour) }))}
+                    rows={reportML.bookingsByHour.map((rML) => ({ ...rML, hour: to12HourML(rML.hour) }))}
                     labelKey="hour"
                     countKey="count"
                     emptyLabel="No bookings yet for this range."
                   />
-                ) : donutView === "days" ? (
+                ) : donutViewML === "days" ? (
                   <DonutChart
                     key="days"
-                    rows={report.bookingsByDayOfWeek}
+                    rows={reportML.bookingsByDayOfWeek}
                     labelKey="day"
                     countKey="count"
                     emptyLabel="No bookings yet for this range."
@@ -1156,7 +1156,7 @@ export default function Dashboard() {
                 ) : (
                   <DonutChart
                     key="months"
-                    rows={report.bookingsByMonth}
+                    rows={reportML.bookingsByMonth}
                     labelKey="month"
                     countKey="count"
                     emptyLabel="No bookings yet for this range."
@@ -1165,12 +1165,12 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="eb-analytics-card eb-report-card" style={analyticsStyles.reportCard}>
-              <h2 style={analyticsStyles.heading}>Bookings by Product</h2>
-              <hr style={analyticsStyles.divider} />
-              <div style={analyticsStyles.productCardBody}>
+            <div className="eb-analytics-card eb-report-card" style={analyticsStylesML.reportCard}>
+              <h2 style={analyticsStylesML.heading}>Bookings by Product</h2>
+              <hr style={analyticsStylesML.divider} />
+              <div style={analyticsStylesML.productCardBody}>
                 <ProductLineChart
-                  rows={report.bookingsByProduct}
+                  rows={reportML.bookingsByProduct}
                   labelKey="productTitle"
                   countKey="count"
                   emptyLabel="No bookings yet for this range."
@@ -1186,6 +1186,6 @@ export default function Dashboard() {
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

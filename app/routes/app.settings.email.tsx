@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import RichTextEditor, {
   type RichTextEditorHandle,
 } from "../components/RichTextEditor";
-import { buildPreview } from "../utils/emailPreview";
+import { buildPreviewML } from "../utils/emailPreview";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -13,120 +13,120 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import {
-  getBookingSettings,
-  parseEmailFromName,
-  updateEmailFromName,
+  getBookingSettingsML,
+  parseEmailFromNameML,
+  updateEmailFromNameML,
 } from "../models/bookingSettings.server";
 import {
-  getSmtpSettings,
-  parseSmtpSettingsForm,
-  toFormValues,
-  upsertSmtpSettings,
+  getSmtpSettingsML,
+  parseSmtpSettingsFormML,
+  toFormValuesML,
+  upsertSmtpSettingsML,
   type SmtpSettingsFieldErrors,
   type SmtpSettingsFormValues,
 } from "../models/smtpSettings.server";
 import {
-  listEmailTemplates,
-  resetEmailTemplate,
-  upsertEmailTemplate,
-  DEFAULT_EMAIL_TEMPLATES,
+  listEmailTemplatesML,
+  resetEmailTemplateML,
+  upsertEmailTemplateML,
+  DEFAULT_EMAIL_TEMPLATES_ML,
 } from "../models/emailTemplate.server";
 import {
-  EMAIL_TEMPLATE_TYPES,
+  EMAIL_TEMPLATE_TYPES_ML,
   type EmailTemplateType,
 } from "../models/emailTemplateTypes";
 import {
-  styles,
-  BORDER,
-  TEXT_DARK,
-  TEXT_MUTED,
-  BLUE,
+  stylesML,
+  BORDER_ML,
+  TEXT_DARK_ML,
+  TEXT_MUTED_ML,
+  BLUE_ML,
   ChevronDownIcon,
-  collapsibleHeaderStyle,
+  collapsibleHeaderStyleML,
 } from "../components/SettingsUI";
 import type { RegisterSave } from "./app.settings";
 
-type TemplateRow = Awaited<ReturnType<typeof listEmailTemplates>>[number];
+type TemplateRow = Awaited<ReturnType<typeof listEmailTemplatesML>>[number];
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const [smtpSettings, templates, bookingSettings] = await Promise.all([
-    getSmtpSettings(session.shop),
-    listEmailTemplates(session.shop),
-    getBookingSettings(session.shop),
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const [smtpSettingsML, templatesML, bookingSettingsML] = await Promise.all([
+    getSmtpSettingsML(sessionML.shop),
+    listEmailTemplatesML(sessionML.shop),
+    getBookingSettingsML(sessionML.shop),
   ]);
   return {
-    smtp: toFormValues(smtpSettings),
-    templates,
-    emailFromName: bookingSettings.emailFromName,
+    smtp: toFormValuesML(smtpSettingsML),
+    templates: templatesML,
+    emailFromName: bookingSettingsML.emailFromName,
   };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "save");
+export const action = async ({ request: requestML }: ActionFunctionArgs) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
+  const intentML = String(formDataML.get("intent") ?? "save");
 
-  if (intent === "reset-template") {
-    const type = String(formData.get("type") ?? "") as EmailTemplateType;
-    if (!EMAIL_TEMPLATE_TYPES.includes(type)) {
+  if (intentML === "reset-template") {
+    const typeML = String(formDataML.get("type") ?? "") as EmailTemplateType;
+    if (!EMAIL_TEMPLATE_TYPES_ML.includes(typeML)) {
       return {
         ok: false as const,
         kind: "reset" as const,
         error: "Invalid template type",
       };
     }
-    await resetEmailTemplate(session.shop, type);
-    const templates = await listEmailTemplates(session.shop);
-    return { ok: true as const, kind: "reset" as const, templates };
+    await resetEmailTemplateML(sessionML.shop, typeML);
+    const templatesML = await listEmailTemplatesML(sessionML.shop);
+    return { ok: true as const, kind: "reset" as const, templates: templatesML };
   }
 
-  const { values, errors: smtpErrors } = parseSmtpSettingsForm(formData);
-  const emailFromName = parseEmailFromName(formData);
-  const errors: SmtpSettingsFieldErrors & { emailFromName?: string } = {
-    ...smtpErrors,
-    ...(emailFromName.error ? { emailFromName: emailFromName.error } : {}),
+  const { values: valuesML, errors: smtpErrorsML } = parseSmtpSettingsFormML(formDataML);
+  const emailFromNameML = parseEmailFromNameML(formDataML);
+  const errorsML: SmtpSettingsFieldErrors & { emailFromName?: string } = {
+    ...smtpErrorsML,
+    ...(emailFromNameML.error ? { emailFromName: emailFromNameML.error } : {}),
   };
-  if (Object.keys(errors).length > 0) {
+  if (Object.keys(errorsML).length > 0) {
     return {
       ok: false as const,
       kind: "save" as const,
-      errors,
-      values,
-      emailFromName: emailFromName.value,
+      errors: errorsML,
+      values: valuesML,
+      emailFromName: emailFromNameML.value,
     };
   }
 
-  const savedSmtp = await upsertSmtpSettings(session.shop, values);
-  await updateEmailFromName(session.shop, emailFromName.value);
+  const savedSmtpML = await upsertSmtpSettingsML(sessionML.shop, valuesML);
+  await updateEmailFromNameML(sessionML.shop, emailFromNameML.value);
 
-  let parsedTemplates: { type: string; subject: string; body: string }[] = [];
+  let parsedTemplatesML: { type: string; subject: string; body: string }[] = [];
   try {
-    parsedTemplates = JSON.parse(String(formData.get("templates") ?? "[]"));
+    parsedTemplatesML = JSON.parse(String(formDataML.get("templates") ?? "[]"));
   } catch {
-    parsedTemplates = [];
+    parsedTemplatesML = [];
   }
-  for (const item of parsedTemplates) {
-    if (!EMAIL_TEMPLATE_TYPES.includes(item.type as EmailTemplateType)) continue;
-    const type = item.type as EmailTemplateType;
-    const subject = item.subject.trim();
-    const body = item.body.trim();
-    if (!subject || !body) continue;
-    const fallback = DEFAULT_EMAIL_TEMPLATES[type];
-    if (subject === fallback.subject.trim() && body === fallback.body.trim()) {
+  for (const itemML of parsedTemplatesML) {
+    if (!EMAIL_TEMPLATE_TYPES_ML.includes(itemML.type as EmailTemplateType)) continue;
+    const typeML = itemML.type as EmailTemplateType;
+    const subjectML = itemML.subject.trim();
+    const bodyML = itemML.body.trim();
+    if (!subjectML || !bodyML) continue;
+    const fallbackML = DEFAULT_EMAIL_TEMPLATES_ML[typeML];
+    if (subjectML === fallbackML.subject.trim() && bodyML === fallbackML.body.trim()) {
       continue;
     }
-    await upsertEmailTemplate(session.shop, type, subject, body);
+    await upsertEmailTemplateML(sessionML.shop, typeML, subjectML, bodyML);
   }
 
-  const templates = await listEmailTemplates(session.shop);
+  const templatesML = await listEmailTemplatesML(sessionML.shop);
   return {
     ok: true as const,
     kind: "save" as const,
     errors: {} as SmtpSettingsFieldErrors & { emailFromName?: string },
-    values: toFormValues(savedSmtp),
-    templates,
-    emailFromName: emailFromName.value,
+    values: toFormValuesML(savedSmtpML),
+    templates: templatesML,
+    emailFromName: emailFromNameML.value,
   };
 };
 
@@ -135,363 +135,363 @@ type EditableTemplateValues = Record<
   { subject: string; body: string }
 >;
 
-function toEditableValues(templates: TemplateRow[]): EditableTemplateValues {
-  const values = {} as EditableTemplateValues;
-  for (const t of templates) {
-    values[t.type] = { subject: t.subject, body: t.body };
+function toEditableValuesML(templatesML: TemplateRow[]): EditableTemplateValues {
+  const valuesML = {} as EditableTemplateValues;
+  for (const tML of templatesML) {
+    valuesML[tML.type] = { subject: tML.subject, body: tML.body };
   }
-  return values;
+  return valuesML;
 }
 
 export default function EmailSettingsTab() {
   const {
-    smtp: initialSmtp,
-    templates: initialTemplates,
-    emailFromName: initialEmailFromName,
+    smtp: initialSmtpML,
+    templates: initialTemplatesML,
+    emailFromName: initialEmailFromNameML,
   } = useLoaderData<typeof loader>();
-  const saveFetcher = useFetcher<typeof action>();
-  const resetFetcher = useFetcher<typeof action>();
-  const shopify = useAppBridge();
-  const { registerSave } = useOutletContext<{ registerSave: RegisterSave }>();
+  const saveFetcherML = useFetcher<typeof action>();
+  const resetFetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
+  const { registerSave: registerSaveML } = useOutletContext<{ registerSave: RegisterSave }>();
 
-  const [smtpValues, setSmtpValues] = useState<SmtpSettingsFormValues>(initialSmtp);
-  const [emailFromName, setEmailFromName] = useState<string>(initialEmailFromName ?? "");
-  const [showPass, setShowPass] = useState(false);
+  const [smtpValuesML, setSmtpValuesML] = useState<SmtpSettingsFormValues>(initialSmtpML);
+  const [emailFromNameML, setEmailFromNameML] = useState<string>(initialEmailFromNameML ?? "");
+  const [showPassML, setShowPassML] = useState(false);
 
-  const [templates, setTemplates] = useState<TemplateRow[]>(initialTemplates);
-  const [templateValues, setTemplateValues] = useState<EditableTemplateValues>(() =>
-    toEditableValues(initialTemplates),
+  const [templatesML, setTemplatesML] = useState<TemplateRow[]>(initialTemplatesML);
+  const [templateValuesML, setTemplateValuesML] = useState<EditableTemplateValues>(() =>
+    toEditableValuesML(initialTemplatesML),
   );
-  const [previewOpen, setPreviewOpen] = useState<Record<string, boolean>>({});
-  const [openTemplates, setOpenTemplates] = useState<Record<string, boolean>>({});
-  const bodyRefs = useRef<Record<string, RichTextEditorHandle | null>>({});
+  const [previewOpenML, setPreviewOpenML] = useState<Record<string, boolean>>({});
+  const [openTemplatesML, setOpenTemplatesML] = useState<Record<string, boolean>>({});
+  const bodyRefsML = useRef<Record<string, RichTextEditorHandle | null>>({});
 
-  const smtpErrors: SmtpSettingsFieldErrors & { emailFromName?: string } =
-    saveFetcher.data && saveFetcher.data.kind === "save"
-      ? saveFetcher.data.errors
+  const smtpErrorsML: SmtpSettingsFieldErrors & { emailFromName?: string } =
+    saveFetcherML.data && saveFetcherML.data.kind === "save"
+      ? saveFetcherML.data.errors
       : {};
-  const isSaving = saveFetcher.state !== "idle";
-  const isResetting = resetFetcher.state !== "idle";
+  const isSavingML = saveFetcherML.state !== "idle";
+  const isResettingML = resetFetcherML.state !== "idle";
 
   useEffect(() => {
-    if (!saveFetcher.data) return;
-    if (saveFetcher.data.kind !== "save") return;
-    if (saveFetcher.data.ok) {
-      setSmtpValues(saveFetcher.data.values);
-      setEmailFromName(saveFetcher.data.emailFromName ?? "");
-      setTemplates(saveFetcher.data.templates);
-      setTemplateValues(toEditableValues(saveFetcher.data.templates));
-      shopify.toast.show("Settings saved");
+    if (!saveFetcherML.data) return;
+    if (saveFetcherML.data.kind !== "save") return;
+    if (saveFetcherML.data.ok) {
+      setSmtpValuesML(saveFetcherML.data.values);
+      setEmailFromNameML(saveFetcherML.data.emailFromName ?? "");
+      setTemplatesML(saveFetcherML.data.templates);
+      setTemplateValuesML(toEditableValuesML(saveFetcherML.data.templates));
+      shopifyML.toast.show("Settings saved");
     } else {
-      shopify.toast.show("Please fix the highlighted fields", { isError: true });
+      shopifyML.toast.show("Please fix the highlighted fields", { isError: true });
     }
-  }, [saveFetcher.data, shopify]);
+  }, [saveFetcherML.data, shopifyML]);
 
   useEffect(() => {
-    if (resetFetcher.data?.ok && resetFetcher.data.kind === "reset") {
-      setTemplates(resetFetcher.data.templates);
-      setTemplateValues(toEditableValues(resetFetcher.data.templates));
-      shopify.toast.show("Reverted to default");
+    if (resetFetcherML.data?.ok && resetFetcherML.data.kind === "reset") {
+      setTemplatesML(resetFetcherML.data.templates);
+      setTemplateValuesML(toEditableValuesML(resetFetcherML.data.templates));
+      shopifyML.toast.show("Reverted to default");
     }
-  }, [resetFetcher.data, shopify]);
+  }, [resetFetcherML.data, shopifyML]);
 
-  const setSmtpField = <K extends keyof SmtpSettingsFormValues>(
-    key: K,
-    value: SmtpSettingsFormValues[K],
+  const setSmtpFieldML = <K extends keyof SmtpSettingsFormValues>(
+    keyML: K,
+    valueML: SmtpSettingsFormValues[K],
   ) => {
-    setSmtpValues((prev) => ({ ...prev, [key]: value }));
+    setSmtpValuesML((prevML) => ({ ...prevML, [keyML]: valueML }));
   };
 
-  const setTemplateField = (
-    type: EmailTemplateType,
-    field: "subject" | "body",
-    value: string,
+  const setTemplateFieldML = (
+    typeML: EmailTemplateType,
+    fieldML: "subject" | "body",
+    valueML: string,
   ) => {
-    setTemplateValues((prev) => ({
-      ...prev,
-      [type]: { ...prev[type], [field]: value },
+    setTemplateValuesML((prevML) => ({
+      ...prevML,
+      [typeML]: { ...prevML[typeML], [fieldML]: valueML },
     }));
   };
 
-  const insertToken = (type: EmailTemplateType, token: string) => {
-    const editorHandle = bodyRefs.current[type];
-    if (!editorHandle) {
-      const current = templateValues[type]?.body ?? "";
-      setTemplateField(type, "body", `${current}${token}`);
+  const insertTokenML = (typeML: EmailTemplateType, tokenML: string) => {
+    const editorHandleML = bodyRefsML.current[typeML];
+    if (!editorHandleML) {
+      const currentML = templateValuesML[typeML]?.body ?? "";
+      setTemplateFieldML(typeML, "body", `${currentML}${tokenML}`);
       return;
     }
-    editorHandle.insertText(token);
+    editorHandleML.insertText(tokenML);
   };
 
-  const togglePreview = (type: EmailTemplateType) => {
-    setPreviewOpen((prev) => ({ ...prev, [type]: !prev[type] }));
+  const togglePreviewML = (typeML: EmailTemplateType) => {
+    setPreviewOpenML((prevML) => ({ ...prevML, [typeML]: !prevML[typeML] }));
   };
 
-  const toggleTemplateOpen = (type: EmailTemplateType) => {
-    setOpenTemplates((prev) => ({ ...prev, [type]: !prev[type] }));
+  const toggleTemplateOpenML = (typeML: EmailTemplateType) => {
+    setOpenTemplatesML((prevML) => ({ ...prevML, [typeML]: !prevML[typeML] }));
   };
 
-  const handleSave = () => {
-    const templatesPayload = EMAIL_TEMPLATE_TYPES.map((type) => ({
-      type,
-      subject: templateValues[type]?.subject ?? "",
-      body: templateValues[type]?.body ?? "",
+  const handleSaveML = () => {
+    const templatesPayloadML = EMAIL_TEMPLATE_TYPES_ML.map((typeML) => ({
+      type: typeML,
+      subject: templateValuesML[typeML]?.subject ?? "",
+      body: templateValuesML[typeML]?.body ?? "",
     }));
-    saveFetcher.submit(
+    saveFetcherML.submit(
       {
         intent: "save",
-        host: smtpValues.host,
-        port: smtpValues.port,
-        username: smtpValues.username,
-        password: smtpValues.password,
-        fromEmail: smtpValues.fromEmail,
-        emailFromName,
-        templates: JSON.stringify(templatesPayload),
+        host: smtpValuesML.host,
+        port: smtpValuesML.port,
+        username: smtpValuesML.username,
+        password: smtpValuesML.password,
+        fromEmail: smtpValuesML.fromEmail,
+        emailFromName: emailFromNameML,
+        templates: JSON.stringify(templatesPayloadML),
       },
       { method: "POST" },
     );
   };
 
-  const handleResetTemplate = (type: EmailTemplateType) => {
-    resetFetcher.submit({ intent: "reset-template", type }, { method: "POST" });
+  const handleResetTemplateML = (typeML: EmailTemplateType) => {
+    resetFetcherML.submit({ intent: "reset-template", type: typeML }, { method: "POST" });
   };
 
   useEffect(() => {
-    registerSave(handleSave, isSaving);
-    return () => registerSave(null, false);
-  }, [registerSave, smtpValues, emailFromName, templateValues, isSaving]);
+    registerSaveML(handleSaveML, isSavingML);
+    return () => registerSaveML(null, false);
+  }, [registerSaveML, smtpValuesML, emailFromNameML, templateValuesML, isSavingML]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div style={styles.clientCard}>
-        <div style={styles.clientCardBody}>
-          <div style={styles.clientCardHeader}>
-            <div style={styles.clientCardTitle}>Email (SMTP) Settings</div>
-            <div style={styles.subLabel}>
+      <div style={stylesML.clientCard}>
+        <div style={stylesML.clientCardBody}>
+          <div style={stylesML.clientCardHeader}>
+            <div style={stylesML.clientCardTitle}>Email (SMTP) Settings</div>
+            <div style={stylesML.subLabel}>
               Used to send automated emails for reminders, booking confirmations, rescheduling updates, cancellations, and other booking-related notifications.
             </div>
           </div>
 
-          <div style={styles.clientDivider} />
+          <div style={stylesML.clientDivider} />
 
-          <div style={styles.clientFieldGroup}>
-            <div style={styles.clientFieldLabel}>SMTP Host</div>
+          <div style={stylesML.clientFieldGroup}>
+            <div style={stylesML.clientFieldLabel}>SMTP Host</div>
             <input
               type="text"
-              style={styles.clientInput}
-              value={smtpValues.host}
-              onChange={(e) => setSmtpField("host", e.target.value)}
+              style={stylesML.clientInput}
+              value={smtpValuesML.host}
+              onChange={(eML) => setSmtpFieldML("host", eML.target.value)}
               placeholder="smtp.example.com"
             />
-            {smtpErrors.host && <p style={styles.errorText}>{smtpErrors.host}</p>}
+            {smtpErrorsML.host && <p style={stylesML.errorText}>{smtpErrorsML.host}</p>}
           </div>
 
-          <div style={styles.clientDivider} />
+          <div style={stylesML.clientDivider} />
 
-          <div style={styles.clientFieldGroup}>
-            <div style={styles.clientFieldLabel}>SMTP Port</div>
+          <div style={stylesML.clientFieldGroup}>
+            <div style={stylesML.clientFieldLabel}>SMTP Port</div>
             <input
               type="text"
-              style={styles.clientInput}
-              value={smtpValues.port}
-              onChange={(e) => setSmtpField("port", e.target.value)}
+              style={stylesML.clientInput}
+              value={smtpValuesML.port}
+              onChange={(eML) => setSmtpFieldML("port", eML.target.value)}
               placeholder="587"
             />
-            {smtpErrors.port && <p style={styles.errorText}>{smtpErrors.port}</p>}
+            {smtpErrorsML.port && <p style={stylesML.errorText}>{smtpErrorsML.port}</p>}
           </div>
 
-          <div style={styles.clientDivider} />
+          <div style={stylesML.clientDivider} />
 
-          <div style={styles.clientFieldGroup}>
-            <div style={styles.clientFieldLabel}>SMTP Username</div>
+          <div style={stylesML.clientFieldGroup}>
+            <div style={stylesML.clientFieldLabel}>SMTP Username</div>
             <input
               type="text"
-              style={styles.clientInput}
-              value={smtpValues.username}
-              onChange={(e) => setSmtpField("username", e.target.value)}
+              style={stylesML.clientInput}
+              value={smtpValuesML.username}
+              onChange={(eML) => setSmtpFieldML("username", eML.target.value)}
               placeholder="Enter SMTP username"
             />
-            {smtpErrors.username && (
-              <p style={styles.errorText}>{smtpErrors.username}</p>
+            {smtpErrorsML.username && (
+              <p style={stylesML.errorText}>{smtpErrorsML.username}</p>
             )}
           </div>
 
-          <div style={styles.clientDivider} />
+          <div style={stylesML.clientDivider} />
 
-          <div style={styles.clientFieldGroup}>
-            <div style={styles.clientFieldLabel}>SMTP Password</div>
-            <div style={styles.secretInputWrap}>
+          <div style={stylesML.clientFieldGroup}>
+            <div style={stylesML.clientFieldLabel}>SMTP Password</div>
+            <div style={stylesML.secretInputWrap}>
               <input
-                type={showPass ? "text" : "password"}
+                type={showPassML ? "text" : "password"}
                 autoComplete="off"
-                style={styles.secretInput}
-                value={smtpValues.password}
-                onChange={(e) => setSmtpField("password", e.target.value)}
+                style={stylesML.secretInput}
+                value={smtpValuesML.password}
+                onChange={(eML) => setSmtpFieldML("password", eML.target.value)}
                 placeholder="Enter SMTP password"
               />
               <button
                 type="button"
-                style={styles.secretToggleButton}
-                onClick={() => setShowPass((prev) => !prev)}
-                aria-label={showPass ? "Hide SMTP password" : "Show SMTP password"}
-                title={showPass ? "Hide" : "Show"}
+                style={stylesML.secretToggleButton}
+                onClick={() => setShowPassML((prevML) => !prevML)}
+                aria-label={showPassML ? "Hide SMTP password" : "Show SMTP password"}
+                title={showPassML ? "Hide" : "Show"}
               >
                 <img src="/eye-icon.svg" width={22} height={20} alt="" />
               </button>
             </div>
-            {smtpErrors.password && (
-              <p style={styles.errorText}>{smtpErrors.password}</p>
+            {smtpErrorsML.password && (
+              <p style={stylesML.errorText}>{smtpErrorsML.password}</p>
             )}
           </div>
 
-          <div style={styles.clientDivider} />
+          <div style={stylesML.clientDivider} />
 
-          <div style={styles.clientFieldGroup}>
-            <div style={styles.clientFieldLabel}>From Email</div>
+          <div style={stylesML.clientFieldGroup}>
+            <div style={stylesML.clientFieldLabel}>From Email</div>
             <input
               type="text"
-              style={styles.clientInput}
-              value={smtpValues.fromEmail}
-              onChange={(e) => setSmtpField("fromEmail", e.target.value)}
+              style={stylesML.clientInput}
+              value={smtpValuesML.fromEmail}
+              onChange={(eML) => setSmtpFieldML("fromEmail", eML.target.value)}
               placeholder="bookings@yourdomain.com"
             />
-            {smtpErrors.fromEmail && (
-              <p style={styles.errorText}>{smtpErrors.fromEmail}</p>
+            {smtpErrorsML.fromEmail && (
+              <p style={stylesML.errorText}>{smtpErrorsML.fromEmail}</p>
             )}
           </div>
 
-          <div style={styles.clientDivider} />
+          <div style={stylesML.clientDivider} />
 
-          <div style={styles.clientFieldGroup}>
-            <div style={styles.clientFieldLabel}>Sender Name</div>
+          <div style={stylesML.clientFieldGroup}>
+            <div style={stylesML.clientFieldLabel}>Sender Name</div>
             <input
               type="text"
-              style={styles.clientInput}
-              value={emailFromName}
-              onChange={(e) => setEmailFromName(e.target.value)}
+              style={stylesML.clientInput}
+              value={emailFromNameML}
+              onChange={(eML) => setEmailFromNameML(eML.target.value)}
               placeholder="Bookings"
             />
-            <div style={styles.subLabel}>
+            <div style={stylesML.subLabel}>
               The display name customers see on booking confirmation,
               reminder, and cancellation emails — e.g. &quot;Milople Bookings
               &lt;bookings@yourdomain.com&gt;&quot;.
             </div>
-            {smtpErrors.emailFromName && (
-              <p style={styles.errorText}>{smtpErrors.emailFromName}</p>
+            {smtpErrorsML.emailFromName && (
+              <p style={stylesML.errorText}>{smtpErrorsML.emailFromName}</p>
             )}
           </div>
         </div>
       </div>
 
-      <div style={styles.clientCard}>
-        <div style={styles.clientCardBody}>
-          <div style={styles.clientCardHeader}>
-            <div style={styles.clientCardTitle}>Email Templates</div>
-            <div style={styles.subLabel}>
+      <div style={stylesML.clientCard}>
+        <div style={stylesML.clientCardBody}>
+          <div style={stylesML.clientCardHeader}>
+            <div style={stylesML.clientCardTitle}>Email Templates</div>
+            <div style={stylesML.subLabel}>
               Customize the subject and content of the automated emails your customers
               receive. Use the tokens below to insert booking details — they'll be
               filled in automatically when the email is sent.
             </div>
           </div>
 
-          {templates.map((template, index) => {
-            const editable = templateValues[template.type] ?? { subject: "", body: "" };
-            const isOpen = !!openTemplates[template.type];
+          {templatesML.map((templateML, indexML) => {
+            const editableML = templateValuesML[templateML.type] ?? { subject: "", body: "" };
+            const isOpenML = !!openTemplatesML[templateML.type];
             return (
-              <div key={template.type}>
-                {index > 0 && <div style={styles.clientDivider} />}
+              <div key={templateML.type}>
+                {indexML > 0 && <div style={stylesML.clientDivider} />}
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "6px 0" }}>
                   <div
-                    style={{ ...collapsibleHeaderStyle(), alignItems: "flex-start" }}
-                    onClick={() => toggleTemplateOpen(template.type)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        toggleTemplateOpen(template.type);
+                    style={{ ...collapsibleHeaderStyleML(), alignItems: "flex-start" }}
+                    onClick={() => toggleTemplateOpenML(templateML.type)}
+                    onKeyDown={(eML) => {
+                      if (eML.key === "Enter" || eML.key === " ") {
+                        eML.preventDefault();
+                        toggleTemplateOpenML(templateML.type);
                       }
                     }}
                     role="button"
                     tabIndex={0}
-                    aria-expanded={isOpen}
+                    aria-expanded={isOpenML}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <div>
-                        <div style={styles.label}>
-                          {template.label}
-                          {template.isCustomized && (
-                            <span style={customizedPillStyle}>Customized</span>
+                        <div style={stylesML.label}>
+                          {templateML.label}
+                          {templateML.isCustomized && (
+                            <span style={customizedPillStyleML}>Customized</span>
                           )}
                         </div>
-                        <div style={styles.subLabel}>{template.description}</div>
+                        <div style={stylesML.subLabel}>{templateML.description}</div>
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-                      <ChevronDownIcon open={isOpen} />
+                      <ChevronDownIcon open={isOpenML} />
                     </div>
                   </div>
 
-                  {isOpen && (
+                  {isOpenML && (
                     <>
-                      <div style={subjectRowStyle}>
-                        <div style={subjectFieldGroupStyle}>
-                          <div style={styles.clientFieldLabel}>Subject</div>
+                      <div style={subjectRowStyleML}>
+                        <div style={subjectFieldGroupStyleML}>
+                          <div style={stylesML.clientFieldLabel}>Subject</div>
                           <input
                             type="text"
-                            style={styles.clientInput}
-                            value={editable.subject}
-                            onChange={(e) => setTemplateField(template.type, "subject", e.target.value)}
+                            style={stylesML.clientInput}
+                            value={editableML.subject}
+                            onChange={(eML) => setTemplateFieldML(templateML.type, "subject", eML.target.value)}
                           />
                         </div>
                         <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
                           <button
                             type="button"
-                            onClick={() => togglePreview(template.type)}
-                            style={resetButtonStyle(false)}
+                            onClick={() => togglePreviewML(templateML.type)}
+                            style={resetButtonStyleML(false)}
                           >
-                            {previewOpen[template.type] ? "Hide preview" : "Preview"}
+                            {previewOpenML[templateML.type] ? "Hide preview" : "Preview"}
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleResetTemplate(template.type)}
-                            disabled={!template.isCustomized || isResetting}
-                            style={resetButtonStyle(!template.isCustomized || isResetting)}
+                            onClick={() => handleResetTemplateML(templateML.type)}
+                            disabled={!templateML.isCustomized || isResettingML}
+                            style={resetButtonStyleML(!templateML.isCustomized || isResettingML)}
                           >
                             Reset to default
                           </button>
                         </div>
                       </div>
 
-                      <div className="eb-email-row" style={editorPreviewRowStyle}>
-                        <div className="eb-email-col" style={editorColumnStyle}>
-                          <div style={editorFieldGroupStyle}>
-                            <div style={styles.clientFieldLabel}>Email Body</div>
+                      <div className="eb-email-row" style={editorPreviewRowStyleML}>
+                        <div className="eb-email-col" style={editorColumnStyleML}>
+                          <div style={editorFieldGroupStyleML}>
+                            <div style={stylesML.clientFieldLabel}>Email Body</div>
                             <RichTextEditor
-                              ref={(el) => {
-                                bodyRefs.current[template.type] = el;
+                              ref={(elML) => {
+                                bodyRefsML.current[templateML.type] = elML;
                               }}
-                              value={editable.body}
-                              onChange={(html) => setTemplateField(template.type, "body", html)}
-                              footer={template.placeholders.map((p) => (
+                              value={editableML.body}
+                              onChange={(htmlML) => setTemplateFieldML(templateML.type, "body", htmlML)}
+                              footer={templateML.placeholders.map((pML) => (
                                 <button
-                                  key={p.token}
+                                  key={pML.token}
                                   type="button"
-                                  title={p.description}
-                                  onClick={() => insertToken(template.type, p.token)}
-                                  style={tokenPillStyle}
+                                  title={pML.description}
+                                  onClick={() => insertTokenML(templateML.type, pML.token)}
+                                  style={tokenPillStyleML}
                                 >
-                                  {p.token}
+                                  {pML.token}
                                 </button>
                               ))}
                             />
                           </div>
                         </div>
 
-                        {previewOpen[template.type] && (
-                          <div className="eb-email-col eb-email-preview" style={previewColumnStyle}>
-                            <div style={hiddenLabelSpacerStyle} aria-hidden="true">
+                        {previewOpenML[templateML.type] && (
+                          <div className="eb-email-col eb-email-preview" style={previewColumnStyleML}>
+                            <div style={hiddenLabelSpacerStyleML} aria-hidden="true">
                               Email Body
                             </div>
-                            <EmailPreview type={template.type} subject={editable.subject} body={editable.body} />
+                            <EmailPreview type={templateML.type} subject={editableML.subject} body={editableML.body} />
                           </div>
                         )}
                       </div>
@@ -508,62 +508,62 @@ export default function EmailSettingsTab() {
 }
 
 function EmailPreview({
-  type,
-  subject,
-  body,
+  type: typeML,
+  subject: subjectML,
+  body: bodyML,
 }: {
   type: EmailTemplateType;
   subject: string;
   body: string;
 }) {
-  const preview = buildPreview(type, subject, body);
+  const previewML = buildPreviewML(typeML, subjectML, bodyML);
   return (
-    <div style={previewWrapStyle}>
-      <div style={previewNoteStyle}>
+    <div style={previewWrapStyleML}>
+      <div style={previewNoteStyleML}>
         Preview with sample data &mdash; this is what the customer will see.
       </div>
-      <div style={previewSubjectStyle}>{preview.subject}</div>
+      <div style={previewSubjectStyleML}>{previewML.subject}</div>
       <div
-        style={previewBodyStyle}
-        dangerouslySetInnerHTML={{ __html: preview.html }}
+        style={previewBodyStyleML}
+        dangerouslySetInnerHTML={{ __html: previewML.html }}
       />
     </div>
   );
 }
 
-const subjectRowStyle: React.CSSProperties = {
+const subjectRowStyleML: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   alignItems: "flex-end",
   gap: "12px 16px",
 };
 
-const subjectFieldGroupStyle: React.CSSProperties = {
-  ...styles.clientFieldGroup,
+const subjectFieldGroupStyleML: React.CSSProperties = {
+  ...stylesML.clientFieldGroup,
   flex: "1 1 260px",
   minWidth: 0,
 };
 
-const editorPreviewRowStyle: React.CSSProperties = {
+const editorPreviewRowStyleML: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   alignItems: "stretch",
   gap: "16px",
 };
 
-const editorColumnStyle: React.CSSProperties = {
+const editorColumnStyleML: React.CSSProperties = {
   flex: "1 1 320px",
   minWidth: 0,
   display: "flex",
   flexDirection: "column",
 };
 
-const editorFieldGroupStyle: React.CSSProperties = {
-  ...styles.clientFieldGroup,
+const editorFieldGroupStyleML: React.CSSProperties = {
+  ...stylesML.clientFieldGroup,
   flex: 1,
 };
 
-const previewColumnStyle: React.CSSProperties = {
+const previewColumnStyleML: React.CSSProperties = {
   flex: "1 1 320px",
   minWidth: 0,
   display: "flex",
@@ -571,15 +571,15 @@ const previewColumnStyle: React.CSSProperties = {
   gap: "4px",
 };
 
-const hiddenLabelSpacerStyle: React.CSSProperties = {
-  ...styles.clientFieldLabel,
+const hiddenLabelSpacerStyleML: React.CSSProperties = {
+  ...stylesML.clientFieldLabel,
   visibility: "hidden",
   height: "17px",
   lineHeight: "17px",
 };
 
-const previewWrapStyle: React.CSSProperties = {
-  border: `1px solid ${BORDER}`,
+const previewWrapStyleML: React.CSSProperties = {
+  border: `1px solid ${BORDER_ML}`,
   borderRadius: "6px",
   overflow: "hidden",
   background: "#fff",
@@ -588,71 +588,71 @@ const previewWrapStyle: React.CSSProperties = {
   flex: 1,
 };
 
-const previewNoteStyle: React.CSSProperties = {
+const previewNoteStyleML: React.CSSProperties = {
   padding: "6px 12px",
   fontFamily: "Inter",
   fontSize: "11px",
-  color: TEXT_MUTED,
+  color: TEXT_MUTED_ML,
   background: "#F5F6F7",
-  borderBottom: `1px solid ${BORDER}`,
+  borderBottom: `1px solid ${BORDER_ML}`,
 };
 
-const previewSubjectStyle: React.CSSProperties = {
+const previewSubjectStyleML: React.CSSProperties = {
   padding: "10px 12px",
   fontFamily: "Inter",
   fontWeight: 600,
   fontSize: "14px",
-  color: TEXT_DARK,
-  borderBottom: `1px solid ${BORDER}`,
+  color: TEXT_DARK_ML,
+  borderBottom: `1px solid ${BORDER_ML}`,
 };
 
-const previewBodyStyle: React.CSSProperties = {
+const previewBodyStyleML: React.CSSProperties = {
   padding: "12px",
   fontFamily: "Inter",
   fontSize: "14px",
-  color: TEXT_DARK,
+  color: TEXT_DARK_ML,
   lineHeight: 1.5,
   flex: 1,
 };
 
-const customizedPillStyle: React.CSSProperties = {
+const customizedPillStyleML: React.CSSProperties = {
   marginLeft: "8px",
   padding: "1px 8px",
   borderRadius: "999px",
   background: "#EAF1FB",
-  color: BLUE,
+  color: BLUE_ML,
   fontFamily: "Inter",
   fontWeight: 500,
   fontSize: "11px",
   verticalAlign: "middle",
 };
 
-const tokenPillStyle: React.CSSProperties = {
+const tokenPillStyleML: React.CSSProperties = {
   padding: "4px 8px",
   borderRadius: "999px",
-  border: `1px solid ${BORDER}`,
+  border: `1px solid ${BORDER_ML}`,
   background: "#F5F6F7",
-  color: TEXT_MUTED,
+  color: TEXT_MUTED_ML,
   fontFamily: "monospace",
   fontSize: "12px",
   cursor: "pointer",
 };
 
-function resetButtonStyle(disabled: boolean): React.CSSProperties {
+function resetButtonStyleML(disabledML: boolean): React.CSSProperties {
   return {
     padding: "6px 12px",
     borderRadius: "6px",
-    border: `1px solid ${BORDER}`,
-    background: disabled ? "#F5F5F5" : "#fff",
-    color: disabled ? "#A6A6A6" : BLUE,
+    border: `1px solid ${BORDER_ML}`,
+    background: disabledML ? "#F5F5F5" : "#fff",
+    color: disabledML ? "#A6A6A6" : BLUE_ML,
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "12px",
-    cursor: disabled ? "default" : "pointer",
+    cursor: disabledML ? "default" : "pointer",
     whiteSpace: "nowrap",
   };
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

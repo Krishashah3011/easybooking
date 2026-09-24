@@ -1,120 +1,120 @@
 import type { BlackoutDate } from "@prisma/client";
-import prisma from "../db.server";
+import prismaML from "../db.server";
 
 export type BlackoutDateFieldErrors = {
   date?: string;
 };
 
-const EXCLUSION_REASON = "__excluded__";
+const EXCLUSION_REASON_ML = "__excluded__";
 
-export async function listShopBlackoutDates(
-  shop: string,
+export async function listShopBlackoutDatesML(
+  shopML: string,
 ): Promise<BlackoutDate[]> {
-  return prisma.blackoutDate.findMany({
-    where: { shop, bookableProductId: null },
+  return prismaML.blackoutDate.findMany({
+    where: { shop: shopML, bookableProductId: null },
     orderBy: { date: "asc" },
   });
 }
 
-export async function listProductBlackoutDates(
-  shop: string,
-  bookableProductId: string,
+export async function listProductBlackoutDatesML(
+  shopML: string,
+  bookableProductIdML: string,
 ): Promise<BlackoutDate[]> {
-  return prisma.blackoutDate.findMany({
-    where: { shop, bookableProductId, NOT: { reason: EXCLUSION_REASON } },
+  return prismaML.blackoutDate.findMany({
+    where: { shop: shopML, bookableProductId: bookableProductIdML, NOT: { reason: EXCLUSION_REASON_ML } },
     orderBy: { date: "asc" },
   });
 }
 
-export async function listProductBlackoutExclusions(
-  shop: string,
-  bookableProductId: string,
+export async function listProductBlackoutExclusionsML(
+  shopML: string,
+  bookableProductIdML: string,
 ): Promise<Set<string>> {
-  const rows = await prisma.blackoutDate.findMany({
-    where: { shop, bookableProductId, reason: EXCLUSION_REASON },
+  const rowsML = await prismaML.blackoutDate.findMany({
+    where: { shop: shopML, bookableProductId: bookableProductIdML, reason: EXCLUSION_REASON_ML },
     select: { date: true },
   });
-  return new Set(rows.map((r) => r.date.toISOString().slice(0, 10)));
+  return new Set(rowsML.map((rML) => rML.date.toISOString().slice(0, 10)));
 }
 
-export async function excludeShopBlackoutDateForProduct(
-  shop: string,
-  bookableProductId: string,
-  date: string,
+export async function excludeShopBlackoutDateForProductML(
+  shopML: string,
+  bookableProductIdML: string,
+  dateML: string,
 ): Promise<void> {
-  const already = await prisma.blackoutDate.findFirst({
+  const alreadyML = await prismaML.blackoutDate.findFirst({
     where: {
-      shop,
-      bookableProductId,
-      date: new Date(date),
-      reason: EXCLUSION_REASON,
+      shop: shopML,
+      bookableProductId: bookableProductIdML,
+      date: new Date(dateML),
+      reason: EXCLUSION_REASON_ML,
     },
     select: { id: true },
   });
-  if (already) return;
-  await prisma.blackoutDate.create({
+  if (alreadyML) return;
+  await prismaML.blackoutDate.create({
     data: {
-      shop,
-      bookableProductId,
-      date: new Date(date),
-      reason: EXCLUSION_REASON,
+      shop: shopML,
+      bookableProductId: bookableProductIdML,
+      date: new Date(dateML),
+      reason: EXCLUSION_REASON_ML,
     },
   });
 }
 
-export function parseBlackoutDateForm(formData: FormData): {
+export function parseBlackoutDateFormML(formDataML: FormData): {
   date: string | null;
   reason: string | null;
   errors: BlackoutDateFieldErrors;
 } {
-  const errors: BlackoutDateFieldErrors = {};
-  const date = String(formData.get("date") ?? "");
-  const reason = String(formData.get("reason") ?? "").trim() || null;
+  const errorsML: BlackoutDateFieldErrors = {};
+  const dateML = String(formDataML.get("date") ?? "");
+  const reasonML = String(formDataML.get("reason") ?? "").trim() || null;
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    errors.date = "Choose a date.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateML)) {
+    errorsML.date = "Choose a date.";
   }
 
-  return { date: errors.date ? null : date, reason, errors };
+  return { date: errorsML.date ? null : dateML, reason: reasonML, errors: errorsML };
 }
 
-export async function addBlackoutDate(
-  shop: string,
-  date: string,
-  reason: string | null,
-  bookableProductId: string | null,
+export async function addBlackoutDateML(
+  shopML: string,
+  dateML: string,
+  reasonML: string | null,
+  bookableProductIdML: string | null,
 ): Promise<BlackoutDate> {
-  return prisma.blackoutDate.create({
+  return prismaML.blackoutDate.create({
     data: {
-      shop,
-      bookableProductId,
-      date: new Date(date),
-      reason,
+      shop: shopML,
+      bookableProductId: bookableProductIdML,
+      date: new Date(dateML),
+      reason: reasonML,
     },
   });
 }
 
-export async function deleteBlackoutDate(
-  shop: string,
-  id: string,
+export async function deleteBlackoutDateML(
+  shopML: string,
+  idML: string,
 ): Promise<void> {
-  const existing = await prisma.blackoutDate.findFirst({
-    where: { id, shop },
+  const existingML = await prismaML.blackoutDate.findFirst({
+    where: { id: idML, shop: shopML },
     select: { date: true, bookableProductId: true },
   });
-  if (!existing) return;
+  if (!existingML) return;
 
-  await prisma.blackoutDate.deleteMany({
-    where: { id, shop },
+  await prismaML.blackoutDate.deleteMany({
+    where: { id: idML, shop: shopML },
   });
 
-  if (existing.bookableProductId === null) {
-    await prisma.blackoutDate.deleteMany({
+  if (existingML.bookableProductId === null) {
+    await prismaML.blackoutDate.deleteMany({
       where: {
-        shop,
-        date: existing.date,
+        shop: shopML,
+        date: existingML.date,
         bookableProductId: { not: null },
-        reason: EXCLUSION_REASON,
+        reason: EXCLUSION_REASON_ML,
       },
     });
   }

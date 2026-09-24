@@ -1,33 +1,33 @@
 (function () {
   "use strict";
 
-  var LOW_AVAILABILITY_THRESHOLD = 2;
-  var WEEKDAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  var LOW_AVAILABILITY_THRESHOLD_ML = 2;
+  var WEEKDAY_LABELS_ML = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-  var YEAR_PICKER_SPAN = 5;
+  var YEAR_PICKER_SPAN_ML = 5;
 
-  var CAL_BLUE = "#0060E6";
-  var NAV_ARROW = "#4C4C4C";
+  var CAL_BLUE_ML = "#0060E6";
+  var NAV_ARROW_ML = "#4C4C4C";
 
-  var NAV_CHEVRON_PATH =
+  var NAV_CHEVRON_PATH_ML =
     "M32.4806 34.9941C32.8398 34.6529 32.8398 34.0998 32.4806 33.7586L27.4706 29L32.4806 24.2414C32.8398 23.9002 32.8398 23.3471 32.4806 23.0059C32.1214 22.6647 31.539 22.6647 31.1798 23.0059L25.5194 28.3822C25.1602 28.7234 25.1602 29.2766 25.5194 29.6178L31.1798 34.9941C31.539 35.3353 32.1214 35.3353 32.4806 34.9941Z";
-  var DROPDOWN_CHEVRON_SVG =
+  var DROPDOWN_CHEVRON_SVG_ML =
     '<svg width="14" height="12" viewBox="192.5 23 14 12" fill="none" aria-hidden="true" focusable="false">' +
     '<path fill-rule="evenodd" clip-rule="evenodd" d="M205.494 25.5194C205.153 25.1602 204.6 25.1602 204.259 25.5194L199.5 30.5294L194.741 25.5194C194.4 25.1602 193.847 25.1602 193.506 25.5194C193.165 25.8786 193.165 26.461 193.506 26.8202L198.882 32.4806C199.223 32.8398 199.777 32.8398 200.118 32.4806L205.494 26.8202C205.835 26.461 205.835 25.8786 205.494 25.5194Z" fill="#1A1A1A"/>' +
     "</svg>";
 
-  function navChevronSvg(color) {
+  function navChevronSvgML(colorML) {
     return (
       '<svg width="14" height="14" viewBox="22 22 14 14" fill="none" aria-hidden="true" focusable="false">' +
       '<path fill-rule="evenodd" clip-rule="evenodd" d="' +
-      NAV_CHEVRON_PATH +
+      NAV_CHEVRON_PATH_ML +
       '" fill="' +
-      color +
+      colorML +
       '"/></svg>'
     );
   }
 
-  var ENGLISH_STRINGS = {
+  var ENGLISH_STRINGS_ML = {
     loadingAvailability: "Loading availability…",
     availabilityError: "Unable to load availability right now.",
     bookingUnavailable: "Booking is temporarily unavailable. Please check back later.",
@@ -92,695 +92,695 @@
     sessionsBooked: "{count} sessions booked",
   };
 
-  function pad(n) {
-    return String(n).padStart(2, "0");
+  function padML(nML) {
+    return String(nML).padStart(2, "0");
   }
 
-  function format(template, vars) {
-    return template.replace(/\{(\w+)\}/g, function (match, key) {
-      return Object.prototype.hasOwnProperty.call(vars, key)
-        ? vars[key]
-        : match;
+  function formatML(templateML, varsML) {
+    return templateML.replace(/\{(\w+)\}/g, function (matchML, keyML) {
+      return Object.prototype.hasOwnProperty.call(varsML, keyML)
+        ? varsML[keyML]
+        : matchML;
     });
   }
 
-  function to12Hour(timeStr) {
-    var m = /^(\d{1,2}):(\d{2})$/.exec(timeStr);
-    if (!m) return timeStr;
-    var hour = parseInt(m[1], 10);
-    var minute = m[2];
-    var period = hour >= 12 ? "PM" : "AM";
-    hour = hour % 12;
-    if (hour === 0) hour = 12;
-    return hour + ":" + minute + " " + period;
+  function to12HourML(timeStrML) {
+    var mML = /^(\d{1,2}):(\d{2})$/.exec(timeStrML);
+    if (!mML) return timeStrML;
+    var hourML = parseInt(mML[1], 10);
+    var minuteML = mML[2];
+    var periodML = hourML >= 12 ? "PM" : "AM";
+    hourML = hourML % 12;
+    if (hourML === 0) hourML = 12;
+    return hourML + ":" + minuteML + " " + periodML;
   }
 
-  function formatTimeInBrowserTZ(isoString) {
+  function formatTimeInBrowserTZML(isoStringML) {
     try {
-      var dtf = new Intl.DateTimeFormat("en-US", {
+      var dtfML = new Intl.DateTimeFormat("en-US", {
         hour: "numeric",
         minute: "2-digit",
         hour12: true,
       });
-      return dtf.format(new Date(isoString));
-    } catch (e) {
+      return dtfML.format(new Date(isoStringML));
+    } catch (eML) {
       return "";
     }
   }
 
-  function formatTimeRangeDisplay(slot, convertToLocal) {
-    if (convertToLocal === false) {
-      return to12Hour(slot.start) + " - " + to12Hour(slot.end);
+  function formatTimeRangeDisplayML(slotML, convertToLocalML) {
+    if (convertToLocalML === false) {
+      return to12HourML(slotML.start) + " - " + to12HourML(slotML.end);
     }
-    var startLabel = formatTimeInBrowserTZ(slot.startsAt);
-    if (!startLabel) {
-      return to12Hour(slot.start) + " - " + to12Hour(slot.end);
+    var startLabelML = formatTimeInBrowserTZML(slotML.startsAt);
+    if (!startLabelML) {
+      return to12HourML(slotML.start) + " - " + to12HourML(slotML.end);
     }
-    var durationMs = slotDurationMinutes(slot) * 60 * 1000;
-    var endLabel = formatTimeInBrowserTZ(
-      new Date(new Date(slot.startsAt).getTime() + durationMs).toISOString(),
+    var durationMsML = slotDurationMinutesML(slotML) * 60 * 1000;
+    var endLabelML = formatTimeInBrowserTZML(
+      new Date(new Date(slotML.startsAt).getTime() + durationMsML).toISOString(),
     );
-    return endLabel ? startLabel + " - " + endLabel : startLabel;
+    return endLabelML ? startLabelML + " - " + endLabelML : startLabelML;
   }
 
-  function slotDurationMinutes(slot) {
-    var s = slot.start.split(":").map(Number);
-    var e = slot.end.split(":").map(Number);
-    return e[0] * 60 + e[1] - (s[0] * 60 + s[1]);
+  function slotDurationMinutesML(slotML) {
+    var sML = slotML.start.split(":").map(Number);
+    var eML = slotML.end.split(":").map(Number);
+    return eML[0] * 60 + eML[1] - (sML[0] * 60 + sML[1]);
   }
 
-  function formatDateDisplay(dateStr) {
-    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
-    if (!m) return dateStr;
-    return m[3] + "-" + m[2] + "-" + m[1];
+  function formatDateDisplayML(dateStrML) {
+    var mML = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStrML);
+    if (!mML) return dateStrML;
+    return mML[3] + "-" + mML[2] + "-" + mML[1];
   }
 
-  var chipDateFormatter;
+  var chipDateFormatterML;
   try {
-    chipDateFormatter = new Intl.DateTimeFormat("en-GB", {
+    chipDateFormatterML = new Intl.DateTimeFormat("en-GB", {
       weekday: "short",
       day: "numeric",
       month: "short",
       year: "numeric",
       timeZone: "UTC",
     });
-  } catch (e) {
-    chipDateFormatter = null;
+  } catch (eML) {
+    chipDateFormatterML = null;
   }
 
-  function formatChipDate(dateStr) {
-    if (!chipDateFormatter) return formatDateDisplay(dateStr);
+  function formatChipDateML(dateStrML) {
+    if (!chipDateFormatterML) return formatDateDisplayML(dateStrML);
     try {
-      return chipDateFormatter.format(new Date(dateStr + "T00:00:00.000Z"));
-    } catch (e) {
-      return formatDateDisplay(dateStr);
+      return chipDateFormatterML.format(new Date(dateStrML + "T00:00:00.000Z"));
+    } catch (eML) {
+      return formatDateDisplayML(dateStrML);
     }
   }
 
-  function inclusiveDayCount(startStr, endStr) {
-    var start = new Date(startStr + "T00:00:00.000Z");
-    var end = new Date(endStr + "T00:00:00.000Z");
-    var diff = Math.round((end.getTime() - start.getTime()) / 86400000);
-    return diff + 1;
+  function inclusiveDayCountML(startStrML, endStrML) {
+    var startML = new Date(startStrML + "T00:00:00.000Z");
+    var endML = new Date(endStrML + "T00:00:00.000Z");
+    var diffML = Math.round((endML.getTime() - startML.getTime()) / 86400000);
+    return diffML + 1;
   }
 
-  function timezoneLabel() {
+  function timezoneLabelML() {
     try {
-      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      var offsetMinutes = -new Date().getTimezoneOffset();
-      var sign = offsetMinutes >= 0 ? "+" : "-";
-      var abs = Math.abs(offsetMinutes);
-      var hh = pad(Math.floor(abs / 60));
-      var mm = pad(abs % 60);
-      return "(UTC" + sign + hh + ":" + mm + ") " + tz;
-    } catch (e) {
+      var tzML = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      var offsetMinutesML = -new Date().getTimezoneOffset();
+      var signML = offsetMinutesML >= 0 ? "+" : "-";
+      var absML = Math.abs(offsetMinutesML);
+      var hhML = padML(Math.floor(absML / 60));
+      var mmML = padML(absML % 60);
+      return "(UTC" + signML + hhML + ":" + mmML + ") " + tzML;
+    } catch (eML) {
       return "";
     }
   }
 
-  function locationTimezoneLabel(tz) {
-    if (!tz) return "";
+  function locationTimezoneLabelML(tzML) {
+    if (!tzML) return "";
     try {
-      var dtf = new Intl.DateTimeFormat("en-US", {
-        timeZone: tz,
+      var dtfML = new Intl.DateTimeFormat("en-US", {
+        timeZone: tzML,
         timeZoneName: "shortOffset",
       });
-      var parts = dtf.formatToParts(new Date());
-      var offset = "";
-      for (var i = 0; i < parts.length; i++) {
-        if (parts[i].type === "timeZoneName") offset = parts[i].value;
+      var partsML = dtfML.formatToParts(new Date());
+      var offsetML = "";
+      for (var iML = 0; iML < partsML.length; iML++) {
+        if (partsML[iML].type === "timeZoneName") offsetML = partsML[iML].value;
       }
-      return (offset ? "(" + offset + ") " : "") + tz;
-    } catch (e) {
-      return tz;
+      return (offsetML ? "(" + offsetML + ") " : "") + tzML;
+    } catch (eML) {
+      return tzML;
     }
   }
 
-  function initWidget(root) {
-    var productId = root.dataset.productId;
-    var proxyBase = root.dataset.proxyBase;
-    var unitPrice = parseFloat(root.dataset.unitPrice || "");
-    if (!isFinite(unitPrice)) unitPrice = null;
-    var currencyCode = root.dataset.currencyCode || "USD";
-    var countryCode = root.dataset.country || "";
-    function resolveAssetUrl(fromLiquid, filename) {
-      if (fromLiquid) return fromLiquid;
-      var scriptEl = document.querySelector('script[src*="booking-widget.js"]');
-      if (!scriptEl || !scriptEl.src) return "";
-      return scriptEl.src.split("?")[0].replace(/booking-widget\.js$/, filename);
+  function initWidgetML(rootML) {
+    var productIdML = rootML.dataset.productId;
+    var proxyBaseML = rootML.dataset.proxyBase;
+    var unitPriceML = parseFloat(rootML.dataset.unitPrice || "");
+    if (!isFinite(unitPriceML)) unitPriceML = null;
+    var currencyCodeML = rootML.dataset.currencyCode || "USD";
+    var countryCodeML = rootML.dataset.country || "";
+    function resolveAssetUrlML(fromLiquidML, filenameML) {
+      if (fromLiquidML) return fromLiquidML;
+      var scriptElML = document.querySelector('script[src*="booking-widget.js"]');
+      if (!scriptElML || !scriptElML.src) return "";
+      return scriptElML.src.split("?")[0].replace(/booking-widget\.js$/, filenameML);
     }
-    var tickIconUrl = resolveAssetUrl(root.dataset.tickIcon, "tick.svg");
-    var calendarIconUrl = resolveAssetUrl(root.dataset.calendarIcon, "calendar.svg");
-    var moneyFormatter;
+    var tickIconUrlML = resolveAssetUrlML(rootML.dataset.tickIcon, "tick.svg");
+    var calendarIconUrlML = resolveAssetUrlML(rootML.dataset.calendarIcon, "calendar.svg");
+    var moneyFormatterML;
     try {
-      moneyFormatter = new Intl.NumberFormat(navigator.language || "en-US", {
+      moneyFormatterML = new Intl.NumberFormat(navigator.language || "en-US", {
         style: "currency",
-        currency: currencyCode,
+        currency: currencyCodeML,
       });
-    } catch (e) {
-      moneyFormatter = null;
+    } catch (eML) {
+      moneyFormatterML = null;
     }
-    function formatMoney(amount) {
-      if (moneyFormatter) return moneyFormatter.format(amount);
-      return currencyCode + " " + amount.toFixed(2);
+    function formatMoneyML(amountML) {
+      if (moneyFormatterML) return moneyFormatterML.format(amountML);
+      return currencyCodeML + " " + amountML.toFixed(2);
     }
-    var strings = ENGLISH_STRINGS;
-    var monthFormatter;
+    var stringsML = ENGLISH_STRINGS_ML;
+    var monthFormatterML;
     try {
-      monthFormatter = new Intl.DateTimeFormat("en-US", {
+      monthFormatterML = new Intl.DateTimeFormat("en-US", {
         month: "long",
         year: "numeric",
         timeZone: "UTC",
       });
-    } catch (e) {
-      monthFormatter = new Intl.DateTimeFormat("en", {
+    } catch (eML) {
+      monthFormatterML = new Intl.DateTimeFormat("en", {
         month: "long",
         year: "numeric",
         timeZone: "UTC",
       });
     }
 
-    var monthShortFormatter;
+    var monthShortFormatterML;
     try {
-      monthShortFormatter = new Intl.DateTimeFormat("en-US", {
+      monthShortFormatterML = new Intl.DateTimeFormat("en-US", {
         month: "short",
         year: "numeric",
         timeZone: "UTC",
       });
-    } catch (e) {
-      monthShortFormatter = monthFormatter;
+    } catch (eML) {
+      monthShortFormatterML = monthFormatterML;
     }
 
-    var selectionEl = root.querySelector("[data-booking-selection]");
-    var errorEl = root.querySelector("[data-booking-error]");
-    var unavailableEl = root.querySelector("[data-booking-unavailable]");
-    var multiAddStatusEl = root.querySelector("[data-booking-multi-add-status]");
-    var cartReminderEl = root.querySelector("[data-booking-cart-reminder]");
+    var selectionElML = rootML.querySelector("[data-booking-selection]");
+    var errorElML = rootML.querySelector("[data-booking-error]");
+    var unavailableElML = rootML.querySelector("[data-booking-unavailable]");
+    var multiAddStatusElML = rootML.querySelector("[data-booking-multi-add-status]");
+    var cartReminderElML = rootML.querySelector("[data-booking-cart-reminder]");
 
-    var overlayEl = root.querySelector("[data-booking-overlay]");
-    var closeBtn = root.querySelector("[data-booking-close]");
-    var locationTimezoneEl = root.querySelector("[data-booking-location-timezone]");
-    var subheaderEl = root.querySelector("[data-booking-subheader]");
-    var modalBodyEl = root.querySelector("[data-booking-modal-body]");
-    var modalFooterEl = root.querySelector("[data-booking-modal-footer]");
-    var locationStepEl = root.querySelector("[data-booking-location-step]");
-    var locationTriggerEl = root.querySelector("[data-booking-location-trigger]");
-    var locationTriggerTextEl = root.querySelector(
+    var overlayElML = rootML.querySelector("[data-booking-overlay]");
+    var closeBtnML = rootML.querySelector("[data-booking-close]");
+    var locationTimezoneElML = rootML.querySelector("[data-booking-location-timezone]");
+    var subheaderElML = rootML.querySelector("[data-booking-subheader]");
+    var modalBodyElML = rootML.querySelector("[data-booking-modal-body]");
+    var modalFooterElML = rootML.querySelector("[data-booking-modal-footer]");
+    var locationStepElML = rootML.querySelector("[data-booking-location-step]");
+    var locationTriggerElML = rootML.querySelector("[data-booking-location-trigger]");
+    var locationTriggerTextElML = rootML.querySelector(
       "[data-booking-location-trigger-text]",
     );
-    var locationListEl = root.querySelector("[data-booking-location-list]");
-    var locationErrorEl = root.querySelector("[data-booking-location-error]");
-    var datetimeStepEl = root.querySelector("[data-booking-datetime-step]");
-    var locationEmptyStateEl = root.querySelector(
+    var locationListElML = rootML.querySelector("[data-booking-location-list]");
+    var locationErrorElML = rootML.querySelector("[data-booking-location-error]");
+    var datetimeStepElML = rootML.querySelector("[data-booking-datetime-step]");
+    var locationEmptyStateElML = rootML.querySelector(
       "[data-booking-location-empty-state]",
     );
-    var calendarEl = root.querySelector("[data-booking-calendar]");
-    var calendarPaneEl = root.querySelector("[data-booking-calendar-pane]");
-    var datetimeCardEl = root.querySelector("[data-booking-datetime-card]");
-    var durationEl = root.querySelector("[data-booking-duration]");
-    var rangeSummaryEl = root.querySelector("[data-booking-range-summary]");
-    var rangeHintEl = root.querySelector("[data-booking-range-hint]");
-    var selectedDatesEl = root.querySelector("[data-booking-selected-dates]");
-    var selectedDatesLabelEl = root.querySelector(
+    var calendarElML = rootML.querySelector("[data-booking-calendar]");
+    var calendarPaneElML = rootML.querySelector("[data-booking-calendar-pane]");
+    var datetimeCardElML = rootML.querySelector("[data-booking-datetime-card]");
+    var durationElML = rootML.querySelector("[data-booking-duration]");
+    var rangeSummaryElML = rootML.querySelector("[data-booking-range-summary]");
+    var rangeHintElML = rootML.querySelector("[data-booking-range-hint]");
+    var selectedDatesElML = rootML.querySelector("[data-booking-selected-dates]");
+    var selectedDatesLabelElML = rootML.querySelector(
       "[data-booking-selected-dates-label]",
     );
-    var selectedDatesTextEl = root.querySelector(
+    var selectedDatesTextElML = rootML.querySelector(
       "[data-booking-selected-dates-text]",
     );
-    var selectedDatesClearBtn = root.querySelector(
+    var selectedDatesClearBtnML = rootML.querySelector(
       "[data-booking-selected-dates-clear]",
     );
-    var slotsPaneOuterEl = root.querySelector("[data-booking-slots-pane]");
-    var bundleProgressEl = root.querySelector("[data-booking-bundle-progress]");
-    var bundleProgressLabelEl = root.querySelector(
+    var slotsPaneOuterElML = rootML.querySelector("[data-booking-slots-pane]");
+    var bundleProgressElML = rootML.querySelector("[data-booking-bundle-progress]");
+    var bundleProgressLabelElML = rootML.querySelector(
       "[data-booking-bundle-progress-label]",
     );
-    var bundleProgressFillEl = root.querySelector(
+    var bundleProgressFillElML = rootML.querySelector(
       "[data-booking-bundle-progress-fill]",
     );
-    var slotListEl = root.querySelector("[data-booking-slot-list]");
-    var confirmBtn = root.querySelector("[data-booking-confirm]");
-    var nextSlotBtn = root.querySelector("[data-booking-next-slot]");
-    var customFieldsEntryEl = root.querySelector(
+    var slotListElML = rootML.querySelector("[data-booking-slot-list]");
+    var confirmBtnML = rootML.querySelector("[data-booking-confirm]");
+    var nextSlotBtnML = rootML.querySelector("[data-booking-next-slot]");
+    var customFieldsEntryElML = rootML.querySelector(
       "[data-booking-custom-fields-entry]",
     );
-    var quantityWrapEl = root.querySelector("[data-booking-quantity]");
-    var quantityInputEl = root.querySelector("[data-booking-quantity-input]");
-    var quantityDecreaseBtn = root.querySelector(
+    var quantityWrapElML = rootML.querySelector("[data-booking-quantity]");
+    var quantityInputElML = rootML.querySelector("[data-booking-quantity-input]");
+    var quantityDecreaseBtnML = rootML.querySelector(
       "[data-booking-quantity-decrease]",
     );
-    var quantityIncreaseBtn = root.querySelector(
+    var quantityIncreaseBtnML = rootML.querySelector(
       "[data-booking-quantity-increase]",
     );
-    var quantityNoteEl = root.querySelector("[data-booking-quantity-note]");
-    var noteWrapEl = root.querySelector("[data-booking-note]");
-    var noteInputEl = root.querySelector("[data-booking-note-input]");
-    var noteLabelEl = root.querySelector("[data-booking-note-label]");
-    var reviewBodyEl = root.querySelector("[data-booking-review-body]");
-    var reviewStepEl = root.querySelector("[data-booking-review-step]");
-    var reviewListEl = root.querySelector("[data-booking-review-list]");
-    var reviewBackBtn = root.querySelector("[data-booking-review-back]");
+    var quantityNoteElML = rootML.querySelector("[data-booking-quantity-note]");
+    var noteWrapElML = rootML.querySelector("[data-booking-note]");
+    var noteInputElML = rootML.querySelector("[data-booking-note-input]");
+    var noteLabelElML = rootML.querySelector("[data-booking-note-label]");
+    var reviewBodyElML = rootML.querySelector("[data-booking-review-body]");
+    var reviewStepElML = rootML.querySelector("[data-booking-review-step]");
+    var reviewListElML = rootML.querySelector("[data-booking-review-list]");
+    var reviewBackBtnML = rootML.querySelector("[data-booking-review-back]");
 
-    var today = new Date();
-    var viewYear = today.getUTCFullYear();
-    var viewMonth = today.getUTCMonth() + 1;
-    var availableDates = [];
-    var currentSlots = [];
+    var todayML = new Date();
+    var viewYearML = todayML.getUTCFullYear();
+    var viewMonthML = todayML.getUTCMonth() + 1;
+    var availableDatesML = [];
+    var currentSlotsML = [];
 
-    var productBookingType = "SLOT";
-    var productBookingEnabled = true;
-    var fullDayStartTime = "00:00";
-    var fullDayEndTime = "23:59";
-    var slotsPaneEl = root.querySelector("[data-booking-slots]");
-    var availableDatesByDay = {};
-    var remainingCapacityByDate = {};
-    var multiDayMinNights = null;
-    var multiDayMaxNights = null;
-    var pendingEndDate = null;
-    var bundleSessions = [];
-    var bundleSessionCount = null;
-    var bundleValidityDays = null;
-    var bundleQuantity = 1;
+    var productBookingTypeML = "SLOT";
+    var productBookingEnabledML = true;
+    var fullDayStartTimeML = "00:00";
+    var fullDayEndTimeML = "23:59";
+    var slotsPaneElML = rootML.querySelector("[data-booking-slots]");
+    var availableDatesByDayML = {};
+    var remainingCapacityByDateML = {};
+    var multiDayMinNightsML = null;
+    var multiDayMaxNightsML = null;
+    var pendingEndDateML = null;
+    var bundleSessionsML = [];
+    var bundleSessionCountML = null;
+    var bundleValidityDaysML = null;
+    var bundleQuantityML = 1;
 
-    var locations = [];
-    var locationsLoaded = false;
-    var pendingLocation = null;
-    var selectedLocationRecord = null;
+    var locationsML = [];
+    var locationsLoadedML = false;
+    var pendingLocationML = null;
+    var selectedLocationRecordML = null;
 
-    var pendingDate = null;
-    var pendingSlot = null;
-    var quantityLocked = true;
-    var pendingQuantity = 1;
-    var pendingNote = "";
-    var atReviewStep = false;
-    var confirmedSlots = [];
-    var numericProductId = (productId || "").split("/").pop();
+    var pendingDateML = null;
+    var pendingSlotML = null;
+    var quantityLockedML = true;
+    var pendingQuantityML = 1;
+    var pendingNoteML = "";
+    var atReviewStepML = false;
+    var confirmedSlotsML = [];
+    var numericProductIdML = (productIdML || "").split("/").pop();
 
-    function pendingSlotsStorageKey() {
-      return "booking-widget:pending-slots:" + numericProductId;
+    function pendingSlotsStorageKeyML() {
+      return "booking-widget:pending-slots:" + numericProductIdML;
     }
 
-    function saveConfirmedSlots() {
+    function saveConfirmedSlotsML() {
       try {
-        if (confirmedSlots.length === 0) {
-          sessionStorage.removeItem(pendingSlotsStorageKey());
+        if (confirmedSlotsML.length === 0) {
+          sessionStorage.removeItem(pendingSlotsStorageKeyML());
         } else {
           sessionStorage.setItem(
-            pendingSlotsStorageKey(),
-            JSON.stringify(confirmedSlots),
+            pendingSlotsStorageKeyML(),
+            JSON.stringify(confirmedSlotsML),
           );
         }
-      } catch (e) {}
+      } catch (eML) {}
     }
 
-    function loadConfirmedSlots() {
+    function loadConfirmedSlotsML() {
       try {
-        var raw = sessionStorage.getItem(pendingSlotsStorageKey());
-        if (!raw) return;
-        var parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) confirmedSlots = parsed;
-      } catch (e) {
+        var rawML = sessionStorage.getItem(pendingSlotsStorageKeyML());
+        if (!rawML) return;
+        var parsedML = JSON.parse(rawML);
+        if (Array.isArray(parsedML)) confirmedSlotsML = parsedML;
+      } catch (eML) {
       }
     }
 
-    function clearPersistedSlots() {
+    function clearPersistedSlotsML() {
       try {
-        sessionStorage.removeItem(pendingSlotsStorageKey());
-      } catch (e) {}
+        sessionStorage.removeItem(pendingSlotsStorageKeyML());
+      } catch (eML) {}
     }
 
-    var customFields = [];
-    var customFieldValues = {};
+    var customFieldsML = [];
+    var customFieldValuesML = {};
 
-    function getNoteKey() {
+    function getNoteKeyML() {
       return "Note";
     }
 
-    function applyNoteQuestion() {
-      if (noteLabelEl) noteLabelEl.textContent = "Note";
-      if (noteInputEl) {
-        noteInputEl.setAttribute("aria-label", "Note");
-        noteInputEl.placeholder = "Enter Your Request";
+    function applyNoteQuestionML() {
+      if (noteLabelElML) noteLabelElML.textContent = "Note";
+      if (noteInputElML) {
+        noteInputElML.setAttribute("aria-label", "Note");
+        noteInputElML.placeholder = "Enter Your Request";
       }
     }
 
-    var widgetSection = root.closest(".shopify-section");
+    var widgetSectionML = rootML.closest(".shopify-section");
 
-    var KNOWN_NON_ADD_TO_CART_SELECTORS = [
+    var KNOWN_NON_ADD_TO_CART_SELECTORS_ML = [
       ".shopify-payment-button",
       ".shopify-payment-button__button",
     ];
 
-    function findAddToCartButton(form) {
-      if (!form) return null;
-      var byName = form.querySelector('[name="add"]');
-      if (byName) return byName;
-      var candidates = form.querySelectorAll('button, input[type="submit"]');
-      for (var i = 0; i < candidates.length; i++) {
-        var el = candidates[i];
-        var type =
-          el.tagName === "INPUT" ? el.type : el.getAttribute("type") || "submit";
-        if (type !== "submit") continue;
-        var isExcluded = KNOWN_NON_ADD_TO_CART_SELECTORS.some(function (sel) {
-          return el.closest(sel);
+    function findAddToCartButtonML(formML) {
+      if (!formML) return null;
+      var byNameML = formML.querySelector('[name="add"]');
+      if (byNameML) return byNameML;
+      var candidatesML = formML.querySelectorAll('button, input[type="submit"]');
+      for (var iML = 0; iML < candidatesML.length; iML++) {
+        var elML = candidatesML[iML];
+        var typeML =
+          elML.tagName === "INPUT" ? elML.type : elML.getAttribute("type") || "submit";
+        if (typeML !== "submit") continue;
+        var isExcludedML = KNOWN_NON_ADD_TO_CART_SELECTORS_ML.some(function (selML) {
+          return elML.closest(selML);
         });
-        if (!isExcluded) return el;
+        if (!isExcludedML) return elML;
       }
       return null;
     }
 
-    function pickAddToCartForm(scope) {
-      if (!scope) return { form: null, btn: null };
-      var forms = scope.querySelectorAll('form[action*="/cart/add"]');
-      for (var i = 0; i < forms.length; i++) {
-        var btn = findAddToCartButton(forms[i]);
-        if (btn) return { form: forms[i], btn: btn };
+    function pickAddToCartFormML(scopeML) {
+      if (!scopeML) return { form: null, btn: null };
+      var formsML = scopeML.querySelectorAll('form[action*="/cart/add"]');
+      for (var iML = 0; iML < formsML.length; iML++) {
+        var btnML = findAddToCartButtonML(formsML[iML]);
+        if (btnML) return { form: formsML[iML], btn: btnML };
       }
       return { form: null, btn: null };
     }
 
-    var picked = pickAddToCartForm(widgetSection);
-    if (!picked.form) picked = pickAddToCartForm(document);
+    var pickedML = pickAddToCartFormML(widgetSectionML);
+    if (!pickedML.form) pickedML = pickAddToCartFormML(document);
 
-    var nearbyForm = picked.form;
-    var addToCartBtn = picked.btn;
+    var nearbyFormML = pickedML.form;
+    var addToCartBtnML = pickedML.btn;
 
-    if (addToCartBtn && addToCartBtn.parentNode) {
-      addToCartBtn.parentNode.insertBefore(root, addToCartBtn);
+    if (addToCartBtnML && addToCartBtnML.parentNode) {
+      addToCartBtnML.parentNode.insertBefore(rootML, addToCartBtnML);
     }
 
-    if (addToCartBtn && addToCartBtn.parentNode && cartReminderEl) {
-      var reminderWrap = document.createElement("div");
-      reminderWrap.className = "booking-widget booking-widget__reminder-wrap";
-      reminderWrap.appendChild(cartReminderEl);
-      addToCartBtn.insertAdjacentElement("afterend", reminderWrap);
+    if (addToCartBtnML && addToCartBtnML.parentNode && cartReminderElML) {
+      var reminderWrapML = document.createElement("div");
+      reminderWrapML.className = "booking-widget booking-widget__reminder-wrap";
+      reminderWrapML.appendChild(cartReminderElML);
+      addToCartBtnML.insertAdjacentElement("afterend", reminderWrapML);
     }
 
-    var triggerBtn = root.querySelector("[data-booking-trigger]");
-    triggerBtn.addEventListener("click", function () {
-      clearError();
-      openModal();
+    var triggerBtnML = rootML.querySelector("[data-booking-trigger]");
+    triggerBtnML.addEventListener("click", function () {
+      clearErrorML();
+      openModalML();
     });
-    function timeLabelForSlot(slot) {
-      return formatTimeRangeDisplay(
-        slot,
-        productBookingType === "SLOT" || productBookingType === "BUNDLE",
+    function timeLabelForSlotML(slotML) {
+      return formatTimeRangeDisplayML(
+        slotML,
+        productBookingTypeML === "SLOT" || productBookingTypeML === "BUNDLE",
       );
     }
 
-    var TIME_LABELS_KEY = "bookingWidgetTimeLabels:" + productId;
+    var TIME_LABELS_KEY_ML = "bookingWidgetTimeLabels:" + productIdML;
 
-    function rememberTimeLabel(date, startTime, label) {
+    function rememberTimeLabelML(dateML, startTimeML, labelML) {
       try {
-        var map = JSON.parse(window.localStorage.getItem(TIME_LABELS_KEY) || "{}");
-        map[date + "|" + startTime] = label;
-        window.localStorage.setItem(TIME_LABELS_KEY, JSON.stringify(map));
-      } catch (e) {}
+        var mapML = JSON.parse(window.localStorage.getItem(TIME_LABELS_KEY_ML) || "{}");
+        mapML[dateML + "|" + startTimeML] = labelML;
+        window.localStorage.setItem(TIME_LABELS_KEY_ML, JSON.stringify(mapML));
+      } catch (eML) {}
     }
 
-    function recallTimeLabel(date, startTime) {
+    function recallTimeLabelML(dateML, startTimeML) {
       try {
-        var map = JSON.parse(window.localStorage.getItem(TIME_LABELS_KEY) || "{}");
-        return map[date + "|" + startTime] || "";
-      } catch (e) {
+        var mapML = JSON.parse(window.localStorage.getItem(TIME_LABELS_KEY_ML) || "{}");
+        return mapML[dateML + "|" + startTimeML] || "";
+      } catch (eML) {
         return "";
       }
     }
 
-    function firstSessionSlot(entry) {
-      return entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1
-        ? entry.slot.bundleSessions[0].slot
-        : entry.slot;
+    function firstSessionSlotML(entryML) {
+      return entryML.slot.bundleSessions && entryML.slot.bundleSessions.length > 1
+        ? entryML.slot.bundleSessions[0].slot
+        : entryML.slot;
     }
 
-    function setHiddenProperty(form, name, value) {
-      var input = form.querySelector('input[name="' + cssEscape(name) + '"]');
-      if (!input) {
-        input = document.createElement("input");
-        input.type = "hidden";
-        input.name = name;
-        form.appendChild(input);
+    function setHiddenPropertyML(formML, nameML, valueML) {
+      var inputML = formML.querySelector('input[name="' + cssEscapeML(nameML) + '"]');
+      if (!inputML) {
+        inputML = document.createElement("input");
+        inputML.type = "hidden";
+        inputML.name = nameML;
+        formML.appendChild(inputML);
       }
-      input.value = value;
+      inputML.value = valueML;
     }
 
-    function injectBookingFields(form, entry) {
-      var dateInput = form.querySelector(
+    function injectBookingFieldsML(formML, entryML) {
+      var dateInputML = formML.querySelector(
         'input[name="properties[Booking Date]"]',
       );
-      var timeInput = form.querySelector(
+      var timeInputML = formML.querySelector(
         'input[name="properties[Booking Time]"]',
       );
-      if (!dateInput) {
-        dateInput = document.createElement("input");
-        dateInput.type = "hidden";
-        dateInput.name = "properties[Booking Date]";
-        form.appendChild(dateInput);
+      if (!dateInputML) {
+        dateInputML = document.createElement("input");
+        dateInputML.type = "hidden";
+        dateInputML.name = "properties[Booking Date]";
+        formML.appendChild(dateInputML);
       }
-      if (!timeInput) {
-        timeInput = document.createElement("input");
-        timeInput.type = "hidden";
-        timeInput.name = "properties[Booking Time]";
-        form.appendChild(timeInput);
+      if (!timeInputML) {
+        timeInputML = document.createElement("input");
+        timeInputML.type = "hidden";
+        timeInputML.name = "properties[Booking Time]";
+        formML.appendChild(timeInputML);
       }
-      dateInput.value = entry.date;
-      timeInput.value = entry.slot.start;
-      setHiddenProperty(
-        form,
+      dateInputML.value = entryML.date;
+      timeInputML.value = entryML.slot.start;
+      setHiddenPropertyML(
+        formML,
         "properties[_Booking Time Label]",
-        timeLabelForSlot(firstSessionSlot(entry)),
+        timeLabelForSlotML(firstSessionSlotML(entryML)),
       );
-      rememberTimeLabel(entry.date, entry.slot.start, timeLabelForSlot(firstSessionSlot(entry)));
+      rememberTimeLabelML(entryML.date, entryML.slot.start, timeLabelForSlotML(firstSessionSlotML(entryML)));
 
-      if (entry.slot.endDate) {
-        var checkoutInput = form.querySelector(
+      if (entryML.slot.endDate) {
+        var checkoutInputML = formML.querySelector(
           'input[name="properties[Checkout Date]"]',
         );
-        if (!checkoutInput) {
-          checkoutInput = document.createElement("input");
-          checkoutInput.type = "hidden";
-          checkoutInput.name = "properties[Checkout Date]";
-          form.appendChild(checkoutInput);
+        if (!checkoutInputML) {
+          checkoutInputML = document.createElement("input");
+          checkoutInputML.type = "hidden";
+          checkoutInputML.name = "properties[Checkout Date]";
+          formML.appendChild(checkoutInputML);
         }
-        checkoutInput.value = entry.slot.endDate;
+        checkoutInputML.value = entryML.slot.endDate;
       }
 
-      if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
-        entry.slot.bundleSessions.slice(1).forEach(function (session, i) {
-          var n = i + 2;
-          var sDateInput = form.querySelector(
-            'input[name="properties[Session ' + n + ' Date]"]',
+      if (entryML.slot.bundleSessions && entryML.slot.bundleSessions.length > 1) {
+        entryML.slot.bundleSessions.slice(1).forEach(function (sessionML, iML) {
+          var nML = iML + 2;
+          var sDateInputML = formML.querySelector(
+            'input[name="properties[Session ' + nML + ' Date]"]',
           );
-          var sTimeInput = form.querySelector(
-            'input[name="properties[Session ' + n + ' Time]"]',
+          var sTimeInputML = formML.querySelector(
+            'input[name="properties[Session ' + nML + ' Time]"]',
           );
-          if (!sDateInput) {
-            sDateInput = document.createElement("input");
-            sDateInput.type = "hidden";
-            sDateInput.name = "properties[Session " + n + " Date]";
-            form.appendChild(sDateInput);
+          if (!sDateInputML) {
+            sDateInputML = document.createElement("input");
+            sDateInputML.type = "hidden";
+            sDateInputML.name = "properties[Session " + nML + " Date]";
+            formML.appendChild(sDateInputML);
           }
-          if (!sTimeInput) {
-            sTimeInput = document.createElement("input");
-            sTimeInput.type = "hidden";
-            sTimeInput.name = "properties[Session " + n + " Time]";
-            form.appendChild(sTimeInput);
+          if (!sTimeInputML) {
+            sTimeInputML = document.createElement("input");
+            sTimeInputML.type = "hidden";
+            sTimeInputML.name = "properties[Session " + nML + " Time]";
+            formML.appendChild(sTimeInputML);
           }
-          sDateInput.value = session.date;
-          sTimeInput.value = session.slot.start;
-          setHiddenProperty(
-            form,
-            "properties[_Session " + n + " Time Label]",
-            timeLabelForSlot(session.slot),
+          sDateInputML.value = sessionML.date;
+          sTimeInputML.value = sessionML.slot.start;
+          setHiddenPropertyML(
+            formML,
+            "properties[_Session " + nML + " Time Label]",
+            timeLabelForSlotML(sessionML.slot),
           );
-          rememberTimeLabel(session.date, session.slot.start, timeLabelForSlot(session.slot));
+          rememberTimeLabelML(sessionML.date, sessionML.slot.start, timeLabelForSlotML(sessionML.slot));
         });
       }
 
-      if (entry.location) {
-        var locationInput = form.querySelector(
+      if (entryML.location) {
+        var locationInputML = formML.querySelector(
           'input[name="properties[Location]"]',
         );
-        if (!locationInput) {
-          locationInput = document.createElement("input");
-          locationInput.type = "hidden";
-          locationInput.name = "properties[Location]";
-          form.appendChild(locationInput);
+        if (!locationInputML) {
+          locationInputML = document.createElement("input");
+          locationInputML.type = "hidden";
+          locationInputML.name = "properties[Location]";
+          formML.appendChild(locationInputML);
         }
-        locationInput.value = entry.location;
+        locationInputML.value = entryML.location;
       }
 
-      if (entry.locationId) {
-        var locationIdInput = form.querySelector(
+      if (entryML.locationId) {
+        var locationIdInputML = formML.querySelector(
           'input[name="properties[_Location Id]"]',
         );
-        if (!locationIdInput) {
-          locationIdInput = document.createElement("input");
-          locationIdInput.type = "hidden";
-          locationIdInput.name = "properties[_Location Id]";
-          form.appendChild(locationIdInput);
+        if (!locationIdInputML) {
+          locationIdInputML = document.createElement("input");
+          locationIdInputML.type = "hidden";
+          locationIdInputML.name = "properties[_Location Id]";
+          formML.appendChild(locationIdInputML);
         }
-        locationIdInput.value = entry.locationId;
+        locationIdInputML.value = entryML.locationId;
       }
 
-      var quantityInput = form.querySelector('input[name="quantity"]');
-      if (!quantityInput) {
-        quantityInput = document.createElement("input");
-        quantityInput.type = "hidden";
-        quantityInput.name = "quantity";
-        form.appendChild(quantityInput);
+      var quantityInputML = formML.querySelector('input[name="quantity"]');
+      if (!quantityInputML) {
+        quantityInputML = document.createElement("input");
+        quantityInputML.type = "hidden";
+        quantityInputML.name = "quantity";
+        formML.appendChild(quantityInputML);
       }
-      quantityInput.value = String(entry.quantity || 1);
+      quantityInputML.value = String(entryML.quantity || 1);
 
-      if (entry.note) {
-        var noteInputName = "properties[" + getNoteKey() + "]";
-        var noteInput = form.querySelector(
-          'input[name="' + cssEscape(noteInputName) + '"]',
+      if (entryML.note) {
+        var noteInputNameML = "properties[" + getNoteKeyML() + "]";
+        var noteInputML = formML.querySelector(
+          'input[name="' + cssEscapeML(noteInputNameML) + '"]',
         );
-        if (!noteInput) {
-          noteInput = document.createElement("input");
-          noteInput.type = "hidden";
-          noteInput.name = noteInputName;
-          form.appendChild(noteInput);
+        if (!noteInputML) {
+          noteInputML = document.createElement("input");
+          noteInputML.type = "hidden";
+          noteInputML.name = noteInputNameML;
+          formML.appendChild(noteInputML);
         }
-        noteInput.value = entry.note;
+        noteInputML.value = entryML.note;
       }
 
-      customFields.forEach(function (field) {
-        var value = customFieldValues[field.fieldKey];
-        if (!value) return;
-        var inputName = "properties[" + field.label + "]";
-        var input = form.querySelector(
-          'input[name="' + cssEscape(inputName) + '"]',
+      customFieldsML.forEach(function (fieldML) {
+        var valueML = customFieldValuesML[fieldML.fieldKey];
+        if (!valueML) return;
+        var inputNameML = "properties[" + fieldML.label + "]";
+        var inputML = formML.querySelector(
+          'input[name="' + cssEscapeML(inputNameML) + '"]',
         );
-        if (!input) {
-          input = document.createElement("input");
-          input.type = "hidden";
-          input.name = inputName;
-          form.appendChild(input);
+        if (!inputML) {
+          inputML = document.createElement("input");
+          inputML.type = "hidden";
+          inputML.name = inputNameML;
+          formML.appendChild(inputML);
         }
-        input.value = value;
+        inputML.value = valueML;
       });
     }
 
-    function buildFormDataForSlot(form, entry) {
-      var fd = new FormData(form);
-      fd.set("properties[Booking Date]", entry.date);
-      fd.set("properties[Booking Time]", entry.slot.start);
-      fd.set("properties[_Booking Time Label]", timeLabelForSlot(firstSessionSlot(entry)));
-      rememberTimeLabel(entry.date, entry.slot.start, timeLabelForSlot(firstSessionSlot(entry)));
-      fd.set("quantity", String(entry.quantity || 1));
-      if (entry.slot.endDate) {
-        fd.set("properties[Checkout Date]", entry.slot.endDate);
+    function buildFormDataForSlotML(formML, entryML) {
+      var fdML = new FormData(formML);
+      fdML.set("properties[Booking Date]", entryML.date);
+      fdML.set("properties[Booking Time]", entryML.slot.start);
+      fdML.set("properties[_Booking Time Label]", timeLabelForSlotML(firstSessionSlotML(entryML)));
+      rememberTimeLabelML(entryML.date, entryML.slot.start, timeLabelForSlotML(firstSessionSlotML(entryML)));
+      fdML.set("quantity", String(entryML.quantity || 1));
+      if (entryML.slot.endDate) {
+        fdML.set("properties[Checkout Date]", entryML.slot.endDate);
       }
-      if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
-        entry.slot.bundleSessions.slice(1).forEach(function (session, i) {
-          var n = i + 2;
-          fd.set("properties[Session " + n + " Date]", session.date);
-          fd.set("properties[Session " + n + " Time]", session.slot.start);
-          fd.set(
-            "properties[_Session " + n + " Time Label]",
-            timeLabelForSlot(session.slot),
+      if (entryML.slot.bundleSessions && entryML.slot.bundleSessions.length > 1) {
+        entryML.slot.bundleSessions.slice(1).forEach(function (sessionML, iML) {
+          var nML = iML + 2;
+          fdML.set("properties[Session " + nML + " Date]", sessionML.date);
+          fdML.set("properties[Session " + nML + " Time]", sessionML.slot.start);
+          fdML.set(
+            "properties[_Session " + nML + " Time Label]",
+            timeLabelForSlotML(sessionML.slot),
           );
-          rememberTimeLabel(session.date, session.slot.start, timeLabelForSlot(session.slot));
+          rememberTimeLabelML(sessionML.date, sessionML.slot.start, timeLabelForSlotML(sessionML.slot));
         });
       }
-      if (entry.location) {
-        fd.set("properties[Location]", entry.location);
+      if (entryML.location) {
+        fdML.set("properties[Location]", entryML.location);
       }
-      if (entry.locationId) {
-        fd.set("properties[_Location Id]", entry.locationId);
+      if (entryML.locationId) {
+        fdML.set("properties[_Location Id]", entryML.locationId);
       }
-      if (entry.note) {
-        fd.set("properties[" + getNoteKey() + "]", entry.note);
+      if (entryML.note) {
+        fdML.set("properties[" + getNoteKeyML() + "]", entryML.note);
       }
-      customFields.forEach(function (field) {
-        var value = customFieldValues[field.fieldKey];
-        if (!value) return;
-        fd.set("properties[" + field.label + "]", value);
+      customFieldsML.forEach(function (fieldML) {
+        var valueML = customFieldValuesML[fieldML.fieldKey];
+        if (!valueML) return;
+        fdML.set("properties[" + fieldML.label + "]", valueML);
       });
-      return fd;
+      return fdML;
     }
 
-    function addSlotsToCartSequentially(form, entries, onDone) {
-      var action = form.getAttribute("action") || "/cart/add";
-      var index = 0;
+    function addSlotsToCartSequentiallyML(formML, entriesML, onDoneML) {
+      var actionML = formML.getAttribute("action") || "/cart/add";
+      var indexML = 0;
 
-      function next() {
-        if (index >= entries.length) {
-          onDone(null);
+      function nextML() {
+        if (indexML >= entriesML.length) {
+          onDoneML(null);
           return;
         }
-        fetch(action, {
+        fetch(actionML, {
           method: "POST",
           headers: { Accept: "application/json" },
-          body: buildFormDataForSlot(form, entries[index]),
+          body: buildFormDataForSlotML(formML, entriesML[indexML]),
         })
-          .then(function (res) {
-            if (!res.ok) throw new Error("add-to-cart failed");
-            return res.json();
+          .then(function (resML) {
+            if (!resML.ok) throw new Error("add-to-cart failed");
+            return resML.json();
           })
           .then(function () {
-            index += 1;
-            next();
+            indexML += 1;
+            nextML();
           })
-          .catch(onDone);
+          .catch(onDoneML);
       }
 
-      next();
+      nextML();
     }
 
-    function cssEscape(value) {
+    function cssEscapeML(valueML) {
       return window.CSS && CSS.escape
-        ? CSS.escape(value)
-        : value.replace(/["\\\]]/g, "\\$&");
+        ? CSS.escape(valueML)
+        : valueML.replace(/["\\\]]/g, "\\$&");
     }
 
-    function guardAddToCart(event) {
-      if (confirmedSlots.length === 0) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        showError(strings.selectBeforeCart);
-        root.scrollIntoView({ behavior: "smooth", block: "center" });
+    function guardAddToCartML(eventML) {
+      if (confirmedSlotsML.length === 0) {
+        eventML.preventDefault();
+        eventML.stopPropagation();
+        eventML.stopImmediatePropagation();
+        showErrorML(stringsML.selectBeforeCart);
+        rootML.scrollIntoView({ behavior: "smooth", block: "center" });
         return true;
       }
-      clearError();
+      clearErrorML();
 
-      if (confirmedSlots.length === 1) {
-        if (nearbyForm) injectBookingFields(nearbyForm, confirmedSlots[0]);
+      if (confirmedSlotsML.length === 1) {
+        if (nearbyFormML) injectBookingFieldsML(nearbyFormML, confirmedSlotsML[0]);
         setTimeout(function () {
-          confirmedSlots = [];
-          updateSelectionDisplay();
-          refreshCartReminder();
+          confirmedSlotsML = [];
+          updateSelectionDisplayML();
+          refreshCartReminderML();
         }, 1200);
-        [2500, 4500].forEach(function (delay) {
-          setTimeout(refreshCartReminder, delay);
+        [2500, 4500].forEach(function (delayML) {
+          setTimeout(refreshCartReminderML, delayML);
         });
         return false;
       }
 
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
+      eventML.preventDefault();
+      eventML.stopPropagation();
+      eventML.stopImmediatePropagation();
 
-      if (!nearbyForm) {
-        showError(strings.multiAddError);
+      if (!nearbyFormML) {
+        showErrorML(stringsML.multiAddError);
         return true;
       }
 
-      var entries = confirmedSlots.slice();
-      multiAddStatusEl.hidden = false;
-      multiAddStatusEl.textContent = strings.addingToCart;
+      var entriesML = confirmedSlotsML.slice();
+      multiAddStatusElML.hidden = false;
+      multiAddStatusElML.textContent = stringsML.addingToCart;
 
-      addSlotsToCartSequentially(nearbyForm, entries, function (err) {
-        if (err) {
-          multiAddStatusEl.hidden = true;
-          showError(strings.multiAddError);
+      addSlotsToCartSequentiallyML(nearbyFormML, entriesML, function (errML) {
+        if (errML) {
+          multiAddStatusElML.hidden = true;
+          showErrorML(stringsML.multiAddError);
           return;
         }
-        confirmedSlots = [];
-        clearPersistedSlots();
+        confirmedSlotsML = [];
+        clearPersistedSlotsML();
         window.location.reload();
       });
 
@@ -789,1359 +789,1359 @@
 
     document.addEventListener(
       "submit",
-      function (event) {
-        var target = event.target;
-        if (!(target instanceof HTMLFormElement)) return;
-        if (target !== nearbyForm) return;
-        if (!/\/cart\/add/.test(target.getAttribute("action") || "")) return;
-        guardAddToCart(event);
+      function (eventML) {
+        var targetML = eventML.target;
+        if (!(targetML instanceof HTMLFormElement)) return;
+        if (targetML !== nearbyFormML) return;
+        if (!/\/cart\/add/.test(targetML.getAttribute("action") || "")) return;
+        guardAddToCartML(eventML);
       },
       true,
     );
 
     document.addEventListener("booking-widget:cart-added", function () {
-      refreshCartReminder();
+      refreshCartReminderML();
     });
 
     if (!window.__bookingWidgetCartHooked) {
       window.__bookingWidgetCartHooked = true;
 
-      var isCartAddUrl = function (url) {
-        return /\/cart\/add(\.js)?(\?|$)/.test(String(url || ""));
+      var isCartAddUrlML = function (urlML) {
+        return /\/cart\/add(\.js)?(\?|$)/.test(String(urlML || ""));
       };
-      var notifyCartAdded = function () {
+      var notifyCartAddedML = function () {
         document.dispatchEvent(new CustomEvent("booking-widget:cart-added"));
       };
 
-      var originalFetch = window.fetch;
-      if (typeof originalFetch === "function") {
-        window.fetch = function (input) {
-          var promise = originalFetch.apply(this, arguments);
+      var originalFetchML = window.fetch;
+      if (typeof originalFetchML === "function") {
+        window.fetch = function (inputML) {
+          var promiseML = originalFetchML.apply(this, arguments);
           try {
-            var url = typeof input === "string" ? input : input && input.url;
-            if (isCartAddUrl(url)) {
-              promise
-                .then(function (res) {
-                  if (res && res.ok) notifyCartAdded();
+            var urlML = typeof inputML === "string" ? inputML : inputML && inputML.url;
+            if (isCartAddUrlML(urlML)) {
+              promiseML
+                .then(function (resML) {
+                  if (resML && resML.ok) notifyCartAddedML();
                 })
                 .catch(function () {});
             }
-          } catch (e) {}
-          return promise;
+          } catch (eML) {}
+          return promiseML;
         };
       }
 
-      var originalOpen = XMLHttpRequest.prototype.open;
-      var originalSend = XMLHttpRequest.prototype.send;
-      XMLHttpRequest.prototype.open = function (method, url) {
-        this.__bwCartAdd = isCartAddUrl(url);
-        return originalOpen.apply(this, arguments);
+      var originalOpenML = XMLHttpRequest.prototype.open;
+      var originalSendML = XMLHttpRequest.prototype.send;
+      XMLHttpRequest.prototype.open = function (methodML, urlML) {
+        this.__bwCartAdd = isCartAddUrlML(urlML);
+        return originalOpenML.apply(this, arguments);
       };
       XMLHttpRequest.prototype.send = function () {
         if (this.__bwCartAdd) {
           this.addEventListener("load", function () {
-            if (this.status >= 200 && this.status < 300) notifyCartAdded();
+            if (this.status >= 200 && this.status < 300) notifyCartAddedML();
           });
         }
-        return originalSend.apply(this, arguments);
+        return originalSendML.apply(this, arguments);
       };
     }
 
-    if (addToCartBtn) {
-      addToCartBtn.addEventListener("click", guardAddToCart, true);
+    if (addToCartBtnML) {
+      addToCartBtnML.addEventListener("click", guardAddToCartML, true);
     }
 
-    if (locationTimezoneEl) locationTimezoneEl.textContent = timezoneLabel();
-    loadLocations();
-    loadCustomFields();
+    if (locationTimezoneElML) locationTimezoneElML.textContent = timezoneLabelML();
+    loadLocationsML();
+    loadCustomFieldsML();
 
-    function setStatus(container, message, onRetry) {
-      container.innerHTML = "";
-      var p = document.createElement("p");
-      p.className = "booking-widget__status";
-      p.textContent = message;
-      container.appendChild(p);
-      if (onRetry) {
-        var retryBtn = document.createElement("button");
-        retryBtn.type = "button";
-        retryBtn.className = "booking-widget__status-retry";
-        retryBtn.textContent = strings.retry || "Try again";
-        retryBtn.addEventListener("click", onRetry);
-        container.appendChild(retryBtn);
+    function setStatusML(containerML, messageML, onRetryML) {
+      containerML.innerHTML = "";
+      var pML = document.createElement("p");
+      pML.className = "booking-widget__status";
+      pML.textContent = messageML;
+      containerML.appendChild(pML);
+      if (onRetryML) {
+        var retryBtnML = document.createElement("button");
+        retryBtnML.type = "button";
+        retryBtnML.className = "booking-widget__status-retry";
+        retryBtnML.textContent = stringsML.retry || "Try again";
+        retryBtnML.addEventListener("click", onRetryML);
+        containerML.appendChild(retryBtnML);
       }
     }
 
-    function loadCustomFields() {
-      fetch(proxyBase + "/custom-fields")
-        .then(function (res) {
-          return res.json();
+    function loadCustomFieldsML() {
+      fetch(proxyBaseML + "/custom-fields")
+        .then(function (resML) {
+          return resML.json();
         })
-        .then(function (data) {
-          customFields = data.fields || [];
-          applyNoteQuestion();
-          renderCustomFields();
+        .then(function (dataML) {
+          customFieldsML = dataML.fields || [];
+          applyNoteQuestionML();
+          renderCustomFieldsML();
         })
         .catch(function () {
-          customFields = [];
-          applyNoteQuestion();
+          customFieldsML = [];
+          applyNoteQuestionML();
         });
     }
 
-    function loadLocations() {
-      if (!locationStepEl || !locationListEl) return;
-      var url = proxyBase + "/locations?productId=" + encodeURIComponent(productId);
-      if (countryCode) {
-        url += "&country=" + encodeURIComponent(countryCode);
+    function loadLocationsML() {
+      if (!locationStepElML || !locationListElML) return;
+      var urlML = proxyBaseML + "/locations?productId=" + encodeURIComponent(productIdML);
+      if (countryCodeML) {
+        urlML += "&country=" + encodeURIComponent(countryCodeML);
       }
-      fetch(url)
-        .then(function (res) {
-          return res.json();
+      fetch(urlML)
+        .then(function (resML) {
+          return resML.json();
         })
-        .then(function (data) {
-          locations = data.locations || [];
-          productBookingEnabled = data.productBookingEnabled !== false;
-          locationsLoaded = true;
-          populateLocationList();
-          updateAvailability();
+        .then(function (dataML) {
+          locationsML = dataML.locations || [];
+          productBookingEnabledML = dataML.productBookingEnabled !== false;
+          locationsLoadedML = true;
+          populateLocationListML();
+          updateAvailabilityML();
         })
         .catch(function () {
-          locations = [];
-          locationsLoaded = true;
-          updateAvailability();
+          locationsML = [];
+          locationsLoadedML = true;
+          updateAvailabilityML();
         });
     }
 
-    function updateAvailability() {
-      if (!locationsLoaded) return;
-      var hasLocations = locations.length > 0 && productBookingEnabled;
-      if (triggerBtn) {
-        triggerBtn.hidden = !hasLocations || confirmedSlots.length > 0;
+    function updateAvailabilityML() {
+      if (!locationsLoadedML) return;
+      var hasLocationsML = locationsML.length > 0 && productBookingEnabledML;
+      if (triggerBtnML) {
+        triggerBtnML.hidden = !hasLocationsML || confirmedSlotsML.length > 0;
       }
-      if (unavailableEl) {
-        unavailableEl.hidden = hasLocations;
-        if (!hasLocations) {
-          unavailableEl.textContent = strings.noLocationsConfigured;
+      if (unavailableElML) {
+        unavailableElML.hidden = hasLocationsML;
+        if (!hasLocationsML) {
+          unavailableElML.textContent = stringsML.noLocationsConfigured;
         }
       }
     }
 
-    function isLocationListOpen() {
-      return !!locationListEl && !locationListEl.hidden;
+    function isLocationListOpenML() {
+      return !!locationListElML && !locationListElML.hidden;
     }
 
-    function openLocationList() {
-      if (!locationListEl) return;
-      locationListEl.hidden = false;
-      if (locationTriggerEl) {
-        locationTriggerEl.classList.add("booking-widget__location-trigger--open");
-        locationTriggerEl.setAttribute("aria-expanded", "true");
+    function openLocationListML() {
+      if (!locationListElML) return;
+      locationListElML.hidden = false;
+      if (locationTriggerElML) {
+        locationTriggerElML.classList.add("booking-widget__location-trigger--open");
+        locationTriggerElML.setAttribute("aria-expanded", "true");
       }
     }
 
-    function closeLocationList() {
-      if (!locationListEl) return;
-      locationListEl.hidden = true;
-      if (locationTriggerEl) {
-        locationTriggerEl.classList.remove("booking-widget__location-trigger--open");
-        locationTriggerEl.setAttribute("aria-expanded", "false");
+    function closeLocationListML() {
+      if (!locationListElML) return;
+      locationListElML.hidden = true;
+      if (locationTriggerElML) {
+        locationTriggerElML.classList.remove("booking-widget__location-trigger--open");
+        locationTriggerElML.setAttribute("aria-expanded", "false");
       }
     }
 
-    function toggleLocationList() {
-      if (isLocationListOpen()) {
-        closeLocationList();
+    function toggleLocationListML() {
+      if (isLocationListOpenML()) {
+        closeLocationListML();
       } else {
-        openLocationList();
+        openLocationListML();
       }
     }
 
-    if (locationTriggerEl) {
-      locationTriggerEl.addEventListener("click", toggleLocationList);
-      locationTriggerEl.addEventListener("keydown", function (event) {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          toggleLocationList();
-        } else if (event.key === "Escape") {
-          closeLocationList();
+    if (locationTriggerElML) {
+      locationTriggerElML.addEventListener("click", toggleLocationListML);
+      locationTriggerElML.addEventListener("keydown", function (eventML) {
+        if (eventML.key === "Enter" || eventML.key === " ") {
+          eventML.preventDefault();
+          toggleLocationListML();
+        } else if (eventML.key === "Escape") {
+          closeLocationListML();
         }
       });
     }
 
-    document.addEventListener("click", function (event) {
-      if (!isLocationListOpen()) return;
+    document.addEventListener("click", function (eventML) {
+      if (!isLocationListOpenML()) return;
       if (
-        locationTriggerEl &&
-        (locationTriggerEl === event.target ||
-          locationTriggerEl.contains(event.target))
+        locationTriggerElML &&
+        (locationTriggerElML === eventML.target ||
+          locationTriggerElML.contains(eventML.target))
       ) {
         return;
       }
       if (
-        locationListEl &&
-        (locationListEl === event.target || locationListEl.contains(event.target))
+        locationListElML &&
+        (locationListElML === eventML.target || locationListElML.contains(eventML.target))
       ) {
         return;
       }
-      closeLocationList();
+      closeLocationListML();
     });
 
-    function populateLocationList() {
-      if (!locationListEl) return;
-      locationListEl.innerHTML = "";
-      var currentId = pendingLocation ? pendingLocation.id : null;
+    function populateLocationListML() {
+      if (!locationListElML) return;
+      locationListElML.innerHTML = "";
+      var currentIdML = pendingLocationML ? pendingLocationML.id : null;
 
-      locations.forEach(function (location) {
-        var li = document.createElement("li");
-        li.className = "booking-widget__location-option";
-        li.setAttribute("role", "option");
-        li.dataset.locationId = location.id;
-        li.textContent = location.name;
-        var isSelected = location.id === currentId;
-        li.setAttribute("aria-selected", isSelected ? "true" : "false");
-        if (isSelected) {
-          li.classList.add("booking-widget__location-option--selected");
+      locationsML.forEach(function (locationML) {
+        var liML = document.createElement("li");
+        liML.className = "booking-widget__location-option";
+        liML.setAttribute("role", "option");
+        liML.dataset.locationId = locationML.id;
+        liML.textContent = locationML.name;
+        var isSelectedML = locationML.id === currentIdML;
+        liML.setAttribute("aria-selected", isSelectedML ? "true" : "false");
+        if (isSelectedML) {
+          liML.classList.add("booking-widget__location-option--selected");
         }
-        li.addEventListener("click", function () {
-          selectLocation(location);
+        liML.addEventListener("click", function () {
+          selectLocationML(locationML);
         });
-        locationListEl.appendChild(li);
+        locationListElML.appendChild(liML);
       });
     }
 
-    function selectLocation(location) {
-      var locationChanged = !pendingLocation || pendingLocation.id !== location.id;
-      pendingLocation = location;
-      selectedLocationRecord = location;
-      if (locationTriggerTextEl) {
-        locationTriggerTextEl.textContent = location.name;
-        locationTriggerTextEl.classList.remove(
+    function selectLocationML(locationML) {
+      var locationChangedML = !pendingLocationML || pendingLocationML.id !== locationML.id;
+      pendingLocationML = locationML;
+      selectedLocationRecordML = locationML;
+      if (locationTriggerTextElML) {
+        locationTriggerTextElML.textContent = locationML.name;
+        locationTriggerTextElML.classList.remove(
           "booking-widget__location-trigger-text--placeholder",
         );
       }
-      if (locationErrorEl) {
-        locationErrorEl.hidden = true;
-        locationErrorEl.textContent = "";
+      if (locationErrorElML) {
+        locationErrorElML.hidden = true;
+        locationErrorElML.textContent = "";
       }
-      if (locationTriggerEl) {
-        locationTriggerEl.classList.remove(
+      if (locationTriggerElML) {
+        locationTriggerElML.classList.remove(
           "booking-widget__location-trigger--error",
         );
       }
-      populateLocationList();
-      closeLocationList();
-      updateConfirmButton();
-      if (locationChanged) {
-        pendingDate = null;
-        pendingSlot = null;
-        pendingEndDate = null;
-        bundleSessions = [];
-        bundleQuantity = 1;
-        availableDates = [];
-        availableDatesByDay = {};
-        remainingCapacityByDate = {};
-        slotRequestId++;
-        refreshQuantityForSelection();
-        updateRangeSummary();
-        updateTimezoneDisplay();
-        loadMonth();
+      populateLocationListML();
+      closeLocationListML();
+      updateConfirmButtonML();
+      if (locationChangedML) {
+        pendingDateML = null;
+        pendingSlotML = null;
+        pendingEndDateML = null;
+        bundleSessionsML = [];
+        bundleQuantityML = 1;
+        availableDatesML = [];
+        availableDatesByDayML = {};
+        remainingCapacityByDateML = {};
+        slotRequestIdML++;
+        refreshQuantityForSelectionML();
+        updateRangeSummaryML();
+        updateTimezoneDisplayML();
+        loadMonthML();
       }
     }
 
-    function locationRequired() {
-      return locations.length > 0;
+    function locationRequiredML() {
+      return locationsML.length > 0;
     }
 
-    function isLocationSelected() {
-      return !locationRequired() || !!pendingLocation;
+    function isLocationSelectedML() {
+      return !locationRequiredML() || !!pendingLocationML;
     }
 
-    function updateCalendarLockState() {
-      if (!calendarPaneEl) return;
-      calendarPaneEl.classList.toggle(
+    function updateCalendarLockStateML() {
+      if (!calendarPaneElML) return;
+      calendarPaneElML.classList.toggle(
         "booking-widget__calendar-pane--locked",
-        !isLocationSelected(),
+        !isLocationSelectedML(),
       );
     }
 
-    function updateTimezoneDisplay() {
-      if (!locationTimezoneEl) return;
-      var showsConvertedTimes =
-        productBookingType === "SLOT" || productBookingType === "BUNDLE";
-      var label = showsConvertedTimes || !pendingLocation
-        ? timezoneLabel()
-        : locationTimezoneLabel(pendingLocation.timezone);
-      if (locationTimezoneEl) locationTimezoneEl.textContent = label;
+    function updateTimezoneDisplayML() {
+      if (!locationTimezoneElML) return;
+      var showsConvertedTimesML =
+        productBookingTypeML === "SLOT" || productBookingTypeML === "BUNDLE";
+      var labelML = showsConvertedTimesML || !pendingLocationML
+        ? timezoneLabelML()
+        : locationTimezoneLabelML(pendingLocationML.timezone);
+      if (locationTimezoneElML) locationTimezoneElML.textContent = labelML;
     }
 
-    function showBookingStep() {
-      exitReviewStep();
-      closeLocationList();
-      selectedLocationRecord = pendingLocation;
-      if (locationTriggerTextEl) {
-        if (pendingLocation) {
-          locationTriggerTextEl.textContent = pendingLocation.name;
-          locationTriggerTextEl.classList.remove(
+    function showBookingStepML() {
+      exitReviewStepML();
+      closeLocationListML();
+      selectedLocationRecordML = pendingLocationML;
+      if (locationTriggerTextElML) {
+        if (pendingLocationML) {
+          locationTriggerTextElML.textContent = pendingLocationML.name;
+          locationTriggerTextElML.classList.remove(
             "booking-widget__location-trigger-text--placeholder",
           );
         } else {
-          locationTriggerTextEl.textContent = strings.selectLocationPlaceholder;
-          locationTriggerTextEl.classList.add(
+          locationTriggerTextElML.textContent = stringsML.selectLocationPlaceholder;
+          locationTriggerTextElML.classList.add(
             "booking-widget__location-trigger-text--placeholder",
           );
         }
       }
-      if (locationStepEl) {
-        if (locationRequired()) {
-          populateLocationList();
-          locationStepEl.hidden = false;
+      if (locationStepElML) {
+        if (locationRequiredML()) {
+          populateLocationListML();
+          locationStepElML.hidden = false;
         } else {
-          locationStepEl.hidden = true;
+          locationStepElML.hidden = true;
         }
       }
-      if (locationEmptyStateEl) locationEmptyStateEl.hidden = true;
-      datetimeStepEl.hidden = false;
-      if (locationErrorEl) {
-        locationErrorEl.hidden = true;
-        locationErrorEl.textContent = "";
+      if (locationEmptyStateElML) locationEmptyStateElML.hidden = true;
+      datetimeStepElML.hidden = false;
+      if (locationErrorElML) {
+        locationErrorElML.hidden = true;
+        locationErrorElML.textContent = "";
       }
-      if (locationTriggerEl) {
-        locationTriggerEl.classList.remove(
+      if (locationTriggerElML) {
+        locationTriggerElML.classList.remove(
           "booking-widget__location-trigger--error",
         );
       }
-      confirmBtn.hidden = false;
-      if (subheaderEl) subheaderEl.hidden = false;
-      updateCalendarLockState();
-      updateConfirmButton();
-      updateTimezoneDisplay();
-      loadMonth();
+      confirmBtnML.hidden = false;
+      if (subheaderElML) subheaderElML.hidden = false;
+      updateCalendarLockStateML();
+      updateConfirmButtonML();
+      updateTimezoneDisplayML();
+      loadMonthML();
     }
 
-    function renderCustomFields() {
-      if (!customFieldsEntryEl) return;
-      customFieldsEntryEl.innerHTML = "";
+    function renderCustomFieldsML() {
+      if (!customFieldsEntryElML) return;
+      customFieldsEntryElML.innerHTML = "";
 
-      if (customFields.length === 0) {
-        customFieldsEntryEl.hidden = true;
+      if (customFieldsML.length === 0) {
+        customFieldsEntryElML.hidden = true;
         return;
       }
 
-      customFields.forEach(function (field) {
-        var wrapper = document.createElement("div");
-        wrapper.className = "booking-widget__field";
+      customFieldsML.forEach(function (fieldML) {
+        var wrapperML = document.createElement("div");
+        wrapperML.className = "booking-widget__field";
 
-        var label = document.createElement("label");
-        label.className = "booking-widget__field-label";
-        var inputId = "booking-field-" + root.dataset.productId + "-" + field.fieldKey;
-        label.setAttribute("for", inputId);
-        var noteIconImg = noteWrapEl
-          ? noteWrapEl.querySelector(".booking-widget__note-icon img")
+        var labelML = document.createElement("label");
+        labelML.className = "booking-widget__field-label";
+        var inputIdML = "booking-field-" + rootML.dataset.productId + "-" + fieldML.fieldKey;
+        labelML.setAttribute("for", inputIdML);
+        var noteIconImgML = noteWrapElML
+          ? noteWrapElML.querySelector(".booking-widget__note-icon img")
           : null;
-        if (noteIconImg) {
-          var iconSpan = document.createElement("span");
-          iconSpan.className = "booking-widget__field-icon";
-          iconSpan.setAttribute("aria-hidden", "true");
-          var iconImg = document.createElement("img");
-          iconImg.src = noteIconImg.src;
-          iconImg.width = 28;
-          iconImg.height = 28;
-          iconImg.alt = "";
-          iconSpan.appendChild(iconImg);
-          label.appendChild(iconSpan);
+        if (noteIconImgML) {
+          var iconSpanML = document.createElement("span");
+          iconSpanML.className = "booking-widget__field-icon";
+          iconSpanML.setAttribute("aria-hidden", "true");
+          var iconImgML = document.createElement("img");
+          iconImgML.src = noteIconImgML.src;
+          iconImgML.width = 28;
+          iconImgML.height = 28;
+          iconImgML.alt = "";
+          iconSpanML.appendChild(iconImgML);
+          labelML.appendChild(iconSpanML);
         }
-        var labelText = document.createElement("span");
-        labelText.textContent = field.label;
-        label.appendChild(labelText);
-        wrapper.appendChild(label);
+        var labelTextML = document.createElement("span");
+        labelTextML.textContent = fieldML.label;
+        labelML.appendChild(labelTextML);
+        wrapperML.appendChild(labelML);
 
-        var input;
-        if (field.type === "TEXTAREA") {
-          input = document.createElement("textarea");
-          input.rows = 3;
-        } else if (field.type === "SELECT") {
-          input = document.createElement("select");
-          var placeholderOpt = document.createElement("option");
-          placeholderOpt.value = "";
-          placeholderOpt.textContent = "";
-          input.appendChild(placeholderOpt);
-          (field.options || []).forEach(function (optionValue) {
-            var opt = document.createElement("option");
-            opt.value = optionValue;
-            opt.textContent = optionValue;
-            input.appendChild(opt);
+        var inputML;
+        if (fieldML.type === "TEXTAREA") {
+          inputML = document.createElement("textarea");
+          inputML.rows = 3;
+        } else if (fieldML.type === "SELECT") {
+          inputML = document.createElement("select");
+          var placeholderOptML = document.createElement("option");
+          placeholderOptML.value = "";
+          placeholderOptML.textContent = "";
+          inputML.appendChild(placeholderOptML);
+          (fieldML.options || []).forEach(function (optionValueML) {
+            var optML = document.createElement("option");
+            optML.value = optionValueML;
+            optML.textContent = optionValueML;
+            inputML.appendChild(optML);
           });
         } else {
-          input = document.createElement("input");
-          input.type = field.type === "NUMBER" ? "number" : "text";
+          inputML = document.createElement("input");
+          inputML.type = fieldML.type === "NUMBER" ? "number" : "text";
         }
 
-        input.id = inputId;
-        input.className = "booking-widget__field-input";
-        input.value = customFieldValues[field.fieldKey] || "";
-        input.disabled = quantityLocked;
-        input.addEventListener("input", function () {
-          customFieldValues[field.fieldKey] = input.value;
+        inputML.id = inputIdML;
+        inputML.className = "booking-widget__field-input";
+        inputML.value = customFieldValuesML[fieldML.fieldKey] || "";
+        inputML.disabled = quantityLockedML;
+        inputML.addEventListener("input", function () {
+          customFieldValuesML[fieldML.fieldKey] = inputML.value;
         });
-        input.addEventListener("change", function () {
-          customFieldValues[field.fieldKey] = input.value;
+        inputML.addEventListener("change", function () {
+          customFieldValuesML[fieldML.fieldKey] = inputML.value;
         });
 
-        wrapper.classList.toggle("is-locked", quantityLocked);
+        wrapperML.classList.toggle("is-locked", quantityLockedML);
 
-        wrapper.appendChild(input);
-        customFieldsEntryEl.appendChild(wrapper);
+        wrapperML.appendChild(inputML);
+        customFieldsEntryElML.appendChild(wrapperML);
       });
 
-      customFieldsEntryEl.hidden = false;
+      customFieldsEntryElML.hidden = false;
     }
 
-    function showError(message) {
-      errorEl.hidden = false;
-      errorEl.textContent = message;
+    function showErrorML(messageML) {
+      errorElML.hidden = false;
+      errorElML.textContent = messageML;
     }
 
-    function clearError() {
-      errorEl.hidden = true;
-      errorEl.textContent = "";
+    function clearErrorML() {
+      errorElML.hidden = true;
+      errorElML.textContent = "";
     }
 
-    function openModal() {
-      pendingDate = null;
-      pendingSlot = null;
-      pendingEndDate = null;
-      pendingQuantity = 1;
-      pendingNote = "";
-      if (noteInputEl) noteInputEl.value = "";
-      bundleSessions = [];
-      bundleQuantity = 1;
-      customFieldValues = {};
-      atReviewStep = false;
-      currentSlots = [];
-      availableDates = [];
-      availableDatesByDay = {};
-      remainingCapacityByDate = {};
-      slotRequestId++;
-      if (slotListEl) slotListEl.innerHTML = "";
-      if (durationEl) durationEl.hidden = true;
-      if (slotsPaneEl) slotsPaneEl.hidden = true;
-      var freshToday = new Date();
-      viewYear = freshToday.getUTCFullYear();
-      viewMonth = freshToday.getUTCMonth() + 1;
-      if (reviewStepEl) reviewStepEl.hidden = true;
-      if (reviewBodyEl) reviewBodyEl.hidden = true;
-      if (quantityWrapEl) quantityWrapEl.hidden = false;
-      if (noteWrapEl) noteWrapEl.hidden = false;
-      refreshQuantityForSelection();
-      modalBodyEl.hidden = false;
-      modalFooterEl.hidden = false;
-      overlayEl.hidden = false;
+    function openModalML() {
+      pendingDateML = null;
+      pendingSlotML = null;
+      pendingEndDateML = null;
+      pendingQuantityML = 1;
+      pendingNoteML = "";
+      if (noteInputElML) noteInputElML.value = "";
+      bundleSessionsML = [];
+      bundleQuantityML = 1;
+      customFieldValuesML = {};
+      atReviewStepML = false;
+      currentSlotsML = [];
+      availableDatesML = [];
+      availableDatesByDayML = {};
+      remainingCapacityByDateML = {};
+      slotRequestIdML++;
+      if (slotListElML) slotListElML.innerHTML = "";
+      if (durationElML) durationElML.hidden = true;
+      if (slotsPaneElML) slotsPaneElML.hidden = true;
+      var freshTodayML = new Date();
+      viewYearML = freshTodayML.getUTCFullYear();
+      viewMonthML = freshTodayML.getUTCMonth() + 1;
+      if (reviewStepElML) reviewStepElML.hidden = true;
+      if (reviewBodyElML) reviewBodyElML.hidden = true;
+      if (quantityWrapElML) quantityWrapElML.hidden = false;
+      if (noteWrapElML) noteWrapElML.hidden = false;
+      refreshQuantityForSelectionML();
+      modalBodyElML.hidden = false;
+      modalFooterElML.hidden = false;
+      overlayElML.hidden = false;
       document.body.classList.add("booking-widget-lock-scroll");
-      updateConfirmButton();
-      renderCustomFields();
-      updateRangeSummary();
-      updateBundleProgress();
+      updateConfirmButtonML();
+      renderCustomFieldsML();
+      updateRangeSummaryML();
+      updateBundleProgressML();
 
-      showBookingStep();
+      showBookingStepML();
     }
 
-    function closeModal() {
-      monthRequestId++;
-      slotRequestId++;
-      if (atReviewStep) exitReviewStep();
-      overlayEl.hidden = true;
+    function closeModalML() {
+      monthRequestIdML++;
+      slotRequestIdML++;
+      if (atReviewStepML) exitReviewStepML();
+      overlayElML.hidden = true;
       document.body.classList.remove("booking-widget-lock-scroll");
     }
 
-    function isDateOnlyType(type) {
-      return type === "FULL_DAY" || type === "MULTI_DAY";
+    function isDateOnlyTypeML(typeML) {
+      return typeML === "FULL_DAY" || typeML === "MULTI_DAY";
     }
 
-    function showSelectDateHint() {
-      slotRequestId++;
-      currentSlots = [];
-      if (durationEl) durationEl.hidden = true;
-      if (slotListEl) setStatus(slotListEl, strings.selectDateHint);
+    function showSelectDateHintML() {
+      slotRequestIdML++;
+      currentSlotsML = [];
+      if (durationElML) durationElML.hidden = true;
+      if (slotListElML) setStatusML(slotListElML, stringsML.selectDateHint);
     }
 
-    function nightsBetween(startStr, endStr) {
-      var out = [];
-      var a = Date.parse(startStr + "T00:00:00Z");
-      var b = Date.parse(endStr + "T00:00:00Z");
-      if (!isFinite(a) || !isFinite(b)) return out;
-      for (var t = a; t < b && out.length < 366; t += 86400000) {
-        out.push(new Date(t).toISOString().slice(0, 10));
+    function nightsBetweenML(startStrML, endStrML) {
+      var outML = [];
+      var aML = Date.parse(startStrML + "T00:00:00Z");
+      var bML = Date.parse(endStrML + "T00:00:00Z");
+      if (!isFinite(aML) || !isFinite(bML)) return outML;
+      for (var tML = aML; tML < bML && outML.length < 366; tML += 86400000) {
+        outML.push(new Date(tML).toISOString().slice(0, 10));
       }
-      return out;
+      return outML;
     }
 
-    function cartSlotKey(date, start) {
-      return date + "|" + start;
+    function cartSlotKeyML(dateML, startML) {
+      return dateML + "|" + startML;
     }
 
-    function fetchCartBookedQty() {
-      var locId = pendingLocation ? String(pendingLocation.id) : "";
+    function fetchCartBookedQtyML() {
+      var locIdML = pendingLocationML ? String(pendingLocationML.id) : "";
       return fetch("/cart.js", { headers: { Accept: "application/json" } })
-        .then(function (res) {
-          return res.json();
+        .then(function (resML) {
+          return resML.json();
         })
-        .then(function (cart) {
-          var out = { slots: {}, days: {} };
-          (cart.items || []).forEach(function (item) {
-            var props = item.properties || {};
-            if (String(item.product_id) !== numericProductId) return;
-            if (!props["Booking Date"]) return;
-            if (locId && String(props["_Location Id"] || "") !== locId) return;
-            var qty = item.quantity || 0;
+        .then(function (cartML) {
+          var outML = { slots: {}, days: {} };
+          (cartML.items || []).forEach(function (itemML) {
+            var propsML = itemML.properties || {};
+            if (String(itemML.product_id) !== numericProductIdML) return;
+            if (!propsML["Booking Date"]) return;
+            if (locIdML && String(propsML["_Location Id"] || "") !== locIdML) return;
+            var qtyML = itemML.quantity || 0;
 
-            var k = cartSlotKey(props["Booking Date"], props["Booking Time"] || "");
-            out.slots[k] = (out.slots[k] || 0) + qty;
+            var kML = cartSlotKeyML(propsML["Booking Date"], propsML["Booking Time"] || "");
+            outML.slots[kML] = (outML.slots[kML] || 0) + qtyML;
 
-            var n = 2;
-            while (props["Session " + n + " Date"]) {
-              var sk = cartSlotKey(
-                props["Session " + n + " Date"],
-                props["Session " + n + " Time"] || "",
+            var nML = 2;
+            while (propsML["Session " + nML + " Date"]) {
+              var skML = cartSlotKeyML(
+                propsML["Session " + nML + " Date"],
+                propsML["Session " + nML + " Time"] || "",
               );
-              out.slots[sk] = (out.slots[sk] || 0) + qty;
-              n += 1;
+              outML.slots[skML] = (outML.slots[skML] || 0) + qtyML;
+              nML += 1;
             }
 
-            var nights = props["Checkout Date"]
-              ? nightsBetween(props["Booking Date"], props["Checkout Date"])
-              : [props["Booking Date"]];
-            nights.forEach(function (d) {
-              out.days[d] = (out.days[d] || 0) + qty;
+            var nightsML = propsML["Checkout Date"]
+              ? nightsBetweenML(propsML["Booking Date"], propsML["Checkout Date"])
+              : [propsML["Booking Date"]];
+            nightsML.forEach(function (dML) {
+              outML.days[dML] = (outML.days[dML] || 0) + qtyML;
             });
           });
-          return out;
+          return outML;
         })
         .catch(function () {
           return { slots: {}, days: {} };
         });
     }
 
-    function subtractCartFromSlots(slots, dateStr, cartQty) {
-      return slots.map(function (slot) {
-        if (typeof slot.remainingCapacity !== "number") return slot;
-        var used = cartQty.slots[cartSlotKey(dateStr, slot.start)] || 0;
-        if (used <= 0) return slot;
-        var next = Object.assign({}, slot);
-        next.remainingCapacity = Math.max(0, slot.remainingCapacity - used);
-        if (next.remainingCapacity === 0) next.available = false;
-        return next;
+    function subtractCartFromSlotsML(slotsML, dateStrML, cartQtyML) {
+      return slotsML.map(function (slotML) {
+        if (typeof slotML.remainingCapacity !== "number") return slotML;
+        var usedML = cartQtyML.slots[cartSlotKeyML(dateStrML, slotML.start)] || 0;
+        if (usedML <= 0) return slotML;
+        var nextML = Object.assign({}, slotML);
+        nextML.remainingCapacity = Math.max(0, slotML.remainingCapacity - usedML);
+        if (nextML.remainingCapacity === 0) nextML.available = false;
+        return nextML;
       });
     }
 
-    function fetchAvailability(year, month) {
-      var url =
-        proxyBase +
+    function fetchAvailabilityML(yearML, monthML) {
+      var urlML =
+        proxyBaseML +
         "/availability?productId=" +
-        encodeURIComponent(productId) +
+        encodeURIComponent(productIdML) +
         "&year=" +
-        year +
+        yearML +
         "&month=" +
-        month;
-      if (pendingLocation) {
-        url += "&locationId=" + encodeURIComponent(pendingLocation.id);
+        monthML;
+      if (pendingLocationML) {
+        urlML += "&locationId=" + encodeURIComponent(pendingLocationML.id);
       }
-      return fetch(url).then(function (res) {
-        if (res.status === 403) {
-          return res.json().catch(function () {
+      return fetch(urlML).then(function (resML) {
+        if (resML.status === 403) {
+          return resML.json().catch(function () {
             return {};
-          }).then(function (body) {
-            var err = new Error((body && body.error) || "Booking unavailable");
-            err.code = "APP_DISABLED";
-            throw err;
+          }).then(function (bodyML) {
+            var errML = new Error((bodyML && bodyML.error) || "Booking unavailable");
+            errML.code = "APP_DISABLED";
+            throw errML;
           });
         }
-        return res.json();
+        return resML.json();
       });
     }
 
-    function applyAvailabilityData(data, cartQty) {
-      var dates = data.availableDates || [];
-      if (data.bookingType) productBookingType = data.bookingType;
-      if (typeof data.dailyStartTime === "string") fullDayStartTime = data.dailyStartTime;
-      if (typeof data.dailyEndTime === "string") fullDayEndTime = data.dailyEndTime;
-      if (typeof data.minNights === "number") multiDayMinNights = data.minNights;
-      if (typeof data.maxNights === "number") multiDayMaxNights = data.maxNights;
-      if (typeof data.bundleSessionCount === "number") bundleSessionCount = data.bundleSessionCount;
-      if (typeof data.bundleValidityDays === "number") {
-        bundleValidityDays = data.bundleValidityDays;
+    function applyAvailabilityDataML(dataML, cartQtyML) {
+      var datesML = dataML.availableDates || [];
+      if (dataML.bookingType) productBookingTypeML = dataML.bookingType;
+      if (typeof dataML.dailyStartTime === "string") fullDayStartTimeML = dataML.dailyStartTime;
+      if (typeof dataML.dailyEndTime === "string") fullDayEndTimeML = dataML.dailyEndTime;
+      if (typeof dataML.minNights === "number") multiDayMinNightsML = dataML.minNights;
+      if (typeof dataML.maxNights === "number") multiDayMaxNightsML = dataML.maxNights;
+      if (typeof dataML.bundleSessionCount === "number") bundleSessionCountML = dataML.bundleSessionCount;
+      if (typeof dataML.bundleValidityDays === "number") {
+        bundleValidityDaysML = dataML.bundleValidityDays;
       }
-      dates.forEach(function (d) {
-        availableDatesByDay[d] = true;
+      datesML.forEach(function (dML) {
+        availableDatesByDayML[dML] = true;
       });
-      if (data.remainingCapacityByDate) {
-        Object.keys(data.remainingCapacityByDate).forEach(function (d) {
-          remainingCapacityByDate[d] = data.remainingCapacityByDate[d];
+      if (dataML.remainingCapacityByDate) {
+        Object.keys(dataML.remainingCapacityByDate).forEach(function (dML) {
+          remainingCapacityByDateML[dML] = dataML.remainingCapacityByDate[dML];
         });
       }
-      if (cartQty && isDateOnlyType(productBookingType)) {
-        Object.keys(cartQty.days).forEach(function (d) {
-          if (typeof remainingCapacityByDate[d] !== "number") return;
-          remainingCapacityByDate[d] = Math.max(
+      if (cartQtyML && isDateOnlyTypeML(productBookingTypeML)) {
+        Object.keys(cartQtyML.days).forEach(function (dML) {
+          if (typeof remainingCapacityByDateML[dML] !== "number") return;
+          remainingCapacityByDateML[dML] = Math.max(
             0,
-            remainingCapacityByDate[d] - cartQty.days[d],
+            remainingCapacityByDateML[dML] - cartQtyML.days[dML],
           );
-          if (remainingCapacityByDate[d] === 0) availableDatesByDay[d] = false;
+          if (remainingCapacityByDateML[dML] === 0) availableDatesByDayML[dML] = false;
         });
-        dates = dates.filter(function (d) {
-          return remainingCapacityByDate[d] !== 0;
+        datesML = datesML.filter(function (dML) {
+          return remainingCapacityByDateML[dML] !== 0;
         });
       }
-      return dates;
+      return datesML;
     }
 
-    function applyLayoutForType() {
-      var showTimes = !isDateOnlyType(productBookingType);
-      if (slotsPaneEl) slotsPaneEl.hidden = !showTimes;
-      if (slotsPaneOuterEl) slotsPaneOuterEl.hidden = !showTimes;
-      if (datetimeCardEl) {
-        datetimeCardEl.classList.toggle(
+    function applyLayoutForTypeML() {
+      var showTimesML = !isDateOnlyTypeML(productBookingTypeML);
+      if (slotsPaneElML) slotsPaneElML.hidden = !showTimesML;
+      if (slotsPaneOuterElML) slotsPaneOuterElML.hidden = !showTimesML;
+      if (datetimeCardElML) {
+        datetimeCardElML.classList.toggle(
           "booking-widget__datetime-card--times",
-          showTimes,
+          showTimesML,
         );
       }
-      if (showTimes && !pendingDate) showSelectDateHint();
+      if (showTimesML && !pendingDateML) showSelectDateHintML();
     }
 
-    function updateRangeSummary() {
-      if (!rangeSummaryEl) return;
-      var showSummary = productBookingType === "MULTI_DAY";
-      rangeSummaryEl.hidden = !showSummary;
-      if (!showSummary) return;
+    function updateRangeSummaryML() {
+      if (!rangeSummaryElML) return;
+      var showSummaryML = productBookingTypeML === "MULTI_DAY";
+      rangeSummaryElML.hidden = !showSummaryML;
+      if (!showSummaryML) return;
 
-      if (rangeHintEl) rangeHintEl.textContent = multiDayRangeInfoText() || "";
+      if (rangeHintElML) rangeHintElML.textContent = multiDayRangeInfoTextML() || "";
 
-      if (!selectedDatesEl) return;
-      if (pendingDate) {
-        var count = pendingEndDate
-          ? inclusiveDayCount(pendingDate, pendingEndDate)
+      if (!selectedDatesElML) return;
+      if (pendingDateML) {
+        var countML = pendingEndDateML
+          ? inclusiveDayCountML(pendingDateML, pendingEndDateML)
           : 1;
-        selectedDatesEl.hidden = false;
-        if (selectedDatesLabelEl) {
-          selectedDatesLabelEl.textContent = "Selected Dates (" + count + ")";
+        selectedDatesElML.hidden = false;
+        if (selectedDatesLabelElML) {
+          selectedDatesLabelElML.textContent = "Selected Dates (" + countML + ")";
         }
-        if (selectedDatesTextEl) {
-          selectedDatesTextEl.textContent = pendingEndDate
-            ? formatChipDate(pendingDate) + " - " + formatChipDate(pendingEndDate)
-            : formatChipDate(pendingDate);
+        if (selectedDatesTextElML) {
+          selectedDatesTextElML.textContent = pendingEndDateML
+            ? formatChipDateML(pendingDateML) + " - " + formatChipDateML(pendingEndDateML)
+            : formatChipDateML(pendingDateML);
         }
       } else {
-        selectedDatesEl.hidden = true;
+        selectedDatesElML.hidden = true;
       }
     }
 
-    if (selectedDatesClearBtn) {
-      selectedDatesClearBtn.addEventListener("click", function () {
-        pendingDate = null;
-        pendingEndDate = null;
-        pendingSlot = null;
-        clearError();
-        renderCalendar();
-        updateConfirmButton();
-        renderCustomFields();
-        refreshQuantityForSelection();
-        updateRangeSummary();
+    if (selectedDatesClearBtnML) {
+      selectedDatesClearBtnML.addEventListener("click", function () {
+        pendingDateML = null;
+        pendingEndDateML = null;
+        pendingSlotML = null;
+        clearErrorML();
+        renderCalendarML();
+        updateConfirmButtonML();
+        renderCustomFieldsML();
+        refreshQuantityForSelectionML();
+        updateRangeSummaryML();
       });
     }
 
-    var monthRequestId = 0;
+    var monthRequestIdML = 0;
 
-    function loadMonth() {
-      var requestId = ++monthRequestId;
-      setStatus(calendarEl, strings.loadingAvailability);
+    function loadMonthML() {
+      var requestIdML = ++monthRequestIdML;
+      setStatusML(calendarElML, stringsML.loadingAvailability);
 
-      Promise.all([fetchAvailability(viewYear, viewMonth), fetchCartBookedQty()])
-        .then(function (results) {
-          if (requestId !== monthRequestId) return;
-          availableDates = applyAvailabilityData(results[0], results[1]);
-          updateBundleProgress();
-          applyLayoutForType();
-          renderCalendar();
-          if (!pendingEndDate) updateRangeSummary();
+      Promise.all([fetchAvailabilityML(viewYearML, viewMonthML), fetchCartBookedQtyML()])
+        .then(function (resultsML) {
+          if (requestIdML !== monthRequestIdML) return;
+          availableDatesML = applyAvailabilityDataML(resultsML[0], resultsML[1]);
+          updateBundleProgressML();
+          applyLayoutForTypeML();
+          renderCalendarML();
+          if (!pendingEndDateML) updateRangeSummaryML();
         })
-        .catch(function (err) {
-          if (requestId !== monthRequestId) return;
-          if (err && err.code === "APP_DISABLED") {
-            setStatus(calendarEl, strings.bookingUnavailable);
+        .catch(function (errML) {
+          if (requestIdML !== monthRequestIdML) return;
+          if (errML && errML.code === "APP_DISABLED") {
+            setStatusML(calendarElML, stringsML.bookingUnavailable);
             return;
           }
-          setStatus(calendarEl, strings.availabilityError, loadMonth);
+          setStatusML(calendarElML, stringsML.availabilityError, loadMonthML);
         });
     }
 
-    function bundleWindowStart() {
+    function bundleWindowStartML() {
       if (
-        productBookingType !== "BUNDLE" ||
-        bundleValidityDays === null ||
-        bundleSessions.length === 0
+        productBookingTypeML !== "BUNDLE" ||
+        bundleValidityDaysML === null ||
+        bundleSessionsML.length === 0
       ) {
         return null;
       }
-      return bundleSessions
-        .map(function (session) {
-          return session.date;
+      return bundleSessionsML
+        .map(function (sessionML) {
+          return sessionML.date;
         })
         .sort()[0];
     }
 
-    function bundleValidityDeadline() {
-      var start = bundleWindowStart();
-      if (!start) return null;
-      var deadline = new Date(start + "T00:00:00.000Z");
-      deadline.setUTCDate(deadline.getUTCDate() + bundleValidityDays);
-      return deadline.toISOString().slice(0, 10);
+    function bundleValidityDeadlineML() {
+      var startML = bundleWindowStartML();
+      if (!startML) return null;
+      var deadlineML = new Date(startML + "T00:00:00.000Z");
+      deadlineML.setUTCDate(deadlineML.getUTCDate() + bundleValidityDaysML);
+      return deadlineML.toISOString().slice(0, 10);
     }
 
-    function sessionProgressText() {
-      var deadlineStr = bundleValidityDeadline();
-      if (deadlineStr) {
-        return format(strings.sessionProgressWithDeadline, {
-          current: bundleSessions.length + 1,
-          total: bundleSessionCount,
-          deadline: formatDateDisplay(deadlineStr),
+    function sessionProgressTextML() {
+      var deadlineStrML = bundleValidityDeadlineML();
+      if (deadlineStrML) {
+        return formatML(stringsML.sessionProgressWithDeadline, {
+          current: bundleSessionsML.length + 1,
+          total: bundleSessionCountML,
+          deadline: formatDateDisplayML(deadlineStrML),
         });
       }
-      if (productBookingType === "BUNDLE" && bundleValidityDays !== null) {
-        return format(strings.sessionProgressWithWindow, {
-          current: bundleSessions.length + 1,
-          total: bundleSessionCount,
-          days: bundleValidityDays,
+      if (productBookingTypeML === "BUNDLE" && bundleValidityDaysML !== null) {
+        return formatML(stringsML.sessionProgressWithWindow, {
+          current: bundleSessionsML.length + 1,
+          total: bundleSessionCountML,
+          days: bundleValidityDaysML,
         });
       }
-      return format(strings.sessionProgress, {
-        current: bundleSessions.length + 1,
-        total: bundleSessionCount,
+      return formatML(stringsML.sessionProgress, {
+        current: bundleSessionsML.length + 1,
+        total: bundleSessionCountML,
       });
     }
 
-    function updateBundleProgress() {
-      if (!bundleProgressEl) return;
-      if (productBookingType !== "BUNDLE" || !bundleSessionCount) {
-        bundleProgressEl.hidden = true;
+    function updateBundleProgressML() {
+      if (!bundleProgressElML) return;
+      if (productBookingTypeML !== "BUNDLE" || !bundleSessionCountML) {
+        bundleProgressElML.hidden = true;
         return;
       }
-      bundleProgressEl.hidden = false;
-      var completed = bundleSessions.length;
-      var total = bundleSessionCount;
-      var pct = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
-      if (bundleProgressFillEl) bundleProgressFillEl.style.width = pct + "%";
-      if (bundleProgressLabelEl) {
-        bundleProgressLabelEl.textContent =
-          completed + " of " + total + " sessions selected";
+      bundleProgressElML.hidden = false;
+      var completedML = bundleSessionsML.length;
+      var totalML = bundleSessionCountML;
+      var pctML = totalML > 0 ? Math.min(100, Math.round((completedML / totalML) * 100)) : 0;
+      if (bundleProgressFillElML) bundleProgressFillElML.style.width = pctML + "%";
+      if (bundleProgressLabelElML) {
+        bundleProgressLabelElML.textContent =
+          completedML + " of " + totalML + " sessions selected";
       }
     }
 
-    function buildDayButton(dateStr, choosingMultiDayCheckout) {
-      var day = Number(dateStr.slice(8, 10));
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = String(day);
-      btn.className = "booking-widget__day";
+    function buildDayButtonML(dateStrML, choosingMultiDayCheckoutML) {
+      var dayML = Number(dateStrML.slice(8, 10));
+      var btnML = document.createElement("button");
+      btnML.type = "button";
+      btnML.textContent = String(dayML);
+      btnML.className = "booking-widget__day";
 
-      var isCheckoutCandidate =
-        choosingMultiDayCheckout && dateStr > pendingDate;
-      var windowStart = bundleWindowStart();
-      var windowEnd = bundleValidityDeadline();
-      var withinBundleValidity =
-        productBookingType !== "BUNDLE" ||
-        !windowStart ||
-        (dateStr >= windowStart && dateStr <= windowEnd);
-      var isClickable =
-        (availableDatesByDay[dateStr] || isCheckoutCandidate) &&
-        withinBundleValidity &&
-        isLocationSelected();
+      var isCheckoutCandidateML =
+        choosingMultiDayCheckoutML && dateStrML > pendingDateML;
+      var windowStartML = bundleWindowStartML();
+      var windowEndML = bundleValidityDeadlineML();
+      var withinBundleValidityML =
+        productBookingTypeML !== "BUNDLE" ||
+        !windowStartML ||
+        (dateStrML >= windowStartML && dateStrML <= windowEndML);
+      var isClickableML =
+        (availableDatesByDayML[dateStrML] || isCheckoutCandidateML) &&
+        withinBundleValidityML &&
+        isLocationSelectedML();
 
-      if (isClickable) {
-        btn.classList.add("booking-widget__day--available");
-        btn.addEventListener("click", function () {
-          if (productBookingType === "MULTI_DAY") {
-            selectMultiDayDate(dateStr);
+      if (isClickableML) {
+        btnML.classList.add("booking-widget__day--available");
+        btnML.addEventListener("click", function () {
+          if (productBookingTypeML === "MULTI_DAY") {
+            selectMultiDayDateML(dateStrML);
           } else {
-            selectDate(dateStr);
+            selectDateML(dateStrML);
           }
         });
       } else {
-        btn.disabled = true;
+        btnML.disabled = true;
       }
 
-      if (productBookingType === "MULTI_DAY") {
-        if (dateStr === pendingDate || dateStr === pendingEndDate) {
-          btn.classList.add("booking-widget__day--selected");
+      if (productBookingTypeML === "MULTI_DAY") {
+        if (dateStrML === pendingDateML || dateStrML === pendingEndDateML) {
+          btnML.classList.add("booking-widget__day--selected");
         } else if (
-          pendingDate &&
-          pendingEndDate &&
-          dateStr > pendingDate &&
-          dateStr < pendingEndDate
+          pendingDateML &&
+          pendingEndDateML &&
+          dateStrML > pendingDateML &&
+          dateStrML < pendingEndDateML
         ) {
-          btn.classList.add("booking-widget__day--in-range");
+          btnML.classList.add("booking-widget__day--in-range");
         }
-      } else if (dateStr === pendingDate) {
-        btn.classList.add("booking-widget__day--selected");
+      } else if (dateStrML === pendingDateML) {
+        btnML.classList.add("booking-widget__day--selected");
       }
 
-      return btn;
+      return btnML;
     }
 
-    function buildGrid(year, month, choosingMultiDayCheckout) {
-      var grid = document.createElement("div");
-      grid.className = "booking-widget__grid";
+    function buildGridML(yearML, monthML, choosingMultiDayCheckoutML) {
+      var gridML = document.createElement("div");
+      gridML.className = "booking-widget__grid";
 
-      var daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-      var firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+      var daysInMonthML = new Date(Date.UTC(yearML, monthML, 0)).getUTCDate();
+      var firstWeekdayML = new Date(Date.UTC(yearML, monthML - 1, 1)).getUTCDay();
 
-      for (var i = 0; i < firstWeekday; i++) {
-        grid.appendChild(document.createElement("span"));
+      for (var iML = 0; iML < firstWeekdayML; iML++) {
+        gridML.appendChild(document.createElement("span"));
       }
-      for (var day = 1; day <= daysInMonth; day++) {
-        var dateStr = year + "-" + pad(month) + "-" + pad(day);
-        grid.appendChild(buildDayButton(dateStr, choosingMultiDayCheckout));
+      for (var dayML = 1; dayML <= daysInMonthML; dayML++) {
+        var dateStrML = yearML + "-" + padML(monthML) + "-" + padML(dayML);
+        gridML.appendChild(buildDayButtonML(dateStrML, choosingMultiDayCheckoutML));
       }
 
-      return grid;
+      return gridML;
     }
 
-    function buildWeekdaysRow() {
-      var row = document.createElement("div");
-      row.className = "booking-widget__weekdays";
-      WEEKDAY_LABELS.forEach(function (label) {
-        var span = document.createElement("span");
-        span.textContent = label;
-        row.appendChild(span);
+    function buildWeekdaysRowML() {
+      var rowML = document.createElement("div");
+      rowML.className = "booking-widget__weekdays";
+      WEEKDAY_LABELS_ML.forEach(function (labelML) {
+        var spanML = document.createElement("span");
+        spanML.textContent = labelML;
+        rowML.appendChild(spanML);
       });
-      return row;
+      return rowML;
     }
 
-    function buildMonthPicker(year, month, offset) {
-      var label = monthShortFormatter.format(
-        new Date(Date.UTC(year, month - 1, 1)),
+    function buildMonthPickerML(yearML, monthML, offsetML) {
+      var labelML = monthShortFormatterML.format(
+        new Date(Date.UTC(yearML, monthML - 1, 1)),
       );
 
-      var wrap = document.createElement("div");
-      wrap.className = "booking-widget__month-picker";
+      var wrapML = document.createElement("div");
+      wrapML.className = "booking-widget__month-picker";
 
-      var text = document.createElement("span");
-      text.className = "booking-widget__month-picker-text";
-      text.textContent = label;
-      wrap.appendChild(text);
-      wrap.insertAdjacentHTML("beforeend", DROPDOWN_CHEVRON_SVG);
+      var textML = document.createElement("span");
+      textML.className = "booking-widget__month-picker-text";
+      textML.textContent = labelML;
+      wrapML.appendChild(textML);
+      wrapML.insertAdjacentHTML("beforeend", DROPDOWN_CHEVRON_SVG_ML);
 
-      var select = document.createElement("select");
-      select.className = "booking-widget__month-picker-select";
-      select.setAttribute(
+      var selectML = document.createElement("select");
+      selectML.className = "booking-widget__month-picker-select";
+      selectML.setAttribute(
         "aria-label",
-        format(strings.selectYear, { year: year }),
+        formatML(stringsML.selectYear, { year: yearML }),
       );
 
-      var now = new Date();
-      var todayIndex = now.getUTCFullYear() * 12 + now.getUTCMonth();
-      var thisYear = now.getUTCFullYear();
-      var firstYear = Math.min(thisYear, year);
-      var lastYear = Math.max(thisYear + YEAR_PICKER_SPAN - 1, year);
-      for (var y = firstYear; y <= lastYear; y++) {
-        var option = document.createElement("option");
-        option.value = String(y);
-        option.textContent = String(y);
-        select.appendChild(option);
+      var nowML = new Date();
+      var todayIndexML = nowML.getUTCFullYear() * 12 + nowML.getUTCMonth();
+      var thisYearML = nowML.getUTCFullYear();
+      var firstYearML = Math.min(thisYearML, yearML);
+      var lastYearML = Math.max(thisYearML + YEAR_PICKER_SPAN_ML - 1, yearML);
+      for (var yML = firstYearML; yML <= lastYearML; yML++) {
+        var optionML = document.createElement("option");
+        optionML.value = String(yML);
+        optionML.textContent = String(yML);
+        selectML.appendChild(optionML);
       }
-      select.value = String(year);
-      select.addEventListener("change", function () {
-        var target = Math.max(
-          Number(select.value) * 12 + (month - 1),
-          todayIndex + offset,
+      selectML.value = String(yearML);
+      selectML.addEventListener("change", function () {
+        var targetML = Math.max(
+          Number(selectML.value) * 12 + (monthML - 1),
+          todayIndexML + offsetML,
         );
-        changeViewMonth(target - offset);
+        changeViewMonthML(targetML - offsetML);
       });
-      wrap.appendChild(select);
+      wrapML.appendChild(selectML);
 
-      return wrap;
+      return wrapML;
     }
 
-    function buildMonthPane(
-      year,
-      month,
-      choosingMultiDayCheckout,
-      showNoAvailability,
-      offset,
+    function buildMonthPaneML(
+      yearML,
+      monthML,
+      choosingMultiDayCheckoutML,
+      showNoAvailabilityML,
+      offsetML,
     ) {
-      var pane = document.createElement("div");
-      pane.className = "booking-widget__month-pane";
+      var paneML = document.createElement("div");
+      paneML.className = "booking-widget__month-pane";
 
-      var heading = document.createElement("div");
-      heading.className = "booking-widget__month-pane-heading";
+      var headingML = document.createElement("div");
+      headingML.className = "booking-widget__month-pane-heading";
 
-      var prev = document.createElement("button");
-      prev.type = "button";
-      prev.className = "booking-widget__nav";
-      prev.setAttribute("aria-label", strings.previousMonth);
-      prev.innerHTML = navChevronSvg(NAV_ARROW);
-      prev.addEventListener("click", function () {
-        goToMonth(-1);
+      var prevML = document.createElement("button");
+      prevML.type = "button";
+      prevML.className = "booking-widget__nav";
+      prevML.setAttribute("aria-label", stringsML.previousMonth);
+      prevML.innerHTML = navChevronSvgML(NAV_ARROW_ML);
+      prevML.addEventListener("click", function () {
+        goToMonthML(-1);
       });
-      heading.appendChild(prev);
+      headingML.appendChild(prevML);
 
-      heading.appendChild(buildMonthPicker(year, month, offset));
+      headingML.appendChild(buildMonthPickerML(yearML, monthML, offsetML));
 
-      var next = document.createElement("button");
-      next.type = "button";
-      next.className = "booking-widget__nav booking-widget__nav--next";
-      next.setAttribute("aria-label", strings.nextMonth);
-      next.innerHTML = navChevronSvg(CAL_BLUE);
-      next.addEventListener("click", function () {
-        goToMonth(1);
+      var nextML = document.createElement("button");
+      nextML.type = "button";
+      nextML.className = "booking-widget__nav booking-widget__nav--next";
+      nextML.setAttribute("aria-label", stringsML.nextMonth);
+      nextML.innerHTML = navChevronSvgML(CAL_BLUE_ML);
+      nextML.addEventListener("click", function () {
+        goToMonthML(1);
       });
-      heading.appendChild(next);
+      headingML.appendChild(nextML);
 
-      pane.appendChild(heading);
-      pane.appendChild(buildWeekdaysRow());
-      pane.appendChild(buildGrid(year, month, choosingMultiDayCheckout));
+      paneML.appendChild(headingML);
+      paneML.appendChild(buildWeekdaysRowML());
+      paneML.appendChild(buildGridML(yearML, monthML, choosingMultiDayCheckoutML));
 
-      if (showNoAvailability) {
-        var status = document.createElement("p");
-        status.className = "booking-widget__status booking-widget__month-note";
-        status.textContent = strings.noAvailability;
-        pane.appendChild(status);
+      if (showNoAvailabilityML) {
+        var statusML = document.createElement("p");
+        statusML.className = "booking-widget__status booking-widget__month-note";
+        statusML.textContent = stringsML.noAvailability;
+        paneML.appendChild(statusML);
       }
 
-      return pane;
+      return paneML;
     }
 
-    function renderCalendar() {
-      var choosingMultiDayCheckout =
-        productBookingType === "MULTI_DAY" && pendingDate && !pendingEndDate;
+    function renderCalendarML() {
+      var choosingMultiDayCheckoutML =
+        productBookingTypeML === "MULTI_DAY" && pendingDateML && !pendingEndDateML;
 
-      var pane1NoAvail = availableDates.length === 0 && !choosingMultiDayCheckout;
+      var pane1NoAvailML = availableDatesML.length === 0 && !choosingMultiDayCheckoutML;
 
-      calendarEl.innerHTML = "";
-      calendarEl.appendChild(
-        buildMonthPane(
-          viewYear,
-          viewMonth,
-          choosingMultiDayCheckout,
-          pane1NoAvail,
+      calendarElML.innerHTML = "";
+      calendarElML.appendChild(
+        buildMonthPaneML(
+          viewYearML,
+          viewMonthML,
+          choosingMultiDayCheckoutML,
+          pane1NoAvailML,
           0,
         ),
       );
-      updateCalendarLockState();
+      updateCalendarLockStateML();
     }
 
-    function multiDayRangeInfoText() {
-      if (multiDayMinNights !== null && multiDayMaxNights !== null) {
-        return format(strings.multiDayMinMaxNights, {
-          min: multiDayMinNights,
-          max: multiDayMaxNights,
+    function multiDayRangeInfoTextML() {
+      if (multiDayMinNightsML !== null && multiDayMaxNightsML !== null) {
+        return formatML(stringsML.multiDayMinMaxNights, {
+          min: multiDayMinNightsML,
+          max: multiDayMaxNightsML,
         });
       }
-      if (multiDayMinNights !== null) {
-        return format(strings.multiDayMinNights, { count: multiDayMinNights });
+      if (multiDayMinNightsML !== null) {
+        return formatML(stringsML.multiDayMinNights, { count: multiDayMinNightsML });
       }
-      if (multiDayMaxNights !== null) {
-        return format(strings.multiDayMaxNights, { count: multiDayMaxNights });
+      if (multiDayMaxNightsML !== null) {
+        return formatML(stringsML.multiDayMaxNights, { count: multiDayMaxNightsML });
       }
       return null;
     }
 
-    function selectMultiDayDate(dateStr) {
-      var choosingCheckout = pendingDate && !pendingEndDate && dateStr > pendingDate;
+    function selectMultiDayDateML(dateStrML) {
+      var choosingCheckoutML = pendingDateML && !pendingEndDateML && dateStrML > pendingDateML;
 
-      if (!choosingCheckout) {
-        pendingDate = dateStr;
-        pendingEndDate = null;
-        pendingSlot = null;
-        clearError();
-        renderCalendar();
-        updateConfirmButton();
-        renderCustomFields();
-        refreshQuantityForSelection();
-        updateRangeSummary();
+      if (!choosingCheckoutML) {
+        pendingDateML = dateStrML;
+        pendingEndDateML = null;
+        pendingSlotML = null;
+        clearErrorML();
+        renderCalendarML();
+        updateConfirmButtonML();
+        renderCustomFieldsML();
+        refreshQuantityForSelectionML();
+        updateRangeSummaryML();
         return;
       }
 
-      var nights = 0;
-      var cursor = pendingDate;
-      var allNightsAvailable = true;
-      while (cursor < dateStr) {
-        if (!availableDatesByDay[cursor]) {
-          allNightsAvailable = false;
+      var nightsML = 0;
+      var cursorML = pendingDateML;
+      var allNightsAvailableML = true;
+      while (cursorML < dateStrML) {
+        if (!availableDatesByDayML[cursorML]) {
+          allNightsAvailableML = false;
           break;
         }
-        nights += 1;
-        var d = new Date(cursor + "T00:00:00.000Z");
-        d.setUTCDate(d.getUTCDate() + 1);
-        cursor = d.toISOString().slice(0, 10);
+        nightsML += 1;
+        var dML = new Date(cursorML + "T00:00:00.000Z");
+        dML.setUTCDate(dML.getUTCDate() + 1);
+        cursorML = dML.toISOString().slice(0, 10);
       }
 
-      if (!allNightsAvailable) {
-        showError(strings.multiDayRangeUnavailable);
+      if (!allNightsAvailableML) {
+        showErrorML(stringsML.multiDayRangeUnavailable);
         return;
       }
-      if (multiDayMinNights !== null && nights < multiDayMinNights) {
-        showError(format(strings.multiDayMinNights, { count: multiDayMinNights }));
+      if (multiDayMinNightsML !== null && nightsML < multiDayMinNightsML) {
+        showErrorML(formatML(stringsML.multiDayMinNights, { count: multiDayMinNightsML }));
         return;
       }
-      if (multiDayMaxNights !== null && nights > multiDayMaxNights) {
-        showError(format(strings.multiDayMaxNights, { count: multiDayMaxNights }));
+      if (multiDayMaxNightsML !== null && nightsML > multiDayMaxNightsML) {
+        showErrorML(formatML(stringsML.multiDayMaxNights, { count: multiDayMaxNightsML }));
         return;
       }
 
-      clearError();
-      pendingEndDate = dateStr;
-      pendingSlot = buildMultiDaySlot(pendingDate, pendingEndDate);
-      renderCalendar();
-      updateConfirmButton();
-      renderCustomFields();
-      refreshQuantityForSelection();
-      updateRangeSummary();
+      clearErrorML();
+      pendingEndDateML = dateStrML;
+      pendingSlotML = buildMultiDaySlotML(pendingDateML, pendingEndDateML);
+      renderCalendarML();
+      updateConfirmButtonML();
+      renderCustomFieldsML();
+      refreshQuantityForSelectionML();
+      updateRangeSummaryML();
     }
 
-    function minRemainingCapacityForRange(checkinStr, checkoutStr) {
-      var min = null;
-      var cursor = checkinStr;
-      while (cursor < checkoutStr) {
-        var cap = remainingCapacityByDate[cursor];
-        if (typeof cap === "number" && (min === null || cap < min)) {
-          min = cap;
+    function minRemainingCapacityForRangeML(checkinStrML, checkoutStrML) {
+      var minML = null;
+      var cursorML = checkinStrML;
+      while (cursorML < checkoutStrML) {
+        var capML = remainingCapacityByDateML[cursorML];
+        if (typeof capML === "number" && (minML === null || capML < minML)) {
+          minML = capML;
         }
-        var d = new Date(cursor + "T00:00:00.000Z");
-        d.setUTCDate(d.getUTCDate() + 1);
-        cursor = d.toISOString().slice(0, 10);
+        var dML = new Date(cursorML + "T00:00:00.000Z");
+        dML.setUTCDate(dML.getUTCDate() + 1);
+        cursorML = dML.toISOString().slice(0, 10);
       }
-      return min;
+      return minML;
     }
 
-    function buildMultiDaySlot(checkinStr, checkoutStr) {
+    function buildMultiDaySlotML(checkinStrML, checkoutStrML) {
       return {
         start: "00:00",
         end: "00:00",
-        startsAt: checkinStr + "T00:00:00.000Z",
-        endDate: checkoutStr,
-        remainingCapacity: minRemainingCapacityForRange(checkinStr, checkoutStr),
+        startsAt: checkinStrML + "T00:00:00.000Z",
+        endDate: checkoutStrML,
+        remainingCapacity: minRemainingCapacityForRangeML(checkinStrML, checkoutStrML),
         available: true,
       };
     }
 
-    function buildFullDaySlot(dateStr) {
-      var cap = remainingCapacityByDate[dateStr];
+    function buildFullDaySlotML(dateStrML) {
+      var capML = remainingCapacityByDateML[dateStrML];
       return {
-        start: fullDayStartTime,
-        end: fullDayEndTime,
-        startsAt: dateStr + "T00:00:00.000Z",
-        remainingCapacity: typeof cap === "number" ? cap : null,
+        start: fullDayStartTimeML,
+        end: fullDayEndTimeML,
+        startsAt: dateStrML + "T00:00:00.000Z",
+        remainingCapacity: typeof capML === "number" ? capML : null,
         available: true,
       };
     }
 
-    function selectDate(dateStr) {
-      pendingDate = dateStr;
-      pendingSlot = productBookingType === "FULL_DAY" ? buildFullDaySlot(dateStr) : null;
-      renderCalendar();
-      updateConfirmButton();
-      renderCustomFields();
-      refreshQuantityForSelection();
-      if (productBookingType === "FULL_DAY") {
-        if (slotsPaneEl) slotsPaneEl.hidden = true;
-        durationEl.hidden = true;
+    function selectDateML(dateStrML) {
+      pendingDateML = dateStrML;
+      pendingSlotML = productBookingTypeML === "FULL_DAY" ? buildFullDaySlotML(dateStrML) : null;
+      renderCalendarML();
+      updateConfirmButtonML();
+      renderCustomFieldsML();
+      refreshQuantityForSelectionML();
+      if (productBookingTypeML === "FULL_DAY") {
+        if (slotsPaneElML) slotsPaneElML.hidden = true;
+        durationElML.hidden = true;
       } else {
-        if (slotsPaneEl) slotsPaneEl.hidden = false;
-        loadSlots(dateStr);
+        if (slotsPaneElML) slotsPaneElML.hidden = false;
+        loadSlotsML(dateStrML);
       }
     }
 
-    var slotRequestId = 0;
+    var slotRequestIdML = 0;
 
-    function loadSlots(dateStr) {
-      var requestId = ++slotRequestId;
-      durationEl.hidden = true;
-      setStatus(slotListEl, strings.loadingTimes);
+    function loadSlotsML(dateStrML) {
+      var requestIdML = ++slotRequestIdML;
+      durationElML.hidden = true;
+      setStatusML(slotListElML, stringsML.loadingTimes);
 
-      var url =
-        proxyBase +
+      var urlML =
+        proxyBaseML +
         "/slots?productId=" +
-        encodeURIComponent(productId) +
+        encodeURIComponent(productIdML) +
         "&date=" +
-        dateStr;
-      if (pendingLocation) {
-        url += "&locationId=" + encodeURIComponent(pendingLocation.id);
+        dateStrML;
+      if (pendingLocationML) {
+        urlML += "&locationId=" + encodeURIComponent(pendingLocationML.id);
       }
 
-      fetch(url)
-        .then(function (res) {
-          if (res.status === 403) {
-            return res.json().catch(function () {
+      fetch(urlML)
+        .then(function (resML) {
+          if (resML.status === 403) {
+            return resML.json().catch(function () {
               return {};
-            }).then(function (body) {
-              var err = new Error((body && body.error) || "Booking unavailable");
-              err.code = "APP_DISABLED";
-              throw err;
+            }).then(function (bodyML) {
+              var errML = new Error((bodyML && bodyML.error) || "Booking unavailable");
+              errML.code = "APP_DISABLED";
+              throw errML;
             });
           }
-          return res.json();
+          return resML.json();
         })
-        .then(function (data) {
-          return fetchCartBookedQty().then(function (cartQty) {
-            return [data, cartQty];
+        .then(function (dataML) {
+          return fetchCartBookedQtyML().then(function (cartQtyML) {
+            return [dataML, cartQtyML];
           });
         })
-        .then(function (pair) {
-          if (requestId !== slotRequestId) return;
-          currentSlots = subtractCartFromSlots(pair[0].slots || [], dateStr, pair[1]);
-          renderSlots();
+        .then(function (pairML) {
+          if (requestIdML !== slotRequestIdML) return;
+          currentSlotsML = subtractCartFromSlotsML(pairML[0].slots || [], dateStrML, pairML[1]);
+          renderSlotsML();
         })
-        .catch(function (err) {
-          if (requestId !== slotRequestId) return;
-          if (err && err.code === "APP_DISABLED") {
-            setStatus(slotListEl, strings.bookingUnavailable);
+        .catch(function (errML) {
+          if (requestIdML !== slotRequestIdML) return;
+          if (errML && errML.code === "APP_DISABLED") {
+            setStatusML(slotListElML, stringsML.bookingUnavailable);
             return;
           }
-          setStatus(slotListEl, strings.timesError, function () {
-            loadSlots(dateStr);
+          setStatusML(slotListElML, stringsML.timesError, function () {
+            loadSlotsML(dateStrML);
           });
         });
     }
 
-    function isSlotTaken(dateStr, slot) {
-      if (!dateStr || !slot) return false;
-      var inBundle = bundleSessions.some(function (session) {
+    function isSlotTakenML(dateStrML, slotML) {
+      if (!dateStrML || !slotML) return false;
+      var inBundleML = bundleSessionsML.some(function (sessionML) {
         return (
-          session.date === dateStr && session.slot.startsAt === slot.startsAt
+          sessionML.date === dateStrML && sessionML.slot.startsAt === slotML.startsAt
         );
       });
-      if (inBundle) return true;
-      return confirmedSlots.some(function (entry) {
-        return entry.date === dateStr && entry.slot.startsAt === slot.startsAt;
+      if (inBundleML) return true;
+      return confirmedSlotsML.some(function (entryML) {
+        return entryML.date === dateStrML && entryML.slot.startsAt === slotML.startsAt;
       });
     }
 
-    function renderSlots() {
-      slotListEl.innerHTML = "";
+    function renderSlotsML() {
+      slotListElML.innerHTML = "";
 
-      if (currentSlots.length === 0) {
-        setStatus(slotListEl, strings.noTimes);
+      if (currentSlotsML.length === 0) {
+        setStatusML(slotListElML, stringsML.noTimes);
         return;
       }
 
-      durationEl.hidden = false;
-      if (productBookingType === "BUNDLE" && bundleSessionCount) {
-        durationEl.textContent = sessionProgressText();
+      durationElML.hidden = false;
+      if (productBookingTypeML === "BUNDLE" && bundleSessionCountML) {
+        durationElML.textContent = sessionProgressTextML();
       } else {
-        durationEl.textContent = format(strings.durationMinutes, {
-          count: slotDurationMinutes(currentSlots[0]),
+        durationElML.textContent = formatML(stringsML.durationMinutes, {
+          count: slotDurationMinutesML(currentSlotsML[0]),
         });
       }
 
-      currentSlots.forEach(function (slot) {
-        var row = document.createElement("label");
-        row.className = "booking-widget__slot-row";
+      currentSlotsML.forEach(function (slotML) {
+        var rowML = document.createElement("label");
+        rowML.className = "booking-widget__slot-row";
 
-        var input = document.createElement("input");
-        input.type = "radio";
-        input.name = "booking-widget-slot-" + root.dataset.productId;
-        input.className = "booking-widget__slot-radio";
-        input.value = slot.startsAt;
+        var inputML = document.createElement("input");
+        inputML.type = "radio";
+        inputML.name = "booking-widget-slot-" + rootML.dataset.productId;
+        inputML.className = "booking-widget__slot-radio";
+        inputML.value = slotML.startsAt;
 
-        var textWrap = document.createElement("span");
-        textWrap.className = "booking-widget__slot-text";
-        textWrap.textContent = formatTimeRangeDisplay(slot);
+        var textWrapML = document.createElement("span");
+        textWrapML.className = "booking-widget__slot-text";
+        textWrapML.textContent = formatTimeRangeDisplayML(slotML);
 
-        if (slot.available === false) {
-          row.classList.add("booking-widget__slot-row--unavailable");
-          input.disabled = true;
-          var bookedTag = document.createElement("span");
-          bookedTag.className = "booking-widget__slot-tag";
-          bookedTag.textContent = "(" + strings.booked + ")";
-          row.appendChild(input);
-          row.appendChild(textWrap);
-          row.appendChild(bookedTag);
-          slotListEl.appendChild(row);
+        if (slotML.available === false) {
+          rowML.classList.add("booking-widget__slot-row--unavailable");
+          inputML.disabled = true;
+          var bookedTagML = document.createElement("span");
+          bookedTagML.className = "booking-widget__slot-tag";
+          bookedTagML.textContent = "(" + stringsML.booked + ")";
+          rowML.appendChild(inputML);
+          rowML.appendChild(textWrapML);
+          rowML.appendChild(bookedTagML);
+          slotListElML.appendChild(rowML);
           return;
         }
 
-        if (isSlotTaken(pendingDate, slot)) {
-          row.classList.add("booking-widget__slot-row--unavailable");
-          input.disabled = true;
-          var takenTag = document.createElement("span");
-          takenTag.className = "booking-widget__slot-tag";
-          takenTag.textContent = "(" + strings.alreadySelected + ")";
-          row.appendChild(input);
-          row.appendChild(textWrap);
-          row.appendChild(takenTag);
-          slotListEl.appendChild(row);
+        if (isSlotTakenML(pendingDateML, slotML)) {
+          rowML.classList.add("booking-widget__slot-row--unavailable");
+          inputML.disabled = true;
+          var takenTagML = document.createElement("span");
+          takenTagML.className = "booking-widget__slot-tag";
+          takenTagML.textContent = "(" + stringsML.alreadySelected + ")";
+          rowML.appendChild(inputML);
+          rowML.appendChild(textWrapML);
+          rowML.appendChild(takenTagML);
+          slotListElML.appendChild(rowML);
           return;
         }
 
-        if (typeof slot.remainingCapacity === "number") {
-          var isLow = slot.remainingCapacity <= LOW_AVAILABILITY_THRESHOLD;
-          var remainingTag = document.createElement("span");
-          remainingTag.className =
+        if (typeof slotML.remainingCapacity === "number") {
+          var isLowML = slotML.remainingCapacity <= LOW_AVAILABILITY_THRESHOLD_ML;
+          var remainingTagML = document.createElement("span");
+          remainingTagML.className =
             "booking-widget__slot-tag" +
-            (isLow ? " booking-widget__slot-tag--low" : "");
-          remainingTag.textContent =
+            (isLowML ? " booking-widget__slot-tag--low" : "");
+          remainingTagML.textContent =
             "(" +
-            (slot.remainingCapacity === 1
-              ? strings.spotLeft
-              : format(strings.spotsLeft, { count: slot.remainingCapacity })) +
+            (slotML.remainingCapacity === 1
+              ? stringsML.spotLeft
+              : formatML(stringsML.spotsLeft, { count: slotML.remainingCapacity })) +
             ")";
-          row.appendChild(input);
-          row.appendChild(textWrap);
-          row.appendChild(remainingTag);
+          rowML.appendChild(inputML);
+          rowML.appendChild(textWrapML);
+          rowML.appendChild(remainingTagML);
         } else {
-          row.appendChild(input);
-          row.appendChild(textWrap);
+          rowML.appendChild(inputML);
+          rowML.appendChild(textWrapML);
         }
 
-        if (pendingSlot && pendingSlot.startsAt === slot.startsAt) {
-          input.checked = true;
-          row.classList.add("booking-widget__slot-row--selected");
+        if (pendingSlotML && pendingSlotML.startsAt === slotML.startsAt) {
+          inputML.checked = true;
+          rowML.classList.add("booking-widget__slot-row--selected");
         }
 
-        input.addEventListener("change", function () {
-          pendingSlot = slot;
-          renderSlots();
-          updateConfirmButton();
-          renderCustomFields();
-          refreshQuantityForSelection();
+        inputML.addEventListener("change", function () {
+          pendingSlotML = slotML;
+          renderSlotsML();
+          updateConfirmButtonML();
+          renderCustomFieldsML();
+          refreshQuantityForSelectionML();
         });
 
-        slotListEl.appendChild(row);
+        slotListElML.appendChild(rowML);
       });
     }
 
-    var DEFAULT_MAX_QUANTITY = 99;
+    var DEFAULT_MAX_QUANTITY_ML = 99;
 
-    function maxQuantityForPendingSlot() {
-      if (!pendingSlot || typeof pendingSlot.remainingCapacity !== "number") {
-        return DEFAULT_MAX_QUANTITY;
+    function maxQuantityForPendingSlotML() {
+      if (!pendingSlotML || typeof pendingSlotML.remainingCapacity !== "number") {
+        return DEFAULT_MAX_QUANTITY_ML;
       }
-      return Math.max(1, pendingSlot.remainingCapacity);
+      return Math.max(1, pendingSlotML.remainingCapacity);
     }
 
-    function setPendingQuantity(value) {
-      var max = maxQuantityForPendingSlot();
-      var next = Math.round(Number(value));
-      if (!Number.isFinite(next) || next < 1) next = 1;
-      if (next > max) next = max;
-      pendingQuantity = next;
-      if (quantityInputEl) {
-        quantityInputEl.value = String(pendingQuantity);
-        quantityInputEl.disabled = quantityLocked;
+    function setPendingQuantityML(valueML) {
+      var maxML = maxQuantityForPendingSlotML();
+      var nextML = Math.round(Number(valueML));
+      if (!Number.isFinite(nextML) || nextML < 1) nextML = 1;
+      if (nextML > maxML) nextML = maxML;
+      pendingQuantityML = nextML;
+      if (quantityInputElML) {
+        quantityInputElML.value = String(pendingQuantityML);
+        quantityInputElML.disabled = quantityLockedML;
       }
-      if (quantityDecreaseBtn) {
-        quantityDecreaseBtn.disabled = quantityLocked || pendingQuantity <= 1;
+      if (quantityDecreaseBtnML) {
+        quantityDecreaseBtnML.disabled = quantityLockedML || pendingQuantityML <= 1;
       }
-      if (quantityIncreaseBtn) {
-        quantityIncreaseBtn.disabled = quantityLocked || pendingQuantity >= max;
+      if (quantityIncreaseBtnML) {
+        quantityIncreaseBtnML.disabled = quantityLockedML || pendingQuantityML >= maxML;
       }
-      if (quantityNoteEl) {
-        var showsCapacityAlways =
-          isDateOnlyType(productBookingType) &&
-          pendingSlot &&
-          typeof pendingSlot.remainingCapacity === "number";
+      if (quantityNoteElML) {
+        var showsCapacityAlwaysML =
+          isDateOnlyTypeML(productBookingTypeML) &&
+          pendingSlotML &&
+          typeof pendingSlotML.remainingCapacity === "number";
 
-        if (showsCapacityAlways) {
-          quantityNoteEl.textContent =
-            max === 1
-              ? strings.unitAvailable
-              : format(strings.unitsAvailable, { count: max });
-          quantityNoteEl.hidden = false;
-        } else if (max <= 5) {
-          quantityNoteEl.textContent = format(strings.quantityMaxReached, {
-            count: max,
+        if (showsCapacityAlwaysML) {
+          quantityNoteElML.textContent =
+            maxML === 1
+              ? stringsML.unitAvailable
+              : formatML(stringsML.unitsAvailable, { count: maxML });
+          quantityNoteElML.hidden = false;
+        } else if (maxML <= 5) {
+          quantityNoteElML.textContent = formatML(stringsML.quantityMaxReached, {
+            count: maxML,
           });
-          quantityNoteEl.hidden = false;
+          quantityNoteElML.hidden = false;
         } else {
-          quantityNoteEl.hidden = true;
+          quantityNoteElML.hidden = true;
         }
       }
     }
 
-    function refreshQuantityForSelection() {
-      var isBundleFollowupSession =
-        productBookingType === "BUNDLE" && bundleSessions.length > 0;
-      quantityLocked = !pendingSlot || isBundleFollowupSession;
-      if (quantityWrapEl) {
-        quantityWrapEl.classList.toggle("is-locked", quantityLocked);
+    function refreshQuantityForSelectionML() {
+      var isBundleFollowupSessionML =
+        productBookingTypeML === "BUNDLE" && bundleSessionsML.length > 0;
+      quantityLockedML = !pendingSlotML || isBundleFollowupSessionML;
+      if (quantityWrapElML) {
+        quantityWrapElML.classList.toggle("is-locked", quantityLockedML);
       }
-      if (noteWrapEl) {
-        noteWrapEl.classList.toggle("is-locked", quantityLocked);
+      if (noteWrapElML) {
+        noteWrapElML.classList.toggle("is-locked", quantityLockedML);
       }
-      if (noteInputEl) noteInputEl.disabled = quantityLocked;
-      if (customFieldsEntryEl) {
-        var customFieldCards = customFieldsEntryEl.querySelectorAll(
+      if (noteInputElML) noteInputElML.disabled = quantityLockedML;
+      if (customFieldsEntryElML) {
+        var customFieldCardsML = customFieldsEntryElML.querySelectorAll(
           ".booking-widget__field",
         );
-        customFieldCards.forEach(function (card) {
-          card.classList.toggle("is-locked", quantityLocked);
+        customFieldCardsML.forEach(function (cardML) {
+          cardML.classList.toggle("is-locked", quantityLockedML);
         });
-        var customFieldInputs = customFieldsEntryEl.querySelectorAll(
+        var customFieldInputsML = customFieldsEntryElML.querySelectorAll(
           "input, textarea, select",
         );
-        customFieldInputs.forEach(function (el) {
-          el.disabled = quantityLocked;
+        customFieldInputsML.forEach(function (elML) {
+          elML.disabled = quantityLockedML;
         });
       }
-      setPendingQuantity(
-        pendingSlot && !isBundleFollowupSession ? pendingQuantity : 1,
+      setPendingQuantityML(
+        pendingSlotML && !isBundleFollowupSessionML ? pendingQuantityML : 1,
       );
     }
 
-    if (noteInputEl) {
-      noteInputEl.addEventListener("input", function () {
-        pendingNote = noteInputEl.value;
+    if (noteInputElML) {
+      noteInputElML.addEventListener("input", function () {
+        pendingNoteML = noteInputElML.value;
       });
     }
 
-    if (quantityDecreaseBtn) {
-      quantityDecreaseBtn.addEventListener("click", function () {
-        setPendingQuantity(pendingQuantity - 1);
+    if (quantityDecreaseBtnML) {
+      quantityDecreaseBtnML.addEventListener("click", function () {
+        setPendingQuantityML(pendingQuantityML - 1);
       });
     }
-    if (quantityIncreaseBtn) {
-      quantityIncreaseBtn.addEventListener("click", function () {
-        setPendingQuantity(pendingQuantity + 1);
+    if (quantityIncreaseBtnML) {
+      quantityIncreaseBtnML.addEventListener("click", function () {
+        setPendingQuantityML(pendingQuantityML + 1);
       });
     }
-    if (quantityInputEl) {
-      quantityInputEl.addEventListener("change", function () {
-        setPendingQuantity(quantityInputEl.value);
+    if (quantityInputElML) {
+      quantityInputElML.addEventListener("change", function () {
+        setPendingQuantityML(quantityInputElML.value);
       });
     }
-    setPendingQuantity(1);
+    setPendingQuantityML(1);
 
-    function updateConfirmButton() {
-      if (locationRequired() && !pendingLocation) {
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = strings.next;
-        if (reviewBackBtn) reviewBackBtn.hidden = true;
-        if (nextSlotBtn) nextSlotBtn.hidden = true;
+    function updateConfirmButtonML() {
+      if (locationRequiredML() && !pendingLocationML) {
+        confirmBtnML.disabled = true;
+        confirmBtnML.textContent = stringsML.next;
+        if (reviewBackBtnML) reviewBackBtnML.hidden = true;
+        if (nextSlotBtnML) nextSlotBtnML.hidden = true;
         return;
       }
 
-      if (productBookingType === "BUNDLE" && !atReviewStep) {
-        var totalSessions = bundleSessionCount || 1;
-        var isLastSession = bundleSessions.length >= totalSessions - 1;
+      if (productBookingTypeML === "BUNDLE" && !atReviewStepML) {
+        var totalSessionsML = bundleSessionCountML || 1;
+        var isLastSessionML = bundleSessionsML.length >= totalSessionsML - 1;
 
-        if (nextSlotBtn) {
-          nextSlotBtn.hidden = totalSessions <= 1 || isLastSession;
-          nextSlotBtn.disabled = isLastSession || !(pendingDate && pendingSlot);
+        if (nextSlotBtnML) {
+          nextSlotBtnML.hidden = totalSessionsML <= 1 || isLastSessionML;
+          nextSlotBtnML.disabled = isLastSessionML || !(pendingDateML && pendingSlotML);
         }
-        confirmBtn.disabled = !(isLastSession && pendingDate && pendingSlot);
-        confirmBtn.textContent = isLastSession ? strings.done : strings.next;
-        if (!confirmBtn.disabled && nextSlotBtn) {
-          nextSlotBtn.disabled = true;
+        confirmBtnML.disabled = !(isLastSessionML && pendingDateML && pendingSlotML);
+        confirmBtnML.textContent = isLastSessionML ? stringsML.done : stringsML.next;
+        if (!confirmBtnML.disabled && nextSlotBtnML) {
+          nextSlotBtnML.disabled = true;
         }
-        if (reviewBackBtn) reviewBackBtn.hidden = true;
+        if (reviewBackBtnML) reviewBackBtnML.hidden = true;
         return;
       }
 
-      if (nextSlotBtn) nextSlotBtn.hidden = true;
-      confirmBtn.disabled = atReviewStep ? false : !(pendingDate && pendingSlot);
-      confirmBtn.textContent = atReviewStep ? strings.confirm : strings.next;
-      if (reviewBackBtn) reviewBackBtn.hidden = !atReviewStep;
+      if (nextSlotBtnML) nextSlotBtnML.hidden = true;
+      confirmBtnML.disabled = atReviewStepML ? false : !(pendingDateML && pendingSlotML);
+      confirmBtnML.textContent = atReviewStepML ? stringsML.confirm : stringsML.next;
+      if (reviewBackBtnML) reviewBackBtnML.hidden = !atReviewStepML;
     }
 
-    var REVIEW_ICONS = {
+    var REVIEW_ICONS_ML = {
       location:
         '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
         '<path d="M12 21s-7-7.58-7-12a7 7 0 1 1 14 0c0 4.42-7 12-7 12z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />' +
@@ -2165,336 +2165,336 @@
         "</svg>",
     };
 
-    function buildReviewSummary() {
-      if (!reviewListEl) return;
-      reviewListEl.innerHTML = "";
-      if (!pendingDate || !pendingSlot) return;
+    function buildReviewSummaryML() {
+      if (!reviewListElML) return;
+      reviewListElML.innerHTML = "";
+      if (!pendingDateML || !pendingSlotML) return;
 
-      var rows;
-      if (productBookingType === "BUNDLE") {
-        rows = [
-          pendingLocation
-            ? { label: "Location", value: pendingLocation.name, icon: "location" }
+      var rowsML;
+      if (productBookingTypeML === "BUNDLE") {
+        rowsML = [
+          pendingLocationML
+            ? { label: "Location", value: pendingLocationML.name, icon: "location" }
             : null,
         ];
-        bundleSessions.forEach(function (session, index) {
-          rows.push({
-            label: format(strings.sessionConfirmed, { number: index + 1 }),
+        bundleSessionsML.forEach(function (sessionML, indexML) {
+          rowsML.push({
+            label: formatML(stringsML.sessionConfirmed, { number: indexML + 1 }),
             value:
-              formatDateDisplay(session.date) +
+              formatDateDisplayML(sessionML.date) +
               " · " +
-              formatTimeRangeDisplay(session.slot),
+              formatTimeRangeDisplayML(sessionML.slot),
             icon: "calendar",
           });
         });
-        rows.push({
+        rowsML.push({
           label: "Quantity",
-          value: String(bundleQuantity),
+          value: String(bundleQuantityML),
           icon: "quantity",
         });
-      } else if (productBookingType === "MULTI_DAY") {
-        rows = [
-          pendingLocation
-            ? { label: "Location", value: pendingLocation.name, icon: "location" }
+      } else if (productBookingTypeML === "MULTI_DAY") {
+        rowsML = [
+          pendingLocationML
+            ? { label: "Location", value: pendingLocationML.name, icon: "location" }
             : null,
           {
             label: "Check-in",
-            value: formatDateDisplay(pendingDate),
+            value: formatDateDisplayML(pendingDateML),
             icon: "calendar",
           },
           {
             label: "Check-out",
-            value: formatDateDisplay(pendingSlot.endDate),
+            value: formatDateDisplayML(pendingSlotML.endDate),
             icon: "calendar",
           },
           {
             label: "Quantity",
-            value: String(pendingQuantity),
+            value: String(pendingQuantityML),
             icon: "quantity",
           },
         ];
       } else {
-        rows = [
-          pendingLocation
-            ? { label: "Location", value: pendingLocation.name, icon: "location" }
+        rowsML = [
+          pendingLocationML
+            ? { label: "Location", value: pendingLocationML.name, icon: "location" }
             : null,
-          { label: "Date", value: formatDateDisplay(pendingDate), icon: "calendar" },
-          productBookingType === "FULL_DAY"
+          { label: "Date", value: formatDateDisplayML(pendingDateML), icon: "calendar" },
+          productBookingTypeML === "FULL_DAY"
             ? {
                 label: "Booking",
-                value: formatTimeRangeDisplay(pendingSlot, false),
+                value: formatTimeRangeDisplayML(pendingSlotML, false),
                 icon: "clock",
               }
             : {
                 label: "Time",
-                value: formatTimeRangeDisplay(pendingSlot),
+                value: formatTimeRangeDisplayML(pendingSlotML),
                 icon: "clock",
               },
           {
             label: "Quantity",
-            value: String(pendingQuantity),
+            value: String(pendingQuantityML),
             icon: "quantity",
           },
         ];
       }
 
-      var requestText = (pendingNote || "").trim();
-      rows.push({
+      var requestTextML = (pendingNoteML || "").trim();
+      rowsML.push({
         label: "Note",
-        value: requestText || "-",
+        value: requestTextML || "-",
         icon: "note",
       });
 
-      customFields.forEach(function (field) {
-        var value = (customFieldValues[field.fieldKey] || "").trim();
-        rows.push({
-          label: field.label,
-          value: value || "-",
+      customFieldsML.forEach(function (fieldML) {
+        var valueML = (customFieldValuesML[fieldML.fieldKey] || "").trim();
+        rowsML.push({
+          label: fieldML.label,
+          value: valueML || "-",
           icon: "note",
         });
       });
 
-      rows.forEach(function (row) {
-        if (!row) return;
-        var dt = document.createElement("dt");
-        dt.textContent = row.label;
+      rowsML.forEach(function (rowML) {
+        if (!rowML) return;
+        var dtML = document.createElement("dt");
+        dtML.textContent = rowML.label;
 
-        var dd = document.createElement("dd");
-        dd.className = "booking-widget__review-row";
-        var labelSpan = document.createElement("span");
-        labelSpan.className = "booking-widget__review-label";
-        labelSpan.textContent = row.label;
-        if (row.sub) {
-          var subSpan = document.createElement("span");
-          subSpan.className = "booking-widget__review-sub";
-          subSpan.textContent = row.sub;
-          labelSpan.appendChild(subSpan);
+        var ddML = document.createElement("dd");
+        ddML.className = "booking-widget__review-row";
+        var labelSpanML = document.createElement("span");
+        labelSpanML.className = "booking-widget__review-label";
+        labelSpanML.textContent = rowML.label;
+        if (rowML.sub) {
+          var subSpanML = document.createElement("span");
+          subSpanML.className = "booking-widget__review-sub";
+          subSpanML.textContent = rowML.sub;
+          labelSpanML.appendChild(subSpanML);
         }
-        var valueSpan = document.createElement("span");
-        valueSpan.className = "booking-widget__review-value";
-        valueSpan.textContent = row.value;
-        dd.appendChild(labelSpan);
-        dd.appendChild(valueSpan);
+        var valueSpanML = document.createElement("span");
+        valueSpanML.className = "booking-widget__review-value";
+        valueSpanML.textContent = rowML.value;
+        ddML.appendChild(labelSpanML);
+        ddML.appendChild(valueSpanML);
 
-        reviewListEl.appendChild(dt);
-        reviewListEl.appendChild(dd);
+        reviewListElML.appendChild(dtML);
+        reviewListElML.appendChild(ddML);
       });
 
-      if (unitPrice !== null) {
-        var reviewQuantity =
-          productBookingType === "BUNDLE" ? bundleQuantity : pendingQuantity;
-        var total = unitPrice * reviewQuantity;
-        var totalDt = document.createElement("dt");
-        totalDt.textContent = "Total";
+      if (unitPriceML !== null) {
+        var reviewQuantityML =
+          productBookingTypeML === "BUNDLE" ? bundleQuantityML : pendingQuantityML;
+        var totalML = unitPriceML * reviewQuantityML;
+        var totalDtML = document.createElement("dt");
+        totalDtML.textContent = "Total";
 
-        var totalDd = document.createElement("dd");
-        totalDd.className =
+        var totalDdML = document.createElement("dd");
+        totalDdML.className =
           "booking-widget__review-row booking-widget__review-row--total";
-        var totalLabel = document.createElement("span");
-        totalLabel.className = "booking-widget__review-label";
-        totalLabel.textContent = "Total";
-        var totalValue = document.createElement("span");
-        totalValue.className = "booking-widget__review-value";
-        totalValue.textContent = formatMoney(total);
-        totalDd.appendChild(totalLabel);
-        totalDd.appendChild(totalValue);
+        var totalLabelML = document.createElement("span");
+        totalLabelML.className = "booking-widget__review-label";
+        totalLabelML.textContent = "Total";
+        var totalValueML = document.createElement("span");
+        totalValueML.className = "booking-widget__review-value";
+        totalValueML.textContent = formatMoneyML(totalML);
+        totalDdML.appendChild(totalLabelML);
+        totalDdML.appendChild(totalValueML);
 
-        reviewListEl.appendChild(totalDt);
-        reviewListEl.appendChild(totalDd);
+        reviewListElML.appendChild(totalDtML);
+        reviewListElML.appendChild(totalDdML);
       }
     }
 
-    function showReviewStep() {
-      atReviewStep = true;
-      buildReviewSummary();
-      modalBodyEl.hidden = true;
-      if (reviewStepEl) reviewStepEl.hidden = false;
-      if (reviewBodyEl) reviewBodyEl.hidden = false;
-      if (subheaderEl) subheaderEl.hidden = true;
-      renderCustomFields();
-      updateConfirmButton();
+    function showReviewStepML() {
+      atReviewStepML = true;
+      buildReviewSummaryML();
+      modalBodyElML.hidden = true;
+      if (reviewStepElML) reviewStepElML.hidden = false;
+      if (reviewBodyElML) reviewBodyElML.hidden = false;
+      if (subheaderElML) subheaderElML.hidden = true;
+      renderCustomFieldsML();
+      updateConfirmButtonML();
     }
 
-    function exitReviewStep() {
-      atReviewStep = false;
-      if (reviewStepEl) reviewStepEl.hidden = true;
-      if (reviewBodyEl) reviewBodyEl.hidden = true;
-      modalBodyEl.hidden = false;
-      if (quantityWrapEl) quantityWrapEl.hidden = false;
-      if (noteWrapEl) noteWrapEl.hidden = false;
-      renderCustomFields();
+    function exitReviewStepML() {
+      atReviewStepML = false;
+      if (reviewStepElML) reviewStepElML.hidden = true;
+      if (reviewBodyElML) reviewBodyElML.hidden = true;
+      modalBodyElML.hidden = false;
+      if (quantityWrapElML) quantityWrapElML.hidden = false;
+      if (noteWrapElML) noteWrapElML.hidden = false;
+      renderCustomFieldsML();
     }
 
-    if (reviewBackBtn) {
-      reviewBackBtn.addEventListener("click", function () {
-        if (productBookingType === "BUNDLE" && bundleSessions.length > 0) {
-          var last = bundleSessions.pop();
-          pendingDate = last.date;
-          pendingSlot = last.slot;
-          updateBundleProgress();
-          exitReviewStep();
-          loadSlots(pendingDate);
-          refreshQuantityForSelection();
-          updateConfirmButton();
+    if (reviewBackBtnML) {
+      reviewBackBtnML.addEventListener("click", function () {
+        if (productBookingTypeML === "BUNDLE" && bundleSessionsML.length > 0) {
+          var lastML = bundleSessionsML.pop();
+          pendingDateML = lastML.date;
+          pendingSlotML = lastML.slot;
+          updateBundleProgressML();
+          exitReviewStepML();
+          loadSlotsML(pendingDateML);
+          refreshQuantityForSelectionML();
+          updateConfirmButtonML();
           return;
         }
-        exitReviewStep();
-        renderSlots();
-        refreshQuantityForSelection();
-        updateConfirmButton();
+        exitReviewStepML();
+        renderSlotsML();
+        refreshQuantityForSelectionML();
+        updateConfirmButtonML();
       });
     }
 
-    function createIconImg(src, size) {
-      var img = document.createElement("img");
-      img.src = src;
-      img.alt = "";
-      img.width = size;
-      img.height = size;
-      img.decoding = "async";
-      img.setAttribute("aria-hidden", "true");
-      return img;
+    function createIconImgML(srcML, sizeML) {
+      var imgML = document.createElement("img");
+      imgML.src = srcML;
+      imgML.alt = "";
+      imgML.width = sizeML;
+      imgML.height = sizeML;
+      imgML.decoding = "async";
+      imgML.setAttribute("aria-hidden", "true");
+      return imgML;
     }
 
-    function createSelectionRow(text, onRemove) {
-      var row = document.createElement("div");
-      row.className = "booking-widget__selection-row";
+    function createSelectionRowML(textML, onRemoveML) {
+      var rowML = document.createElement("div");
+      rowML.className = "booking-widget__selection-row";
 
-      var icon = document.createElement("span");
-      icon.className = "booking-widget__selection-row-icon";
-      if (calendarIconUrl) icon.appendChild(createIconImg(calendarIconUrl, 24));
-      row.appendChild(icon);
+      var iconML = document.createElement("span");
+      iconML.className = "booking-widget__selection-row-icon";
+      if (calendarIconUrlML) iconML.appendChild(createIconImgML(calendarIconUrlML, 24));
+      rowML.appendChild(iconML);
 
-      var label = document.createElement("span");
-      label.className = "booking-widget__selection-row-text";
-      label.textContent = text;
-      row.appendChild(label);
+      var labelML = document.createElement("span");
+      labelML.className = "booking-widget__selection-row-text";
+      labelML.textContent = textML;
+      rowML.appendChild(labelML);
 
-      if (onRemove) {
-        var removeBtn = document.createElement("button");
-        removeBtn.type = "button";
-        removeBtn.className = "booking-widget__selection-row-remove";
-        removeBtn.setAttribute("aria-label", strings.removeSlot);
-        removeBtn.textContent = "\u00d7";
-        removeBtn.addEventListener("click", onRemove);
-        row.appendChild(removeBtn);
+      if (onRemoveML) {
+        var removeBtnML = document.createElement("button");
+        removeBtnML.type = "button";
+        removeBtnML.className = "booking-widget__selection-row-remove";
+        removeBtnML.setAttribute("aria-label", stringsML.removeSlot);
+        removeBtnML.textContent = "\u00d7";
+        removeBtnML.addEventListener("click", onRemoveML);
+        rowML.appendChild(removeBtnML);
       }
 
-      return row;
+      return rowML;
     }
 
-    function buildSelectionCard(rows) {
-      var card = document.createElement("div");
-      card.className = "booking-widget__selection-card";
+    function buildSelectionCardML(rowsML) {
+      var cardML = document.createElement("div");
+      cardML.className = "booking-widget__selection-card";
 
-      rows.forEach(function (row, i) {
-        card.appendChild(row);
-        if (i < rows.length - 1) {
-          var divider = document.createElement("hr");
-          divider.className = "booking-widget__selection-divider";
-          card.appendChild(divider);
+      rowsML.forEach(function (rowML, iML) {
+        cardML.appendChild(rowML);
+        if (iML < rowsML.length - 1) {
+          var dividerML = document.createElement("hr");
+          dividerML.className = "booking-widget__selection-divider";
+          cardML.appendChild(dividerML);
         }
       });
 
-      return card;
+      return cardML;
     }
 
-    function updateSelectionDisplay() {
-      saveConfirmedSlots();
-      selectionEl.innerHTML = "";
+    function updateSelectionDisplayML() {
+      saveConfirmedSlotsML();
+      selectionElML.innerHTML = "";
 
-      if (confirmedSlots.length === 0) {
-        selectionEl.hidden = true;
-        if (triggerBtn) {
-          triggerBtn.textContent = strings.triggerBook;
-          triggerBtn.hidden = !(locationsLoaded && locations.length > 0);
+      if (confirmedSlotsML.length === 0) {
+        selectionElML.hidden = true;
+        if (triggerBtnML) {
+          triggerBtnML.textContent = stringsML.triggerBook;
+          triggerBtnML.hidden = !(locationsLoadedML && locationsML.length > 0);
         }
         return;
       }
 
-      if (triggerBtn) triggerBtn.hidden = true;
-      selectionEl.hidden = false;
+      if (triggerBtnML) triggerBtnML.hidden = true;
+      selectionElML.hidden = false;
 
-      var rows = [];
+      var rowsML = [];
 
-      confirmedSlots.forEach(function (entry, index) {
-        var removeEntry = function () {
-          confirmedSlots.splice(index, 1);
-          updateSelectionDisplay();
+      confirmedSlotsML.forEach(function (entryML, indexML) {
+        var removeEntryML = function () {
+          confirmedSlotsML.splice(indexML, 1);
+          updateSelectionDisplayML();
         };
 
-        if (entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1) {
-          entry.slot.bundleSessions.forEach(function (session, sessionIndex) {
-            var lineText =
-              format(strings.sessionConfirmed, { number: sessionIndex + 1 }) +
+        if (entryML.slot.bundleSessions && entryML.slot.bundleSessions.length > 1) {
+          entryML.slot.bundleSessions.forEach(function (sessionML, sessionIndexML) {
+            var lineTextML =
+              formatML(stringsML.sessionConfirmed, { number: sessionIndexML + 1 }) +
               ": " +
-              formatDateDisplay(session.date) +
+              formatDateDisplayML(sessionML.date) +
               ", " +
-              formatTimeRangeDisplay(session.slot);
-            if (entry.quantity && entry.quantity > 1) {
-              lineText += " \u00d7 " + entry.quantity;
+              formatTimeRangeDisplayML(sessionML.slot);
+            if (entryML.quantity && entryML.quantity > 1) {
+              lineTextML += " \u00d7 " + entryML.quantity;
             }
-            rows.push(
-              createSelectionRow(lineText, sessionIndex === 0 ? removeEntry : null),
+            rowsML.push(
+              createSelectionRowML(lineTextML, sessionIndexML === 0 ? removeEntryML : null),
             );
           });
         } else {
-          var rowText =
-            formatDateDisplay(entry.date) +
+          var rowTextML =
+            formatDateDisplayML(entryML.date) +
             ", " +
-            formatTimeRangeDisplay(
-              entry.slot,
-              productBookingType === "SLOT" || productBookingType === "BUNDLE",
+            formatTimeRangeDisplayML(
+              entryML.slot,
+              productBookingTypeML === "SLOT" || productBookingTypeML === "BUNDLE",
             );
-          if (entry.quantity && entry.quantity > 1) {
-            rowText += " \u00d7 " + entry.quantity;
+          if (entryML.quantity && entryML.quantity > 1) {
+            rowTextML += " \u00d7 " + entryML.quantity;
           }
-          rows.push(createSelectionRow(rowText, removeEntry));
+          rowsML.push(createSelectionRowML(rowTextML, removeEntryML));
         }
       });
 
-      selectionEl.appendChild(buildSelectionCard(rows));
+      selectionElML.appendChild(buildSelectionCardML(rowsML));
     }
 
-    function refreshCartReminder() {
-      if (!cartReminderEl) return;
+    function refreshCartReminderML() {
+      if (!cartReminderElML) return;
       fetch("/cart.js", { headers: { Accept: "application/json" } })
-        .then(function (res) {
-          return res.json();
+        .then(function (resML) {
+          return resML.json();
         })
-        .then(function (cart) {
-          var items = (cart.items || []).filter(function (item) {
+        .then(function (cartML) {
+          var itemsML = (cartML.items || []).filter(function (itemML) {
             return (
-              String(item.product_id) === numericProductId &&
-              item.properties &&
-              item.properties["Booking Date"]
+              String(itemML.product_id) === numericProductIdML &&
+              itemML.properties &&
+              itemML.properties["Booking Date"]
             );
           });
-          renderCartReminder(items);
+          renderCartReminderML(itemsML);
         })
         .catch(function () {
         });
     }
 
-    function renderCartReminder(items) {
-      cartReminderEl.innerHTML = "";
+    function renderCartReminderML(itemsML) {
+      cartReminderElML.innerHTML = "";
 
-      if (items.length === 0) {
-        cartReminderEl.hidden = true;
+      if (itemsML.length === 0) {
+        cartReminderElML.hidden = true;
         return;
       }
 
-      var banner = document.createElement("div");
-      banner.className = "booking-widget__cart-success-banner";
+      var bannerML = document.createElement("div");
+      bannerML.className = "booking-widget__cart-success-banner";
 
-      var icon = document.createElement("span");
-      icon.className = "booking-widget__cart-success-icon";
-      if (tickIconUrl) icon.appendChild(createIconImg(tickIconUrl, 24));
-      banner.appendChild(icon);
+      var iconML = document.createElement("span");
+      iconML.className = "booking-widget__cart-success-icon";
+      if (tickIconUrlML) iconML.appendChild(createIconImgML(tickIconUrlML, 24));
+      bannerML.appendChild(iconML);
 
-      var message = document.createElement("p");
-      message.className = "booking-widget__cart-success-message";
-      message.textContent = strings.addedToCartSuccess;
+      var messageML = document.createElement("p");
+      messageML.className = "booking-widget__cart-success-message";
+      messageML.textContent = stringsML.addedToCartSuccess;
       [
         ["font-family", '"Inter", sans-serif'],
         ["font-size", "20px"],
@@ -2504,193 +2504,193 @@
         ["text-transform", "none"],
         ["color", "#1f9900"],
         ["margin", "0"],
-      ].forEach(function (rule) {
-        message.style.setProperty(rule[0], rule[1], "important");
+      ].forEach(function (ruleML) {
+        messageML.style.setProperty(ruleML[0], ruleML[1], "important");
       });
-      banner.appendChild(message);
+      bannerML.appendChild(messageML);
 
-      cartReminderEl.appendChild(banner);
+      cartReminderElML.appendChild(bannerML);
 
-      var grouped = [];
-      var groupIndex = {};
+      var groupedML = [];
+      var groupIndexML = {};
 
-      items.forEach(function (item) {
-        var props = item.properties;
-        var qty = item.quantity || 1;
+      itemsML.forEach(function (itemML) {
+        var propsML = itemML.properties;
+        var qtyML = itemML.quantity || 1;
 
-        var sessionCount = 1;
-        while (props["Session " + (sessionCount + 1) + " Date"]) {
-          sessionCount += 1;
+        var sessionCountML = 1;
+        while (propsML["Session " + (sessionCountML + 1) + " Date"]) {
+          sessionCountML += 1;
         }
 
-        for (var s = 1; s <= sessionCount; s++) {
-          var sDate = s === 1 ? props["Booking Date"] : props["Session " + s + " Date"];
-          var sTime = s === 1 ? props["Booking Time"] : props["Session " + s + " Time"];
-          var sLabel =
-            (s === 1 ? props["_Booking Time Label"] : props["_Session " + s + " Time Label"]) ||
-            recallTimeLabel(sDate, sTime) ||
-            (sTime ? to12Hour(sTime) : "");
+        for (var sML = 1; sML <= sessionCountML; sML++) {
+          var sDateML = sML === 1 ? propsML["Booking Date"] : propsML["Session " + sML + " Date"];
+          var sTimeML = sML === 1 ? propsML["Booking Time"] : propsML["Session " + sML + " Time"];
+          var sLabelML =
+            (sML === 1 ? propsML["_Booking Time Label"] : propsML["_Session " + sML + " Time Label"]) ||
+            recallTimeLabelML(sDateML, sTimeML) ||
+            (sTimeML ? to12HourML(sTimeML) : "");
 
-          var text = formatDateDisplay(sDate) + ", " + sLabel;
-          if (sessionCount > 1) {
-            text = format(strings.sessionConfirmed, { number: s }) + ": " + text;
+          var textML = formatDateDisplayML(sDateML) + ", " + sLabelML;
+          if (sessionCountML > 1) {
+            textML = formatML(stringsML.sessionConfirmed, { number: sML }) + ": " + textML;
           }
-          var key = text + "|" + (props["_Location Id"] || "");
-          if (groupIndex[key] === undefined) {
-            groupIndex[key] = grouped.length;
-            grouped.push({ text: text, qty: qty });
+          var keyML = textML + "|" + (propsML["_Location Id"] || "");
+          if (groupIndexML[keyML] === undefined) {
+            groupIndexML[keyML] = groupedML.length;
+            groupedML.push({ text: textML, qty: qtyML });
           } else {
-            grouped[groupIndex[key]].qty += qty;
+            groupedML[groupIndexML[keyML]].qty += qtyML;
           }
         }
       });
 
-      var rows = grouped.map(function (g) {
-        return createSelectionRow(g.text + (g.qty > 1 ? " \u00d7 " + g.qty : ""));
+      var rowsML = groupedML.map(function (gML) {
+        return createSelectionRowML(gML.text + (gML.qty > 1 ? " \u00d7 " + gML.qty : ""));
       });
 
-      cartReminderEl.appendChild(buildSelectionCard(rows));
-      cartReminderEl.hidden = false;
+      cartReminderElML.appendChild(buildSelectionCardML(rowsML));
+      cartReminderElML.hidden = false;
     }
 
-    function changeViewMonth(index) {
-      viewYear = Math.floor(index / 12);
-      viewMonth = (index % 12) + 1;
-      pendingDate = null;
-      pendingSlot = null;
-      pendingEndDate = null;
-      refreshQuantityForSelection();
-      showSelectDateHint();
-      updateConfirmButton();
-      renderCustomFields();
-      loadMonth();
+    function changeViewMonthML(indexML) {
+      viewYearML = Math.floor(indexML / 12);
+      viewMonthML = (indexML % 12) + 1;
+      pendingDateML = null;
+      pendingSlotML = null;
+      pendingEndDateML = null;
+      refreshQuantityForSelectionML();
+      showSelectDateHintML();
+      updateConfirmButtonML();
+      renderCustomFieldsML();
+      loadMonthML();
     }
 
-    function goToMonth(delta) {
-      changeViewMonth(viewYear * 12 + (viewMonth - 1) + delta);
+    function goToMonthML(deltaML) {
+      changeViewMonthML(viewYearML * 12 + (viewMonthML - 1) + deltaML);
     }
 
-    closeBtn.addEventListener("click", closeModal);
-    var pressStartedInsideModal = false;
-    overlayEl.addEventListener("pointerdown", function (event) {
-      pressStartedInsideModal = event.target !== overlayEl;
+    closeBtnML.addEventListener("click", closeModalML);
+    var pressStartedInsideModalML = false;
+    overlayElML.addEventListener("pointerdown", function (eventML) {
+      pressStartedInsideModalML = eventML.target !== overlayElML;
     });
-    overlayEl.addEventListener("click", function (event) {
-      var startedInside = pressStartedInsideModal;
-      pressStartedInsideModal = false;
-      if (event.target === overlayEl && !startedInside) closeModal();
+    overlayElML.addEventListener("click", function (eventML) {
+      var startedInsideML = pressStartedInsideModalML;
+      pressStartedInsideModalML = false;
+      if (eventML.target === overlayElML && !startedInsideML) closeModalML();
     });
-    if (nextSlotBtn) {
-      nextSlotBtn.addEventListener("click", function () {
-        if (!pendingDate || !pendingSlot) return;
-        if (isSlotTaken(pendingDate, pendingSlot)) {
-          showError(strings.slotAlreadySelectedError);
+    if (nextSlotBtnML) {
+      nextSlotBtnML.addEventListener("click", function () {
+        if (!pendingDateML || !pendingSlotML) return;
+        if (isSlotTakenML(pendingDateML, pendingSlotML)) {
+          showErrorML(stringsML.slotAlreadySelectedError);
           return;
         }
-        clearError();
-        if (bundleSessions.length === 0) {
-          bundleQuantity = pendingQuantity;
+        clearErrorML();
+        if (bundleSessionsML.length === 0) {
+          bundleQuantityML = pendingQuantityML;
         }
-        bundleSessions.push({ date: pendingDate, slot: pendingSlot });
-        updateBundleProgress();
-        pendingDate = null;
-        pendingSlot = null;
-        renderCalendar();
-        updateConfirmButton();
-        renderCustomFields();
-        refreshQuantityForSelection();
-        if (slotsPaneEl) slotsPaneEl.hidden = false;
-        setStatus(slotListEl, strings.selectDateHint);
-        durationEl.hidden = false;
-        durationEl.textContent = sessionProgressText();
+        bundleSessionsML.push({ date: pendingDateML, slot: pendingSlotML });
+        updateBundleProgressML();
+        pendingDateML = null;
+        pendingSlotML = null;
+        renderCalendarML();
+        updateConfirmButtonML();
+        renderCustomFieldsML();
+        refreshQuantityForSelectionML();
+        if (slotsPaneElML) slotsPaneElML.hidden = false;
+        setStatusML(slotListElML, stringsML.selectDateHint);
+        durationElML.hidden = false;
+        durationElML.textContent = sessionProgressTextML();
       });
     }
-    confirmBtn.addEventListener("click", function () {
-      if (locationRequired() && !pendingLocation) {
-        if (locationErrorEl) {
-          locationErrorEl.hidden = false;
-          locationErrorEl.textContent = strings.locationRequired;
+    confirmBtnML.addEventListener("click", function () {
+      if (locationRequiredML() && !pendingLocationML) {
+        if (locationErrorElML) {
+          locationErrorElML.hidden = false;
+          locationErrorElML.textContent = stringsML.locationRequired;
         }
-        if (locationTriggerEl) {
-          locationTriggerEl.classList.add(
+        if (locationTriggerElML) {
+          locationTriggerElML.classList.add(
             "booking-widget__location-trigger--error",
           );
         }
         return;
       }
 
-      if (!pendingDate || !pendingSlot) return;
+      if (!pendingDateML || !pendingSlotML) return;
 
-      if (productBookingType === "BUNDLE") {
-        var totalSessions = bundleSessionCount || 1;
+      if (productBookingTypeML === "BUNDLE") {
+        var totalSessionsML = bundleSessionCountML || 1;
 
-        if (!atReviewStep) {
-          if (isSlotTaken(pendingDate, pendingSlot)) {
-            showError(strings.slotAlreadySelectedError);
+        if (!atReviewStepML) {
+          if (isSlotTakenML(pendingDateML, pendingSlotML)) {
+            showErrorML(stringsML.slotAlreadySelectedError);
             return;
           }
-          clearError();
-          if (bundleSessions.length === 0) {
-            bundleQuantity = pendingQuantity;
+          clearErrorML();
+          if (bundleSessionsML.length === 0) {
+            bundleQuantityML = pendingQuantityML;
           }
-          bundleSessions.push({ date: pendingDate, slot: pendingSlot });
-          updateBundleProgress();
-          showReviewStep();
+          bundleSessionsML.push({ date: pendingDateML, slot: pendingSlotML });
+          updateBundleProgressML();
+          showReviewStepML();
           return;
         }
 
-        var firstSession = bundleSessions[0];
-        var combinedSlot = Object.assign({}, firstSession.slot, {
-          bundleSessions: bundleSessions.slice(),
+        var firstSessionML = bundleSessionsML[0];
+        var combinedSlotML = Object.assign({}, firstSessionML.slot, {
+          bundleSessions: bundleSessionsML.slice(),
         });
-        confirmedSlots.push({
-          date: firstSession.date,
-          slot: combinedSlot,
-          location: pendingLocation ? pendingLocation.name : null,
-          locationId: pendingLocation ? pendingLocation.id : null,
-          quantity: bundleQuantity,
-          note: pendingNote,
+        confirmedSlotsML.push({
+          date: firstSessionML.date,
+          slot: combinedSlotML,
+          location: pendingLocationML ? pendingLocationML.name : null,
+          locationId: pendingLocationML ? pendingLocationML.id : null,
+          quantity: bundleQuantityML,
+          note: pendingNoteML,
         });
-        updateSelectionDisplay();
-        bundleSessions = [];
-        bundleQuantity = 1;
-        updateBundleProgress();
-        closeModal();
+        updateSelectionDisplayML();
+        bundleSessionsML = [];
+        bundleQuantityML = 1;
+        updateBundleProgressML();
+        closeModalML();
         return;
       }
 
-      if (!atReviewStep) {
-        showReviewStep();
+      if (!atReviewStepML) {
+        showReviewStepML();
         return;
       }
 
-      var date = pendingDate;
-      var slot = pendingSlot;
-      var quantity = pendingQuantity;
-      if (isSlotTaken(date, slot)) {
-        showError(strings.slotAlreadySelectedError);
+      var dateML = pendingDateML;
+      var slotML = pendingSlotML;
+      var quantityML = pendingQuantityML;
+      if (isSlotTakenML(dateML, slotML)) {
+        showErrorML(stringsML.slotAlreadySelectedError);
         return;
       }
-      clearError();
-      confirmedSlots.push({
-        date: date,
-        slot: slot,
-        location: pendingLocation ? pendingLocation.name : null,
-        locationId: pendingLocation ? pendingLocation.id : null,
-        quantity: quantity,
-        note: pendingNote,
+      clearErrorML();
+      confirmedSlotsML.push({
+        date: dateML,
+        slot: slotML,
+        location: pendingLocationML ? pendingLocationML.name : null,
+        locationId: pendingLocationML ? pendingLocationML.id : null,
+        quantity: quantityML,
+        note: pendingNoteML,
       });
-      updateSelectionDisplay();
-      refreshQuantityForSelection();
-      closeModal();
+      updateSelectionDisplayML();
+      refreshQuantityForSelectionML();
+      closeModalML();
     });
 
-    loadConfirmedSlots();
-    updateSelectionDisplay();
-    refreshCartReminder();
+    loadConfirmedSlotsML();
+    updateSelectionDisplayML();
+    refreshCartReminderML();
   }
 
-  var BUY_BUTTON_CONTAINER_SELECTORS = [
+  var BUY_BUTTON_CONTAINER_SELECTORS_ML = [
     "product-form",
     "form[action*='/cart/add'] .product-form__buttons",
     "form[action*='/cart/add']",
@@ -2699,30 +2699,30 @@
     ".product-form",
   ];
 
-  function relocateNextToBuyButton(root) {
-    if (root.closest("form[action*='/cart/add']")) return;
-    if (root.dataset.bookingWidgetPlaced === "true") return;
+  function relocateNextToBuyButtonML(rootML) {
+    if (rootML.closest("form[action*='/cart/add']")) return;
+    if (rootML.dataset.bookingWidgetPlaced === "true") return;
 
-    for (var i = 0; i < BUY_BUTTON_CONTAINER_SELECTORS.length; i++) {
-      var target = document.querySelector(BUY_BUTTON_CONTAINER_SELECTORS[i]);
-      if (target && target.parentNode) {
-        target.insertAdjacentElement("afterend", root);
-        root.dataset.bookingWidgetPlaced = "true";
+    for (var iML = 0; iML < BUY_BUTTON_CONTAINER_SELECTORS_ML.length; iML++) {
+      var targetML = document.querySelector(BUY_BUTTON_CONTAINER_SELECTORS_ML[iML]);
+      if (targetML && targetML.parentNode) {
+        targetML.insertAdjacentElement("afterend", rootML);
+        rootML.dataset.bookingWidgetPlaced = "true";
         return;
       }
     }
   }
 
-  function init() {
-    document.querySelectorAll("[data-booking-widget]").forEach(function (root) {
-      relocateNextToBuyButton(root);
-      initWidget(root);
+  function initML() {
+    document.querySelectorAll("[data-booking-widget]").forEach(function (rootML) {
+      relocateNextToBuyButtonML(rootML);
+      initWidgetML(rootML);
     });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", initML);
   } else {
-    init();
+    initML();
   }
 })();

@@ -3,14 +3,14 @@ import type { HeadersFunction } from "react-router";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import {
-  styles,
-  tabButtonStyle,
-  saveWrapperStyle,
-  saveButtonStyle,
+  stylesML,
+  tabButtonStyleML,
+  saveWrapperStyleML,
+  saveButtonStyleML,
   TabNavRow,
 } from "../components/SettingsUI";
 
-const TABS = [
+const TABS_ML = [
   { to: "/app/settings", label: "General Settings", end: true },
   { to: "/app/settings/booking", label: "Booking Settings" },
   { to: "/app/settings/locations", label: "Locations" },
@@ -25,72 +25,72 @@ export type RegisterSave = (
 ) => void;
 
 export default function SettingsLayout() {
-  const [saveHandler, setSaveHandler] = useState<(() => void) | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
+  const [saveHandlerML, setSaveHandlerML] = useState<(() => void) | null>(null);
+  const [isSavingML, setIsSavingML] = useState(false);
+  const locationML = useLocation();
+  const navigateML = useNavigate();
 
-  const registerSave: RegisterSave = useCallback((handler, saving = false) => {
-    setSaveHandler(() => handler);
-    setIsSaving(saving);
+  const registerSaveML: RegisterSave = useCallback((handlerML, savingML = false) => {
+    setSaveHandlerML(() => handlerML);
+    setIsSavingML(savingML);
   }, []);
 
-  const currentPath = location.pathname.replace(/\/$/, "") || "/app/settings";
-  const activeIndex = TABS.findIndex((tab) => tab.to === currentPath);
-  const isFirst = activeIndex <= 0;
-  const isLast = activeIndex === -1 || activeIndex === TABS.length - 1;
+  const currentPathML = locationML.pathname.replace(/\/$/, "") || "/app/settings";
+  const activeIndexML = TABS_ML.findIndex((tabML) => tabML.to === currentPathML);
+  const isFirstML = activeIndexML <= 0;
+  const isLastML = activeIndexML === -1 || activeIndexML === TABS_ML.length - 1;
 
-  const goBack = () => {
-    if (activeIndex > 0) navigate(TABS[activeIndex - 1].to);
+  const goBackML = () => {
+    if (activeIndexML > 0) navigateML(TABS_ML[activeIndexML - 1].to);
   };
-  const goNext = () => {
-    if (activeIndex !== -1 && activeIndex < TABS.length - 1) {
-      navigate(TABS[activeIndex + 1].to);
+  const goNextML = () => {
+    if (activeIndexML !== -1 && activeIndexML < TABS_ML.length - 1) {
+      navigateML(TABS_ML[activeIndexML + 1].to);
     }
   };
 
   return (
     <s-page heading="Settings" inlineSize="large" style={{ fontFamily: "Inter" }}>
-      <div style={styles.outerCard}>
-        <div style={styles.headerRow}>
+      <div style={stylesML.outerCard}>
+        <div style={stylesML.headerRow}>
           <div>
-            <h1 style={styles.heading}>Configurations</h1>
-            <p style={styles.pageSubtitle}>
+            <h1 style={stylesML.heading}>Configurations</h1>
+            <p style={stylesML.pageSubtitle}>
               Configure your store's booking rules and preferences.
             </p>
           </div>
-          <div className="eb-settings-save" style={saveWrapperStyle()}>
+          <div className="eb-settings-save" style={saveWrapperStyleML()}>
             <button
-              style={saveButtonStyle(isSaving)}
-              disabled={!saveHandler || isSaving}
-              onClick={() => saveHandler?.()}
+              style={saveButtonStyleML(isSavingML)}
+              disabled={!saveHandlerML || isSavingML}
+              onClick={() => saveHandlerML?.()}
             >
-              {isSaving ? "Saving..." : "Save Settings"}
+              {isSavingML ? "Saving..." : "Save Settings"}
             </button>
           </div>
         </div>
 
-        <div className="eb-tab-bar" style={styles.tabBar}>
-          {TABS.map((tab) => (
+        <div className="eb-tab-bar" style={stylesML.tabBar}>
+          {TABS_ML.map((tabML) => (
             <NavLink
-              key={tab.to}
-              to={tab.to}
-              end={tab.end}
-              style={({ isActive }) => tabButtonStyle(isActive)}
+              key={tabML.to}
+              to={tabML.to}
+              end={tabML.end}
+              style={({ isActive: isActiveML }) => tabButtonStyleML(isActiveML)}
             >
-              {tab.label}
+              {tabML.label}
             </NavLink>
           ))}
         </div>
 
-        <Outlet context={{ registerSave }} />
+        <Outlet context={{ registerSave: registerSaveML }} />
 
-        <TabNavRow onBack={goBack} onNext={goNext} isFirst={isFirst} isLast={isLast} />
+        <TabNavRow onBack={goBackML} onNext={goNextML} isFirst={isFirstML} isLast={isLastML} />
       </div>
     </s-page>
   );
 }
 
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers: HeadersFunction = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

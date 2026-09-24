@@ -1,5 +1,5 @@
 import type { EffectiveBookingSettings } from "./bookableProduct.server";
-import { zonedTimeToUtc } from "../utils/timezones";
+import { zonedTimeToUtcML } from "../utils/timezones";
 
 export type TimeSlot = {
   start: string;
@@ -9,272 +9,272 @@ export type TimeSlot = {
   available: boolean;
 };
 
-const MINUTES_IN_DAY = 24 * 60;
+const MINUTES_IN_DAY_ML = 24 * 60;
 
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
+function timeToMinutesML(timeML: string): number {
+  const [hML, mML] = timeML.split(":").map(Number);
+  return hML * 60 + mML;
 }
 
-function minutesToTime(minutes: number): string {
-  const h = Math.floor(minutes / 60)
+function minutesToTimeML(minutesML: number): string {
+  const hML = Math.floor(minutesML / 60)
     .toString()
     .padStart(2, "0");
-  const m = (minutes % 60).toString().padStart(2, "0");
-  return `${h}:${m}`;
+  const mML = (minutesML % 60).toString().padStart(2, "0");
+  return `${hML}:${mML}`;
 }
 
-export function dayOfWeek(dateStr: string): number {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+export function dayOfWeekML(dateStrML: string): number {
+  const [yML, mML, dML] = dateStrML.split("-").map(Number);
+  return new Date(Date.UTC(yML, mML - 1, dML)).getUTCDay();
 }
 
-function isWithinDateWindow(
-  dateStr: string,
-  startDate: Date | null,
-  endDate: Date | null,
+function isWithinDateWindowML(
+  dateStrML: string,
+  startDateML: Date | null,
+  endDateML: Date | null,
 ): boolean {
-  if (startDate && dateStr < startDate.toISOString().slice(0, 10)) {
+  if (startDateML && dateStrML < startDateML.toISOString().slice(0, 10)) {
     return false;
   }
-  if (endDate && dateStr > endDate.toISOString().slice(0, 10)) {
+  if (endDateML && dateStrML > endDateML.toISOString().slice(0, 10)) {
     return false;
   }
   return true;
 }
 
-export function computeSlotsForDate(
-  settings: EffectiveBookingSettings,
-  dateStr: string,
-  blackoutDates: Set<string>,
-  now: Date = new Date(),
-  bookedCounts: Map<string, number> = new Map(),
-  timeZone: string | null = null,
+export function computeSlotsForDateML(
+  settingsML: EffectiveBookingSettings,
+  dateStrML: string,
+  blackoutDatesML: Set<string>,
+  nowML: Date = new Date(),
+  bookedCountsML: Map<string, number> = new Map(),
+  timeZoneML: string | null = null,
 ): TimeSlot[] {
-  if (blackoutDates.has(dateStr)) return [];
-  const dayConfig = settings.dayTimes[dayOfWeek(dateStr)];
-  if (!dayConfig) return [];
+  if (blackoutDatesML.has(dateStrML)) return [];
+  const dayConfigML = settingsML.dayTimes[dayOfWeekML(dateStrML)];
+  if (!dayConfigML) return [];
   if (
-    !isWithinDateWindow(
-      dateStr,
-      settings.bookingStartDate,
-      settings.bookingEndDate,
+    !isWithinDateWindowML(
+      dateStrML,
+      settingsML.bookingStartDate,
+      settingsML.bookingEndDate,
     )
   ) {
     return [];
   }
 
-  const maxAdvanceDate = new Date(now);
-  maxAdvanceDate.setUTCDate(maxAdvanceDate.getUTCDate() + settings.maxAdvanceDays);
-  if (dateStr > maxAdvanceDate.toISOString().slice(0, 10)) return [];
+  const maxAdvanceDateML = new Date(nowML);
+  maxAdvanceDateML.setUTCDate(maxAdvanceDateML.getUTCDate() + settingsML.maxAdvanceDays);
+  if (dateStrML > maxAdvanceDateML.toISOString().slice(0, 10)) return [];
 
-  const stepMinutes = settings.slotDurationMinutes + settings.bufferMinutes;
-  if (stepMinutes <= 0) return [];
+  const stepMinutesML = settingsML.slotDurationMinutes + settingsML.bufferMinutes;
+  if (stepMinutesML <= 0) return [];
 
-  const dayStart = timeToMinutes(dayConfig.start);
-  const dayEnd = timeToMinutes(dayConfig.end);
-  const earliestBookableAt = new Date(
-    now.getTime() + settings.minAdvanceHours * 60 * 60 * 1000,
+  const dayStartML = timeToMinutesML(dayConfigML.start);
+  const dayEndML = timeToMinutesML(dayConfigML.end);
+  const earliestBookableAtML = new Date(
+    nowML.getTime() + settingsML.minAdvanceHours * 60 * 60 * 1000,
   );
 
-  const slots: TimeSlot[] = [];
+  const slotsML: TimeSlot[] = [];
   for (
-    let slotStartMin = dayStart;
-    slotStartMin + settings.slotDurationMinutes <= dayEnd &&
-    slotStartMin < MINUTES_IN_DAY;
-    slotStartMin += stepMinutes
+    let slotStartMinML = dayStartML;
+    slotStartMinML + settingsML.slotDurationMinutes <= dayEndML &&
+    slotStartMinML < MINUTES_IN_DAY_ML;
+    slotStartMinML += stepMinutesML
   ) {
-    const slotEndMin = slotStartMin + settings.slotDurationMinutes;
-    const startsAt = zonedTimeToUtc(dateStr, minutesToTime(slotStartMin), timeZone);
+    const slotEndMinML = slotStartMinML + settingsML.slotDurationMinutes;
+    const startsAtML = zonedTimeToUtcML(dateStrML, minutesToTimeML(slotStartMinML), timeZoneML);
 
-    if (startsAt < earliestBookableAt) continue;
+    if (startsAtML < earliestBookableAtML) continue;
 
-    const booked = bookedCounts.get(startsAt.toISOString()) ?? 0;
-    const remainingCapacity = Math.max(0, settings.maxBookingsPerSlot - booked);
+    const bookedML = bookedCountsML.get(startsAtML.toISOString()) ?? 0;
+    const remainingCapacityML = Math.max(0, settingsML.maxBookingsPerSlot - bookedML);
 
-    slots.push({
-      start: minutesToTime(slotStartMin),
-      end: minutesToTime(slotEndMin),
-      startsAt: startsAt.toISOString(),
-      remainingCapacity,
-      available: remainingCapacity > 0,
+    slotsML.push({
+      start: minutesToTimeML(slotStartMinML),
+      end: minutesToTimeML(slotEndMinML),
+      startsAt: startsAtML.toISOString(),
+      remainingCapacity: remainingCapacityML,
+      available: remainingCapacityML > 0,
     });
   }
 
-  return slots;
+  return slotsML;
 }
 
-export function computeFullDayAvailability(
-  settings: EffectiveBookingSettings,
-  dateStr: string,
-  blackoutDates: Set<string>,
-  now: Date = new Date(),
-  bookedCount: number = 0,
+export function computeFullDayAvailabilityML(
+  settingsML: EffectiveBookingSettings,
+  dateStrML: string,
+  blackoutDatesML: Set<string>,
+  nowML: Date = new Date(),
+  bookedCountML: number = 0,
 ): { available: boolean; remainingCapacity: number } {
-  if (blackoutDates.has(dateStr)) return { available: false, remainingCapacity: 0 };
-  if (!settings.workingDays.includes(dayOfWeek(dateStr))) {
+  if (blackoutDatesML.has(dateStrML)) return { available: false, remainingCapacity: 0 };
+  if (!settingsML.workingDays.includes(dayOfWeekML(dateStrML))) {
     return { available: false, remainingCapacity: 0 };
   }
   if (
-    !isWithinDateWindow(dateStr, settings.bookingStartDate, settings.bookingEndDate)
+    !isWithinDateWindowML(dateStrML, settingsML.bookingStartDate, settingsML.bookingEndDate)
   ) {
     return { available: false, remainingCapacity: 0 };
   }
 
-  const maxAdvanceDate = new Date(now);
-  maxAdvanceDate.setUTCDate(maxAdvanceDate.getUTCDate() + settings.maxAdvanceDays);
-  if (dateStr > maxAdvanceDate.toISOString().slice(0, 10)) {
+  const maxAdvanceDateML = new Date(nowML);
+  maxAdvanceDateML.setUTCDate(maxAdvanceDateML.getUTCDate() + settingsML.maxAdvanceDays);
+  if (dateStrML > maxAdvanceDateML.toISOString().slice(0, 10)) {
     return { available: false, remainingCapacity: 0 };
   }
 
-  const todayStr = now.toISOString().slice(0, 10);
-  if (settings.minAdvanceHours > 0 && dateStr <= todayStr) {
+  const todayStrML = nowML.toISOString().slice(0, 10);
+  if (settingsML.minAdvanceHours > 0 && dateStrML <= todayStrML) {
     return { available: false, remainingCapacity: 0 };
   }
 
-  const remainingCapacity = Math.max(0, settings.maxBookingsPerSlot - bookedCount);
-  return { available: remainingCapacity > 0, remainingCapacity };
+  const remainingCapacityML = Math.max(0, settingsML.maxBookingsPerSlot - bookedCountML);
+  return { available: remainingCapacityML > 0, remainingCapacity: remainingCapacityML };
 }
 
-export function getAvailableFullDayDatesInMonth(
-  settings: EffectiveBookingSettings,
-  year: number,
-  month: number,
-  blackoutDates: Set<string>,
-  now: Date = new Date(),
-  bookedCounts: Map<string, number> = new Map(),
+export function getAvailableFullDayDatesInMonthML(
+  settingsML: EffectiveBookingSettings,
+  yearML: number,
+  monthML: number,
+  blackoutDatesML: Set<string>,
+  nowML: Date = new Date(),
+  bookedCountsML: Map<string, number> = new Map(),
 ): string[] {
-  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const available: string[] = [];
+  const daysInMonthML = new Date(Date.UTC(yearML, monthML, 0)).getUTCDate();
+  const availableML: string[] = [];
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const startsAt = `${dateStr}T00:00:00.000Z`;
-    const bookedCount = bookedCounts.get(startsAt) ?? 0;
-    const result = computeFullDayAvailability(settings, dateStr, blackoutDates, now, bookedCount);
-    if (result.available) available.push(dateStr);
+  for (let dayML = 1; dayML <= daysInMonthML; dayML++) {
+    const dateStrML = `${yearML}-${String(monthML).padStart(2, "0")}-${String(dayML).padStart(2, "0")}`;
+    const startsAtML = `${dateStrML}T00:00:00.000Z`;
+    const bookedCountML = bookedCountsML.get(startsAtML) ?? 0;
+    const resultML = computeFullDayAvailabilityML(settingsML, dateStrML, blackoutDatesML, nowML, bookedCountML);
+    if (resultML.available) availableML.push(dateStrML);
   }
 
-  return available;
+  return availableML;
 }
 
-export function computeMultiDayNightAvailability(
-  settings: EffectiveBookingSettings,
-  dateStr: string,
-  blackoutDates: Set<string>,
-  now: Date = new Date(),
-  bookedCount: number = 0,
+export function computeMultiDayNightAvailabilityML(
+  settingsML: EffectiveBookingSettings,
+  dateStrML: string,
+  blackoutDatesML: Set<string>,
+  nowML: Date = new Date(),
+  bookedCountML: number = 0,
 ): { available: boolean; remainingCapacity: number } {
-  if (blackoutDates.has(dateStr)) return { available: false, remainingCapacity: 0 };
+  if (blackoutDatesML.has(dateStrML)) return { available: false, remainingCapacity: 0 };
   if (
-    !isWithinDateWindow(dateStr, settings.bookingStartDate, settings.bookingEndDate)
+    !isWithinDateWindowML(dateStrML, settingsML.bookingStartDate, settingsML.bookingEndDate)
   ) {
     return { available: false, remainingCapacity: 0 };
   }
 
-  const maxAdvanceDate = new Date(now);
-  maxAdvanceDate.setUTCDate(maxAdvanceDate.getUTCDate() + settings.maxAdvanceDays);
-  if (dateStr > maxAdvanceDate.toISOString().slice(0, 10)) {
+  const maxAdvanceDateML = new Date(nowML);
+  maxAdvanceDateML.setUTCDate(maxAdvanceDateML.getUTCDate() + settingsML.maxAdvanceDays);
+  if (dateStrML > maxAdvanceDateML.toISOString().slice(0, 10)) {
     return { available: false, remainingCapacity: 0 };
   }
 
-  const todayStr = now.toISOString().slice(0, 10);
-  if (settings.minAdvanceHours > 0 && dateStr <= todayStr) {
+  const todayStrML = nowML.toISOString().slice(0, 10);
+  if (settingsML.minAdvanceHours > 0 && dateStrML <= todayStrML) {
     return { available: false, remainingCapacity: 0 };
   }
 
-  const remainingCapacity = Math.max(0, settings.maxBookingsPerSlot - bookedCount);
-  return { available: remainingCapacity > 0, remainingCapacity };
+  const remainingCapacityML = Math.max(0, settingsML.maxBookingsPerSlot - bookedCountML);
+  return { available: remainingCapacityML > 0, remainingCapacity: remainingCapacityML };
 }
 
-export function getFullDayCapacityInMonth(
-  settings: EffectiveBookingSettings,
-  year: number,
-  month: number,
-  blackoutDates: Set<string>,
-  now: Date = new Date(),
-  bookedCounts: Map<string, number> = new Map(),
+export function getFullDayCapacityInMonthML(
+  settingsML: EffectiveBookingSettings,
+  yearML: number,
+  monthML: number,
+  blackoutDatesML: Set<string>,
+  nowML: Date = new Date(),
+  bookedCountsML: Map<string, number> = new Map(),
 ): Record<string, number> {
-  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const capacity: Record<string, number> = {};
+  const daysInMonthML = new Date(Date.UTC(yearML, monthML, 0)).getUTCDate();
+  const capacityML: Record<string, number> = {};
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const startsAt = `${dateStr}T00:00:00.000Z`;
-    const bookedCount = bookedCounts.get(startsAt) ?? 0;
-    const result = computeFullDayAvailability(settings, dateStr, blackoutDates, now, bookedCount);
-    capacity[dateStr] = result.remainingCapacity;
+  for (let dayML = 1; dayML <= daysInMonthML; dayML++) {
+    const dateStrML = `${yearML}-${String(monthML).padStart(2, "0")}-${String(dayML).padStart(2, "0")}`;
+    const startsAtML = `${dateStrML}T00:00:00.000Z`;
+    const bookedCountML = bookedCountsML.get(startsAtML) ?? 0;
+    const resultML = computeFullDayAvailabilityML(settingsML, dateStrML, blackoutDatesML, nowML, bookedCountML);
+    capacityML[dateStrML] = resultML.remainingCapacity;
   }
 
-  return capacity;
+  return capacityML;
 }
 
-export function getAvailableMultiDayNightsInMonth(
-  settings: EffectiveBookingSettings,
-  year: number,
-  month: number,
-  blackoutDates: Set<string>,
-  now: Date = new Date(),
-  bookedNightCounts: Map<string, number> = new Map(),
+export function getAvailableMultiDayNightsInMonthML(
+  settingsML: EffectiveBookingSettings,
+  yearML: number,
+  monthML: number,
+  blackoutDatesML: Set<string>,
+  nowML: Date = new Date(),
+  bookedNightCountsML: Map<string, number> = new Map(),
 ): string[] {
-  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const available: string[] = [];
+  const daysInMonthML = new Date(Date.UTC(yearML, monthML, 0)).getUTCDate();
+  const availableML: string[] = [];
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const bookedCount = bookedNightCounts.get(dateStr) ?? 0;
-    const result = computeMultiDayNightAvailability(settings, dateStr, blackoutDates, now, bookedCount);
-    if (result.available) available.push(dateStr);
+  for (let dayML = 1; dayML <= daysInMonthML; dayML++) {
+    const dateStrML = `${yearML}-${String(monthML).padStart(2, "0")}-${String(dayML).padStart(2, "0")}`;
+    const bookedCountML = bookedNightCountsML.get(dateStrML) ?? 0;
+    const resultML = computeMultiDayNightAvailabilityML(settingsML, dateStrML, blackoutDatesML, nowML, bookedCountML);
+    if (resultML.available) availableML.push(dateStrML);
   }
 
-  return available;
+  return availableML;
 }
 
-export function getMultiDayCapacityInMonth(
-  settings: EffectiveBookingSettings,
-  year: number,
-  month: number,
-  blackoutDates: Set<string>,
-  now: Date = new Date(),
-  bookedNightCounts: Map<string, number> = new Map(),
+export function getMultiDayCapacityInMonthML(
+  settingsML: EffectiveBookingSettings,
+  yearML: number,
+  monthML: number,
+  blackoutDatesML: Set<string>,
+  nowML: Date = new Date(),
+  bookedNightCountsML: Map<string, number> = new Map(),
 ): Record<string, number> {
-  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const capacity: Record<string, number> = {};
+  const daysInMonthML = new Date(Date.UTC(yearML, monthML, 0)).getUTCDate();
+  const capacityML: Record<string, number> = {};
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const bookedCount = bookedNightCounts.get(dateStr) ?? 0;
-    const result = computeMultiDayNightAvailability(settings, dateStr, blackoutDates, now, bookedCount);
-    capacity[dateStr] = result.remainingCapacity;
+  for (let dayML = 1; dayML <= daysInMonthML; dayML++) {
+    const dateStrML = `${yearML}-${String(monthML).padStart(2, "0")}-${String(dayML).padStart(2, "0")}`;
+    const bookedCountML = bookedNightCountsML.get(dateStrML) ?? 0;
+    const resultML = computeMultiDayNightAvailabilityML(settingsML, dateStrML, blackoutDatesML, nowML, bookedCountML);
+    capacityML[dateStrML] = resultML.remainingCapacity;
   }
 
-  return capacity;
+  return capacityML;
 }
 
-export function getAvailableDatesInMonth(
-  settings: EffectiveBookingSettings,
-  year: number,
-  month: number,
-  blackoutDates: Set<string>,
-  now: Date = new Date(),
-  bookedCounts: Map<string, number> = new Map(),
-  timeZone: string | null = null,
+export function getAvailableDatesInMonthML(
+  settingsML: EffectiveBookingSettings,
+  yearML: number,
+  monthML: number,
+  blackoutDatesML: Set<string>,
+  nowML: Date = new Date(),
+  bookedCountsML: Map<string, number> = new Map(),
+  timeZoneML: string | null = null,
 ): string[] {
-  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const available: string[] = [];
+  const daysInMonthML = new Date(Date.UTC(yearML, monthML, 0)).getUTCDate();
+  const availableML: string[] = [];
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const slots = computeSlotsForDate(
-      settings,
-      dateStr,
-      blackoutDates,
-      now,
-      bookedCounts,
-      timeZone,
+  for (let dayML = 1; dayML <= daysInMonthML; dayML++) {
+    const dateStrML = `${yearML}-${String(monthML).padStart(2, "0")}-${String(dayML).padStart(2, "0")}`;
+    const slotsML = computeSlotsForDateML(
+      settingsML,
+      dateStrML,
+      blackoutDatesML,
+      nowML,
+      bookedCountsML,
+      timeZoneML,
     );
-    if (slots.some((s) => s.available)) available.push(dateStr);
+    if (slotsML.some((sML) => sML.available)) availableML.push(dateStrML);
   }
 
-  return available;
+  return availableML;
 }

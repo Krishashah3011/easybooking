@@ -1,16 +1,16 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import {
-  listCustomFields,
-  toPublicField,
+  listCustomFieldsML,
+  toPublicFieldML,
 } from "../models/customBookingField.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.public.appProxy(request);
-  if (!session) {
+export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
+  const { session: sessionML } = await authenticate.public.appProxy(requestML);
+  if (!sessionML) {
     return Response.json({ error: "Unknown shop" }, { status: 401 });
   }
 
-  const fields = await listCustomFields(session.shop);
-  return Response.json({ fields: fields.map(toPublicField) });
+  const fieldsML = await listCustomFieldsML(sessionML.shop);
+  return Response.json({ fields: fieldsML.map(toPublicFieldML) });
 };

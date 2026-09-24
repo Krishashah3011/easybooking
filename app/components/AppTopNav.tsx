@@ -17,42 +17,42 @@ type NavItem = {
   matchPrefix?: boolean;
 };
 
-const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS_ML: NavItem[] = [
   { href: "/app", label: "Home", icon: HomeIcon },
   { href: "/app/settings", label: "Settings", icon: SettingsIcon, matchPrefix: true },
   { href: "/app/products", label: "Products", icon: ProductsIcon, matchPrefix: true },
   { href: "/app/bookings", label: "Bookings", icon: BookingsIcon, matchPrefix: true },
 ];
 
-function isActive(pathname: string, item: NavItem) {
-  if (item.href === "/app") {
-    return pathname === "/app" || pathname === "/app/";
+function isActiveML(pathnameML: string, itemML: NavItem) {
+  if (itemML.href === "/app") {
+    return pathnameML === "/app" || pathnameML === "/app/";
   }
-  return item.matchPrefix
-    ? pathname.startsWith(item.href)
-    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  return itemML.matchPrefix
+    ? pathnameML.startsWith(itemML.href)
+    : pathnameML === itemML.href || pathnameML.startsWith(`${itemML.href}/`);
 }
 
 export function AppTopNav() {
-  const { pathname } = useLocation();
-  const accountActive = pathname.startsWith("/app/account");
+  const { pathname: pathnameML } = useLocation();
+  const accountActiveML = pathnameML.startsWith("/app/account");
 
   return (
     <nav className="bar" aria-label="App navigation">
       <div className="group">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(pathname, item);
+        {NAV_ITEMS_ML.map((itemML) => {
+          const Icon = itemML.icon;
+          const activeML = isActiveML(pathnameML, itemML);
           return (
             <Link
-              key={item.href}
-              to={item.href}
-              title={item.label}
-              aria-label={item.label}
-              aria-current={active ? "page" : undefined}
+              key={itemML.href}
+              to={itemML.href}
+              title={itemML.label}
+              aria-label={itemML.label}
+              aria-current={activeML ? "page" : undefined}
               className="link"
             >
-              <Icon active={active} />
+              <Icon active={activeML} />
             </Link>
           );
         })}
@@ -62,10 +62,10 @@ export function AppTopNav() {
         to="/app/account"
         title="Account"
         aria-label="Account"
-        aria-current={accountActive ? "page" : undefined}
+        aria-current={accountActiveML ? "page" : undefined}
         className="link"
       >
-        <AccountIcon active={accountActive} />
+        <AccountIcon active={accountActiveML} />
       </Link>
     </nav>
   );
