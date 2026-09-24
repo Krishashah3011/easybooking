@@ -686,8 +686,14 @@ function buildGuideSteps(
 ): GuideStep[] {
   const workingSteps: GuideStep[] = [
     {
+      title: "Turn the booking app on",
+      body: "In General Settings, switch on Booking App Status so the app is active across your storefront.",
+      cta: "Go to General Settings",
+      href: "/app/settings",
+    },
+    {
       title: "Turn on the booking widget",
-      body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page - no manual placement needed.",
+      body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page (no manual placement needed).",
       cta: "Activate App Embed",
       href: `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${apiKey}/${BOOKING_WIDGET_BLOCK_HANDLE}`,
       external: true,
@@ -699,20 +705,32 @@ function buildGuideSteps(
       href: "/app/products",
     },
     {
-      title: "Set your booking schedule and Location",
-      body: "In Booking Settings, set your working days, hours, slot rules, and det up your business locations.",
+      title: "Set your booking schedule",
+      body: "In Booking Settings, shape your availability- pick your working days, hours, and slot rules so bookings only land when you're ready for them.",
       cta: "Go to Booking Settings",
       href: "/app/settings/booking",
     },
     {
-      title: "Block off unavailable days & collect extra info (optional)",
-      body: "Add holidays or closures on the Blackout Dates tab, shop-wide or for a specific product. You can also collect extra info like notes or special requests at booking time using Custom Fields.",
+      title: "Add your business locations",
+      body: "In the Locations tab, add every place customers can book with you — each with its own timezone, so booking times are always accurate no matter where they are.",
+      cta: "Go to Locations",
+      href: "/app/settings/locations",
+    },
+    {
+      title: "Block off unavailable days",
+      body: "Add holidays or closures on the Blackout Dates tab, shop-wide or for a specific product.",
       cta: "Go to Blackout Dates",
       href: "/app/settings/blackout-dates",
     },
     {
+      title: "Collect extra info at booking time",
+      body: "Use Custom Fields to collect extra info like notes or special requests from customers when they book.",
+      cta: "Go to Custom Fields",
+      href: "/app/settings/custom-fields",
+    },
+    {
       title: "Turn on booking emails",
-      body: "Configure SMTP Settings so customers automatically get confirmation, reminder, and cancellation emails.",
+      body: "Configure Email Settings- set up SMTP so customers automatically get confirmation, reminder, reschedule, and cancellation emails, and customize the email templates they receive.",
       cta: "Go to Email Settings",
       href: "/app/settings/email",
     },
@@ -868,9 +886,9 @@ export default function Dashboard() {
     },
     {
       done: smtpConfigured,
-      label: "Configure SMTP so booking emails can send",
+      label: "Configure Email Settings so booking emails can send",
       href: "/app/settings/email",
-      cta: "Go to Settings",
+      cta: "Go to Email Settings",
     },
   ];
   const remainingSteps = setupSteps.filter((s) => !s.done);
