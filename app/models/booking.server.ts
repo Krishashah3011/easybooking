@@ -5,7 +5,12 @@ import {
   resolveEffectiveSettings,
 } from "./bookableProduct.server";
 import { getBookingSettings } from "./bookingSettings.server";
-import { computeSlotsForDate } from "./slotAvailability.server";
+import {
+  computeSlotsForDate,
+  computeFullDayAvailability,
+  computeMultiDayNightAvailability,
+} from "./slotAvailability.server";
+import { resolveBookingContextById } from "./booking-context.server";
 import { sendEmail } from "../utils/mailer.server";
 import {
   confirmationEmail,
@@ -16,6 +21,11 @@ import {
 } from "./emailTemplate.server";
 import { listCustomFields } from "./customBookingField.server";
 import { getLocationById } from "./bookingLocation.server";
+import {
+  dateStrInTimezone,
+  localDayRangeUtc,
+  zonedTimeToUtc,
+} from "../utils/timezones";
 import { formatDateDisplay } from "../utils/format";
 import { getDisplayStatus, belongsInCompletedTab } from "../utils/bookingStatus";
 
@@ -402,6 +412,17 @@ async function sendBookingRescheduled(
   });
 }
 
+function nightsInRange(checkin: string, checkout: string): string[] {
+  const nights: string[] = [];
+  const start = Date.parse(`${checkin}T00:00:00Z`);
+  const end = Date.parse(`${checkout}T00:00:00Z`);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return nights;
+  for (let t = start; t < end && nights.length < 366; t += 86400000) {
+    nights.push(new Date(t).toISOString().slice(0, 10));
+  }
+  return nights;
+}
+
 export async function createBookingsFromOrder(
   shop: string,
   order: OrderPayload,
@@ -447,6 +468,33 @@ export async function createBookingsFromOrder(
       resolvedLocation,
     );
 
+    // Order-time sanity checks. The order is already paid, so an invalid date
+    // can't be rejected here; it is saved as OVERBOOKED (needs merchant review),
+    // the same way capacity overflows are. Min/max advance are deliberately not
+    // enforced here: a shopper may legitimately pick a slot and check out later.
+    const bookingContext = await resolveBookingContextById(
+      shop,
+      bookableProduct.id,
+      resolvedLocation?.id ?? null,
+    );
+    const blackoutDates = bookingContext?.blackoutDates ?? new Set<string>();
+    const checkSettings = {
+      ...effectiveSettings,
+      minAdvanceHours: 0,
+      maxAdvanceDays: 36500,
+    };
+    const checkNow = new Date();
+    const todayInLocation = dateStrInTimezone(
+      checkNow,
+      resolvedLocation?.timezone ?? null,
+    );
+    const flagInvalid = (reason: string): true => {
+      console.warn(
+        `Order ${order.id} line item ${lineItem.id}: ${reason} — marked OVERBOOKED for merchant review.`,
+      );
+      return true;
+    };
+
     const customFieldResponses = extractCustomFieldResponses(
       lineItem,
       customFields,
@@ -475,17 +523,32 @@ export async function createBookingsFromOrder(
       const bundleBookings: Booking[] = [];
       for (const session of sessions) {
         const slotsForDate = computeSlotsForDate(
-          effectiveSettings,
+          checkSettings,
           session.date,
-          new Set(),
-          new Date(),
+          blackoutDates,
+          checkNow,
           new Map(),
           resolvedLocation?.timezone ?? null,
         );
         const matchedSlot = slotsForDate.find((s) => s.start === session.time);
+        // No match means the slot already started (past slots are never
+        // generated), or it's a blackout date / non-working day / off-grid time.
+        const sessionInvalid = !matchedSlot
+          ? flagInvalid(
+              `session ${session.date} ${session.time} isn't a bookable slot (already started, blackout date, non-working day, or time not offered)`,
+            )
+          : false;
+        // If the slot can't be matched any more (min-advance passed, hours
+        // changed, ...), still convert the wall time in the location's
+        // timezone instead of treating it as UTC, so capacity counting and
+        // reminders stay correct.
         const sessionSlotStartsAt = matchedSlot
           ? new Date(matchedSlot.startsAt)
-          : new Date(`${session.date}T${session.time}:00Z`);
+          : zonedTimeToUtc(
+              session.date,
+              session.time,
+              resolvedLocation?.timezone ?? null,
+            );
         const sessionSlotEnd =
           matchedSlot?.end ??
           addMinutes(session.time, effectiveSettings.slotDurationMinutes);
@@ -498,6 +561,7 @@ export async function createBookingsFromOrder(
           bundleValidityDeadlineStr !== null && session.date > bundleValidityDeadlineStr;
         const sessionStatus =
           outsideValidityWindow ||
+          sessionInvalid ||
           sessionAlreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot
             ? "OVERBOOKED"
             : "CONFIRMED";
@@ -552,6 +616,7 @@ export async function createBookingsFromOrder(
     let slotEnd: string;
     let alreadyBooked: number;
     let bookingEndDateField: string | null = null;
+    let invalidSelection = false;
 
     if (bookableProduct.bookingType === "MULTI_DAY") {
       const checkout = selection.checkoutDate ?? selection.date;
@@ -564,6 +629,37 @@ export async function createBookingsFromOrder(
         selection.date,
         checkout,
       );
+
+      const nights = nightsInRange(selection.date, checkout);
+      if (checkout <= selection.date) {
+        invalidSelection = flagInvalid("check-out isn't after check-in");
+      } else if (selection.date < todayInLocation) {
+        invalidSelection = flagInvalid(`check-in ${selection.date} is in the past`);
+      } else if (
+        bookableProduct.minNights !== null &&
+        nights.length < bookableProduct.minNights
+      ) {
+        invalidSelection = flagInvalid(
+          `stay of ${nights.length} night(s) is below the ${bookableProduct.minNights}-night minimum`,
+        );
+      } else if (
+        bookableProduct.maxNights !== null &&
+        nights.length > bookableProduct.maxNights
+      ) {
+        invalidSelection = flagInvalid(
+          `stay of ${nights.length} night(s) is above the ${bookableProduct.maxNights}-night maximum`,
+        );
+      } else if (
+        nights.some(
+          (night) =>
+            !computeMultiDayNightAvailability(checkSettings, night, blackoutDates, checkNow, 0)
+              .available,
+        )
+      ) {
+        invalidSelection = flagInvalid(
+          "one or more nights are unavailable (blackout date or outside the bookable window)",
+        );
+      }
     } else if (bookableProduct.bookingType === "FULL_DAY") {
       slotStartsAt = new Date(`${selection.date}T00:00:00.000Z`);
       slotEnd = effectiveSettings.dailyEndTime;
@@ -572,19 +668,42 @@ export async function createBookingsFromOrder(
         bookableProduct.id,
         slotStartsAt,
       );
+
+      if (selection.date < todayInLocation) {
+        invalidSelection = flagInvalid(`date ${selection.date} is in the past`);
+      } else if (
+        !computeFullDayAvailability(checkSettings, selection.date, blackoutDates, checkNow, 0)
+          .available
+      ) {
+        invalidSelection = flagInvalid(
+          `date ${selection.date} isn't bookable (blackout date, non-working day, or outside the bookable window)`,
+        );
+      }
     } else {
       const slotsForDate = computeSlotsForDate(
-        effectiveSettings,
+        checkSettings,
         selection.date,
-        new Set(),
-        new Date(),
+        blackoutDates,
+        checkNow,
         new Map(),
         resolvedLocation?.timezone ?? null,
       );
       const matchedSlot = slotsForDate.find((s) => s.start === selection.time);
+      // No match means the slot already started (past slots are never
+      // generated), or it's a blackout date / non-working day / off-grid time.
+      if (!matchedSlot) {
+        invalidSelection = flagInvalid(
+          `${selection.date} ${selection.time} isn't a bookable slot (already started, blackout date, non-working day, or time not offered)`,
+        );
+      }
+      // Same fallback as above: never treat a local wall time as UTC.
       slotStartsAt = matchedSlot
         ? new Date(matchedSlot.startsAt)
-        : new Date(`${selection.date}T${selection.time}:00Z`);
+        : zonedTimeToUtc(
+            selection.date,
+            selection.time,
+            resolvedLocation?.timezone ?? null,
+          );
       slotEnd =
         matchedSlot?.end ??
         addMinutes(selection.time, effectiveSettings.slotDurationMinutes);
@@ -596,6 +715,7 @@ export async function createBookingsFromOrder(
     }
 
     const status =
+      !invalidSelection &&
       alreadyBooked + quantity <= effectiveSettings.maxBookingsPerSlot
         ? "CONFIRMED"
         : "OVERBOOKED";
@@ -976,7 +1096,10 @@ export async function getUpcomingBookings(
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       slotStartsAt: { gte: new Date() },
     },
-    include: { bookableProduct: { select: { productTitle: true, bookingType: true } } },
+    include: {
+      bookableProduct: { select: { productTitle: true, bookingType: true } },
+      bookingLocation: { select: { timezone: true } },
+    },
     orderBy: { slotStartsAt: "asc" },
     take: limit,
   });
@@ -984,12 +1107,17 @@ export async function getUpcomingBookings(
   return bookings.map(
     ({
       bookableProduct,
+      bookingLocation,
       ...booking
-    }: Booking & { bookableProduct: { productTitle: string; bookingType: BookingType } }) => {
+    }: Booking & {
+      bookableProduct: { productTitle: string; bookingType: BookingType };
+      bookingLocation: { timezone: string } | null;
+    }) => {
       const withType = {
         ...booking,
         productTitle: bookableProduct.productTitle,
         bookingType: bookableProduct.bookingType,
+        locationTimezone: bookingLocation?.timezone ?? null,
       };
       return { ...withType, displayStatus: getDisplayStatus(withType) };
     },
@@ -1266,8 +1394,10 @@ export async function listSlotsForReschedule(
     rescheduleLocation,
   );
 
-  const dayStart = new Date(`${date}T00:00:00.000Z`);
-  const dayEnd = new Date(`${date}T23:59:59.999Z`);
+  const { start: dayStart, end: dayEnd } = localDayRangeUtc(
+    date,
+    rescheduleLocation?.timezone ?? null,
+  );
   const grouped = await prisma.booking.groupBy({
     by: ["slotStartsAt"],
     where: {

@@ -4,6 +4,7 @@ import { resolveBookingContext } from "../models/booking-context.server";
 import { computeSlotsForDate } from "../models/slotAvailability.server";
 import { getBookedCountsInRange } from "../models/booking.server";
 import { getOrCreateShopSettings } from "../models/shopSettings.server";
+import { localDayRangeUtc } from "../utils/timezones";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -41,8 +42,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return Response.json({ slots: [] });
   }
 
-  const dayStart = new Date(`${date}T00:00:00.000Z`);
-  const dayEnd = new Date(`${date}T23:59:59.999Z`);
+  // Count bookings over the local day in the location's timezone, not the UTC
+  // day, so late/early slots that fall on a neighbouring UTC date are included.
+  const { start: dayStart, end: dayEnd } = localDayRangeUtc(
+    date,
+    context.location?.timezone ?? null,
+  );
   const bookedCounts = await getBookedCountsInRange(
     session.shop,
     context.bookableProductId,

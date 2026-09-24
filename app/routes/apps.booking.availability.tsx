@@ -13,6 +13,7 @@ import {
   getBookedCountsInRange,
   getBookedNightCountsInRange,
 } from "../models/booking.server";
+import { localMonthRangeUtc } from "../utils/timezones";
 
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -100,11 +101,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       bookedNightCounts,
     );
   } else {
+    // Time-slot products: slot instants live in the location's timezone, so
+    // count bookings over the local month, not the UTC month.
+    const localMonth = localMonthRangeUtc(
+      year,
+      month,
+      context.location?.timezone ?? null,
+    );
     const bookedCounts = await getBookedCountsInRange(
       session.shop,
       context.bookableProductId,
-      monthStart,
-      monthEnd,
+      localMonth.start,
+      localMonth.end,
     );
     availableDates = getAvailableDatesInMonth(
       context.effectiveSettings,

@@ -1233,6 +1233,78 @@
       if (slotListEl) setStatus(slotListEl, strings.selectDateHint);
     }
 
+    // ---- Spots already taken by slots in this shopper's cart ----
+    function nightsBetween(startStr, endStr) {
+      var out = [];
+      var a = Date.parse(startStr + "T00:00:00Z");
+      var b = Date.parse(endStr + "T00:00:00Z");
+      if (!isFinite(a) || !isFinite(b)) return out;
+      for (var t = a; t < b && out.length < 366; t += 86400000) {
+        out.push(new Date(t).toISOString().slice(0, 10));
+      }
+      return out;
+    }
+
+    function cartSlotKey(date, start) {
+      return date + "|" + start;
+    }
+
+    // Resolves to { slots: {"date|HH:MM": qty}, days: {"date": qty} } for cart
+    // lines of this product (same location as the one being booked, if any).
+    function fetchCartBookedQty() {
+      var locId = pendingLocation ? String(pendingLocation.id) : "";
+      return fetch("/cart.js", { headers: { Accept: "application/json" } })
+        .then(function (res) {
+          return res.json();
+        })
+        .then(function (cart) {
+          var out = { slots: {}, days: {} };
+          (cart.items || []).forEach(function (item) {
+            var props = item.properties || {};
+            if (String(item.product_id) !== numericProductId) return;
+            if (!props["Booking Date"]) return;
+            if (locId && String(props["_Location Id"] || "") !== locId) return;
+            var qty = item.quantity || 0;
+
+            var k = cartSlotKey(props["Booking Date"], props["Booking Time"] || "");
+            out.slots[k] = (out.slots[k] || 0) + qty;
+
+            var n = 2;
+            while (props["Session " + n + " Date"]) {
+              var sk = cartSlotKey(
+                props["Session " + n + " Date"],
+                props["Session " + n + " Time"] || "",
+              );
+              out.slots[sk] = (out.slots[sk] || 0) + qty;
+              n += 1;
+            }
+
+            var nights = props["Checkout Date"]
+              ? nightsBetween(props["Booking Date"], props["Checkout Date"])
+              : [props["Booking Date"]];
+            nights.forEach(function (d) {
+              out.days[d] = (out.days[d] || 0) + qty;
+            });
+          });
+          return out;
+        })
+        .catch(function () {
+          return { slots: {}, days: {} };
+        });
+    }
+
+    function subtractCartFromSlots(slots, dateStr, cartQty) {
+      return slots.map(function (slot) {
+        if (typeof slot.remainingCapacity !== "number") return slot;
+        var used = cartQty.slots[cartSlotKey(dateStr, slot.start)] || 0;
+        if (used <= 0) return slot;
+        var next = Object.assign({}, slot);
+        next.remainingCapacity = Math.max(0, slot.remainingCapacity - used);
+        if (next.remainingCapacity === 0) next.available = false;
+        return next;
+      });
+    }
+
     function fetchAvailability(year, month) {
       var url =
         proxyBase +
@@ -1259,7 +1331,7 @@
       });
     }
 
-    function applyAvailabilityData(data) {
+    function applyAvailabilityData(data, cartQty) {
       var dates = data.availableDates || [];
       if (data.bookingType) productBookingType = data.bookingType;
       if (typeof data.dailyStartTime === "string") fullDayStartTime = data.dailyStartTime;
@@ -1276,6 +1348,19 @@
       if (data.remainingCapacityByDate) {
         Object.keys(data.remainingCapacityByDate).forEach(function (d) {
           remainingCapacityByDate[d] = data.remainingCapacityByDate[d];
+        });
+      }
+      if (cartQty && isDateOnlyType(productBookingType)) {
+        Object.keys(cartQty.days).forEach(function (d) {
+          if (typeof remainingCapacityByDate[d] !== "number") return;
+          remainingCapacityByDate[d] = Math.max(
+            0,
+            remainingCapacityByDate[d] - cartQty.days[d],
+          );
+          if (remainingCapacityByDate[d] === 0) availableDatesByDay[d] = false;
+        });
+        dates = dates.filter(function (d) {
+          return remainingCapacityByDate[d] !== 0;
         });
       }
       return dates;
@@ -1341,10 +1426,10 @@
       var requestId = ++monthRequestId;
       setStatus(calendarEl, strings.loadingAvailability);
 
-      Promise.all([fetchAvailability(viewYear, viewMonth)])
+      Promise.all([fetchAvailability(viewYear, viewMonth), fetchCartBookedQty()])
         .then(function (results) {
           if (requestId !== monthRequestId) return;
-          availableDates = applyAvailabilityData(results[0]);
+          availableDates = applyAvailabilityData(results[0], results[1]);
           updateBundleProgress();
           applyLayoutForType();
           renderCalendar();
@@ -1768,8 +1853,13 @@
           return res.json();
         })
         .then(function (data) {
+          return fetchCartBookedQty().then(function (cartQty) {
+            return [data, cartQty];
+          });
+        })
+        .then(function (pair) {
           if (requestId !== slotRequestId) return;
-          currentSlots = data.slots || [];
+          currentSlots = subtractCartFromSlots(pair[0].slots || [], dateStr, pair[1]);
           renderSlots();
         })
         .catch(function (err) {
@@ -2377,11 +2467,14 @@
 
       cartReminderEl.appendChild(banner);
 
-      var rows = [];
+      // One row per distinct slot: the same slot added again just adds to the
+      // quantity instead of showing a second, identical row.
+      var grouped = [];
+      var groupIndex = {};
 
       items.forEach(function (item) {
         var props = item.properties;
-        var qtySuffix = item.quantity && item.quantity > 1 ? " \u00d7 " + item.quantity : "";
+        var qty = item.quantity || 1;
 
         var sessionCount = 1;
         while (props["Session " + (sessionCount + 1) + " Date"]) {
@@ -2396,12 +2489,22 @@
             recallTimeLabel(sDate, sTime) ||
             (sTime ? to12Hour(sTime) : "");
 
-          var rowText = formatDateDisplay(sDate) + ", " + sLabel + qtySuffix;
+          var text = formatDateDisplay(sDate) + ", " + sLabel;
           if (sessionCount > 1) {
-            rowText = format(strings.sessionConfirmed, { number: s }) + ": " + rowText;
+            text = format(strings.sessionConfirmed, { number: s }) + ": " + text;
           }
-          rows.push(createSelectionRow(rowText));
+          var key = text + "|" + (props["_Location Id"] || "");
+          if (groupIndex[key] === undefined) {
+            groupIndex[key] = grouped.length;
+            grouped.push({ text: text, qty: qty });
+          } else {
+            grouped[groupIndex[key]].qty += qty;
+          }
         }
+      });
+
+      var rows = grouped.map(function (g) {
+        return createSelectionRow(g.text + (g.qty > 1 ? " \u00d7 " + g.qty : ""));
       });
 
       cartReminderEl.appendChild(buildSelectionCard(rows));

@@ -1,8 +1,13 @@
+import { zonedTimeToUtc } from "./timezones";
+
 type CompletionInput = {
   bookingType: string;
   date: string;
   endDate?: string | null;
   slotEnd: string;
+  // Timezone of the booking's location. The date/time above are wall-clock
+  // times in this timezone; without one they are treated as UTC.
+  locationTimezone?: string | null;
 };
 
 export function isBookingCompleted(
@@ -15,7 +20,10 @@ export function isBookingCompleted(
       : booking.date;
   const endTime = booking.bookingType === "MULTI_DAY" ? "23:59" : booking.slotEnd || "23:59";
 
-  const endsAt = new Date(`${endDateStr}T${endTime}:00Z`);
+  if (Number.isNaN(new Date(`${endDateStr}T${endTime}:00Z`).getTime())) {
+    return false;
+  }
+  const endsAt = zonedTimeToUtc(endDateStr, endTime, booking.locationTimezone);
   if (Number.isNaN(endsAt.getTime())) return false;
   return now.getTime() >= endsAt.getTime();
 }

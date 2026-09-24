@@ -107,6 +107,55 @@ export function zonedTimeToUtc(
   return guess;
 }
 
+// Calendar date (YYYY-MM-DD) of an instant in the given timezone (UTC if none).
+export function dateStrInTimezone(
+  instant: Date,
+  timeZone: string | null | undefined,
+): string {
+  const zone = timeZone && isValidTimezone(timeZone) ? timeZone : "UTC";
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: zone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(instant);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function addDaysToDateStr(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// UTC range covering one calendar day *in the given timezone*. Slot start times
+// are stored as UTC instants, so counting bookings for a local day must use
+// this range, not the UTC day (they differ for any non-UTC timezone).
+export function localDayRangeUtc(
+  dateStr: string,
+  timeZone: string | null | undefined,
+): { start: Date; end: Date } {
+  const start = zonedTimeToUtc(dateStr, "00:00", timeZone);
+  const nextDayStart = zonedTimeToUtc(addDaysToDateStr(dateStr, 1), "00:00", timeZone);
+  return { start, end: new Date(nextDayStart.getTime() - 1) };
+}
+
+// UTC range covering one calendar month (month is 1-12) in the given timezone.
+export function localMonthRangeUtc(
+  year: number,
+  month: number,
+  timeZone: string | null | undefined,
+): { start: Date; end: Date } {
+  const first = `${year}-${String(month).padStart(2, "0")}-01`;
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const nextFirst = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+  const start = zonedTimeToUtc(first, "00:00", timeZone);
+  const nextStart = zonedTimeToUtc(nextFirst, "00:00", timeZone);
+  return { start, end: new Date(nextStart.getTime() - 1) };
+}
+
 export function formatInstantInTimezone(
   value: string | Date,
   timeZone: string | null | undefined,
