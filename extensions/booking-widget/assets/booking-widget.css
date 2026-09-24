@@ -51,10 +51,12 @@
   display: inline-flex;
 }
 
-.booking-widget__selection-row-icon svg {
+.booking-widget__selection-row-icon img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 24px;
+  height: 24px;
+  max-width: none;
+  object-fit: contain;
 }
 
 .booking-widget__selection-row-text {
@@ -106,30 +108,44 @@
   background: none;
 }
 
-.booking-widget__cart-success-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.booking-widget__reminder-wrap .booking-widget__cart-reminder {
+  margin: 28px 0 0;
 }
 
-.booking-widget__cart-success-icon {
-  width: 20px;
-  height: 20px;
+.booking-widget .booking-widget__cart-success-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 4px;
+  background: none;
+  border: none;
+}
+
+.booking-widget .booking-widget__cart-success-icon {
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   display: inline-flex;
 }
 
-.booking-widget__cart-success-icon svg {
+.booking-widget .booking-widget__cart-success-icon img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 24px;
+  height: 24px;
+  max-width: none;
+  object-fit: contain;
 }
 
-.booking-widget__cart-success-message {
+.booking-widget .booking-widget__cart-success-message {
   margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #16a34a;
+  font-family: "Inter", sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 20px !important;
+  line-height: 100%;
+  letter-spacing: 0;
+  color: #1f9900;
 }
 
 .booking-widget__multi-add-status {

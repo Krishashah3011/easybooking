@@ -223,6 +223,17 @@
     if (!isFinite(unitPrice)) unitPrice = null;
     var currencyCode = root.dataset.currencyCode || "USD";
     var countryCode = root.dataset.country || "";
+    // tick.svg / calendar.svg live next to this script in the extension's
+    // assets folder. Prefer the URLs the liquid block passes in; if they are
+    // missing, build them from this script's own URL.
+    function resolveAssetUrl(fromLiquid, filename) {
+      if (fromLiquid) return fromLiquid;
+      var scriptEl = document.querySelector('script[src*="booking-widget.js"]');
+      if (!scriptEl || !scriptEl.src) return "";
+      return scriptEl.src.split("?")[0].replace(/booking-widget\.js$/, filename);
+    }
+    var tickIconUrl = resolveAssetUrl(root.dataset.tickIcon, "tick.svg");
+    var calendarIconUrl = resolveAssetUrl(root.dataset.calendarIcon, "calendar.svg");
     var moneyFormatter;
     try {
       moneyFormatter = new Intl.NumberFormat(navigator.language || "en-US", {
@@ -488,11 +499,69 @@
       addToCartBtn.parentNode.insertBefore(root, addToCartBtn);
     }
 
+    // The "added to cart" banner + slot card sits directly below the theme's
+    // Add to cart button (the rest of the widget stays above it). It needs its
+    // own ".booking-widget" wrapper so the widget's scoped styles still apply.
+    if (addToCartBtn && addToCartBtn.parentNode && cartReminderEl) {
+      var reminderWrap = document.createElement("div");
+      reminderWrap.className = "booking-widget booking-widget__reminder-wrap";
+      reminderWrap.appendChild(cartReminderEl);
+      addToCartBtn.insertAdjacentElement("afterend", reminderWrap);
+    }
+
     var triggerBtn = root.querySelector("[data-booking-trigger]");
     triggerBtn.addEventListener("click", function () {
       clearError();
       openModal();
     });
+
+    // Time range exactly as shown on the confirmed-slot card. It is saved on the
+    // cart line in hidden ("_") properties so the "added to cart" card can show
+    // the same text (the cart itself only stores the start time).
+    function timeLabelForSlot(slot) {
+      return formatTimeRangeDisplay(
+        slot,
+        productBookingType === "SLOT" || productBookingType === "BUNDLE",
+      );
+    }
+
+    // Backup copy of each label in this browser, keyed by date + start time,
+    // used if the cart line has no "_Time Label" property.
+    var TIME_LABELS_KEY = "bookingWidgetTimeLabels:" + productId;
+
+    function rememberTimeLabel(date, startTime, label) {
+      try {
+        var map = JSON.parse(window.localStorage.getItem(TIME_LABELS_KEY) || "{}");
+        map[date + "|" + startTime] = label;
+        window.localStorage.setItem(TIME_LABELS_KEY, JSON.stringify(map));
+      } catch (e) {}
+    }
+
+    function recallTimeLabel(date, startTime) {
+      try {
+        var map = JSON.parse(window.localStorage.getItem(TIME_LABELS_KEY) || "{}");
+        return map[date + "|" + startTime] || "";
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function firstSessionSlot(entry) {
+      return entry.slot.bundleSessions && entry.slot.bundleSessions.length > 1
+        ? entry.slot.bundleSessions[0].slot
+        : entry.slot;
+    }
+
+    function setHiddenProperty(form, name, value) {
+      var input = form.querySelector('input[name="' + cssEscape(name) + '"]');
+      if (!input) {
+        input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        form.appendChild(input);
+      }
+      input.value = value;
+    }
 
     function injectBookingFields(form, entry) {
       var dateInput = form.querySelector(
@@ -515,6 +584,12 @@
       }
       dateInput.value = entry.date;
       timeInput.value = entry.slot.start;
+      setHiddenProperty(
+        form,
+        "properties[_Booking Time Label]",
+        timeLabelForSlot(firstSessionSlot(entry)),
+      );
+      rememberTimeLabel(entry.date, entry.slot.start, timeLabelForSlot(firstSessionSlot(entry)));
 
       if (entry.slot.endDate) {
         var checkoutInput = form.querySelector(
@@ -552,6 +627,12 @@
           }
           sDateInput.value = session.date;
           sTimeInput.value = session.slot.start;
+          setHiddenProperty(
+            form,
+            "properties[_Session " + n + " Time Label]",
+            timeLabelForSlot(session.slot),
+          );
+          rememberTimeLabel(session.date, session.slot.start, timeLabelForSlot(session.slot));
         });
       }
 
@@ -626,6 +707,8 @@
       var fd = new FormData(form);
       fd.set("properties[Booking Date]", entry.date);
       fd.set("properties[Booking Time]", entry.slot.start);
+      fd.set("properties[_Booking Time Label]", timeLabelForSlot(firstSessionSlot(entry)));
+      rememberTimeLabel(entry.date, entry.slot.start, timeLabelForSlot(firstSessionSlot(entry)));
       fd.set("quantity", String(entry.quantity || 1));
       if (entry.slot.endDate) {
         fd.set("properties[Checkout Date]", entry.slot.endDate);
@@ -635,6 +718,11 @@
           var n = i + 2;
           fd.set("properties[Session " + n + " Date]", session.date);
           fd.set("properties[Session " + n + " Time]", session.slot.start);
+          fd.set(
+            "properties[_Session " + n + " Time Label]",
+            timeLabelForSlot(session.slot),
+          );
+          rememberTimeLabel(session.date, session.slot.start, timeLabelForSlot(session.slot));
         });
       }
       if (entry.location) {
@@ -2118,21 +2206,16 @@
       });
     }
 
-    var SELECTION_CALENDAR_ICON_SVG =
-      '<svg viewBox="11 11 21 21" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">' +
-      '<path d="M12.5 29V17H31.5V29C31.5 30.1 30.6 31 29.5 31H14.5C13.4 31 12.5 30.1 12.5 29Z" fill="#CFD8DC"/>' +
-      '<path d="M31.5 15V18H12.5V15C12.5 13.9 13.4 13 14.5 13H29.5C30.6 13 31.5 13.9 31.5 15Z" fill="#F44336"/>' +
-      '<path d="M26.5 16.5C27.3284 16.5 28 15.8284 28 15C28 14.1716 27.3284 13.5 26.5 13.5C25.6716 13.5 25 14.1716 25 15C25 15.8284 25.6716 16.5 26.5 16.5Z" fill="#B71C1C"/>' +
-      '<path d="M17.5 16.5C18.3284 16.5 19 15.8284 19 15C19 14.1716 18.3284 13.5 17.5 13.5C16.6716 13.5 16 14.1716 16 15C16 15.8284 16.6716 16.5 17.5 16.5Z" fill="#B71C1C"/>' +
-      '<path d="M26.5 11.5C25.95 11.5 25.5 11.95 25.5 12.5V15C25.5 15.55 25.95 16 26.5 16C27.05 16 27.5 15.55 27.5 15V12.5C27.5 11.95 27.05 11.5 26.5 11.5ZM17.5 11.5C16.95 11.5 16.5 11.95 16.5 12.5V15C16.5 15.55 16.95 16 17.5 16C18.05 16 18.5 15.55 18.5 15V12.5C18.5 11.95 18.05 11.5 17.5 11.5Z" fill="#B0BEC5"/>' +
-      '<path d="M16.5 20H18.5V22H16.5V20ZM19.5 20H21.5V22H19.5V20ZM22.5 20H24.5V22H22.5V20ZM25.5 20H27.5V22H25.5V20ZM16.5 23H18.5V25H16.5V23ZM19.5 23H21.5V25H19.5V23ZM22.5 23H24.5V25H22.5V23ZM25.5 23H27.5V25H25.5V23ZM16.5 26H18.5V28H16.5V26ZM19.5 26H21.5V28H19.5V26ZM22.5 26H24.5V28H22.5V26ZM25.5 26H27.5V28H25.5V26Z" fill="#90A4AE"/>' +
-      "</svg>";
-
-    var SUCCESS_CHECK_ICON_SVG =
-      '<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">' +
-      '<circle cx="10" cy="10" r="10" fill="#22C55E"/>' +
-      '<path d="M6 10.2L8.6 12.8L14 7.3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-      "</svg>";
+    function createIconImg(src, size) {
+      var img = document.createElement("img");
+      img.src = src;
+      img.alt = "";
+      img.width = size;
+      img.height = size;
+      img.decoding = "async";
+      img.setAttribute("aria-hidden", "true");
+      return img;
+    }
 
     function createSelectionRow(text, onRemove) {
       var row = document.createElement("div");
@@ -2140,7 +2223,7 @@
 
       var icon = document.createElement("span");
       icon.className = "booking-widget__selection-row-icon";
-      icon.innerHTML = SELECTION_CALENDAR_ICON_SVG;
+      if (calendarIconUrl) icon.appendChild(createIconImg(calendarIconUrl, 24));
       row.appendChild(icon);
 
       var label = document.createElement("span");
@@ -2272,12 +2355,24 @@
 
       var icon = document.createElement("span");
       icon.className = "booking-widget__cart-success-icon";
-      icon.innerHTML = SUCCESS_CHECK_ICON_SVG;
+      if (tickIconUrl) icon.appendChild(createIconImg(tickIconUrl, 24));
       banner.appendChild(icon);
 
       var message = document.createElement("p");
       message.className = "booking-widget__cart-success-message";
       message.textContent = strings.addedToCartSuccess;
+      [
+        ["font-family", '"Inter", sans-serif'],
+        ["font-size", "20px"],
+        ["font-weight", "600"],
+        ["line-height", "100%"],
+        ["letter-spacing", "0"],
+        ["text-transform", "none"],
+        ["color", "#1f9900"],
+        ["margin", "0"],
+      ].forEach(function (rule) {
+        message.style.setProperty(rule[0], rule[1], "important");
+      });
       banner.appendChild(message);
 
       cartReminderEl.appendChild(banner);
@@ -2285,25 +2380,26 @@
       var rows = [];
 
       items.forEach(function (item) {
-        var label = item.product_title || item.title || "";
-        var date = item.properties["Booking Date"];
-        var time = item.properties["Booking Time"] || "";
+        var props = item.properties;
+        var qtySuffix = item.quantity && item.quantity > 1 ? " \u00d7 " + item.quantity : "";
 
         var sessionCount = 1;
-        while (
-          item.properties["Session " + (sessionCount + 1) + " Date"]
-        ) {
+        while (props["Session " + (sessionCount + 1) + " Date"]) {
           sessionCount += 1;
         }
 
         for (var s = 1; s <= sessionCount; s++) {
-          var sDate = s === 1 ? date : item.properties["Session " + s + " Date"];
-          var sTime = s === 1 ? time : item.properties["Session " + s + " Time"];
-          var rowText =
-            (label ? label + ": " : "") +
-            formatDateDisplay(sDate) +
-            ", " +
+          var sDate = s === 1 ? props["Booking Date"] : props["Session " + s + " Date"];
+          var sTime = s === 1 ? props["Booking Time"] : props["Session " + s + " Time"];
+          var sLabel =
+            (s === 1 ? props["_Booking Time Label"] : props["_Session " + s + " Time Label"]) ||
+            recallTimeLabel(sDate, sTime) ||
             (sTime ? to12Hour(sTime) : "");
+
+          var rowText = formatDateDisplay(sDate) + ", " + sLabel + qtySuffix;
+          if (sessionCount > 1) {
+            rowText = format(strings.sessionConfirmed, { number: s }) + ": " + rowText;
+          }
           rows.push(createSelectionRow(rowText));
         }
       });
