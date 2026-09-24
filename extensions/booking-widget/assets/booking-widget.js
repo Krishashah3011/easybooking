@@ -46,7 +46,7 @@
       "Please select a date and time before adding this to your cart.",
     selected: "{date} | {time}",
     triggerBook: "Book your slot",
-    modalTitle: "Appointment - Booking",
+    modalTitle: "Book Your Spot",
     modalSubtitle: "Select your preferred date & time",
     selectLocation: "Select location",
     selectLocationPlaceholder: "Location",

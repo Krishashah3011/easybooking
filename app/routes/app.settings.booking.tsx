@@ -765,7 +765,7 @@ export default function BookingSettingsPage() {
           <p style={styles.title}>Advance Booking Rules</p>
           <p style={styles.descText}>
             Control how soon and how far ahead customers are allowed to
-            book an appointment.
+            make a booking.
           </p>
         </div>
         <hr style={styles.divider} />
