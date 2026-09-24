@@ -175,6 +175,7 @@ model Booking {
   quantity Int @default(1)
   status BookingStatus @default(CONFIRMED)
   source BookingSource
+  note String?
   customFieldResponses Json?
   confirmationSentAt DateTime?
   reminderSentAt     DateTime?

@@ -1647,6 +1647,20 @@ body.booking-widget-lock-scroll {
   gap: 14px;
 }
 
+.booking-widget__custom-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1 0 100%;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0;
+}
+
+.booking-widget__custom-fields--entry {
+  margin-top: 0.75rem;
+}
+
 .booking-widget__field {
   display: flex;
   flex-direction: column;

@@ -827,9 +827,11 @@ function ChevronToggleIcon({ expanded }: { expanded: boolean }) {
 }
 
 function BookingNotes({
+  note,
   responses,
   labels,
 }: {
+  note?: string | null;
   responses: unknown;
   labels: Record<string, string>;
 }) {
@@ -838,12 +840,13 @@ function BookingNotes({
       ? Object.entries(responses as Record<string, string>)
       : [];
 
-  if (entries.length === 0) {
+  if (!note && entries.length === 0) {
     return <span style={{ color: TEXT_MUTED }}>—</span>;
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+      {note && <span>{"Note: " + note}</span>}
       {entries.map(([fieldKey, value]) => (
         <span key={fieldKey}>{(labels[fieldKey] ?? fieldKey) + ": " + value}</span>
       ))}
@@ -1169,6 +1172,7 @@ function BookingDetails({
         </FieldBlock>
         <FieldBlock label="Note" style={S.actionRowField}>
           <BookingNotes
+            note={booking.note}
             responses={booking.customFieldResponses}
             labels={customFieldLabels}
           />
@@ -1508,6 +1512,7 @@ function BundleGroupDetails({
         </FieldBlock>
         <FieldBlock label="Note" style={S.actionRowField}>
           <BookingNotes
+            note={first.note}
             responses={first.customFieldResponses}
             labels={customFieldLabels}
           />

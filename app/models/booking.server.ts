@@ -58,6 +58,7 @@ const BOOKING_TIME_PROPERTY = "Booking Time";
 const BOOKING_LOCATION_PROPERTY = "Location";
 const BOOKING_LOCATION_ID_PROPERTY = "_Location Id";
 const BOOKING_CHECKOUT_DATE_PROPERTY = "Checkout Date";
+const BOOKING_NOTE_PROPERTY = "Note";
 
 function toProductGid(productId: number | string): string {
   return `gid://shopify/Product/${productId}`;
@@ -140,6 +141,12 @@ export function extractBundleSessions(
   }
 
   return sessions;
+}
+
+export function extractBookingNote(lineItem: OrderLineItem): string | null {
+  const properties = lineItem.properties ?? [];
+  const note = properties.find((p) => p.name === BOOKING_NOTE_PROPERTY)?.value;
+  return note && note.trim() ? note.trim() : null;
 }
 
 function extractCustomFieldResponses(
@@ -513,6 +520,7 @@ export async function createBookingsFromOrder(
       lineItem,
       customFields,
     );
+    const customerNote = extractBookingNote(lineItem);
     const quantity = (() => {
       const n = Number(lineItem.quantity);
       return Number.isInteger(n) && n > 0 ? n : 1;
@@ -601,6 +609,7 @@ export async function createBookingsFromOrder(
             quantity,
             status: sessionStatus,
             source: "STOREFRONT_ORDER",
+            note: customerNote ?? undefined,
             customFieldResponses: customFieldResponses ?? undefined,
           },
         });
@@ -750,6 +759,7 @@ export async function createBookingsFromOrder(
         quantity,
         status,
         source: "STOREFRONT_ORDER",
+        note: customerNote ?? undefined,
         customFieldResponses: customFieldResponses ?? undefined,
       },
     });

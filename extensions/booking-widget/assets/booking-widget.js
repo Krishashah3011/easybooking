@@ -321,7 +321,9 @@
     var slotListEl = root.querySelector("[data-booking-slot-list]");
     var confirmBtn = root.querySelector("[data-booking-confirm]");
     var nextSlotBtn = root.querySelector("[data-booking-next-slot]");
-    var customFieldsEl = root.querySelector("[data-booking-custom-fields]");
+    var customFieldsEntryEl = root.querySelector(
+      "[data-booking-custom-fields-entry]",
+    );
     var quantityWrapEl = root.querySelector("[data-booking-quantity]");
     var quantityInputEl = root.querySelector("[data-booking-quantity-input]");
     var quantityDecreaseBtn = root.querySelector(
@@ -410,41 +412,17 @@
     var customFields = [];
     var customFieldValues = {};
 
-    function getNoteField() {
-      return customFields.length > 0 ? customFields[0] : null;
-    }
-
+    // Note is always a plain, always-on free-text field — never overridden
+    // by an admin-configured custom question. Kept separate on purpose.
     function getNoteKey() {
-      var field = getNoteField();
-      return field ? field.label : "Note";
+      return "Note";
     }
 
     function applyNoteQuestion() {
-      var field = getNoteField();
       if (noteLabelEl) noteLabelEl.textContent = "Note";
-      if (noteWrapEl) {
-        var questionEl = noteWrapEl.querySelector(
-          "[data-booking-note-question]",
-        );
-        if (field && !questionEl) {
-          questionEl = document.createElement("p");
-          questionEl.className = "booking-widget__note-question";
-          questionEl.setAttribute("data-booking-note-question", "");
-          noteWrapEl.insertBefore(questionEl, noteWrapEl.firstChild);
-        }
-        if (questionEl) {
-          questionEl.textContent = field ? field.label : "";
-          questionEl.hidden = !field;
-        }
-      }
       if (noteInputEl) {
-        noteInputEl.setAttribute(
-          "aria-label",
-          field ? "Note: " + field.label : "Note",
-        );
-        noteInputEl.placeholder = field
-          ? "Type your answer here"
-          : "Enter Your Request";
+        noteInputEl.setAttribute("aria-label", "Note");
+        noteInputEl.placeholder = "Enter Your Request";
       }
     }
 
@@ -671,7 +649,6 @@
       }
 
       customFields.forEach(function (field) {
-        if (field === getNoteField()) return;
         var value = customFieldValues[field.fieldKey];
         if (!value) return;
         var inputName = "properties[" + field.label + "]";
@@ -720,7 +697,6 @@
         fd.set("properties[" + getNoteKey() + "]", entry.note);
       }
       customFields.forEach(function (field) {
-        if (field === getNoteField()) return;
         var value = customFieldValues[field.fieldKey];
         if (!value) return;
         fd.set("properties[" + field.label + "]", value);
@@ -1092,16 +1068,15 @@
     }
 
     function renderCustomFields() {
-      if (!customFieldsEl) return;
-      customFieldsEl.innerHTML = "";
+      if (!customFieldsEntryEl) return;
+      customFieldsEntryEl.innerHTML = "";
 
       if (customFields.length === 0) {
-        customFieldsEl.hidden = true;
+        customFieldsEntryEl.hidden = true;
         return;
       }
 
       customFields.forEach(function (field) {
-        if (field === getNoteField()) return;
         var wrapper = document.createElement("div");
         wrapper.className = "booking-widget__field";
 
@@ -1144,10 +1119,10 @@
         });
 
         wrapper.appendChild(input);
-        customFieldsEl.appendChild(wrapper);
+        customFieldsEntryEl.appendChild(wrapper);
       });
 
-      customFieldsEl.hidden = !atReviewStep;
+      customFieldsEntryEl.hidden = false;
     }
 
     function showError(message) {
@@ -2182,9 +2157,17 @@
       var requestText = (pendingNote || "").trim();
       rows.push({
         label: "Note",
-        sub: getNoteField() ? getNoteField().label : "",
         value: requestText || "-",
         icon: "note",
+      });
+
+      customFields.forEach(function (field) {
+        var value = (customFieldValues[field.fieldKey] || "").trim();
+        rows.push({
+          label: field.label,
+          value: value || "-",
+          icon: "note",
+        });
       });
 
       rows.forEach(function (row) {
