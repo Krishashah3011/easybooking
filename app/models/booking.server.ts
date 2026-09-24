@@ -174,10 +174,20 @@ function resolveCustomerInfo(order: OrderPayload) {
   };
 }
 
+// Capacity is tracked per location, so a booking at Location A must not use up
+// spots at Location B. Bookings with no location (made before locations existed,
+// or for a product without locations) still count against every location: that
+// can only under-sell, never overbook. With no locationId (a product that has
+// no locations) every booking counts, as before.
+function locationCapacityScope(locationId?: string | null) {
+  return locationId ? { OR: [{ locationId }, { locationId: null }] } : {};
+}
+
 async function countConfirmedBookingsForSlot(
   shop: string,
   bookableProductId: string,
   slotStartsAt: Date,
+  locationId?: string | null,
 ): Promise<number> {
   const result = await prisma.booking.aggregate({
     where: {
@@ -185,6 +195,7 @@ async function countConfirmedBookingsForSlot(
       bookableProductId,
       slotStartsAt,
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      ...locationCapacityScope(locationId),
     },
     _sum: { quantity: true },
   });
@@ -196,6 +207,7 @@ export async function getBookedCountsInRange(
   bookableProductId: string,
   rangeStart: Date,
   rangeEnd: Date,
+  locationId?: string | null,
 ): Promise<Map<string, number>> {
   const grouped = await prisma.booking.groupBy({
     by: ["slotStartsAt"],
@@ -204,6 +216,7 @@ export async function getBookedCountsInRange(
       bookableProductId,
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       slotStartsAt: { gte: rangeStart, lte: rangeEnd },
+      ...locationCapacityScope(locationId),
     },
     _sum: { quantity: true },
   });
@@ -220,6 +233,7 @@ export async function getBookedNightCountsInRange(
   bookableProductId: string,
   rangeStart: Date,
   rangeEnd: Date,
+  locationId?: string | null,
 ): Promise<Map<string, number>> {
   const rangeStartStr = rangeStart.toISOString().slice(0, 10);
   const rangeEndStr = rangeEnd.toISOString().slice(0, 10);
@@ -231,6 +245,7 @@ export async function getBookedNightCountsInRange(
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       date: { lte: rangeEndStr },
       endDate: { gte: rangeStartStr },
+      ...locationCapacityScope(locationId),
     },
     select: { date: true, endDate: true, quantity: true },
   });
@@ -255,8 +270,9 @@ async function countOverlappingMultiDayBookings(
   bookableProductId: string,
   checkin: string,
   checkout: string,
-  excludeBookingId?: string,
+  options: { excludeBookingId?: string; locationId?: string | null } = {},
 ): Promise<number> {
+  const { excludeBookingId, locationId } = options;
   const overlapping = await prisma.booking.findMany({
     where: {
       shop,
@@ -265,6 +281,7 @@ async function countOverlappingMultiDayBookings(
       date: { lt: checkout },
       endDate: { gt: checkin },
       ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      ...locationCapacityScope(locationId),
     },
     select: { quantity: true },
   });
@@ -402,7 +419,7 @@ async function sendBookingRescheduled(
     previousSlotEnd,
   });
 
-  await sendEmail({
+  const sent = await sendEmail({
     shop,
     to: booking.customerEmail,
     subject,
@@ -410,6 +427,14 @@ async function sendBookingRescheduled(
     html,
     fromName,
   });
+  // The reschedule email is the customer's latest confirmation of their slot;
+  // record it so sendDueReminders doesn't follow it with an immediate reminder.
+  if (sent) {
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { confirmationSentAt: new Date() },
+    });
+  }
 }
 
 function nightsInRange(checkin: string, checkout: string): string[] {
@@ -556,6 +581,7 @@ export async function createBookingsFromOrder(
           shop,
           bookableProduct.id,
           sessionSlotStartsAt,
+          resolvedLocation?.id,
         );
         const outsideValidityWindow =
           bundleValidityDeadlineStr !== null && session.date > bundleValidityDeadlineStr;
@@ -628,6 +654,7 @@ export async function createBookingsFromOrder(
         bookableProduct.id,
         selection.date,
         checkout,
+        { locationId: resolvedLocation?.id },
       );
 
       const nights = nightsInRange(selection.date, checkout);
@@ -667,6 +694,7 @@ export async function createBookingsFromOrder(
         shop,
         bookableProduct.id,
         slotStartsAt,
+        resolvedLocation?.id,
       );
 
       if (selection.date < todayInLocation) {
@@ -711,6 +739,7 @@ export async function createBookingsFromOrder(
         shop,
         bookableProduct.id,
         slotStartsAt,
+        resolvedLocation?.id,
       );
     }
 
@@ -883,6 +912,7 @@ export async function createManualBooking(
       shop,
       bookableProduct.id,
       slotStartsAt,
+      resolvedLocation?.id,
     );
     if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
       return { ok: false, error: "That day is already fully booked." };
@@ -919,6 +949,7 @@ export async function createManualBooking(
       bookableProduct.id,
       input.date,
       input.endDate,
+      { locationId: resolvedLocation?.id },
     );
     if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
       return { ok: false, error: "Those dates overlap an existing booking." };
@@ -945,6 +976,7 @@ export async function createManualBooking(
       shop,
       bookableProduct.id,
       slotStartsAt,
+      resolvedLocation?.id,
     );
     if (alreadyBooked + quantity > effectiveSettings.maxBookingsPerSlot) {
       return { ok: false, error: "That slot is already fully booked." };
@@ -1223,6 +1255,7 @@ export async function rescheduleBooking(
         slotStartsAt,
         status: { in: [...ACTIVE_BOOKING_STATUSES] },
         id: { not: id },
+        ...locationCapacityScope(booking.locationId),
       },
       _sum: { quantity: true },
     });
@@ -1266,7 +1299,7 @@ export async function rescheduleBooking(
       booking.bookableProductId,
       newDate,
       newEndDate,
-      id,
+      { excludeBookingId: id, locationId: booking.locationId },
     );
     if (overlapping + booking.quantity > effectiveSettings.maxBookingsPerSlot) {
       return { ok: false, error: "Those dates overlap an existing booking." };
@@ -1300,6 +1333,7 @@ export async function rescheduleBooking(
         slotStartsAt: new Date(matchedSlot.startsAt),
         status: { in: [...ACTIVE_BOOKING_STATUSES] },
         id: { not: id },
+        ...locationCapacityScope(booking.locationId),
       },
       _sum: { quantity: true },
     });
@@ -1406,6 +1440,7 @@ export async function listSlotsForReschedule(
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       slotStartsAt: { gte: dayStart, lte: dayEnd },
       id: { not: bookingId },
+      ...locationCapacityScope(booking.locationId),
     },
     _sum: { quantity: true },
   });
@@ -1426,29 +1461,92 @@ export async function listSlotsForReschedule(
   return { ok: true, slots };
 }
 
+// Don't send a reminder less than this long after the customer was last told
+// about their slot (confirmation / reschedule email).
+const REMINDER_MIN_GAP_MS = 6 * 60 * 60 * 1000;
+
+// Widest possible gap between a FULL_DAY/MULTI_DAY booking's stored
+// slotStartsAt (UTC midnight of the date) and its real start instant: UTC-12..+14
+// offsets plus a start time anywhere in the day. Used only to widen the DB query;
+// the exact check happens in JS.
+const MAX_START_SKEW_BEFORE_MS = 36 * 60 * 60 * 1000;
+const MAX_START_SKEW_AFTER_MS = 14 * 60 * 60 * 1000;
+
+type ReminderCandidate = Booking & {
+  bookableProduct: { productTitle: string; bookingType: BookingType };
+  bookingLocation: { timezone: string } | null;
+};
+
+// The instant the booking actually starts. For timed slots slotStartsAt is
+// already that. For FULL_DAY / MULTI_DAY it is UTC midnight of the date (also
+// relied on by availability counting), so derive the real start from the local
+// date + start time in the location's timezone instead.
+function bookingStartInstant(booking: ReminderCandidate): Date {
+  const type = booking.bookableProduct.bookingType;
+  if (type !== "FULL_DAY" && type !== "MULTI_DAY") return booking.slotStartsAt;
+  const time = /^\d{2}:\d{2}$/.test(booking.slotStart) ? booking.slotStart : "00:00";
+  return zonedTimeToUtc(
+    booking.date,
+    time,
+    booking.bookingLocation?.timezone ?? null,
+  );
+}
+
+// When the customer was last told about this slot: creation, the confirmation
+// email, or (via confirmationSentAt) the latest reschedule email.
+function lastCustomerNoticeAt(booking: ReminderCandidate): Date {
+  return new Date(
+    Math.max(
+      booking.createdAt.getTime(),
+      booking.confirmationSentAt?.getTime() ?? 0,
+    ),
+  );
+}
+
 export async function sendDueReminders(
   windowHours = 24,
 ): Promise<{ sent: number; skipped: number }> {
   const now = new Date();
-  const windowEnd = new Date(now.getTime() + windowHours * 60 * 60 * 1000);
+  const windowMs = windowHours * 60 * 60 * 1000;
+  const windowEnd = new Date(now.getTime() + windowMs);
 
-  const dueBookings = await prisma.booking.findMany({
+  const candidates: ReminderCandidate[] = await prisma.booking.findMany({
     where: {
       status: { in: [...ACTIVE_BOOKING_STATUSES] },
       reminderSentAt: null,
-      slotStartsAt: { gte: now, lte: windowEnd },
+      slotStartsAt: {
+        gte: new Date(now.getTime() - MAX_START_SKEW_BEFORE_MS),
+        lte: new Date(windowEnd.getTime() + MAX_START_SKEW_AFTER_MS),
+      },
     },
-    include: { bookableProduct: { select: { productTitle: true } } },
+    include: {
+      bookableProduct: { select: { productTitle: true, bookingType: true } },
+      bookingLocation: { select: { timezone: true } },
+    },
   });
 
   let sent = 0;
   let skipped = 0;
 
-  for (const booking of dueBookings) {
+  for (const booking of candidates) {
+    const startsAt = bookingStartInstant(booking);
+    if (startsAt < now || startsAt > windowEnd) continue;
+
     if (!booking.customerEmail) {
       skipped += 1;
       continue;
     }
+
+    // Booked inside the reminder window: the confirmation email already served
+    // as the heads-up, so a reminder would just be a duplicate.
+    const noticeAt = lastCustomerNoticeAt(booking);
+    if (startsAt.getTime() - noticeAt.getTime() < windowMs) {
+      skipped += 1;
+      continue;
+    }
+    // Booked just outside the window: give the confirmation some breathing room
+    // (it is retried on the next cron run).
+    if (now.getTime() - noticeAt.getTime() < REMINDER_MIN_GAP_MS) continue;
 
     const { fromName } = await getShopEmailSettings(booking.shop);
     const { subject, text, html } = await reminderEmail(booking.shop, {

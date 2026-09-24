@@ -27,6 +27,7 @@ import {
 import { listEnabledLocations } from "../models/bookingLocation.server";
 import { listCustomFields, toPublicField } from "../models/customBookingField.server";
 import { formatDateDisplay, formatTimeRangeDisplay } from "../utils/format";
+import { localDayRangeUtc, localMonthRangeUtc } from "../utils/timezones";
 import {
   BLUE,
   BORDER,
@@ -698,6 +699,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         bookableProductId,
         monthStart,
         monthEnd,
+        resolved.location?.id,
       );
       availableDates = getAvailableFullDayDatesInMonth(
         resolved.effectiveSettings,
@@ -713,6 +715,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         bookableProductId,
         monthStart,
         monthEnd,
+        resolved.location?.id,
       );
       availableDates = getAvailableMultiDayNightsInMonth(
         resolved.effectiveSettings,
@@ -723,11 +726,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         bookedNightCounts,
       );
     } else {
+      // Time-slot products: count over the local month in the location's timezone.
+      const localMonth = localMonthRangeUtc(
+        year,
+        month,
+        resolved.location?.timezone ?? null,
+      );
       const bookedCounts = await getBookedCountsInRange(
         session.shop,
         bookableProductId,
-        monthStart,
-        monthEnd,
+        localMonth.start,
+        localMonth.end,
+        resolved.location?.id,
       );
       availableDates = getAvailableDatesInMonth(
         resolved.effectiveSettings,
@@ -766,13 +776,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { intent, ok: false as const, slots: [] as TimeSlot[] };
     }
 
-    const dayStart = new Date(`${date}T00:00:00.000Z`);
-    const dayEnd = new Date(`${date}T23:59:59.999Z`);
+    // Slot instants live in the location's timezone, so count bookings over the
+    // local day (same as the storefront slots route), not the UTC day.
+    const { start: dayStart, end: dayEnd } = localDayRangeUtc(
+      date,
+      resolved.location?.timezone ?? null,
+    );
     const bookedCounts = await getBookedCountsInRange(
       session.shop,
       bookableProductId,
       dayStart,
       dayEnd,
+      resolved.location?.id,
     );
 
     const slots = computeSlotsForDate(

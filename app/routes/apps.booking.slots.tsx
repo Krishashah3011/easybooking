@@ -53,6 +53,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     context.bookableProductId,
     dayStart,
     dayEnd,
+    context.location?.id,
   );
 
   const slots = computeSlotsForDate(

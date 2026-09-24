@@ -60,6 +60,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       context.bookableProductId,
       monthStart,
       monthEnd,
+      context.location?.id,
     );
     availableDates = getAvailableFullDayDatesInMonth(
       context.effectiveSettings,
@@ -83,6 +84,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       context.bookableProductId,
       monthStart,
       monthEnd,
+      context.location?.id,
     );
     availableDates = getAvailableMultiDayNightsInMonth(
       context.effectiveSettings,
@@ -113,6 +115,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       context.bookableProductId,
       localMonth.start,
       localMonth.end,
+      context.location?.id,
     );
     availableDates = getAvailableDatesInMonth(
       context.effectiveSettings,
