@@ -412,8 +412,6 @@
     var customFields = [];
     var customFieldValues = {};
 
-    // Note is always a plain, always-on free-text field — never overridden
-    // by an admin-configured custom question. Kept separate on purpose.
     function getNoteKey() {
       return "Note";
     }
@@ -756,6 +754,9 @@
           updateSelectionDisplay();
           refreshCartReminder();
         }, 1200);
+        [2500, 4500].forEach(function (delay) {
+          setTimeout(refreshCartReminder, delay);
+        });
         return false;
       }
 
@@ -797,6 +798,54 @@
       },
       true,
     );
+
+    document.addEventListener("booking-widget:cart-added", function () {
+      refreshCartReminder();
+    });
+
+    if (!window.__bookingWidgetCartHooked) {
+      window.__bookingWidgetCartHooked = true;
+
+      var isCartAddUrl = function (url) {
+        return /\/cart\/add(\.js)?(\?|$)/.test(String(url || ""));
+      };
+      var notifyCartAdded = function () {
+        document.dispatchEvent(new CustomEvent("booking-widget:cart-added"));
+      };
+
+      var originalFetch = window.fetch;
+      if (typeof originalFetch === "function") {
+        window.fetch = function (input) {
+          var promise = originalFetch.apply(this, arguments);
+          try {
+            var url = typeof input === "string" ? input : input && input.url;
+            if (isCartAddUrl(url)) {
+              promise
+                .then(function (res) {
+                  if (res && res.ok) notifyCartAdded();
+                })
+                .catch(function () {});
+            }
+          } catch (e) {}
+          return promise;
+        };
+      }
+
+      var originalOpen = XMLHttpRequest.prototype.open;
+      var originalSend = XMLHttpRequest.prototype.send;
+      XMLHttpRequest.prototype.open = function (method, url) {
+        this.__bwCartAdd = isCartAddUrl(url);
+        return originalOpen.apply(this, arguments);
+      };
+      XMLHttpRequest.prototype.send = function () {
+        if (this.__bwCartAdd) {
+          this.addEventListener("load", function () {
+            if (this.status >= 200 && this.status < 300) notifyCartAdded();
+          });
+        }
+        return originalSend.apply(this, arguments);
+      };
+    }
 
     if (addToCartBtn) {
       addToCartBtn.addEventListener("click", guardAddToCart, true);

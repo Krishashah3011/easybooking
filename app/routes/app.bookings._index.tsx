@@ -607,12 +607,17 @@ const S: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "flex-end",
-    gap: "10px",
+    gap: "16px",
     width: "100%",
   },
   actionRowField: {
-    flex: "1 1 0",
+    flex: "0 0 calc((100% - 48px) / 4)",
     minWidth: "160px",
+  },
+  actionRowFieldWide: {
+    flex: "0 0 252px",
+    width: "252px",
+    minWidth: "0",
   },
   cancelBookingWrap: {
     display: "flex",
@@ -827,11 +832,9 @@ function ChevronToggleIcon({ expanded }: { expanded: boolean }) {
 }
 
 function BookingNotes({
-  note,
   responses,
   labels,
 }: {
-  note?: string | null;
   responses: unknown;
   labels: Record<string, string>;
 }) {
@@ -840,13 +843,12 @@ function BookingNotes({
       ? Object.entries(responses as Record<string, string>)
       : [];
 
-  if (!note && entries.length === 0) {
+  if (entries.length === 0) {
     return <span style={{ color: TEXT_MUTED }}>—</span>;
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-      {note && <span>{"Note: " + note}</span>}
       {entries.map(([fieldKey, value]) => (
         <span key={fieldKey}>{(labels[fieldKey] ?? fieldKey) + ": " + value}</span>
       ))}
@@ -1155,27 +1157,27 @@ function BookingDetails({
           </button>
         </div>
       ) : (
-        <div style={S.fieldsRow}>
+        <div style={S.topFieldsRow}>
           <FieldBlock label="Booking Date">{dateLabel}</FieldBlock>
           <FieldBlock label="Booking Time">{timeLabel ?? "Whole day"}</FieldBlock>
           <FieldBlock label="Quantity">{booking.quantity}</FieldBlock>
+          <FieldBlock label="Customer Note">{booking.note ?? "—"}</FieldBlock>
         </div>
       )}
 
       <hr style={S.detailsDivider} />
 
       <div style={S.actionRow}>
-        <FieldBlock label="Booked at" style={S.actionRowField}>
-          {formatInstantInTimezone(booking.createdAt, booking.locationTimezone)}
-          {" · "}
-          {bookingSourceLabel(booking.source)}
-        </FieldBlock>
         <FieldBlock label="Note" style={S.actionRowField}>
           <BookingNotes
-            note={booking.note}
             responses={booking.customFieldResponses}
             labels={customFieldLabels}
           />
+        </FieldBlock>
+        <FieldBlock label="Booked at" style={S.actionRowFieldWide}>
+          {formatInstantInTimezone(booking.createdAt, booking.locationTimezone)}
+          {" · "}
+          {bookingSourceLabel(booking.source)}
         </FieldBlock>
 
         {!isCancelled && !isCompleted ? (
@@ -1393,10 +1395,11 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      <div style={S.fieldsRow}>
+      <div style={S.topFieldsRow}>
         <FieldBlock label="Booking Date">{when.date}</FieldBlock>
         <FieldBlock label="Booking Time">{when.sub ?? "Whole day"}</FieldBlock>
         <FieldBlock label="Quantity">{first.quantity}</FieldBlock>
+        <FieldBlock label="Customer Note">{first.note ?? "—"}</FieldBlock>
       </div>
 
       <hr style={S.detailsDivider} />
@@ -1505,17 +1508,16 @@ function BundleGroupDetails({
       )}
 
       <div style={S.actionRow}>
-        <FieldBlock label="Booked at" style={S.actionRowField}>
-          {formatInstantInTimezone(first.createdAt, first.locationTimezone)}
-          {" · "}
-          {bookingSourceLabel(first.source)}
-        </FieldBlock>
         <FieldBlock label="Note" style={S.actionRowField}>
           <BookingNotes
-            note={first.note}
             responses={first.customFieldResponses}
             labels={customFieldLabels}
           />
+        </FieldBlock>
+        <FieldBlock label="Booked at" style={S.actionRowFieldWide}>
+          {formatInstantInTimezone(first.createdAt, first.locationTimezone)}
+          {" · "}
+          {bookingSourceLabel(first.source)}
         </FieldBlock>
 
         {!isCancelled && !isCompleted ? (
