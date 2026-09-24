@@ -804,6 +804,7 @@
 
     if (locationTimezoneEl) locationTimezoneEl.textContent = timezoneLabel();
     loadLocations();
+    loadCustomFields();
 
     function setStatus(container, message, onRetry) {
       container.innerHTML = "";
@@ -1082,9 +1083,26 @@
 
         var label = document.createElement("label");
         label.className = "booking-widget__field-label";
-        label.textContent = field.label;
         var inputId = "booking-field-" + root.dataset.productId + "-" + field.fieldKey;
         label.setAttribute("for", inputId);
+        var noteIconImg = noteWrapEl
+          ? noteWrapEl.querySelector(".booking-widget__note-icon img")
+          : null;
+        if (noteIconImg) {
+          var iconSpan = document.createElement("span");
+          iconSpan.className = "booking-widget__field-icon";
+          iconSpan.setAttribute("aria-hidden", "true");
+          var iconImg = document.createElement("img");
+          iconImg.src = noteIconImg.src;
+          iconImg.width = 28;
+          iconImg.height = 28;
+          iconImg.alt = "";
+          iconSpan.appendChild(iconImg);
+          label.appendChild(iconSpan);
+        }
+        var labelText = document.createElement("span");
+        labelText.textContent = field.label;
+        label.appendChild(labelText);
         wrapper.appendChild(label);
 
         var input;
@@ -1111,12 +1129,15 @@
         input.id = inputId;
         input.className = "booking-widget__field-input";
         input.value = customFieldValues[field.fieldKey] || "";
+        input.disabled = quantityLocked;
         input.addEventListener("input", function () {
           customFieldValues[field.fieldKey] = input.value;
         });
         input.addEventListener("change", function () {
           customFieldValues[field.fieldKey] = input.value;
         });
+
+        wrapper.classList.toggle("is-locked", quantityLocked);
 
         wrapper.appendChild(input);
         customFieldsEntryEl.appendChild(wrapper);
@@ -1997,6 +2018,20 @@
         noteWrapEl.classList.toggle("is-locked", quantityLocked);
       }
       if (noteInputEl) noteInputEl.disabled = quantityLocked;
+      if (customFieldsEntryEl) {
+        var customFieldCards = customFieldsEntryEl.querySelectorAll(
+          ".booking-widget__field",
+        );
+        customFieldCards.forEach(function (card) {
+          card.classList.toggle("is-locked", quantityLocked);
+        });
+        var customFieldInputs = customFieldsEntryEl.querySelectorAll(
+          "input, textarea, select",
+        );
+        customFieldInputs.forEach(function (el) {
+          el.disabled = quantityLocked;
+        });
+      }
       setPendingQuantity(
         pendingSlot && !isBundleFollowupSession ? pendingQuantity : 1,
       );
