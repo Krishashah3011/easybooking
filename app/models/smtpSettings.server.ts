@@ -1,14 +1,6 @@
 import type { SmtpSettings } from "@prisma/client";
 import prisma from "../db.server";
 
-export const DEFAULT_SMTP_SETTINGS = {
-  host: null as string | null,
-  port: null as number | null,
-  username: null as string | null,
-  password: null as string | null,
-  fromEmail: null as string | null,
-};
-
 export type SmtpSettingsFormValues = {
   host: string;
   port: string;

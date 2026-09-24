@@ -546,13 +546,13 @@ const subjectFieldGroupStyle: React.CSSProperties = {
 
 const editorPreviewRowStyle: React.CSSProperties = {
   display: "flex",
+  flexWrap: "wrap",
   alignItems: "stretch",
   gap: "16px",
 };
 
 const editorColumnStyle: React.CSSProperties = {
-  flex: "0 1 50%",
-  maxWidth: "50%",
+  flex: "1 1 320px",
   minWidth: 0,
   display: "flex",
   flexDirection: "column",
@@ -564,8 +564,7 @@ const editorFieldGroupStyle: React.CSSProperties = {
 };
 
 const previewColumnStyle: React.CSSProperties = {
-  flex: "0 1 50%",
-  maxWidth: "50%",
+  flex: "1 1 320px",
   minWidth: 0,
   display: "flex",
   flexDirection: "column",

@@ -45,16 +45,6 @@ export const COMMON_TIMEZONES: string[] = [
   "Pacific/Auckland",
 ];
 
-export function listTimezones(): string[] {
-  try {
-    const supported = (
-      Intl as unknown as { supportedValuesOf?: (key: string) => string[] }
-    ).supportedValuesOf?.("timeZone");
-    if (supported && supported.length > 0) return supported;
-  } catch {}
-  return COMMON_TIMEZONES;
-}
-
 export function isValidTimezone(timeZone: string): boolean {
   if (!timeZone) return false;
   try {

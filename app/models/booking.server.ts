@@ -1005,17 +1005,6 @@ export async function createManualBooking(
   };
 }
 
-export async function listBookingsForProduct(
-  shop: string,
-  bookableProductId: string,
-): Promise<Booking[]> {
-  return prisma.booking.findMany({
-    where: { shop, bookableProductId },
-    orderBy: { slotStartsAt: "asc" },
-    take: 50,
-  });
-}
-
 export type BookingWithProductTitle = Booking & {
   productTitle: string;
   bookingType: BookingType;
@@ -1106,44 +1095,6 @@ export async function listBookings(
     return withDisplayStatus.filter((b) => !belongsInCompletedTab(b));
   }
   return withDisplayStatus;
-}
-
-export async function getUpcomingBookings(
-  shop: string,
-  limit = 5,
-): Promise<BookingWithProductTitle[]> {
-  const bookings = await prisma.booking.findMany({
-    where: {
-      shop,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
-      slotStartsAt: { gte: new Date() },
-    },
-    include: {
-      bookableProduct: { select: { productTitle: true, bookingType: true } },
-      bookingLocation: { select: { timezone: true } },
-    },
-    orderBy: { slotStartsAt: "asc" },
-    take: limit,
-  });
-
-  return bookings.map(
-    ({
-      bookableProduct,
-      bookingLocation,
-      ...booking
-    }: Booking & {
-      bookableProduct: { productTitle: string; bookingType: BookingType };
-      bookingLocation: { timezone: string } | null;
-    }) => {
-      const withType = {
-        ...booking,
-        productTitle: bookableProduct.productTitle,
-        bookingType: bookableProduct.bookingType,
-        locationTimezone: bookingLocation?.timezone ?? null,
-      };
-      return { ...withType, displayStatus: getDisplayStatus(withType) };
-    },
-  );
 }
 
 export type CountBookingsFilters = {
