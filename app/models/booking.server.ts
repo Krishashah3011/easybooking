@@ -174,11 +174,6 @@ function resolveCustomerInfo(order: OrderPayload) {
   };
 }
 
-// Capacity is tracked per location, so a booking at Location A must not use up
-// spots at Location B. Bookings with no location (made before locations existed,
-// or for a product without locations) still count against every location: that
-// can only under-sell, never overbook. With no locationId (a product that has
-// no locations) every booking counts, as before.
 function locationCapacityScope(locationId?: string | null) {
   return locationId ? { OR: [{ locationId }, { locationId: null }] } : {};
 }
@@ -427,8 +422,6 @@ async function sendBookingRescheduled(
     html,
     fromName,
   });
-  // The reschedule email is the customer's latest confirmation of their slot;
-  // record it so sendDueReminders doesn't follow it with an immediate reminder.
   if (sent) {
     await prisma.booking.update({
       where: { id: booking.id },
@@ -493,10 +486,6 @@ export async function createBookingsFromOrder(
       resolvedLocation,
     );
 
-    // Order-time sanity checks. The order is already paid, so an invalid date
-    // can't be rejected here; it is saved as OVERBOOKED (needs merchant review),
-    // the same way capacity overflows are. Min/max advance are deliberately not
-    // enforced here: a shopper may legitimately pick a slot and check out later.
     const bookingContext = await resolveBookingContextById(
       shop,
       bookableProduct.id,
@@ -556,17 +545,11 @@ export async function createBookingsFromOrder(
           resolvedLocation?.timezone ?? null,
         );
         const matchedSlot = slotsForDate.find((s) => s.start === session.time);
-        // No match means the slot already started (past slots are never
-        // generated), or it's a blackout date / non-working day / off-grid time.
         const sessionInvalid = !matchedSlot
           ? flagInvalid(
               `session ${session.date} ${session.time} isn't a bookable slot (already started, blackout date, non-working day, or time not offered)`,
             )
           : false;
-        // If the slot can't be matched any more (min-advance passed, hours
-        // changed, ...), still convert the wall time in the location's
-        // timezone instead of treating it as UTC, so capacity counting and
-        // reminders stay correct.
         const sessionSlotStartsAt = matchedSlot
           ? new Date(matchedSlot.startsAt)
           : zonedTimeToUtc(
@@ -717,14 +700,11 @@ export async function createBookingsFromOrder(
         resolvedLocation?.timezone ?? null,
       );
       const matchedSlot = slotsForDate.find((s) => s.start === selection.time);
-      // No match means the slot already started (past slots are never
-      // generated), or it's a blackout date / non-working day / off-grid time.
       if (!matchedSlot) {
         invalidSelection = flagInvalid(
           `${selection.date} ${selection.time} isn't a bookable slot (already started, blackout date, non-working day, or time not offered)`,
         );
       }
-      // Same fallback as above: never treat a local wall time as UTC.
       slotStartsAt = matchedSlot
         ? new Date(matchedSlot.startsAt)
         : zonedTimeToUtc(
@@ -1461,14 +1441,8 @@ export async function listSlotsForReschedule(
   return { ok: true, slots };
 }
 
-// Don't send a reminder less than this long after the customer was last told
-// about their slot (confirmation / reschedule email).
 const REMINDER_MIN_GAP_MS = 6 * 60 * 60 * 1000;
 
-// Widest possible gap between a FULL_DAY/MULTI_DAY booking's stored
-// slotStartsAt (UTC midnight of the date) and its real start instant: UTC-12..+14
-// offsets plus a start time anywhere in the day. Used only to widen the DB query;
-// the exact check happens in JS.
 const MAX_START_SKEW_BEFORE_MS = 36 * 60 * 60 * 1000;
 const MAX_START_SKEW_AFTER_MS = 14 * 60 * 60 * 1000;
 
@@ -1477,10 +1451,6 @@ type ReminderCandidate = Booking & {
   bookingLocation: { timezone: string } | null;
 };
 
-// The instant the booking actually starts. For timed slots slotStartsAt is
-// already that. For FULL_DAY / MULTI_DAY it is UTC midnight of the date (also
-// relied on by availability counting), so derive the real start from the local
-// date + start time in the location's timezone instead.
 function bookingStartInstant(booking: ReminderCandidate): Date {
   const type = booking.bookableProduct.bookingType;
   if (type !== "FULL_DAY" && type !== "MULTI_DAY") return booking.slotStartsAt;
@@ -1492,8 +1462,6 @@ function bookingStartInstant(booking: ReminderCandidate): Date {
   );
 }
 
-// When the customer was last told about this slot: creation, the confirmation
-// email, or (via confirmationSentAt) the latest reschedule email.
 function lastCustomerNoticeAt(booking: ReminderCandidate): Date {
   return new Date(
     Math.max(
@@ -1537,15 +1505,11 @@ export async function sendDueReminders(
       continue;
     }
 
-    // Booked inside the reminder window: the confirmation email already served
-    // as the heads-up, so a reminder would just be a duplicate.
     const noticeAt = lastCustomerNoticeAt(booking);
     if (startsAt.getTime() - noticeAt.getTime() < windowMs) {
       skipped += 1;
       continue;
     }
-    // Booked just outside the window: give the confirmation some breathing room
-    // (it is retried on the next cron run).
     if (now.getTime() - noticeAt.getTime() < REMINDER_MIN_GAP_MS) continue;
 
     const { fromName } = await getShopEmailSettings(booking.shop);

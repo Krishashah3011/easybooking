@@ -726,7 +726,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         bookedNightCounts,
       );
     } else {
-      // Time-slot products: count over the local month in the location's timezone.
       const localMonth = localMonthRangeUtc(
         year,
         month,
@@ -776,8 +775,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { intent, ok: false as const, slots: [] as TimeSlot[] };
     }
 
-    // Slot instants live in the location's timezone, so count bookings over the
-    // local day (same as the storefront slots route), not the UTC day.
     const { start: dayStart, end: dayEnd } = localDayRangeUtc(
       date,
       resolved.location?.timezone ?? null,
@@ -973,8 +970,6 @@ export default function NewBookingPage() {
 
   const todayMonthIndex = today.getUTCFullYear() * 12 + today.getUTCMonth();
 
-  // The picker lists years only (this year + the next 4). Months are reached
-  // with the arrows, so picking a year keeps the month being shown.
   const yearPickerOptions = (shownYear: number) => {
     const thisYear = today.getUTCFullYear();
     const from = Math.min(thisYear, shownYear);
@@ -985,7 +980,6 @@ export default function NewBookingPage() {
   };
 
   const jumpToYear = (year: number, shownMonth: number, offset: number) => {
-    // Same month in the chosen year, but never before the current month.
     const target = Math.max(
       year * 12 + (shownMonth - 1),
       todayMonthIndex + offset,

@@ -477,13 +477,6 @@ export type LocationHoursOverride = {
   dailyEndTime: string | null;
 };
 
-/**
- * Per-day time map for one level of the location > product > shop
- * cascade. Prefers that level's own dayTimes JSON; falls back to its
- * legacy uniform workingDays + dailyStartTime/dailyEndTime if set;
- * returns null if this level configures nothing (so the caller falls
- * through to the next level).
- */
 function levelDayTimes(entity: {
   workingDays: string | null;
   dailyStartTime: string | null;

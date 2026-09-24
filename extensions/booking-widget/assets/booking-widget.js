@@ -223,9 +223,6 @@
     if (!isFinite(unitPrice)) unitPrice = null;
     var currencyCode = root.dataset.currencyCode || "USD";
     var countryCode = root.dataset.country || "";
-    // tick.svg / calendar.svg live next to this script in the extension's
-    // assets folder. Prefer the URLs the liquid block passes in; if they are
-    // missing, build them from this script's own URL.
     function resolveAssetUrl(fromLiquid, filename) {
       if (fromLiquid) return fromLiquid;
       var scriptEl = document.querySelector('script[src*="booking-widget.js"]');
@@ -413,9 +410,6 @@
     var customFields = [];
     var customFieldValues = {};
 
-    // The merchant's first custom-field question is asked in the Note box
-    // (label + answer). Its answer is sent under the question's label, which
-    // is how the backend matches it to the custom field.
     function getNoteField() {
       return customFields.length > 0 ? customFields[0] : null;
     }
@@ -499,9 +493,6 @@
       addToCartBtn.parentNode.insertBefore(root, addToCartBtn);
     }
 
-    // The "added to cart" banner + slot card sits directly below the theme's
-    // Add to cart button (the rest of the widget stays above it). It needs its
-    // own ".booking-widget" wrapper so the widget's scoped styles still apply.
     if (addToCartBtn && addToCartBtn.parentNode && cartReminderEl) {
       var reminderWrap = document.createElement("div");
       reminderWrap.className = "booking-widget booking-widget__reminder-wrap";
@@ -514,10 +505,6 @@
       clearError();
       openModal();
     });
-
-    // Time range exactly as shown on the confirmed-slot card. It is saved on the
-    // cart line in hidden ("_") properties so the "added to cart" card can show
-    // the same text (the cart itself only stores the start time).
     function timeLabelForSlot(slot) {
       return formatTimeRangeDisplay(
         slot,
@@ -525,8 +512,6 @@
       );
     }
 
-    // Backup copy of each label in this browser, keyed by date + start time,
-    // used if the cart line has no "_Time Label" property.
     var TIME_LABELS_KEY = "bookingWidgetTimeLabels:" + productId;
 
     function rememberTimeLabel(date, startTime, label) {
@@ -1233,7 +1218,6 @@
       if (slotListEl) setStatus(slotListEl, strings.selectDateHint);
     }
 
-    // ---- Spots already taken by slots in this shopper's cart ----
     function nightsBetween(startStr, endStr) {
       var out = [];
       var a = Date.parse(startStr + "T00:00:00Z");
@@ -1249,8 +1233,6 @@
       return date + "|" + start;
     }
 
-    // Resolves to { slots: {"date|HH:MM": qty}, days: {"date": qty} } for cart
-    // lines of this product (same location as the one being booked, if any).
     function fetchCartBookedQty() {
       var locId = pendingLocation ? String(pendingLocation.id) : "";
       return fetch("/cart.js", { headers: { Accept: "application/json" } })
@@ -1608,8 +1590,6 @@
         format(strings.selectYear, { year: year }),
       );
 
-      // Years only (this year + the next 4). Months are reached with the
-      // arrows, so picking a year keeps the month being shown.
       var now = new Date();
       var todayIndex = now.getUTCFullYear() * 12 + now.getUTCMonth();
       var thisYear = now.getUTCFullYear();
@@ -1623,7 +1603,6 @@
       }
       select.value = String(year);
       select.addEventListener("change", function () {
-        // Same month in the chosen year, but never before the current month.
         var target = Math.max(
           Number(select.value) * 12 + (month - 1),
           todayIndex + offset,
@@ -2353,11 +2332,6 @@
       return card;
     }
 
-    // Right after "Confirm" the pending slot(s) are shown in this card so
-    // the shopper can see what they've picked before actually adding it to
-    // cart. There's no "add another slot" link here anymore — that
-    // duplicated the trigger button, and adding a second, separate booking
-    // pre-cart isn't supported from this card.
     function updateSelectionDisplay() {
       saveConfirmedSlots();
       selectionEl.innerHTML = "";
@@ -2470,8 +2444,6 @@
 
       cartReminderEl.appendChild(banner);
 
-      // One row per distinct slot: the same slot added again just adds to the
-      // quantity instead of showing a second, identical row.
       var grouped = [];
       var groupIndex = {};
 

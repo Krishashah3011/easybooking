@@ -42,8 +42,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return Response.json({ slots: [] });
   }
 
-  // Count bookings over the local day in the location's timezone, not the UTC
-  // day, so late/early slots that fall on a neighbouring UTC date are included.
   const { start: dayStart, end: dayEnd } = localDayRangeUtc(
     date,
     context.location?.timezone ?? null,

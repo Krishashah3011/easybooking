@@ -103,8 +103,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       bookedNightCounts,
     );
   } else {
-    // Time-slot products: slot instants live in the location's timezone, so
-    // count bookings over the local month, not the UTC month.
     const localMonth = localMonthRangeUtc(
       year,
       month,

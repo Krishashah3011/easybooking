@@ -107,7 +107,6 @@ export function zonedTimeToUtc(
   return guess;
 }
 
-// Calendar date (YYYY-MM-DD) of an instant in the given timezone (UTC if none).
 export function dateStrInTimezone(
   instant: Date,
   timeZone: string | null | undefined,
@@ -129,9 +128,6 @@ function addDaysToDateStr(dateStr: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-// UTC range covering one calendar day *in the given timezone*. Slot start times
-// are stored as UTC instants, so counting bookings for a local day must use
-// this range, not the UTC day (they differ for any non-UTC timezone).
 export function localDayRangeUtc(
   dateStr: string,
   timeZone: string | null | undefined,
@@ -141,7 +137,6 @@ export function localDayRangeUtc(
   return { start, end: new Date(nextDayStart.getTime() - 1) };
 }
 
-// UTC range covering one calendar month (month is 1-12) in the given timezone.
 export function localMonthRangeUtc(
   year: number,
   month: number,

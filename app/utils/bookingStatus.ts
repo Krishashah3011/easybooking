@@ -5,8 +5,6 @@ type CompletionInput = {
   date: string;
   endDate?: string | null;
   slotEnd: string;
-  // Timezone of the booking's location. The date/time above are wall-clock
-  // times in this timezone; without one they are treated as UTC.
   locationTimezone?: string | null;
 };
 

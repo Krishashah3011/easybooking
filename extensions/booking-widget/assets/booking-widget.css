@@ -234,8 +234,6 @@ body.booking-widget-lock-scroll {
   color: #073E74;
 }
 
-/* Close button: 40px tap target with a 22px x drawn from two bars, in the same
-   blue as the modal title. Negative margins keep the header height unchanged. */
 .booking-widget__close {
   position: relative;
   flex: none;
