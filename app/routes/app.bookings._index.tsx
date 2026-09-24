@@ -760,6 +760,41 @@ const PlusIcon = () => (
 );
 
 
+const DETAILS_RESPONSIVE_CSS = `
+  @media (max-width: 720px) {
+    .eb-fields-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .eb-fields-grid > div > div,
+    .eb-action-row > div > div {
+      white-space: normal !important;
+      overflow-wrap: anywhere;
+      text-overflow: clip !important;
+    }
+    .eb-action-note,
+    .eb-action-booked {
+      flex: 1 1 100% !important;
+      width: 100% !important;
+      max-width: none !important;
+    }
+    .eb-action-buttons {
+      margin-left: 0 !important;
+      width: 100%;
+      justify-content: flex-start !important;
+      flex-wrap: wrap;
+    }
+  }
+  @media (max-width: 480px) {
+    .eb-fields-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+`;
+
+function DetailsResponsiveStyles() {
+  return <style>{DETAILS_RESPONSIVE_CSS}</style>;
+}
+
 function StatusPill({ status }: { status: string }) {
   const colors = STATUS_COLORS[status] ?? STATUS_COLORS.CANCELLED;
   return (
@@ -794,13 +829,18 @@ function FieldBlock({
   label,
   children,
   style,
+  className,
 }: {
   label: string;
   children: React.ReactNode;
   style?: React.CSSProperties;
+  className?: string;
 }) {
   return (
-    <div style={style ? { ...S.fieldBlock, ...style } : S.fieldBlock}>
+    <div
+      className={className}
+      style={style ? { ...S.fieldBlock, ...style } : S.fieldBlock}
+    >
       <span style={S.fieldBlockLabel}>{label}</span>
       <div style={S.fieldBlockBox}>{children}</div>
     </div>
@@ -1015,6 +1055,7 @@ function BookingDetails({
 
   return (
     <div style={S.detailsCard}>
+      <DetailsResponsiveStyles />
       <div style={S.detailsHeaderRow}>
         <div style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
@@ -1053,7 +1094,7 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      <div style={S.topFieldsRow}>
+      <div className="eb-fields-grid" style={S.topFieldsRow}>
         <FieldBlock label="Customer Mail">
           {booking.customerEmail ?? "—"}
         </FieldBlock>
@@ -1157,7 +1198,7 @@ function BookingDetails({
           </button>
         </div>
       ) : (
-        <div style={S.topFieldsRow}>
+        <div className="eb-fields-grid" style={S.topFieldsRow}>
           <FieldBlock label="Booking Date">{dateLabel}</FieldBlock>
           <FieldBlock label="Booking Time">{timeLabel ?? "Whole day"}</FieldBlock>
           <FieldBlock label="Quantity">{booking.quantity}</FieldBlock>
@@ -1167,21 +1208,21 @@ function BookingDetails({
 
       <hr style={S.detailsDivider} />
 
-      <div style={S.actionRow}>
-        <FieldBlock label="Note" style={S.actionRowField}>
+      <div className="eb-action-row" style={S.actionRow}>
+        <FieldBlock label="Note" style={S.actionRowField} className="eb-action-note">
           <BookingNotes
             responses={booking.customFieldResponses}
             labels={customFieldLabels}
           />
         </FieldBlock>
-        <FieldBlock label="Booked at" style={S.actionRowFieldWide}>
+        <FieldBlock label="Booked at" style={S.actionRowFieldWide} className="eb-action-booked">
           {formatInstantInTimezone(booking.createdAt, booking.locationTimezone)}
           {" · "}
           {bookingSourceLabel(booking.source)}
         </FieldBlock>
 
         {!isCancelled && !isCompleted ? (
-          <div style={S.cancelBookingWrap}>
+          <div className="eb-action-buttons" style={S.cancelBookingWrap}>
             {!isRescheduling && (
               <button
                 type="button"
@@ -1342,6 +1383,7 @@ function BundleGroupDetails({
 
   return (
     <div style={S.detailsCard}>
+      <DetailsResponsiveStyles />
       <div style={S.detailsHeaderRow}>
         <div style={S.detailsHeaderLeft}>
           <span style={S.bookingForText}>Booking for</span>
@@ -1380,7 +1422,7 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      <div style={S.topFieldsRow}>
+      <div className="eb-fields-grid" style={S.topFieldsRow}>
         <FieldBlock label="Customer Mail">
           {first.customerEmail ?? "—"}
         </FieldBlock>
@@ -1395,7 +1437,7 @@ function BundleGroupDetails({
 
       <hr style={S.detailsDivider} />
 
-      <div style={S.topFieldsRow}>
+      <div className="eb-fields-grid" style={S.topFieldsRow}>
         <FieldBlock label="Booking Date">{when.date}</FieldBlock>
         <FieldBlock label="Booking Time">{when.sub ?? "Whole day"}</FieldBlock>
         <FieldBlock label="Quantity">{first.quantity}</FieldBlock>
@@ -1507,21 +1549,21 @@ function BundleGroupDetails({
         </>
       )}
 
-      <div style={S.actionRow}>
-        <FieldBlock label="Note" style={S.actionRowField}>
+      <div className="eb-action-row" style={S.actionRow}>
+        <FieldBlock label="Note" style={S.actionRowField} className="eb-action-note">
           <BookingNotes
             responses={first.customFieldResponses}
             labels={customFieldLabels}
           />
         </FieldBlock>
-        <FieldBlock label="Booked at" style={S.actionRowFieldWide}>
+        <FieldBlock label="Booked at" style={S.actionRowFieldWide} className="eb-action-booked">
           {formatInstantInTimezone(first.createdAt, first.locationTimezone)}
           {" · "}
           {bookingSourceLabel(first.source)}
         </FieldBlock>
 
         {!isCancelled && !isCompleted ? (
-          <div style={S.cancelBookingWrap}>
+          <div className="eb-action-buttons" style={S.cancelBookingWrap}>
             {!isRescheduling && (
               <button
                 type="button"

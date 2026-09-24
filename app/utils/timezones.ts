@@ -171,7 +171,6 @@ export function formatInstantInTimezone(
   const parts = dtf.formatToParts(date);
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
 
-  // Always show 12-hour time (e.g. 3:03 PM) instead of 24-hour (15:03).
   const hour24 = Number(get("hour")) % 24;
   const period = hour24 >= 12 ? "PM" : "AM";
   const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
