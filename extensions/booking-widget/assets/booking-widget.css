@@ -234,18 +234,56 @@ body.booking-widget-lock-scroll {
   color: #073E74;
 }
 
+/* Close button: 40px tap target with a 22px x drawn from two bars, in the same
+   blue as the modal title. Negative margins keep the header height unchanged. */
 .booking-widget__close {
-  border: none;
-  background: none;
-  font-size: 1.8rem;
-  line-height: 1;
-  cursor: pointer;
-  color: rgba(0, 0, 0, 0.7);
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin: -5px -8px -5px 0;
   padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  font-size: 0;
+  line-height: 0;
+  color: #073e74;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background 0.15s ease;
+}
+
+.booking-widget__close::before,
+.booking-widget__close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 2.5px;
+  margin: -1.25px 0 0 -11px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.booking-widget__close::before {
+  transform: rotate(45deg);
+}
+
+.booking-widget__close::after {
+  transform: rotate(-45deg);
 }
 
 .booking-widget__close:hover {
   color: #0060e6;
+  background: rgba(0, 96, 230, 0.08);
+}
+
+.booking-widget__close:focus-visible {
+  outline: 2px solid #0060e6;
+  outline-offset: 2px;
 }
 
 .booking-widget__modal-subheader {
@@ -763,9 +801,9 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__month-picker-text {
-  font-weight: 500;
-  font-size: 12px;
-  line-height: 18px;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 24px;
   color: #1a1a1a;
   white-space: nowrap;
 }
@@ -799,7 +837,7 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__weekdays span {
   font-weight: 400;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 12px;
   text-align: center;
   text-transform: uppercase;
@@ -828,7 +866,7 @@ body.booking-widget-lock-scroll {
   box-shadow: none;
   color: #adadad;
   font-weight: 400;
-  font-size: 13px;
+  font-size: 16px;
   line-height: 20px;
   cursor: not-allowed;
   -webkit-appearance: none;
@@ -961,8 +999,8 @@ body.booking-widget-lock-scroll {
   background: #ffffff;
   color: #1a1a1a;
   font-weight: 400;
-  font-size: 14px;
-  line-height: 150%;
+  font-size: 16px;
+  line-height: 21px;
   white-space: nowrap;
   cursor: pointer;
   gap: 8px;
@@ -1022,7 +1060,7 @@ body.booking-widget-lock-scroll {
   display: inline;
   color: inherit;
   font-weight: 400;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 13px;
   white-space: nowrap;
   opacity: 0.75;
@@ -1040,7 +1078,7 @@ body.booking-widget-lock-scroll {
 
   .booking-widget__day {
     max-width: 40px;
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .booking-widget__calendar-pane {
@@ -1216,9 +1254,9 @@ body.booking-widget-lock-scroll {
   flex: none;
   align-items: center;
   justify-content: center;
-  padding: 5px 10px;
-  gap: 14px;
-  width: 110px;
+  padding: 3px 6px;
+  gap: 4px;
+  width: 120px;
   height: 34px;
   background: #fff;
   border: 1px solid #e9e9ea;
@@ -1226,13 +1264,13 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__quantity-btn {
-  width: 20px !important;
-  height: 20px;
+  width: 28px !important;
+  height: 28px;
   min-width: 0 !important;
   max-width: none !important;
   padding: 0 !important;
   margin: 0 !important;
-  flex: 0 0 20px;
+  flex: 0 0 28px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1240,8 +1278,8 @@ body.booking-widget-lock-scroll {
   border: none;
   background: transparent;
   font-family: "Inter";
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 600;
   font-style: normal;
   line-height: 1;
   color: #073e74;
@@ -1264,14 +1302,15 @@ body.booking-widget-lock-scroll {
 }
 
 .booking-widget__quantity-input {
-  width: auto;
-  min-width: 14px;
-  max-width: 2.5rem;
+  width: 34px;
+  min-width: 0;
+  max-width: none;
+  padding: 0;
   flex: none;
   border: none;
   text-align: center;
   font-family: "Inter", sans-serif;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 400;
   color: #898989;
   background: transparent;

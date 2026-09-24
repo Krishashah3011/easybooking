@@ -45,7 +45,7 @@ const CAL_BLUE = "#0060E6";
 const BLUE_TINT = "rgba(0, 96, 230, 0.08)";
 const NAV_ARROW = "#4C4C4C";
 const DISABLED_DATE = "#ADADAD";
-const MONTH_PICKER_SPAN = 24;
+const YEAR_PICKER_SPAN = 5;
 
 const CAL_TEXT = "#1A1A1A";
 const PLACEHOLDER = "#6E6E6E";
@@ -973,22 +973,24 @@ export default function NewBookingPage() {
 
   const todayMonthIndex = today.getUTCFullYear() * 12 + today.getUTCMonth();
 
-  const monthPickerOptions = (shownIndex: number, offset: number) => {
-    const start = todayMonthIndex + offset;
-    const end = start + MONTH_PICKER_SPAN - 1;
-    const from = Math.min(start, shownIndex);
-    const to = Math.max(end, shownIndex);
-    const options: Array<{ value: number; label: string }> = [];
-    for (let i = from; i <= to; i += 1) {
-      options.push({
-        value: i,
-        label: `${MONTH_NAMES[i % 12]} ${Math.floor(i / 12)}`,
-      });
-    }
+  // The picker lists years only (this year + the next 4). Months are reached
+  // with the arrows, so picking a year keeps the month being shown.
+  const yearPickerOptions = (shownYear: number) => {
+    const thisYear = today.getUTCFullYear();
+    const from = Math.min(thisYear, shownYear);
+    const to = Math.max(thisYear + YEAR_PICKER_SPAN - 1, shownYear);
+    const options: number[] = [];
+    for (let y = from; y <= to; y += 1) options.push(y);
     return options;
   };
 
-  const jumpToMonthIndex = (index: number) => {
+  const jumpToYear = (year: number, shownMonth: number, offset: number) => {
+    // Same month in the chosen year, but never before the current month.
+    const target = Math.max(
+      year * 12 + (shownMonth - 1),
+      todayMonthIndex + offset,
+    );
+    const index = target - offset;
     setViewYear(Math.floor(index / 12));
     setViewMonth((index % 12) + 1);
   };
@@ -1516,7 +1518,6 @@ export default function NewBookingPage() {
     hasAnyAvailability: boolean,
     offset: number,
   ) => {
-    const shownIndex = year * 12 + (month - 1);
     const paneLabel = `${MONTH_SHORT[month - 1]} ${year}`;
     return (
       <div key={`pane-${year}-${month}`} style={S.monthPane}>
@@ -1536,15 +1537,15 @@ export default function NewBookingPage() {
             <DropdownChevron />
             <select
               style={S.monthPickerSelect}
-              aria-label={`Select month, currently ${paneLabel}`}
-              value={shownIndex}
+              aria-label={`Select year, currently ${year}`}
+              value={year}
               onChange={(e: FieldChangeEvent) =>
-                jumpToMonthIndex(Number(e.currentTarget.value) - offset)
+                jumpToYear(Number(e.currentTarget.value), month, offset)
               }
             >
-              {monthPickerOptions(shownIndex, offset).map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              {yearPickerOptions(year).map((optionYear) => (
+                <option key={optionYear} value={optionYear}>
+                  {optionYear}
                 </option>
               ))}
             </select>

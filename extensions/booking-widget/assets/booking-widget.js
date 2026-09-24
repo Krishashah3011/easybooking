@@ -4,7 +4,7 @@
   var LOW_AVAILABILITY_THRESHOLD = 2;
   var WEEKDAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-  var MONTH_PICKER_SPAN = 24;
+  var YEAR_PICKER_SPAN = 5;
 
   var CAL_BLUE = "#0060E6";
   var NAV_ARROW = "#4C4C4C";
@@ -63,7 +63,7 @@
     nextMonth: "Next month",
     availableTimes: "Available times",
     selectDateHint: "Select a date to see available times.",
-    selectMonth: "Select month, currently {month}",
+    selectYear: "Select year, currently {year}",
     alreadyBooked: "This slots are added to Cart for this product:",
     addedToCartSuccess: "Yay, Slot is successfully added to cart.",
     removeSlot: "Remove this slot",
@@ -1588,7 +1588,6 @@
     }
 
     function buildMonthPicker(year, month, offset) {
-      var shownIndex = year * 12 + (month - 1);
       var label = monthShortFormatter.format(
         new Date(Date.UTC(year, month - 1, 1)),
       );
@@ -1606,26 +1605,30 @@
       select.className = "booking-widget__month-picker-select";
       select.setAttribute(
         "aria-label",
-        format(strings.selectMonth, { month: label }),
+        format(strings.selectYear, { year: year }),
       );
 
+      // Years only (this year + the next 4). Months are reached with the
+      // arrows, so picking a year keeps the month being shown.
       var now = new Date();
       var todayIndex = now.getUTCFullYear() * 12 + now.getUTCMonth();
-      var start = todayIndex + offset;
-      var end = start + MONTH_PICKER_SPAN - 1;
-      var from = Math.min(start, shownIndex);
-      var to = Math.max(end, shownIndex);
-      for (var i = from; i <= to; i++) {
+      var thisYear = now.getUTCFullYear();
+      var firstYear = Math.min(thisYear, year);
+      var lastYear = Math.max(thisYear + YEAR_PICKER_SPAN - 1, year);
+      for (var y = firstYear; y <= lastYear; y++) {
         var option = document.createElement("option");
-        option.value = String(i);
-        option.textContent = monthFormatter.format(
-          new Date(Date.UTC(Math.floor(i / 12), i % 12, 1)),
-        );
+        option.value = String(y);
+        option.textContent = String(y);
         select.appendChild(option);
       }
-      select.value = String(shownIndex);
+      select.value = String(year);
       select.addEventListener("change", function () {
-        changeViewMonth(Number(select.value) - offset);
+        // Same month in the chosen year, but never before the current month.
+        var target = Math.max(
+          Number(select.value) * 12 + (month - 1),
+          todayIndex + offset,
+        );
+        changeViewMonth(target - offset);
       });
       wrap.appendChild(select);
 
