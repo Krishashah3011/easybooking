@@ -879,6 +879,18 @@ export default function Dashboard() {
 
   return (
     <s-page heading="Booking and Reservation" inlineSize="950px" style={{ fontFamily: "Inter" }}>
+      <img
+        src="/storebanner.svg"
+        alt=""
+        style={{
+          display: "block",
+          width: "100%",
+          height: "auto",
+          borderRadius: "8px",
+          marginBottom: "24px",
+        }}
+      />
+
       <GetStartedGuide
         appName={appNameML}
         intro="A quick walkthrough of how to get bookings running end to end."
