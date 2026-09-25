@@ -778,13 +778,13 @@ function FieldRow({
 
   return (
     <div>
-      <div style={stylesML.rowWrap}>
-        <p style={stylesML.rowCell}>{fieldML.label}</p>
-        <p style={stylesML.rowCell}>
+      <div className="eb-cf-row" style={stylesML.rowWrap}>
+        <p className="eb-cf-cell" style={stylesML.rowCell}>{fieldML.label}</p>
+        <p className="eb-cf-cell" style={stylesML.rowCell}>
           {TYPE_LABELS_ML[fieldML.type as CustomFieldFormValues["type"]] ?? fieldML.type}
         </p>
-        <p style={stylesML.rowCell}>{fieldML.required ? "Yes" : "No"}</p>
-        <div style={stylesML.actionsCell}>
+        <p className="eb-cf-cell" style={stylesML.rowCell}>{fieldML.required ? "Yes" : "No"}</p>
+        <div className="eb-cf-actions" style={stylesML.actionsCell}>
           <button
             type="button"
             style={{
@@ -898,7 +898,7 @@ export default function CustomFieldsPage() {
         }
       />
 
-      <div style={stylesML.listCard}>
+      <div className="eb-cf-listcard" style={stylesML.listCard}>
         <div style={stylesML.listHeaderRow}>
           <div style={stylesML.listHeaderLeft}>
             <p style={stylesML.listTitle}>Current fields</p>
@@ -911,7 +911,7 @@ export default function CustomFieldsPage() {
 
         <hr style={stylesML.divider} />
 
-        <div style={stylesML.columnHeaderRow}>
+        <div className="eb-cf-headerrow" style={stylesML.columnHeaderRow}>
           <p style={stylesML.columnHeaderCell}>Label</p>
           <p style={stylesML.columnHeaderCell}>Type</p>
           <p style={stylesML.columnHeaderCell}>Required</p>
@@ -938,6 +938,26 @@ export default function CustomFieldsPage() {
           ))
         )}
       </div>
+      <style>{`
+        @media (max-width: 780px) {
+          .eb-cf-listcard {
+            overflow-x: auto;
+          }
+          .eb-cf-headerrow,
+          .eb-cf-row {
+            min-width: 560px;
+          }
+        }
+        @media (max-width: 480px) {
+          .eb-cf-cell {
+            white-space: normal !important;
+            overflow-wrap: anywhere;
+          }
+          .eb-cf-actions {
+            gap: 2px;
+          }
+        }
+      `}</style>
     </div>
   );
 }

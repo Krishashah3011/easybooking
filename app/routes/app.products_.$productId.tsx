@@ -1396,7 +1396,7 @@ export default function BookableProductPage() {
             )}
 
             <div style={uiML.toggleCard}>
-              <div style={uiML.toggleRow}>
+              <div className="eb-pd-togglerow" style={uiML.toggleRow}>
                 <div style={uiML.toggleText}>
                   <p style={uiML.fieldLabelBlack}>Bookings</p>
                 </div>
@@ -1835,7 +1835,7 @@ export default function BookableProductPage() {
             </Card>
 
             {blackoutDatesML.length > 0 && (
-              <div style={uiML.card}>
+              <div className="eb-pd-bo-listcard" style={uiML.card}>
                 <div style={uiML.cardHeaderText}>
                   <p style={uiML.title}>Current Blackout Dates</p>
                   <p style={uiML.descText}>
@@ -1845,7 +1845,7 @@ export default function BookableProductPage() {
 
                 <hr style={uiML.divider} />
 
-                <div style={uiML.columnHeaderRow}>
+                <div className="eb-pd-bo-headerrow" style={uiML.columnHeaderRow}>
                   <p style={uiML.columnHeaderCell}>Date</p>
                   <p style={uiML.columnHeaderCell}>Reason</p>
                   <p style={{ ...uiML.columnHeaderCell, textAlign: "center" }}>
@@ -1863,9 +1863,9 @@ export default function BookableProductPage() {
                     source: "shop" | "product";
                   }) => (
                     <div key={bML.id} style={{ width: "100%" }}>
-                      <div style={uiML.rowWrap}>
-                        <p style={uiML.rowCell}>{bML.date}</p>
-                        <p style={uiML.rowCell}>{bML.reason ?? "—"}</p>
+                      <div className="eb-pd-bo-row" style={uiML.rowWrap}>
+                        <p className="eb-pd-bo-cell" style={uiML.rowCell}>{bML.date}</p>
+                        <p className="eb-pd-bo-cell" style={uiML.rowCell}>{bML.reason ?? "—"}</p>
                         <div style={uiML.actionsCell}>
                           <button
                             type="button"
@@ -1897,6 +1897,27 @@ export default function BookableProductPage() {
           </div>
         </div>
       </div>
+      <style>{`
+        @media (max-width: 780px) {
+          .eb-pd-bo-listcard {
+            overflow-x: auto;
+          }
+          .eb-pd-bo-headerrow,
+          .eb-pd-bo-row {
+            min-width: 420px;
+          }
+          .eb-pd-togglerow {
+            flex-wrap: wrap;
+            gap: 12px;
+          }
+        }
+        @media (max-width: 480px) {
+          .eb-pd-bo-cell {
+            white-space: normal !important;
+            overflow-wrap: anywhere;
+          }
+        }
+      `}</style>
     </s-page>
   );
 }

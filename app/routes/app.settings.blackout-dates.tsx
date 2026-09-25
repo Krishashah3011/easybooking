@@ -544,7 +544,7 @@ export default function BlackoutDatesPage() {
         </div>
       </div>
 
-      <div style={stylesML.listCard}>
+      <div className="eb-bo-listcard" style={stylesML.listCard}>
         <div style={stylesML.listHeaderRow}>
           <div style={stylesML.listHeaderLeft}>
             <p style={stylesML.listTitle}>Current Blackout Dates</p>
@@ -556,7 +556,7 @@ export default function BlackoutDatesPage() {
 
         <hr style={stylesML.divider} />
 
-        <div style={stylesML.columnHeaderRow}>
+        <div className="eb-bo-headerrow" style={stylesML.columnHeaderRow}>
           <p style={stylesML.columnHeaderCell}>Date</p>
           <p style={stylesML.columnHeaderCell}>Reason</p>
           <p style={{ ...stylesML.columnHeaderCell, textAlign: "center" }}>
@@ -571,9 +571,9 @@ export default function BlackoutDatesPage() {
         ) : (
           blackoutDatesML.map((bML) => (
             <div key={bML.id}>
-              <div style={stylesML.rowWrap}>
-                <p style={stylesML.rowCell}>{bML.date}</p>
-                <p style={stylesML.rowCell}>{bML.reason ?? "—"}</p>
+              <div className="eb-bo-row" style={stylesML.rowWrap}>
+                <p className="eb-bo-cell" style={stylesML.rowCell}>{bML.date}</p>
+                <p className="eb-bo-cell" style={stylesML.rowCell}>{bML.reason ?? "—"}</p>
                 <div style={stylesML.actionsCell}>
                   <button
                     type="button"
@@ -597,6 +597,23 @@ export default function BlackoutDatesPage() {
           ))
         )}
       </div>
+      <style>{`
+        @media (max-width: 780px) {
+          .eb-bo-listcard {
+            overflow-x: auto;
+          }
+          .eb-bo-headerrow,
+          .eb-bo-row {
+            min-width: 420px;
+          }
+        }
+        @media (max-width: 480px) {
+          .eb-bo-cell {
+            white-space: normal !important;
+            overflow-wrap: anywhere;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1030,19 +1030,19 @@ function LocationRow({
 
   return (
     <div>
-      <div style={stylesML.rowWrap}>
-        <p style={stylesML.rowCell}>{locationML.name}</p>
-        <p style={stylesML.rowCell}>
+      <div className="eb-loc-row" style={stylesML.rowWrap}>
+        <p className="eb-loc-cell" style={stylesML.rowCell}>{locationML.name}</p>
+        <p className="eb-loc-cell" style={stylesML.rowCell}>
           {locationML.timezone}
           {offsetML ? ` (${offsetML})` : ""}
         </p>
-        <p style={stylesML.rowCell}>
+        <p className="eb-loc-cell" style={stylesML.rowCell}>
           {locationML.workingDays || locationML.dailyStartTime || locationML.dailyEndTime
             ? "Custom"
             : "Shop default"}
         </p>
-        <p style={stylesML.rowCell}>{locationML.isEnabled ? "Visible" : "Hidden"}</p>
-        <div style={stylesML.actionsCell}>
+        <p className="eb-loc-cell" style={stylesML.rowCell}>{locationML.isEnabled ? "Visible" : "Hidden"}</p>
+        <div className="eb-loc-actions" style={stylesML.actionsCell}>
           <button
             type="button"
             style={{
@@ -1144,7 +1144,7 @@ export default function LocationsPage() {
         description="Locations shoppers pick before choosing a date and time- Each has its own timezone, so slot times are always local."
       />
 
-      <div style={stylesML.listCard}>
+      <div className="eb-loc-listcard" style={stylesML.listCard}>
         <div style={stylesML.listHeaderRow}>
           <div style={stylesML.listHeaderLeft}>
             <p style={stylesML.listTitle}>Current locations</p>
@@ -1156,7 +1156,7 @@ export default function LocationsPage() {
 
         <hr style={stylesML.divider} />
 
-        <div style={stylesML.columnHeaderRow}>
+        <div className="eb-loc-headerrow" style={stylesML.columnHeaderRow}>
           <p style={stylesML.columnHeaderCell}>Location Name</p>
           <p style={stylesML.columnHeaderCell}>Timezone</p>
           <p style={stylesML.columnHeaderCell}>Hours</p>
@@ -1184,6 +1184,26 @@ export default function LocationsPage() {
           ))
         )}
       </div>
+      <style>{`
+        @media (max-width: 780px) {
+          .eb-loc-listcard {
+            overflow-x: auto;
+          }
+          .eb-loc-headerrow,
+          .eb-loc-row {
+            min-width: 680px;
+          }
+        }
+        @media (max-width: 480px) {
+          .eb-loc-cell {
+            white-space: normal !important;
+            overflow-wrap: anywhere;
+          }
+          .eb-loc-actions {
+            gap: 2px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
