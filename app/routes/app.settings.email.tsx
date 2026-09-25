@@ -633,7 +633,7 @@ const tokenPillStyleML: React.CSSProperties = {
   border: `1px solid ${BORDER_ML}`,
   background: "#F5F6F7",
   color: TEXT_MUTED_ML,
-  fontFamily: "monospace",
+  fontFamily: "Inter",
   fontSize: "12px",
   cursor: "pointer",
 };
