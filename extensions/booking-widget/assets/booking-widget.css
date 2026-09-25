@@ -1,11 +1,3 @@
-/* ==========================================================================
-   Theme-isolation reset
-   Neutralizes each theme's own base-tag styling (h1-h6, p, ul, button,
-   input, a) so it can't leak into the widget. Uses plain element selectors
-   on purpose: their specificity is lower than every class-based rule below
-   them in this file, so our own component styles still win normally —
-   this only strips theme defaults, it never fights our own CSS.
-   ========================================================================== */
 .booking-widget,
 .booking-widget *,
 .booking-widget *::before,
@@ -1053,6 +1045,7 @@ body.booking-widget-lock-scroll {
   box-sizing: border-box;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
   flex: none;
@@ -1067,9 +1060,9 @@ body.booking-widget-lock-scroll {
   font-weight: 400;
   font-size: 16px;
   line-height: 21px;
-  white-space: nowrap;
   cursor: pointer;
-  gap: 8px;
+  column-gap: 8px;
+  row-gap: 2px;
 }
 
 .booking-widget__slot-row:hover {
@@ -1118,12 +1111,15 @@ body.booking-widget-lock-scroll {
 
 .booking-widget__slot-text {
   display: block;
+  flex: none;
   white-space: nowrap;
 }
 
 .booking-widget__slot-tag,
 .booking-widget__slot-tag--low {
-  display: inline;
+  display: inline-block;
+  flex: none;
+  margin-left: auto;
   color: inherit;
   font-weight: 400;
   font-size: 12px;
