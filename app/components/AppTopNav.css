@@ -1,17 +1,24 @@
 .bar {
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: 3.6px;
+  padding-bottom: 0;
+  padding-inline: 16px;
+  margin-bottom: 24px;
+  background: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.barInner {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 0.5rem;
   width: 100%;
+  max-width: 950px;
+  margin: 0 auto;
   box-sizing: border-box;
-  padding-top: 3.6px;
-  padding-bottom: 0;
-  padding-inline: 1.5rem;
-  margin-bottom: 0;
-  background: none;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 
 .group {

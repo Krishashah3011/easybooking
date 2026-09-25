@@ -887,6 +887,7 @@ export default function Dashboard() {
           width: "100%",
           height: "auto",
           borderRadius: "8px",
+          marginTop: "-16px",
           marginBottom: "24px",
         }}
       />

@@ -39,34 +39,36 @@ export function AppTopNav() {
 
   return (
     <nav className="bar" aria-label="App navigation">
-      <div className="group">
-        {NAV_ITEMS_ML.map((itemML) => {
-          const Icon = itemML.icon;
-          const activeML = isActiveML(pathnameML, itemML);
-          return (
-            <Link
-              key={itemML.href}
-              to={itemML.href}
-              title={itemML.label}
-              aria-label={itemML.label}
-              aria-current={activeML ? "page" : undefined}
-              className="link"
-            >
-              <Icon active={activeML} />
-            </Link>
-          );
-        })}
+      <div className="barInner">
+        <div className="group">
+          {NAV_ITEMS_ML.map((itemML) => {
+            const Icon = itemML.icon;
+            const activeML = isActiveML(pathnameML, itemML);
+            return (
+              <Link
+                key={itemML.href}
+                to={itemML.href}
+                title={itemML.label}
+                aria-label={itemML.label}
+                aria-current={activeML ? "page" : undefined}
+                className="link"
+              >
+                <Icon active={activeML} />
+              </Link>
+            );
+          })}
+        </div>
+        <div className="spacer" />
+        <Link
+          to="/app/account"
+          title="Account"
+          aria-label="Account"
+          aria-current={accountActiveML ? "page" : undefined}
+          className="link"
+        >
+          <AccountIcon active={accountActiveML} />
+        </Link>
       </div>
-      <div className="spacer" />
-      <Link
-        to="/app/account"
-        title="Account"
-        aria-label="Account"
-        aria-current={accountActiveML ? "page" : undefined}
-        className="link"
-      >
-        <AccountIcon active={accountActiveML} />
-      </Link>
     </nav>
   );
 }
