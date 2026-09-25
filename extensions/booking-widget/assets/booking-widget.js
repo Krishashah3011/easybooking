@@ -278,6 +278,13 @@
     var cartReminderElML = rootML.querySelector("[data-booking-cart-reminder]");
 
     var overlayElML = rootML.querySelector("[data-booking-overlay]");
+    // Escape any theme ancestor with `transform`/`filter`/`will-change`, which
+    // silently turns `position: fixed` into `position: absolute` relative to
+    // that ancestor. Appending straight to <body> guarantees the modal is
+    // always centered on the real viewport, on every theme.
+    if (overlayElML && overlayElML.parentNode !== document.body) {
+      document.body.appendChild(overlayElML);
+    }
     var closeBtnML = rootML.querySelector("[data-booking-close]");
     var locationTimezoneElML = rootML.querySelector("[data-booking-location-timezone]");
     var subheaderElML = rootML.querySelector("[data-booking-subheader]");

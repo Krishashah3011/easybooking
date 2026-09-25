@@ -1,12 +1,80 @@
-.booking-widget {
-  font-family: inherit;
-}
-
+/* ==========================================================================
+   Theme-isolation reset
+   Neutralizes each theme's own base-tag styling (h1-h6, p, ul, button,
+   input, a) so it can't leak into the widget. Uses plain element selectors
+   on purpose: their specificity is lower than every class-based rule below
+   them in this file, so our own component styles still win normally —
+   this only strips theme defaults, it never fights our own CSS.
+   ========================================================================== */
 .booking-widget,
 .booking-widget *,
 .booking-widget *::before,
 .booking-widget *::after {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.booking-widget h1,
+.booking-widget h2,
+.booking-widget h3,
+.booking-widget h4,
+.booking-widget h5,
+.booking-widget h6,
+.booking-widget p,
+.booking-widget ul,
+.booking-widget ol,
+.booking-widget li,
+.booking-widget dl,
+.booking-widget dd,
+.booking-widget dt,
+.booking-widget figure {
+  margin: 0;
+  padding: 0;
+  font-size: 100%;
+  font-weight: 400;
+  line-height: normal;
+  list-style: none;
+  text-align: left;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.booking-widget button,
+.booking-widget input,
+.booking-widget select,
+.booking-widget textarea {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: 100%;
+  line-height: normal;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.booking-widget button {
+  cursor: pointer;
+}
+
+.booking-widget a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.booking-widget img,
+.booking-widget svg {
+  display: block;
+  max-width: 100%;
+}
+
+.booking-widget {
+  container-type: inline-size;
+  container-name: booking-widget;
+  font-family: "Inter", sans-serif;
 }
 
 .booking-widget [hidden] {
