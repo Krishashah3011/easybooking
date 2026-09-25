@@ -19,22 +19,22 @@ function NavBadge({
 }) {
   return (
     <svg
-      width="48"
-      height="48"
-      viewBox="0 0 48 48"
+      width="40"
+      height="40"
+      viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={classNameML}
     >
       <rect
-        x="4.75"
-        y="4.75"
-        width="40"
-        height="40"
-        rx="7.25"
+        x="3.96"
+        y="3.96"
+        width="33.33"
+        height="33.33"
+        rx="6.04"
         fill={activeML ? GREEN_ML : "none"}
         stroke={GREEN_ML}
-        strokeWidth="1.5"
+        strokeWidth="1.25"
       />
       {childrenML}
     </svg>
@@ -61,10 +61,10 @@ export function HomeIcon({ className: classNameML, active: activeML }: IconProps
     <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Homeicon.svg"
-        x="14.75"
-        y="14.75"
-        width="20"
-        height="20"
+        x="12.29"
+        y="12.29"
+        width="16.67"
+        height="16.67"
         preserveAspectRatio="none"
       />
     </NavBadge>
@@ -76,10 +76,10 @@ export function SettingsIcon({ className: classNameML, active: activeML }: IconP
     <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Configurationsicon.svg"
-        x="14.75"
-        y="14.75"
-        width="20"
-        height="20"
+        x="12.29"
+        y="12.29"
+        width="16.67"
+        height="16.67"
         preserveAspectRatio="none"
       />
     </NavBadge>
@@ -89,20 +89,20 @@ export function SettingsIcon({ className: classNameML, active: activeML }: IconP
 export function AccountIcon({ className: classNameML }: IconProps) {
   return (
     <svg
-      width="48"
-      height="48"
-      viewBox="0 0 48 48"
+      width="40"
+      height="40"
+      viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={classNameML}
     >
-      <rect x="4.75" y="4.75" width="40" height="40" rx="7.25" fill={NAVY_ML} stroke={NAVY_ML} strokeWidth="1.5" />
+      <rect x="3.96" y="3.96" width="33.33" height="33.33" rx="6.04" fill={NAVY_ML} stroke={NAVY_ML} strokeWidth="1.25" />
       <image
         href="/accounticon.svg"
-        x="14.75"
-        y="14.75"
-        width="20"
-        height="20"
+        x="12.29"
+        y="12.29"
+        width="16.67"
+        height="16.67"
         preserveAspectRatio="none"
       />
     </svg>
@@ -128,10 +128,10 @@ export function ProductsIcon({ className: classNameML, active: activeML }: IconP
     <NavBadge active={activeML} className={classNameML}>
       <image
         href="/producticon.svg"
-        x="14.75"
-        y="14.75"
-        width="20"
-        height="20"
+        x="12.29"
+        y="12.29"
+        width="16.67"
+        height="16.67"
         preserveAspectRatio="none"
       />
     </NavBadge>
@@ -143,10 +143,10 @@ export function BookingsIcon({ className: classNameML, active: activeML }: IconP
     <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Bookingicon.svg"
-        x="14.75"
-        y="14.75"
-        width="20"
-        height="20"
+        x="12.29"
+        y="12.29"
+        width="16.67"
+        height="16.67"
         preserveAspectRatio="none"
       />
     </NavBadge>

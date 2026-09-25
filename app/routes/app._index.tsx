@@ -678,11 +678,13 @@ function ProductLineChart({
 }
 
 const BOOKING_WIDGET_BLOCK_HANDLE_ML = "booking-widget";
+const DEFAULT_APP_NAME_ML = "Milople Booking and Reservation App";
 
 function buildGuideStepsML(
   shopML: string,
   apiKeyML: string,
   registeredML: boolean,
+  appNameML: string,
 ): GuideStep[] {
   const workingStepsML: GuideStep[] = [
     {
@@ -693,7 +695,7 @@ function buildGuideStepsML(
     },
     {
       title: "Turn on the booking widget",
-      body: "Switch the EasyBooking app embed on in the theme editor. It shows up automatically on every bookable product page (no manual placement needed).",
+      body: `Switch the ${appNameML} app embed on in the theme editor. It shows up automatically on every bookable product page (no manual placement needed).`,
       cta: "Activate App Embed",
       href: `https://${shopML}/admin/themes/current/editor?context=apps&activateAppId=${apiKeyML}/${BOOKING_WIDGET_BLOCK_HANDLE_ML}`,
       external: true,
@@ -745,7 +747,7 @@ function buildGuideStepsML(
   return [
     {
       title: "Create your account",
-      body: "Register with your name and email to unlock the rest of EasyBooking.",
+      body: `Register with your name and email to unlock the rest of ${appNameML}.`,
       cta: "Register",
       href: "/app/account",
       done: registeredML,
@@ -771,6 +773,7 @@ export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
     shop: sessionML.shop,
     apiKey: process.env.SHOPIFY_API_KEY ?? "",
     registered: shopSettingsML.registered,
+    appName: process.env.APP_NAME?.trim() || DEFAULT_APP_NAME_ML,
   };
 
   if (!shopSettingsML.registered) {
@@ -851,11 +854,14 @@ export default function Dashboard() {
     shop: shopML,
     apiKey: apiKeyML,
     registered: registeredML,
+    appName: appNameML,
     report: reportML,
     reportProducts: reportProductsML,
     reportFilters: reportFiltersML,
   } = useLoaderData<typeof loader>();
-  const guideStepsML = buildGuideStepsML(shopML, apiKeyML, registeredML);
+  const guideDefaultOpenML =
+    !registeredML || !hasLocationsML || statsML.enabledProductCount === 0 || !smtpConfiguredML;
+  const guideStepsML = buildGuideStepsML(shopML, apiKeyML, registeredML, appNameML);
   const navigateML = useNavigate();
 
   const [productIdML, setProductIdML] = useState(reportFiltersML.bookableProductId);
@@ -871,36 +877,16 @@ export default function Dashboard() {
     navigateML({ search: paramsML.toString() });
   };
 
-  const setupStepsML = [
-    {
-      done: hasLocationsML,
-      label: "Add at least one location so booking times use the right timezone",
-      href: "/app/settings/locations",
-      cta: "Go to Locations",
-    },
-    {
-      done: statsML.enabledProductCount > 0,
-      label: "Enable at least one product for booking",
-      href: "/app/products",
-      cta: "Go to Products",
-    },
-    {
-      done: smtpConfiguredML,
-      label: "Configure Email Settings so booking emails can send",
-      href: "/app/settings/email",
-      cta: "Go to Email Settings",
-    },
-  ];
-  const remainingStepsML = setupStepsML.filter((sML) => !sML.done);
-
   return (
-    <s-page heading="Dashboard" inlineSize="950px" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Booking and Reservation" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <GetStartedGuide
-        appName="EasyBooking"
+        appName={appNameML}
         intro="A quick walkthrough of how to get bookings running end to end."
         steps={guideStepsML}
+        defaultOpen={guideDefaultOpenML}
       />
 
+      {registeredML && (
       <div style={analyticsStylesML.outerCard}>
       {registeredML && (
         <>
@@ -915,24 +901,6 @@ export default function Dashboard() {
                 Review overbooked bookings
               </s-link>
             </s-banner>
-          )}
-
-          {remainingStepsML.length > 0 && (
-            <s-section heading="Get set up">
-              <s-stack direction="block" gap="base">
-                {remainingStepsML.map((stepML) => (
-                  <s-stack
-                    key={stepML.label}
-                    direction="inline"
-                    gap="base"
-                    alignItems="center"
-                  >
-                    <s-paragraph>{stepML.label}</s-paragraph>
-                    <s-link href={stepML.href}>{stepML.cta}</s-link>
-                  </s-stack>
-                ))}
-              </s-stack>
-            </s-section>
           )}
         </>
       )}
@@ -1182,6 +1150,7 @@ export default function Dashboard() {
       )}
 
       </div>
+      )}
     </s-page>
   );
 }

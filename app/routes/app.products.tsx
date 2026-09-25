@@ -23,6 +23,8 @@ type ProductListItem = {
   isEnabled: boolean;
 };
 
+const PRODUCTS_PER_PAGE_ML = 10;
+
 const ACCENT_ML = "#073E74";
 const LINE_BORDER_ML = "#DBDBDB";
 const INPUT_BORDER_ML = "#E9E9EA";
@@ -142,6 +144,32 @@ const stylesML: Record<string, React.CSSProperties> = {
     borderTop: `1px solid ${LINE_BORDER_ML}`,
     margin: 0,
     width: "100%",
+  },
+  paginationRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "16px",
+    paddingTop: "4px",
+  },
+  paginationButton: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "14px",
+    color: ACCENT_ML,
+    background: "#FFFFFF",
+    border: `1px solid ${LINE_BORDER_ML}`,
+    borderRadius: "6px",
+    padding: "6px 14px",
+    cursor: "pointer",
+  },
+  paginationLabel: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: "14px",
+    color: TEXT_BLACK_ML,
+    whiteSpace: "nowrap",
   },
   tableWrap: {
     width: "100%",
@@ -359,6 +387,7 @@ export default function BookingProductsPage() {
   const fetcherML = useFetcher<typeof action>();
   const shopifyML = useAppBridge();
   const [queryML, setQueryML] = useState("");
+  const [pageML, setPageML] = useState(1);
 
   const isSubmittingML = fetcherML.state !== "idle";
   const pendingIntentML = isSubmittingML
@@ -414,8 +443,27 @@ export default function BookingProductsPage() {
     );
   }, [productsML, queryML]);
 
+  const pageCountML = Math.max(
+    1,
+    Math.ceil(filteredProductsML.length / PRODUCTS_PER_PAGE_ML),
+  );
+  const currentPageML = Math.min(pageML, pageCountML);
+
+  useEffect(() => {
+    setPageML(1);
+  }, [queryML]);
+
+  const paginatedProductsML = useMemo(
+    () =>
+      filteredProductsML.slice(
+        (currentPageML - 1) * PRODUCTS_PER_PAGE_ML,
+        currentPageML * PRODUCTS_PER_PAGE_ML,
+      ),
+    [filteredProductsML, currentPageML],
+  );
+
   return (
-    <s-page inlineSize="700px">
+    <s-page heading="Booking and Reservation" inlineSize="700px">
       <div style={stylesML.outerCard}>
         <div>
           <h1 style={settingsStyles.heading}>Products</h1>
@@ -510,7 +558,7 @@ export default function BookingProductsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProductsML.map((productML) => {
+                  {paginatedProductsML.map((productML) => {
                     const isActiveML = productML.status === "ACTIVE";
                     const isPendingML = pendingProductIdML === productML.id;
                     const toggleDisabledML =
@@ -591,6 +639,42 @@ export default function BookingProductsPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {filteredProductsML.length > PRODUCTS_PER_PAGE_ML && (
+            <div style={stylesML.paginationRow}>
+              <button
+                type="button"
+                onClick={() => setPageML((pML) => Math.max(1, pML - 1))}
+                disabled={currentPageML === 1}
+                style={{
+                  ...stylesML.paginationButton,
+                  ...(currentPageML === 1
+                    ? { opacity: 0.5, cursor: "not-allowed" }
+                    : {}),
+                }}
+              >
+                Previous
+              </button>
+              <span style={stylesML.paginationLabel}>
+                Page {currentPageML} of {pageCountML}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setPageML((pML) => Math.min(pageCountML, pML + 1))
+                }
+                disabled={currentPageML === pageCountML}
+                style={{
+                  ...stylesML.paginationButton,
+                  ...(currentPageML === pageCountML
+                    ? { opacity: 0.5, cursor: "not-allowed" }
+                    : {}),
+                }}
+              >
+                Next
+              </button>
             </div>
           )}
         </div>

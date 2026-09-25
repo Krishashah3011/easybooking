@@ -1412,7 +1412,7 @@ export default function NewBookingPage() {
 
   if (productsML.length === 0) {
     return (
-      <s-page heading="New Booking" inlineSize="950px">
+      <s-page heading="Booking and Reservation" inlineSize="950px">
         <div style={S.card}>
           <p style={{ fontFamily: "Inter", fontSize: "14px", color: TEXT_MUTED_ML, margin: 0 }}>
             No products have booking enabled yet. Enable booking on a
@@ -1585,7 +1585,7 @@ export default function NewBookingPage() {
   };
 
   return (
-    <s-page heading="New Booking" inlineSize="950px">
+    <s-page heading="Booking and Reservation" inlineSize="950px">
       <div style={S.outerCard}>
         <style>{`
           .nb-day:not(:disabled):not([aria-pressed="true"]):hover {

@@ -50,7 +50,7 @@ export default function SettingsLayout() {
   };
 
   return (
-    <s-page heading="Settings" inlineSize="large" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Booking and Reservation" inlineSize="large" style={{ fontFamily: "Inter" }}>
       <div style={stylesML.outerCard}>
         <div style={stylesML.headerRow}>
           <div>

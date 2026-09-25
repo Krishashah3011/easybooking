@@ -1346,7 +1346,7 @@ export default function BookableProductPage() {
   };
 
   return (
-    <s-page inlineSize="large">
+    <s-page heading="Booking and Reservation" inlineSize="large">
       <div style={uiML.root}>
         <style>{`
           .pc-no-spinner::-webkit-outer-spin-button,

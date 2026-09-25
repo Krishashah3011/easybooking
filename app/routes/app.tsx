@@ -13,6 +13,7 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: navStyles },
 ];
 
+const DEFAULT_APP_NAME_ML = "Milople Booking and Reservation App";
 const BLUE_ML = "#073E74";
 const BORDER_ML = "#DBDBDB";
 const TEXT_DARK_ML = "#000000";
@@ -38,6 +39,7 @@ export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
   return {
     apiKey: process.env.SHOPIFY_API_KEY || "",
     registered: shopSettingsML.registered,
+    appName: process.env.APP_NAME?.trim() || DEFAULT_APP_NAME_ML,
   };
 };
 
@@ -98,16 +100,22 @@ function LockIcon() {
   );
 }
 
-function RegisterRequired({ section: sectionML }: { section: string }) {
+function RegisterRequired({
+  section: sectionML,
+  appName: appNameML,
+}: {
+  section: string;
+  appName: string;
+}) {
   return (
-    <s-page inlineSize="large">
+    <s-page heading="Booking and Reservation" inlineSize="large">
       <div style={lockStylesML.outerCard}>
         <div style={lockStylesML.lockWrap}>
           <LockIcon />
           <p style={lockStylesML.lockTitle}>Login Required</p>
           <p style={lockStylesML.lockDescription}>
             Create your account to access {sectionML} and manage your bookings
-            with EasyBooking.
+            with {appNameML}.
           </p>
           <Link to="/app/account" style={lockStylesML.lockButton}>
             Go to Account
@@ -119,7 +127,7 @@ function RegisterRequired({ section: sectionML }: { section: string }) {
 }
 
 export default function App() {
-  const { apiKey: apiKeyML, registered: registeredML } = useLoaderData<typeof loader>();
+  const { apiKey: apiKeyML, registered: registeredML, appName: appNameML } = useLoaderData<typeof loader>();
   const { pathname: pathnameML } = useLocation();
   const lockedML = !registeredML && isGatedPathML(pathnameML);
 
@@ -127,7 +135,11 @@ export default function App() {
     <AppProvider apiKey={apiKeyML} embedded>
       <div style={{ maxWidth: "950px", width: "100%", margin: "0 auto" }}>
         <AppTopNav />
-        {lockedML ? <RegisterRequired section={sectionLabelML(pathnameML)} /> : <Outlet />}
+        {lockedML ? (
+          <RegisterRequired section={sectionLabelML(pathnameML)} appName={appNameML} />
+        ) : (
+          <Outlet />
+        )}
       </div>
     </AppProvider>
   );

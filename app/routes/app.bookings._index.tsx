@@ -1920,7 +1920,7 @@ function BookingsListPage({
   const isFilteringML = hasActiveFiltersML || queryML.trim().length > 0;
 
   return (
-    <s-page heading="Bookings" inlineSize="950px" style={{ fontFamily: "Inter" }}>
+    <s-page heading="Booking and Reservation" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <div style={S.outerCard}>
         <div style={S.pageHeaderRow}>
           <div>

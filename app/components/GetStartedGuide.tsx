@@ -178,12 +178,14 @@ export default function GetStartedGuide({
   appName: appNameML,
   intro: introML,
   steps: stepsML,
+  defaultOpen: defaultOpenML = false,
 }: {
   appName: string;
   intro?: string;
   steps: GuideStep[];
+  defaultOpen?: boolean;
 }) {
-  const [openML, setOpenML] = useState(false);
+  const [openML, setOpenML] = useState(defaultOpenML);
 
   return (
     <div
