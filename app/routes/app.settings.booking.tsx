@@ -428,6 +428,8 @@ export default function BookingSettingsPage() {
   const isSavingML =
     fetcherML.state === "submitting" || fetcherML.state === "loading";
 
+  const [dateRangeErrorML, setDateRangeErrorML] = useState<string | null>(null);
+
   useEffect(() => {
     if (fetcherML.data?.ok) {
       setValuesML(fetcherML.data.values);
@@ -869,9 +871,22 @@ export default function BookingSettingsPage() {
                 className="booking-date-input"
                 style={stylesML.dateInput}
                 value={valuesML.bookingStartDate ?? ""}
-                onChange={(eML: FieldChangeEvent) =>
-                  setFieldML("bookingStartDate", eML.currentTarget.value || null)
-                }
+                max={valuesML.bookingEndDate ?? undefined}
+                onChange={(eML: FieldChangeEvent) => {
+                  const newValueML = eML.currentTarget.value || null;
+                  if (
+                    newValueML &&
+                    valuesML.bookingEndDate &&
+                    newValueML > valuesML.bookingEndDate
+                  ) {
+                    setDateRangeErrorML(
+                      "Start date can't be after the end date.",
+                    );
+                    return;
+                  }
+                  setDateRangeErrorML(null);
+                  setFieldML("bookingStartDate", newValueML);
+                }}
                 onClick={(eML) => eML.stopPropagation()}
                 aria-label="Booking Start Date"
               />
@@ -895,16 +910,29 @@ export default function BookingSettingsPage() {
                 className="booking-date-input"
                 style={stylesML.dateInput}
                 value={valuesML.bookingEndDate ?? ""}
-                onChange={(eML: FieldChangeEvent) =>
-                  setFieldML("bookingEndDate", eML.currentTarget.value || null)
-                }
+                min={valuesML.bookingStartDate ?? undefined}
+                onChange={(eML: FieldChangeEvent) => {
+                  const newValueML = eML.currentTarget.value || null;
+                  if (
+                    newValueML &&
+                    valuesML.bookingStartDate &&
+                    newValueML < valuesML.bookingStartDate
+                  ) {
+                    setDateRangeErrorML(
+                      "End date can't be earlier than the start date.",
+                    );
+                    return;
+                  }
+                  setDateRangeErrorML(null);
+                  setFieldML("bookingEndDate", newValueML);
+                }}
                 onClick={(eML) => eML.stopPropagation()}
                 aria-label="Booking End Date"
               />
             </div>
-            {errorsML.bookingEndDate && (
+            {(dateRangeErrorML || errorsML.bookingEndDate) && (
               <p style={{ ...stylesML.hintText, color: "#D82C0D" }}>
-                {errorsML.bookingEndDate}
+                {dateRangeErrorML || errorsML.bookingEndDate}
               </p>
             )}
           </div>

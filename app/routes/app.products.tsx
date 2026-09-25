@@ -14,7 +14,13 @@ import {
   setBookableProductEnabledML,
 } from "../models/bookableProduct.server";
 import { listEnabledLocationsML } from "../models/bookingLocation.server";
-import { stylesML as settingsStyles } from "../components/SettingsUI";
+import {
+  stylesML as settingsStyles,
+  backNavButtonStyleML,
+  nextNavButtonStyleML,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "../components/SettingsUI";
 
 type ProductListItem = {
   id: string;
@@ -667,13 +673,9 @@ export default function BookingProductsPage() {
                 type="button"
                 onClick={() => setPageML((pML) => Math.max(1, pML - 1))}
                 disabled={currentPageML === 1}
-                style={{
-                  ...stylesML.paginationButton,
-                  ...(currentPageML === 1
-                    ? { opacity: 0.5, cursor: "not-allowed" }
-                    : {}),
-                }}
+                style={backNavButtonStyleML(currentPageML === 1)}
               >
+                <ChevronLeftIcon />
                 Previous
               </button>
               <span style={stylesML.paginationLabel}>
@@ -685,14 +687,10 @@ export default function BookingProductsPage() {
                   setPageML((pML) => Math.min(pageCountML, pML + 1))
                 }
                 disabled={currentPageML === pageCountML}
-                style={{
-                  ...stylesML.paginationButton,
-                  ...(currentPageML === pageCountML
-                    ? { opacity: 0.5, cursor: "not-allowed" }
-                    : {}),
-                }}
+                style={nextNavButtonStyleML(currentPageML === pageCountML)}
               >
                 Next
+                <ChevronRightIcon />
               </button>
             </div>
           )}

@@ -13,6 +13,9 @@ import rowStyles from "../styles/app.account.module.css";
 
 const BLUE_ML = "#073E74";
 
+const isValidEmailML = (valueML: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valueML);
+
 export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
   const { session: sessionML } = await authenticate.admin(requestML);
 
@@ -57,6 +60,10 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
 
     if (!usernameML || !accountEmailML) {
       return { error: "Username and email are required" };
+    }
+
+    if (!isValidEmailML(accountEmailML)) {
+      return { error: "Please enter a valid email address" };
     }
 
     const updatedML = await prismaML.shopSettings.update({
@@ -457,11 +464,19 @@ function CreateAccountForm({
 
     const usernameEmptyML = !usernameDraftML.trim();
     const emailEmptyML = !emailDraftML.trim();
+    const emailInvalidML =
+      !emailEmptyML && !isValidEmailML(emailDraftML.trim());
 
     setUsernameErrorML(usernameEmptyML ? "Username is required" : "");
-    setEmailErrorML(emailEmptyML ? "Email is required" : "");
+    setEmailErrorML(
+      emailEmptyML
+        ? "Email is required"
+        : emailInvalidML
+          ? "Please enter a valid email address"
+          : "",
+    );
 
-    if (usernameEmptyML || emailEmptyML) return;
+    if (usernameEmptyML || emailEmptyML || emailInvalidML) return;
 
     fetcherML.submit(
       { intent: "register", username: usernameDraftML, accountEmail: emailDraftML },
@@ -517,6 +532,15 @@ function CreateAccountForm({
                   onChange={(eML) => {
                     setEmailDraftML(eML.target.value);
                     if (emailErrorML) setEmailErrorML("");
+                  }}
+                  onBlur={(eML) => {
+                    const valueML = eML.target.value.trim();
+                    if (!valueML) return;
+                    setEmailErrorML(
+                      isValidEmailML(valueML)
+                        ? ""
+                        : "Please enter a valid email address",
+                    );
                   }}
                 />
               </div>

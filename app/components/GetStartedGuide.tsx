@@ -13,8 +13,8 @@ const InfoIcon = () => (
 const ChevronIcon = ({ open: openML }: { open: boolean }) => (
   <img
     src="/chevron.svg"
-    width={16}
-    height={16}
+    width={14}
+    height={7}
     alt=""
     style={{
       transform: openML ? "rotate(180deg)" : "rotate(0deg)",
@@ -82,9 +82,9 @@ const stylesML: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   chevronButton: {
-    width: "28px",
-    height: "28px",
-    minWidth: "28px",
+    width: "24px",
+    height: "24px",
+    minWidth: "24px",
     border: "none",
     background: "transparent",
     display: "flex",
