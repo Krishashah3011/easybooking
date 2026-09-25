@@ -700,8 +700,10 @@ function FieldEditor({
                 onClick={handleSubmitML}
                 disabled={isSavingML}
               >
-                <span style={stylesML.addButtonLabel}>{submitLabelML}</span>
-                {!isEditML && (
+                <span style={stylesML.addButtonLabel}>
+                  {isSavingML ? "Saving…" : submitLabelML}
+                </span>
+                {!isSavingML && !isEditML && (
                   <span style={stylesML.plusWrap}>
                     <PlusIcon />
                   </span>

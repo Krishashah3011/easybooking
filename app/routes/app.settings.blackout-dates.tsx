@@ -530,10 +530,14 @@ export default function BlackoutDatesPage() {
                 onClick={handleAddML}
                 disabled={isAddingML}
               >
-                <span style={stylesML.addButtonLabel}>Add Blackout Date</span>
-                <span style={stylesML.plusWrap}>
-                  <PlusIcon />
+                <span style={stylesML.addButtonLabel}>
+                  {isAddingML ? "Adding…" : "Add Blackout Date"}
                 </span>
+                {!isAddingML && (
+                  <span style={stylesML.plusWrap}>
+                    <PlusIcon />
+                  </span>
+                )}
               </button>
             </>
           )}

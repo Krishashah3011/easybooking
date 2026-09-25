@@ -1823,10 +1823,14 @@ export default function BookableProductPage() {
                 onClick={handleAddBlackoutDateML}
                 disabled={isAddingBlackoutML}
               >
-                <span style={uiML.addButtonLabel}>Add Blackout Date</span>
-                <span style={uiML.plusWrap}>
-                  <PlusIcon />
+                <span style={uiML.addButtonLabel}>
+                  {isAddingBlackoutML ? "Adding…" : "Add Blackout Date"}
                 </span>
+                {!isAddingBlackoutML && (
+                  <span style={uiML.plusWrap}>
+                    <PlusIcon />
+                  </span>
+                )}
               </button>
             </Card>
 

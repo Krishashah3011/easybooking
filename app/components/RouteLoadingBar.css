@@ -1,0 +1,51 @@
+.route-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 1000;
+  background: transparent;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.route-loading-bar--active {
+  opacity: 1;
+}
+
+.route-loading-bar__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: #073e74;
+  border-radius: 0 2px 2px 0;
+}
+
+.route-loading-bar--active .route-loading-bar__fill {
+  animation: route-loading-bar-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes route-loading-bar-sweep {
+  0% {
+    left: -40%;
+  }
+  50% {
+    left: 60%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-loading-bar--active .route-loading-bar__fill {
+    animation: none;
+    left: 0;
+    width: 100%;
+  }
+}
