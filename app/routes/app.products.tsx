@@ -283,22 +283,40 @@ const stylesML: Record<string, React.CSSProperties> = {
 export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
   const { admin: adminML, session: sessionML } = await authenticate.admin(requestML);
 
-  const responseML = await adminML.graphql(
-    `#graphql
-      query BookingProductsList {
-        products(first: 50, sortKey: TITLE) {
-          edges {
-            node {
-              id
-              title
-              status
+  const productEdgesML: Array<{
+    node: { id: string; title: string; status: string };
+  }> = [];
+  let hasNextPageML = true;
+  let afterCursorML: string | null = null;
+
+  while (hasNextPageML) {
+    const responseML: Response = await adminML.graphql(
+      `#graphql
+        query BookingProductsList($afterML: String) {
+          products(first: 50, sortKey: TITLE, after: $afterML) {
+            edges {
+              node {
+                id
+                title
+                status
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
             }
           }
-        }
-      }`,
-  );
-  const responseJsonML = await responseML.json();
-  const productEdgesML = responseJsonML.data?.products?.edges ?? [];
+        }`,
+      { variables: { afterML: afterCursorML } },
+    );
+    const responseJsonML = await responseML.json();
+    const pageEdgesML = responseJsonML.data?.products?.edges ?? [];
+    productEdgesML.push(...pageEdgesML);
+
+    const pageInfoML = responseJsonML.data?.products?.pageInfo;
+    hasNextPageML = Boolean(pageInfoML?.hasNextPage);
+    afterCursorML = pageInfoML?.endCursor ?? null;
+  }
 
   const bookableProductsML = await listBookableProductsML(sessionML.shop);
   const enabledByProductIdML = new Map(

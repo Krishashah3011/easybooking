@@ -7,7 +7,7 @@
   box-sizing: border-box;
   padding-block: var(--p-space-300, 0.6rem);
   padding-inline: 1.5rem;
-  background: var(--p-color-bg-surface-secondary, #eef0f1);
+  background: none;
   overflow-x: auto;
   scrollbar-width: thin;
 }
