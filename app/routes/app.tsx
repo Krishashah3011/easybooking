@@ -6,14 +6,11 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticate } from "../shopify.server";
 import { getOrCreateShopSettingsML } from "../models/shopSettings.server";
 import { AppTopNav } from "../components/AppTopNav";
-import { AppBrandBar } from "../components/AppBrandBar";
 
 import navStyles from "../components/AppTopNav.css?url";
-import brandStyles from "../components/AppBrandBar.css?url";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: navStyles },
-  { rel: "stylesheet", href: brandStyles },
 ];
 
 const DEFAULT_APP_NAME_ML = "Milople Booking and Reservation App";
@@ -136,16 +133,13 @@ export default function App() {
 
   return (
     <AppProvider apiKey={apiKeyML} embedded>
-      <div style={{ maxWidth: "966px", width: "100%", margin: "0 auto" }}>
-        <div style={{ maxWidth: "950px", width: "100%", margin: "0 auto" }}>
-          <AppBrandBar appName={appNameML} />
-          <AppTopNav />
-          {lockedML ? (
-            <RegisterRequired section={sectionLabelML(pathnameML)} appName={appNameML} />
-          ) : (
-            <Outlet />
-          )}
-        </div>
+      <div style={{ maxWidth: "982px", width: "100%", margin: "0 auto" }}>
+        <AppTopNav />
+        {lockedML ? (
+          <RegisterRequired section={sectionLabelML(pathnameML)} appName={appNameML} />
+        ) : (
+          <Outlet />
+        )}
       </div>
     </AppProvider>
   );

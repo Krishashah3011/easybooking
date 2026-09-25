@@ -880,8 +880,8 @@ export default function Dashboard() {
   return (
     <s-page heading="Booking and Reservation" inlineSize="950px" style={{ fontFamily: "Inter" }}>
       <img
-        src="/storebanner.svg"
-        alt=""
+        src="/Banner.svg"
+        alt={`Welcome to ${appNameML}`}
         style={{
           display: "block",
           width: "100%",

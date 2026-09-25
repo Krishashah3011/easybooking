@@ -627,7 +627,7 @@ export default function Account() {
   if (!registeredML) {
     return (
       <s-page heading="Booking and Reservation" inlineSize="950px" style={{ fontFamily: "Inter" }}>
-        <div style={{ maxWidth: "950px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "982px", margin: "0 auto" }}>
           <CreateAccountForm fetcher={fetcherML} saving={savingML} />
         </div>
       </s-page>
@@ -636,7 +636,7 @@ export default function Account() {
 
   return (
     <s-page heading="Booking and Reservation" inlineSize="950px" style={{ fontFamily: "Inter" }}>
-      <div style={{ maxWidth: "950px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "982px", margin: "0 auto" }}>
       <div style={stylesML.outerCard}>
         <div style={stylesML.heading}>Account Information</div>
 

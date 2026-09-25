@@ -20,6 +20,7 @@ function NavBadge({
   return (
     <svg
       width="40"
+      style={{ overflow: "visible" }}
       height="40"
       viewBox="0 0 40 40"
       fill="none"
@@ -27,10 +28,10 @@ function NavBadge({
       className={classNameML}
     >
       <rect
-        x="0.625"
-        y="0.625"
-        width="38.75"
-        height="38.75"
+        x="0"
+        y="0"
+        width="40"
+        height="40"
         rx="6.04"
         fill={activeML ? GREEN_ML : "none"}
         stroke={GREEN_ML}
@@ -90,13 +91,14 @@ export function AccountIcon({ className: classNameML }: IconProps) {
   return (
     <svg
       width="40"
+      style={{ overflow: "visible" }}
       height="40"
       viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={classNameML}
     >
-      <rect x="0.625" y="0.625" width="38.75" height="38.75" rx="6.04" fill={NAVY_ML} stroke={NAVY_ML} strokeWidth="1.25" />
+      <rect x="0" y="0" width="40" height="40" rx="6.04" fill={NAVY_ML} stroke={NAVY_ML} strokeWidth="1.25" />
       <image
         href="/accounticon.svg"
         x="10"
