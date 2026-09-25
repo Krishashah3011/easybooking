@@ -6,11 +6,14 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticate } from "../shopify.server";
 import { getOrCreateShopSettingsML } from "../models/shopSettings.server";
 import { AppTopNav } from "../components/AppTopNav";
+import { RouteLoadingBar } from "../components/RouteLoadingBar";
 
 import navStyles from "../components/AppTopNav.css?url";
+import loadingBarStyles from "../components/RouteLoadingBar.css?url";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: navStyles },
+  { rel: "stylesheet", href: loadingBarStyles },
 ];
 
 const DEFAULT_APP_NAME_ML = "Milople Booking and Reservation App";
@@ -134,6 +137,7 @@ export default function App() {
 
   return (
     <AppProvider apiKey={apiKeyML} embedded>
+      <RouteLoadingBar />
       <div style={{ maxWidth: "982px", width: "100%", margin: "0 auto" }}>
         <AppTopNav />
         {lockedML ? (

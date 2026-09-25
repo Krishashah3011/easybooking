@@ -1247,6 +1247,16 @@ body.booking-widget-lock-scroll {
     width: 340px;
     min-width: 200px;
   }
+
+  .booking-widget__day {
+    max-width: 34px;
+    font-size: 15px;
+  }
+
+  .booking-widget__location-static-label {
+    font-size: 16px;
+    white-space: normal;
+  }
 }
 
 .booking-widget__datetime-extras {
@@ -1815,5 +1825,42 @@ body.booking-widget-lock-scroll {
 
   .booking-widget__location-trigger-text {
     font-size: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .booking-widget__location-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .booking-widget__location-icon svg,
+  .booking-widget__location-icon img {
+    width: 22px;
+    height: 22px;
+  }
+
+  .booking-widget__location-field {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .booking-widget__day {
+    max-width: 32px;
+    font-size: 14px;
+  }
+
+  .booking-widget__modal-header,
+  .booking-widget__modal-body,
+  .booking-widget__review-step,
+  .booking-widget__fields-pane,
+  .booking-widget__modal-footer,
+  .booking-widget__ask-more {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .booking-widget__modal-title {
+    font-size: 18px;
   }
 }
