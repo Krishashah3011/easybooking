@@ -61,6 +61,7 @@ const stylesML: Record<string, React.CSSProperties> = {
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "8px",
+    marginTop: "-16px",
   },
   headerActions: {
     display: "flex",

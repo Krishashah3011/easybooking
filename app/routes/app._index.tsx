@@ -367,15 +367,13 @@ const DONUT_PALETTE_ML = ["#073E74", "#2E6DA4", "#5B94C4", "#9EC3E0", "#C9DFF0",
 
 function ChevronIcon() {
   return (
-    <svg width="6" height="11" viewBox="0 0 6 11" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M1 1L5 5.5L1 10"
-        stroke={ANALYTICS_ACCENT_ML}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <img
+      src="/chevron.svg"
+      width={11}
+      height={6}
+      alt=""
+      style={{ transform: "rotate(-90deg)" }}
+    />
   );
 }
 

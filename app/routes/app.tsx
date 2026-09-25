@@ -49,6 +49,7 @@ const lockStylesML: Record<string, React.CSSProperties> = {
     borderRadius: "8px",
     background: "#fff",
     padding: "16px",
+    marginTop: "-16px",
   },
   lockWrap: {
     display: "flex",

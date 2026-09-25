@@ -61,6 +61,7 @@ const S = {
     background: "#FFFFFF",
     border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
+    marginTop: "-16px",
   } as React.CSSProperties,
   headerRow: {
     display: "flex",
@@ -108,6 +109,7 @@ const S = {
     background: "#FFFFFF",
     border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
+    marginTop: "-16px",
   } as React.CSSProperties,
   cardHeading: {
     fontFamily: "Inter",
@@ -509,22 +511,14 @@ function CollapseIcon() {
 
 function SelectChevron() {
   return (
-    <svg
-      width="12"
-      height="7"
-      viewBox="0 0 12 7"
-      fill="none"
+    <img
+      src="/chevron.svg"
+      width={12}
+      height={7}
+      alt=""
       aria-hidden="true"
       style={S.selectChevron}
-    >
-      <path
-        d="M1 1L6 6L11 1"
-        stroke={BLUE_ML}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   );
 }
 
@@ -558,44 +552,30 @@ function NavChevron({
   color: string;
 }) {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="22 22 14 14"
-      fill="none"
+    <img
+      src="/chevron.svg"
+      width={14}
+      height={14}
+      alt=""
       aria-hidden="true"
       style={{
         display: "block",
-        transform: directionML === "right" ? "scaleX(-1)" : undefined,
+        transform: directionML === "right" ? "rotate(-90deg)" : "rotate(90deg)",
       }}
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M32.4806 34.9941C32.8398 34.6529 32.8398 34.0998 32.4806 33.7586L27.4706 29L32.4806 24.2414C32.8398 23.9002 32.8398 23.3471 32.4806 23.0059C32.1214 22.6647 31.539 22.6647 31.1798 23.0059L25.5194 28.3822C25.1602 28.7234 25.1602 29.2766 25.5194 29.6178L31.1798 34.9941C31.539 35.3353 32.1214 35.3353 32.4806 34.9941Z"
-        fill={colorML}
-      />
-    </svg>
+    />
   );
 }
 
 function DropdownChevron() {
   return (
-    <svg
-      width="14"
-      height="12"
-      viewBox="192.5 23 14 12"
-      fill="none"
+    <img
+      src="/chevron.svg"
+      width={14}
+      height={12}
+      alt=""
       aria-hidden="true"
       style={{ display: "block", flexShrink: 0 }}
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M205.494 25.5194C205.153 25.1602 204.6 25.1602 204.259 25.5194L199.5 30.5294L194.741 25.5194C194.4 25.1602 193.847 25.1602 193.506 25.5194C193.165 25.8786 193.165 26.461 193.506 26.8202L198.882 32.4806C199.223 32.8398 199.777 32.8398 200.118 32.4806L205.494 26.8202C205.835 26.461 205.835 25.8786 205.494 25.5194Z"
-        fill={TEXT_DARK_ML}
-      />
-    </svg>
+    />
   );
 }
 

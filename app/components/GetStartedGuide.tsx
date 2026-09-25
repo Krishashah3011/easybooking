@@ -11,25 +11,16 @@ const InfoIcon = () => (
 );
 
 const ChevronIcon = ({ open: openML }: { open: boolean }) => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 16 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+  <img
+    src="/chevron.svg"
+    width={16}
+    height={16}
+    alt=""
     style={{
-      transform: openML ? "rotate(0deg)" : "rotate(180deg)",
+      transform: openML ? "rotate(180deg)" : "rotate(0deg)",
       transition: "transform 0.2s ease",
     }}
-  >
-    <path
-      d="M3.5 10L8 5.5L12.5 10"
-      stroke={TEXT_BLACK_ML}
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+  />
 );
 
 const CheckIcon = () => (

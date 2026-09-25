@@ -46,25 +46,16 @@ const SORTED_COUNTRIES_ML = [...COUNTRIES_ML].sort((aML, bML) =>
 );
 
 const ChevronIcon = ({ open: openML }: { open: boolean }) => (
-  <svg
-    width="11"
-    height="6"
-    viewBox="0 0 11 6"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+  <img
+    src="/chevron.svg"
+    width={11}
+    height={6}
+    alt=""
     style={{
       transform: openML ? "rotate(180deg)" : "rotate(0deg)",
       transition: "transform 0.2s ease",
     }}
-  >
-    <path
-      d="M1 1L5.5 5L10 1"
-      stroke={ACCENT_ML}
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+  />
 );
 
 const PlusIcon = () => (

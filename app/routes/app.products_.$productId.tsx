@@ -773,46 +773,30 @@ function CloseIcon() {
 
 function ChevronDownIcon() {
   return (
-    <svg
-      width="10"
-      height="6"
-      viewBox="0 0 10 6"
-      fill="none"
+    <img
+      src="/chevron.svg"
+      width={10}
+      height={6}
+      alt=""
       aria-hidden="true"
       style={{ flexShrink: 0, display: "block" }}
-    >
-      <path
-        d="M1 1l3.15 3.433c.395.431.593.647.837.694.093.018.189.018.282 0 .244-.047.442-.263.837-.694L9.25 1"
-        stroke={BLUE_ML}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   );
 }
 
 function CollapseChevron({ open: openML }: { open: boolean }) {
   return (
-    <svg
-      width="11"
-      height="6"
-      viewBox="0 0 11 6"
-      fill="none"
+    <img
+      src="/chevron.svg"
+      width={11}
+      height={6}
+      alt=""
       aria-hidden="true"
       style={{
         transform: openML ? "rotate(180deg)" : "rotate(0deg)",
         transition: "transform 0.2s ease",
       }}
-    >
-      <path
-        d="M1 1L5.5 5L10 1"
-        stroke={BLUE_ML}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   );
 }
 

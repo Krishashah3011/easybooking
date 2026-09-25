@@ -128,6 +128,7 @@ const stylesML: Record<string, React.CSSProperties> = {
     border: "1px solid #dbdbdb",
     borderRadius: "8px",
     padding: "15px",
+    marginTop: "-16px",
   },
   heading: {
     fontSize: "18px",

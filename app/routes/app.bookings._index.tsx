@@ -142,6 +142,7 @@ const S: Record<string, React.CSSProperties> = {
     background: "#FFFFFF",
     border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
+    marginTop: "-16px",
   },
   pageHeaderRow: {
     display: "flex",
@@ -849,25 +850,16 @@ function FieldBlock({
 
 function ChevronToggleIcon({ expanded: expandedML }: { expanded: boolean }) {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+    <img
+      src="/chevron.svg"
+      width={20}
+      height={20}
+      alt=""
       style={{
-        transform: expandedML ? "rotate(180deg)" : "none",
+        transform: expandedML ? "none" : "rotate(180deg)",
         transition: "transform 120ms ease",
       }}
-    >
-      <path
-        d="M4 12.5L10 6.5L16 12.5"
-        stroke="#073E74"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   );
 }
 
