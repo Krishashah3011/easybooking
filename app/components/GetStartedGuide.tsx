@@ -137,9 +137,7 @@ const stylesML: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     whiteSpace: "nowrap",
   },
-  stepDivider: {
-    border: "none",
-    borderTop: `1px solid ${BORDER_ML}`,
+  stepSpacer: {
     margin: "18px 0",
   },
   donePill: {
@@ -242,7 +240,7 @@ export default function GetStartedGuide({
                 )}
               </div>
 
-              {indexML < stepsML.length - 1 && <hr style={stylesML.stepDivider} />}
+              {indexML < stepsML.length - 1 && <div style={stylesML.stepSpacer} />}
             </Fragment>
           ))}
         </div>
