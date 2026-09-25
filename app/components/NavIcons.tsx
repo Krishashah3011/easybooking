@@ -27,10 +27,10 @@ function NavBadge({
       className={classNameML}
     >
       <rect
-        x="3.96"
-        y="3.96"
-        width="33.33"
-        height="33.33"
+        x="0.625"
+        y="0.625"
+        width="38.75"
+        height="38.75"
         rx="6.04"
         fill={activeML ? GREEN_ML : "none"}
         stroke={GREEN_ML}
@@ -61,10 +61,10 @@ export function HomeIcon({ className: classNameML, active: activeML }: IconProps
     <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Homeicon.svg"
-        x="12.29"
-        y="12.29"
-        width="16.67"
-        height="16.67"
+        x="10"
+        y="10"
+        width="20"
+        height="20"
         preserveAspectRatio="none"
       />
     </NavBadge>
@@ -76,10 +76,10 @@ export function SettingsIcon({ className: classNameML, active: activeML }: IconP
     <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Configurationsicon.svg"
-        x="12.29"
-        y="12.29"
-        width="16.67"
-        height="16.67"
+        x="10"
+        y="10"
+        width="20"
+        height="20"
         preserveAspectRatio="none"
       />
     </NavBadge>
@@ -96,13 +96,13 @@ export function AccountIcon({ className: classNameML }: IconProps) {
       xmlns="http://www.w3.org/2000/svg"
       className={classNameML}
     >
-      <rect x="3.96" y="3.96" width="33.33" height="33.33" rx="6.04" fill={NAVY_ML} stroke={NAVY_ML} strokeWidth="1.25" />
+      <rect x="0.625" y="0.625" width="38.75" height="38.75" rx="6.04" fill={NAVY_ML} stroke={NAVY_ML} strokeWidth="1.25" />
       <image
         href="/accounticon.svg"
-        x="12.29"
-        y="12.29"
-        width="16.67"
-        height="16.67"
+        x="10"
+        y="10"
+        width="20"
+        height="20"
         preserveAspectRatio="none"
       />
     </svg>
@@ -128,10 +128,10 @@ export function ProductsIcon({ className: classNameML, active: activeML }: IconP
     <NavBadge active={activeML} className={classNameML}>
       <image
         href="/producticon.svg"
-        x="12.29"
-        y="12.29"
-        width="16.67"
-        height="16.67"
+        x="10"
+        y="10"
+        width="20"
+        height="20"
         preserveAspectRatio="none"
       />
     </NavBadge>
@@ -143,10 +143,10 @@ export function BookingsIcon({ className: classNameML, active: activeML }: IconP
     <NavBadge active={activeML} className={classNameML}>
       <image
         href="/Bookingicon.svg"
-        x="12.29"
-        y="12.29"
-        width="16.67"
-        height="16.67"
+        x="10"
+        y="10"
+        width="20"
+        height="20"
         preserveAspectRatio="none"
       />
     </NavBadge>
