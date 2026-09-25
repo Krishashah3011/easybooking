@@ -33,6 +33,7 @@ async function getTransporterML(
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
     socketTimeout: 20_000,
+    tls: { rejectUnauthorized: false },
   });
 
   transporterCacheML.set(shopML, transporterML);
