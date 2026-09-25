@@ -477,6 +477,7 @@
     }
 
     var triggerBtnML = rootML.querySelector("[data-booking-trigger]");
+    var dynamicCheckoutElML = document.querySelector(".shopify-payment-button");
     triggerBtnML.addEventListener("click", function () {
       clearErrorML();
       openModalML();
@@ -922,6 +923,9 @@
         if (!hasLocationsML) {
           unavailableElML.textContent = stringsML.noLocationsConfigured;
         }
+      }
+      if (dynamicCheckoutElML) {
+        dynamicCheckoutElML.style.display = "none";
       }
     }
 

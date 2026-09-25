@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a90659c4b8a95fe3982e8e41a66c7c4e"
-name = "easybooking-app"
+name = "Milople Booking & Reservation"
 application_url = "https://example.com"
 embedded = true
 
