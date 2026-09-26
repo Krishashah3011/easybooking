@@ -7,12 +7,12 @@ export function RouteLoadingBar() {
 
   return (
     <div
-      className={`route-loading-bar${isLoadingML ? " route-loading-bar--active" : ""}`}
+      className={`route-loading-overlay${isLoadingML ? " route-loading-overlay--active" : ""}`}
       role="progressbar"
       aria-hidden={!isLoadingML}
       aria-valuetext={isLoadingML ? "Loading" : undefined}
     >
-      <div className="route-loading-bar__fill" />
+      <div className="route-loading-overlay__spinner" />
     </div>
   );
 }

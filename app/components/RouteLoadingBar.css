@@ -1,51 +1,46 @@
-.route-loading-bar {
+.route-loading-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
+  inset: 0;
   z-index: 1000;
-  background: transparent;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
   opacity: 0;
+  visibility: hidden;
   transition: opacity 0.15s ease;
   pointer-events: none;
 }
 
-.route-loading-bar--active {
+.route-loading-overlay--active {
   opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
-.route-loading-bar__fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 40%;
-  background: #073e74;
-  border-radius: 0 2px 2px 0;
+.route-loading-overlay__spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(7, 62, 116, 0.18);
+  border-top-color: #073e74;
+  animation: route-loading-overlay-spin 0.7s linear infinite;
 }
 
-.route-loading-bar--active .route-loading-bar__fill {
-  animation: route-loading-bar-sweep 1.1s ease-in-out infinite;
-}
-
-@keyframes route-loading-bar-sweep {
-  0% {
-    left: -40%;
+@media (prefers-color-scheme: dark) {
+  .route-loading-overlay {
+    background: rgba(20, 20, 22, 0.55);
   }
-  50% {
-    left: 60%;
-  }
-  100% {
-    left: 100%;
+}
+
+@keyframes route-loading-overlay-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .route-loading-bar--active .route-loading-bar__fill {
-    animation: none;
-    left: 0;
-    width: 100%;
+  .route-loading-overlay__spinner {
+    animation-duration: 1.4s;
   }
 }
