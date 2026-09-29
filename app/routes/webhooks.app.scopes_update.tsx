@@ -3,8 +3,7 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 
 export const action = async ({ request: requestML }: ActionFunctionArgs) => {
-    const { payload: payloadML, session: sessionML, topic: topicML, shop: shopML } = await authenticate.webhook(requestML);
-    console.log(`Received ${topicML} webhook for ${shopML}`);
+    const { payload: payloadML, session: sessionML } = await authenticate.webhook(requestML);
 
     const currentML = payloadML.current as string[];
     if (sessionML) {

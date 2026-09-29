@@ -3,13 +3,10 @@ import { authenticate } from "../shopify.server";
 import { createBookingsFromOrderML, type OrderPayload } from "../models/booking.server";
 
 export const action = async ({ request: requestML }: ActionFunctionArgs) => {
-  const { shop: shopML, topic: topicML, payload: payloadML } = await authenticate.webhook(requestML);
-
-  console.log(`Received ${topicML} webhook for ${shopML}`);
+  const { shop: shopML, payload: payloadML } = await authenticate.webhook(requestML);
 
   const orderML = payloadML as unknown as OrderPayload;
   const createdML = await createBookingsFromOrderML(shopML, orderML);
-  console.log(`Created ${createdML.length} booking(s) for order ${orderML.id}`);
 
   if (createdML.some((bML) => bML.status === "OVERBOOKED")) {
     console.warn(
