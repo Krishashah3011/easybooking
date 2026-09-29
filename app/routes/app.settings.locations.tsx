@@ -58,12 +58,6 @@ const ChevronIcon = ({ open: openML }: { open: boolean }) => (
   />
 );
 
-const PlusIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 1V11M1 6H11" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
 const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
@@ -156,7 +150,7 @@ const stylesML: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "flex-start",
     gap: "4px",
-    flex: "1 1 260px",
+    flex: "1 1 200px",
     minWidth: 0,
   },
   fieldGroupThirty: {
@@ -244,16 +238,16 @@ const stylesML: Record<string, React.CSSProperties> = {
   },
   dayGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-    gap: "10px",
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gap: "8px",
     width: "100%",
   },
   dayTile: {
     boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
-    minHeight: "48px",
-    padding: "10px 14px",
+    minHeight: "40px",
+    padding: "6px 12px",
     background: "#FFFFFF",
     border: "1px solid #E3E3E3",
     borderRadius: "10px",
@@ -354,16 +348,6 @@ const stylesML: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap",
     flexShrink: 0,
   },
-  plusWrap: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "3px",
-    width: "20px",
-    height: "20px",
-    flexShrink: 0,
-  },
   cancelButton: {
     display: "flex",
     flexDirection: "row",
@@ -388,7 +372,9 @@ const stylesML: Record<string, React.CSSProperties> = {
   buttonRow: {
     display: "flex",
     flexDirection: "row",
+    justifyContent: "flex-end",
     gap: "10px",
+    width: "100%",
   },
   listCard: {
     boxSizing: "border-box",
@@ -847,7 +833,7 @@ function LocationEditor({
                   label="Select All"
                 />
               </div>
-              <div style={stylesML.dayGrid}>
+              <div className="eb-loc-daygrid" style={stylesML.dayGrid}>
                 {WEEKDAY_LABELS_ML.map((dayML) => {
                   const isCheckedML = (valuesML.workingDays ?? []).includes(
                     dayML.value,
@@ -950,11 +936,6 @@ function LocationEditor({
                 <span style={stylesML.addButtonLabel}>
                   {isSavingML ? "Saving…" : submitLabelML}
                 </span>
-                {!isSavingML && !isEditML && (
-                  <span style={stylesML.plusWrap}>
-                    <PlusIcon />
-                  </span>
-                )}
               </button>
             </div>
           </>
@@ -1171,9 +1152,6 @@ export default function LocationsPage() {
             onClick={() => setAddOpenML(true)}
           >
             <span style={stylesML.addButtonLabel}>Add Location</span>
-            <span style={stylesML.plusWrap}>
-              <PlusIcon />
-            </span>
           </button>
         </div>
       </div>
@@ -1199,7 +1177,7 @@ export default function LocationsPage() {
             aria-label="Add Location"
             style={{
               boxSizing: "border-box",
-              width: "min(900px, 100%)",
+              width: "min(640px, 100%)",
               maxHeight: "90vh",
               overflowY: "auto",
               background: "#FFFFFF",
@@ -1214,9 +1192,6 @@ export default function LocationsPage() {
             <div style={stylesML.headerRow}>
               <div style={stylesML.headerLeft}>
                 <p style={stylesML.title}>Add a Location</p>
-                <p style={stylesML.descText}>
-                  Locations shoppers pick before choosing a date and time. Each has its own timezone, so slot times are always local.
-                </p>
               </div>
               <button
                 type="button"
@@ -1233,7 +1208,7 @@ export default function LocationsPage() {
             <LocationEditor
               bare
               initial={EMPTY_FORM_ML}
-              submitLabel="Add Location"
+              submitLabel="Add"
               onCancel={() => setAddOpenML(false)}
             />
           </div>
@@ -1288,6 +1263,11 @@ export default function LocationsPage() {
           .eb-loc-headerrow,
           .eb-loc-row {
             min-width: 680px;
+          }
+        }
+        @media (max-width: 560px) {
+          .eb-loc-daygrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
         }
         @media (max-width: 480px) {

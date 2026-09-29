@@ -54,12 +54,6 @@ const ChevronIcon = ({ open: openML }: { open: boolean }) => (
   />
 );
 
-const PlusIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 1V11M1 6H11" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
 const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
@@ -282,15 +276,6 @@ const stylesML: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap",
     flexShrink: 0,
   },
-  plusWrap: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    width: "16px",
-    height: "16px",
-    flexShrink: 0,
-  },
   cancelButton: {
     display: "flex",
     flexDirection: "row",
@@ -315,7 +300,9 @@ const stylesML: Record<string, React.CSSProperties> = {
   buttonRow: {
     display: "flex",
     flexDirection: "row",
+    justifyContent: "flex-end",
     gap: "10px",
+    width: "100%",
   },
   listCard: {
     boxSizing: "border-box",
@@ -512,7 +499,9 @@ function FieldEditor({
   onToggleOpen: onToggleOpenML,
   title: titleML,
   description: descriptionML,
+  bare: bareML,
 }: {
+  bare?: boolean;
   initial: CustomFieldFormValues;
   onCancel?: () => void;
   submitLabel: string;
@@ -559,7 +548,13 @@ function FieldEditor({
   const showChromeML = titleML !== undefined;
 
   return (
-    <div style={{ ...stylesML.card, height: "auto" }}>
+    <div
+      style={{
+        ...stylesML.card,
+        height: "auto",
+        ...(bareML ? { border: "none", padding: 0 } : {}),
+      }}
+    >
       <div style={stylesML.body}>
         {showChromeML && (
           <div
@@ -703,11 +698,6 @@ function FieldEditor({
                 <span style={stylesML.addButtonLabel}>
                   {isSavingML ? "Saving…" : submitLabelML}
                 </span>
-                {!isSavingML && !isEditML && (
-                  <span style={stylesML.plusWrap}>
-                    <PlusIcon />
-                  </span>
-                )}
               </button>
             </div>
           </>
@@ -857,12 +847,26 @@ export default function CustomFieldsPage() {
   const { fields: loaderFieldsML } = useLoaderData<typeof loader>();
   const reorderFetcherML = useFetcher<typeof action>();
   const [fieldsML, setFieldsML] = useState(loaderFieldsML);
-  const [openML, setOpenML] = useState(false);
+  const [addOpenML, setAddOpenML] = useState(false);
   const isReorderingML = reorderFetcherML.state !== "idle";
 
   useEffect(() => {
     setFieldsML(loaderFieldsML);
   }, [loaderFieldsML]);
+
+  useEffect(() => {
+    if (!addOpenML) return;
+    const onKeyDownML = (eML: KeyboardEvent) => {
+      if (eML.key === "Escape") setAddOpenML(false);
+    };
+    document.addEventListener("keydown", onKeyDownML);
+    const prevOverflowML = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDownML);
+      document.body.style.overflow = prevOverflowML;
+    };
+  }, [addOpenML]);
 
   const persistOrderML = (orderedML: typeof fieldsML) => {
     reorderFetcherML.submit(
@@ -887,16 +891,82 @@ export default function CustomFieldsPage() {
 
   return (
     <div style={{ fontFamily: "Inter" }}>
-      <FieldEditor
-        initial={EMPTY_FORM_ML}
-        submitLabel="Add field"
-        open={openML}
-        onToggleOpen={() => setOpenML(!openML)}
-        title="Add a field"
-        description={
-          'Extra questions customers answer on the booking widget- e.g. "Number of guests" or "Special requests". Applies to every bookable product.'
-        }
-      />
+      <div style={{ ...stylesML.card, height: "auto" }}>
+        <div style={stylesML.headerRow}>
+          <div style={stylesML.headerLeft}>
+            <p style={stylesML.title}>Add a field</p>
+            <p style={stylesML.descText}>
+              Extra questions customers answer on the booking widget- e.g. "Number of guests" or "Special requests". Applies to every bookable product.
+            </p>
+          </div>
+          <button
+            type="button"
+            style={stylesML.addButton}
+            onClick={() => setAddOpenML(true)}
+          >
+            <span style={stylesML.addButtonLabel}>Add field</span>
+          </button>
+        </div>
+      </div>
+
+      {addOpenML && (
+        <div
+          role="presentation"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add a field"
+            style={{
+              boxSizing: "border-box",
+              width: "min(640px, 100%)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: "#FFFFFF",
+              borderRadius: "8px",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              fontFamily: "Inter",
+            }}
+          >
+            <div style={stylesML.headerRow}>
+              <div style={stylesML.headerLeft}>
+                <p style={stylesML.title}>Add a field</p>
+              </div>
+              <button
+                type="button"
+                style={stylesML.chevronButton}
+                aria-label="Close"
+                onClick={() => setAddOpenML(false)}
+              >
+                <span style={{ fontSize: "24px", lineHeight: "20px", color: TEXT_BLACK_ML }}>
+                  &times;
+                </span>
+              </button>
+            </div>
+            <hr style={stylesML.divider} />
+            <FieldEditor
+              bare
+              initial={EMPTY_FORM_ML}
+              submitLabel="Add"
+              onCancel={() => setAddOpenML(false)}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="eb-cf-listcard" style={stylesML.listCard}>
         <div style={stylesML.listHeaderRow}>

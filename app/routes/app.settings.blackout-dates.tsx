@@ -21,25 +21,6 @@ const INPUT_BORDER_ML = "#E9E9EA";
 const LABEL_GREY_ML = "#373737";
 const TEXT_BLACK_ML = "#000000";
 
-const ChevronIcon = ({ open: openML }: { open: boolean }) => (
-  <img
-    src="/chevron.svg"
-    width={11}
-    height={6}
-    alt=""
-    style={{
-      transform: openML ? "rotate(180deg)" : "rotate(0deg)",
-      transition: "transform 0.2s ease",
-    }}
-  />
-);
-
-const PlusIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 1V11M1 6H11" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
 const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
@@ -233,15 +214,33 @@ const stylesML: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap",
     flexShrink: 0,
   },
-  plusWrap: {
+  cancelButton: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: "3px",
-    width: "20px",
-    height: "20px",
-    flexShrink: 0,
+    padding: "10px 16px",
+    height: "42px",
+    background: "transparent",
+    borderRadius: "10px",
+    border: `1px solid ${INPUT_BORDER_ML}`,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+  cancelButtonLabel: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "16px",
+    lineHeight: "19px",
+    color: TEXT_BLACK_ML,
+    whiteSpace: "nowrap",
+  },
+  buttonRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: "10px",
+    width: "100%",
   },
   listCard: {
     boxSizing: "border-box",
@@ -408,8 +407,23 @@ export default function BlackoutDatesPage() {
     if (fetcherML.data?.intent === "add" && fetcherML.data.ok) {
       setDateML("");
       setReasonML("");
+      setOpenML(false);
     }
   }, [fetcherML.data]);
+
+  useEffect(() => {
+    if (!openML) return;
+    const onKeyDownML = (eML: KeyboardEvent) => {
+      if (eML.key === "Escape") setOpenML(false);
+    };
+    document.addEventListener("keydown", onKeyDownML);
+    const prevOverflowML = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDownML);
+      document.body.style.overflow = prevOverflowML;
+    };
+  }, [openML]);
 
   const isSubmittingML = fetcherML.state !== "idle";
   const pendingIntentML = isSubmittingML
@@ -442,107 +456,153 @@ export default function BlackoutDatesPage() {
           position: relative;
         }
       `}</style>
-      <div style={{ ...stylesML.card, minHeight: openML ? "225px" : "auto", height: "auto" }}>
-        <div style={stylesML.body}>
-          <div
-            style={{ ...stylesML.headerRow, cursor: "pointer" }}
-            onClick={() => setOpenML(!openML)}
-          >
-            <div style={stylesML.headerLeft}>
-              <p style={stylesML.title}>Add a Blackout Date</p>
-              <p style={stylesML.descText}>
-                Block bookings across your store on specific dates-
-                holidays, closures, and one-off events.
-              </p>
-            </div>
-            <button
-              type="button"
-              style={stylesML.chevronButton}
-              aria-label={openML ? "Collapse" : "Expand"}
-            >
-              <ChevronIcon open={openML} />
-            </button>
+      <div style={{ ...stylesML.card, height: "auto" }}>
+        <div style={stylesML.headerRow}>
+          <div style={stylesML.headerLeft}>
+            <p style={stylesML.title}>Add a Blackout Date</p>
+            <p style={stylesML.descText}>
+              Block bookings across your store on specific dates-
+              holidays, closures, and one-off events.
+            </p>
           </div>
+          <button
+            type="button"
+            style={stylesML.addButton}
+            onClick={() => setOpenML(true)}
+          >
+            <span style={stylesML.addButtonLabel}>Add Blackout Date</span>
+          </button>
+        </div>
+      </div>
 
-          {openML && (
-            <>
-              <hr style={stylesML.divider} />
-
-              <div style={stylesML.fieldsRow}>
-                <div style={stylesML.fieldGroupDate}>
-                  <p style={stylesML.fieldLabel}>Date</p>
-                  <div
-                    style={{
-                      ...stylesML.inputBoxDate,
-                      ...stylesML.inputBoxDateClickable,
-                    }}
-                    onClick={openDatePickerML}
-                  >
-                    <img src="/date-icon.svg" width={18} height={20} alt="" />
-                    <input
-                      ref={dateInputRefML}
-                      type="date"
-                      className="blackout-date-input"
-                      style={stylesML.visibleDateInput}
-                      value={dateML}
-                      onChange={(eML) => setDateML(eML.target.value)}
-                      onClick={(eML) => eML.stopPropagation()}
-                      aria-label="Date"
-                    />
-                  </div>
-                  {errorsML.date && (
-                    <p
-                      style={{
-                        ...stylesML.fieldLabel,
-                        color: "#D82C0D",
-                        fontWeight: 400,
-                        fontSize: "12px",
-                      }}
-                    >
-                      {errorsML.date}
-                    </p>
-                  )}
-                </div>
-
-                <div style={stylesML.fieldGroupReason}>
-                  <p style={stylesML.fieldLabel}>Reason (Optional)</p>
-                  <div style={stylesML.inputBoxReason}>
-                    <input
-                      type="text"
-                      style={stylesML.reasonInput}
-                      placeholder="e.g. Public holiday"
-                      value={reasonML}
-                      onChange={(eML) => setReasonML(eML.target.value)}
-                    />
-                  </div>
-                </div>
+      {openML && (
+        <div
+          role="presentation"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add a Blackout Date"
+            style={{
+              boxSizing: "border-box",
+              width: "min(640px, 100%)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: "#FFFFFF",
+              borderRadius: "8px",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              fontFamily: "Inter",
+            }}
+          >
+            <div style={stylesML.headerRow}>
+              <div style={stylesML.headerLeft}>
+                <p style={stylesML.title}>Add a Blackout Date</p>
               </div>
-
-              <hr style={stylesML.divider} />
-
               <button
                 type="button"
-                className="eb-add-btn"
+                style={stylesML.chevronButton}
+                aria-label="Close"
+                onClick={() => setOpenML(false)}
+              >
+                <span style={{ fontSize: "24px", lineHeight: "20px", color: TEXT_BLACK_ML }}>
+                  &times;
+                </span>
+              </button>
+            </div>
+            <hr style={stylesML.divider} />
+
+            <div style={stylesML.fieldsRow}>
+              <div style={stylesML.fieldGroupDate}>
+                <p style={stylesML.fieldLabel}>Date</p>
+                <div
+                  style={{
+                    ...stylesML.inputBoxDate,
+                    ...stylesML.inputBoxDateClickable,
+                  }}
+                  onClick={openDatePickerML}
+                >
+                  <img src="/date-icon.svg" width={18} height={20} alt="" />
+                  <input
+                    ref={dateInputRefML}
+                    type="date"
+                    className="blackout-date-input"
+                    style={stylesML.visibleDateInput}
+                    value={dateML}
+                    onChange={(eML) => setDateML(eML.target.value)}
+                    onClick={(eML) => eML.stopPropagation()}
+                    aria-label="Date"
+                  />
+                </div>
+                {errorsML.date && (
+                  <p
+                    style={{
+                      ...stylesML.fieldLabel,
+                      color: "#D82C0D",
+                      fontWeight: 400,
+                      fontSize: "12px",
+                    }}
+                  >
+                    {errorsML.date}
+                  </p>
+                )}
+              </div>
+
+              <div style={stylesML.fieldGroupReason}>
+                <p style={stylesML.fieldLabel}>Reason (Optional)</p>
+                <div style={stylesML.inputBoxReason}>
+                  <input
+                    type="text"
+                    style={stylesML.reasonInput}
+                    placeholder="e.g. Public holiday"
+                    value={reasonML}
+                    onChange={(eML) => setReasonML(eML.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+
+            <div style={stylesML.buttonRow}>
+              <button
+                type="button"
+                style={stylesML.cancelButton}
+                onClick={() => setOpenML(false)}
+                disabled={isAddingML}
+              >
+                <span style={stylesML.cancelButtonLabel}>Cancel</span>
+              </button>
+              <button
+                type="button"
                 style={{
                   ...stylesML.addButton,
+                  minWidth: 0,
                   ...(isAddingML ? stylesML.addButtonDisabled : {}),
                 }}
                 onClick={handleAddML}
                 disabled={isAddingML}
               >
                 <span style={stylesML.addButtonLabel}>
-                  {isAddingML ? "Adding…" : "Add Blackout Date"}
+                  {isAddingML ? "Adding…" : "Add"}
                 </span>
-                {!isAddingML && (
-                  <span style={stylesML.plusWrap}>
-                    <PlusIcon />
-                  </span>
-                )}
               </button>
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="eb-bo-listcard" style={stylesML.listCard}>
         <div style={stylesML.listHeaderRow}>
