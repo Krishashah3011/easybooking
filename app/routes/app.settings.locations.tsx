@@ -651,7 +651,9 @@ function LocationEditor({
   onToggleOpen: onToggleOpenML,
   title: titleML,
   description: descriptionML,
+  bare: bareML,
 }: {
+  bare?: boolean;
   initial: LocationFormValues;
   onCancel?: () => void;
   submitLabel: string;
@@ -745,7 +747,13 @@ function LocationEditor({
   const showChromeML = titleML !== undefined;
 
   return (
-    <div style={{ ...stylesML.card, height: "auto" }}>
+    <div
+      style={{
+        ...stylesML.card,
+        height: "auto",
+        ...(bareML ? { border: "none", padding: 0 } : {}),
+      }}
+    >
       <div style={stylesML.body}>
         {showChromeML && (
           <div
@@ -1105,12 +1113,26 @@ export default function LocationsPage() {
   const { locations: loaderLocationsML } = useLoaderData<typeof loader>();
   const reorderFetcherML = useFetcher<typeof action>();
   const [locationsML, setLocationsML] = useState(loaderLocationsML);
-  const [openML, setOpenML] = useState(false);
+  const [addOpenML, setAddOpenML] = useState(false);
   const isReorderingML = reorderFetcherML.state !== "idle";
 
   useEffect(() => {
     setLocationsML(loaderLocationsML);
   }, [loaderLocationsML]);
+
+  useEffect(() => {
+    if (!addOpenML) return;
+    const onKeyDownML = (eML: KeyboardEvent) => {
+      if (eML.key === "Escape") setAddOpenML(false);
+    };
+    document.addEventListener("keydown", onKeyDownML);
+    const prevOverflowML = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDownML);
+      document.body.style.overflow = prevOverflowML;
+    };
+  }, [addOpenML]);
 
   const persistOrderML = (orderedML: typeof locationsML) => {
     reorderFetcherML.submit(
@@ -1135,14 +1157,88 @@ export default function LocationsPage() {
 
   return (
     <div style={{ fontFamily: "Inter" }}>
-      <LocationEditor
-        initial={EMPTY_FORM_ML}
-        submitLabel="Add Location"
-        open={openML}
-        onToggleOpen={() => setOpenML(!openML)}
-        title="Add a Locations"
-        description="Locations shoppers pick before choosing a date and time- Each has its own timezone, so slot times are always local."
-      />
+      <div style={{ ...stylesML.card, height: "auto" }}>
+        <div style={stylesML.headerRow}>
+          <div style={stylesML.headerLeft}>
+            <p style={stylesML.title}>Add a Locations</p>
+            <p style={stylesML.descText}>
+              Locations shoppers pick before choosing a date and time- Each has its own timezone, so slot times are always local.
+            </p>
+          </div>
+          <button
+            type="button"
+            style={stylesML.addButton}
+            onClick={() => setAddOpenML(true)}
+          >
+            <span style={stylesML.addButtonLabel}>Add Location</span>
+            <span style={stylesML.plusWrap}>
+              <PlusIcon />
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {addOpenML && (
+        <div
+          role="presentation"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add Location"
+            style={{
+              boxSizing: "border-box",
+              width: "min(900px, 100%)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: "#FFFFFF",
+              borderRadius: "8px",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              fontFamily: "Inter",
+            }}
+          >
+            <div style={stylesML.headerRow}>
+              <div style={stylesML.headerLeft}>
+                <p style={stylesML.title}>Add a Location</p>
+                <p style={stylesML.descText}>
+                  Locations shoppers pick before choosing a date and time. Each has its own timezone, so slot times are always local.
+                </p>
+              </div>
+              <button
+                type="button"
+                style={stylesML.chevronButton}
+                aria-label="Close"
+                onClick={() => setAddOpenML(false)}
+              >
+                <span style={{ fontSize: "24px", lineHeight: "20px", color: TEXT_BLACK_ML }}>
+                  &times;
+                </span>
+              </button>
+            </div>
+            <hr style={stylesML.divider} />
+            <LocationEditor
+              bare
+              initial={EMPTY_FORM_ML}
+              submitLabel="Add Location"
+              onCancel={() => setAddOpenML(false)}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="eb-loc-listcard" style={stylesML.listCard}>
         <div style={stylesML.listHeaderRow}>
