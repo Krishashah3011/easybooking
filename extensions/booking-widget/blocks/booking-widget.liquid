@@ -9,6 +9,7 @@
   data-country="{{ localization.country.iso_code }}"
   data-tick-icon="{{ 'tick.svg' | asset_url }}"
   data-calendar-icon="{{ 'calendar.svg' | asset_url }}"
+  data-design-mode="{{ request.design_mode }}"
 >
   <div class="booking-widget__cart-reminder" data-booking-cart-reminder hidden>
     <p class="booking-widget__cart-reminder-title" data-booking-cart-reminder-title></p>
@@ -19,6 +20,7 @@
 
   <button type="button" class="button button--secondary button--full-width booking-widget__trigger" data-booking-trigger hidden>Book your slot</button>
   <p class="booking-widget__unavailable" data-booking-unavailable hidden></p>
+  <p class="booking-widget__register-notice" data-booking-register-notice hidden></p>
   <p class="booking-widget__multi-add-status" data-booking-multi-add-status hidden></p>
   <p class="booking-widget__error" data-booking-error hidden></p>
 

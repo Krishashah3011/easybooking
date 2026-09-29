@@ -43,9 +43,11 @@
     spotLeft: "1 spot left",
     spotsLeft: "{count} spots left",
     selectBeforeCart:
-      "Please select a date and time before adding this to your cart.",
+      "Please Select your Spot before adding this to the Cart.",
     selected: "{date} | {time}",
     triggerBook: "Book your slot",
+    registerRequired:
+      "EasyBooking isn't active yet. Please register the app first: open EasyBooking in your Shopify admin, go to Account and complete registration. The booking widget will work after that.",
     modalTitle: "Book Your Spot",
     modalSubtitle: "Select your preferred date & time",
     selectLocation: "Select location",
@@ -274,6 +276,9 @@
     var selectionElML = rootML.querySelector("[data-booking-selection]");
     var errorElML = rootML.querySelector("[data-booking-error]");
     var unavailableElML = rootML.querySelector("[data-booking-unavailable]");
+    var registerNoticeElML = rootML.querySelector("[data-booking-register-notice]");
+    var isDesignModeML = rootML.dataset.designMode === "true";
+    var registeredML = true;
     var multiAddStatusElML = rootML.querySelector("[data-booking-multi-add-status]");
     var cartReminderElML = rootML.querySelector("[data-booking-cart-reminder]");
 
@@ -281,68 +286,71 @@
     if (overlayElML && overlayElML.parentNode !== document.body) {
       document.body.appendChild(overlayElML);
     }
-    var closeBtnML = rootML.querySelector("[data-booking-close]");
-    var locationTimezoneElML = rootML.querySelector("[data-booking-location-timezone]");
-    var subheaderElML = rootML.querySelector("[data-booking-subheader]");
-    var modalBodyElML = rootML.querySelector("[data-booking-modal-body]");
-    var modalFooterElML = rootML.querySelector("[data-booking-modal-footer]");
-    var locationStepElML = rootML.querySelector("[data-booking-location-step]");
-    var locationTriggerElML = rootML.querySelector("[data-booking-location-trigger]");
-    var locationTriggerTextElML = rootML.querySelector(
+    // The overlay now lives in <body>, so its inner parts must be queried from it,
+    // not from rootML (which no longer contains them).
+    var modalScopeML = overlayElML || rootML;
+    var closeBtnML = modalScopeML.querySelector("[data-booking-close]");
+    var locationTimezoneElML = modalScopeML.querySelector("[data-booking-location-timezone]");
+    var subheaderElML = modalScopeML.querySelector("[data-booking-subheader]");
+    var modalBodyElML = modalScopeML.querySelector("[data-booking-modal-body]");
+    var modalFooterElML = modalScopeML.querySelector("[data-booking-modal-footer]");
+    var locationStepElML = modalScopeML.querySelector("[data-booking-location-step]");
+    var locationTriggerElML = modalScopeML.querySelector("[data-booking-location-trigger]");
+    var locationTriggerTextElML = modalScopeML.querySelector(
       "[data-booking-location-trigger-text]",
     );
-    var locationListElML = rootML.querySelector("[data-booking-location-list]");
-    var locationErrorElML = rootML.querySelector("[data-booking-location-error]");
-    var datetimeStepElML = rootML.querySelector("[data-booking-datetime-step]");
-    var locationEmptyStateElML = rootML.querySelector(
+    var locationListElML = modalScopeML.querySelector("[data-booking-location-list]");
+    var locationErrorElML = modalScopeML.querySelector("[data-booking-location-error]");
+    var datetimeStepElML = modalScopeML.querySelector("[data-booking-datetime-step]");
+    var locationEmptyStateElML = modalScopeML.querySelector(
       "[data-booking-location-empty-state]",
     );
-    var calendarElML = rootML.querySelector("[data-booking-calendar]");
-    var calendarPaneElML = rootML.querySelector("[data-booking-calendar-pane]");
-    var datetimeCardElML = rootML.querySelector("[data-booking-datetime-card]");
-    var durationElML = rootML.querySelector("[data-booking-duration]");
-    var rangeSummaryElML = rootML.querySelector("[data-booking-range-summary]");
-    var rangeHintElML = rootML.querySelector("[data-booking-range-hint]");
-    var selectedDatesElML = rootML.querySelector("[data-booking-selected-dates]");
-    var selectedDatesLabelElML = rootML.querySelector(
+    var calendarElML = modalScopeML.querySelector("[data-booking-calendar]");
+    var calendarPaneElML = modalScopeML.querySelector("[data-booking-calendar-pane]");
+    var datetimeCardElML = modalScopeML.querySelector("[data-booking-datetime-card]");
+    var durationElML = modalScopeML.querySelector("[data-booking-duration]");
+    var rangeSummaryElML = modalScopeML.querySelector("[data-booking-range-summary]");
+    var rangeHintElML = modalScopeML.querySelector("[data-booking-range-hint]");
+    var selectedDatesElML = modalScopeML.querySelector("[data-booking-selected-dates]");
+    var selectedDatesLabelElML = modalScopeML.querySelector(
       "[data-booking-selected-dates-label]",
     );
-    var selectedDatesTextElML = rootML.querySelector(
+    var selectedDatesTextElML = modalScopeML.querySelector(
       "[data-booking-selected-dates-text]",
     );
-    var selectedDatesClearBtnML = rootML.querySelector(
+    var selectedDatesClearBtnML = modalScopeML.querySelector(
       "[data-booking-selected-dates-clear]",
     );
-    var slotsPaneOuterElML = rootML.querySelector("[data-booking-slots-pane]");
-    var bundleProgressElML = rootML.querySelector("[data-booking-bundle-progress]");
-    var bundleProgressLabelElML = rootML.querySelector(
+    var slotsPaneOuterElML = modalScopeML.querySelector("[data-booking-slots-pane]");
+    var bundleProgressElML = modalScopeML.querySelector("[data-booking-bundle-progress]");
+    var bundleProgressLabelElML = modalScopeML.querySelector(
       "[data-booking-bundle-progress-label]",
     );
-    var bundleProgressFillElML = rootML.querySelector(
+    var bundleProgressFillElML = modalScopeML.querySelector(
       "[data-booking-bundle-progress-fill]",
     );
-    var slotListElML = rootML.querySelector("[data-booking-slot-list]");
-    var confirmBtnML = rootML.querySelector("[data-booking-confirm]");
-    var nextSlotBtnML = rootML.querySelector("[data-booking-next-slot]");
-    var customFieldsEntryElML = rootML.querySelector(
+    var slotListElML = modalScopeML.querySelector("[data-booking-slot-list]");
+    var confirmBtnML = modalScopeML.querySelector("[data-booking-confirm]");
+    var nextSlotBtnML = modalScopeML.querySelector("[data-booking-next-slot]");
+    var customFieldsEntryElML = modalScopeML.querySelector(
       "[data-booking-custom-fields-entry]",
     );
-    var quantityWrapElML = rootML.querySelector("[data-booking-quantity]");
-    var quantityInputElML = rootML.querySelector("[data-booking-quantity-input]");
-    var quantityDecreaseBtnML = rootML.querySelector(
+    var quantityWrapElML = modalScopeML.querySelector("[data-booking-quantity]");
+    var quantityInputElML = modalScopeML.querySelector("[data-booking-quantity-input]");
+    var quantityDecreaseBtnML = modalScopeML.querySelector(
       "[data-booking-quantity-decrease]",
     );
-    var quantityIncreaseBtnML = rootML.querySelector(
+    var quantityIncreaseBtnML = modalScopeML.querySelector(
       "[data-booking-quantity-increase]",
     );
-    var quantityNoteElML = rootML.querySelector("[data-booking-quantity-note]");
-    var noteWrapElML = rootML.querySelector("[data-booking-note]");
-    var noteInputElML = rootML.querySelector("[data-booking-note-input]");
-    var noteLabelElML = rootML.querySelector("[data-booking-note-label]");
-    var reviewBodyElML = rootML.querySelector("[data-booking-review-body]");
-    var reviewStepElML = rootML.querySelector("[data-booking-review-step]");
-    var reviewListElML = rootML.querySelector("[data-booking-review-list]");
-    var reviewBackBtnML = rootML.querySelector("[data-booking-review-back]");
+    var quantityNoteElML = modalScopeML.querySelector("[data-booking-quantity-note]");
+    var noteWrapElML = modalScopeML.querySelector("[data-booking-note]");
+    var noteInputElML = modalScopeML.querySelector("[data-booking-note-input]");
+    var noteLabelElML = modalScopeML.querySelector("[data-booking-note-label]");
+    var reviewBodyElML = modalScopeML.querySelector("[data-booking-review-body]");
+    var reviewStepElML = modalScopeML.querySelector("[data-booking-review-step]");
+    var reviewListElML = modalScopeML.querySelector("[data-booking-review-list]");
+    var reviewBackBtnML = modalScopeML.querySelector("[data-booking-review-back]");
 
     var todayML = new Date();
     var viewYearML = todayML.getUTCFullYear();
@@ -354,7 +362,7 @@
     var productBookingEnabledML = true;
     var fullDayStartTimeML = "00:00";
     var fullDayEndTimeML = "23:59";
-    var slotsPaneElML = rootML.querySelector("[data-booking-slots]");
+    var slotsPaneElML = modalScopeML.querySelector("[data-booking-slots]");
     var availableDatesByDayML = {};
     var remainingCapacityByDateML = {};
     var multiDayMinNightsML = null;
@@ -741,6 +749,7 @@
     }
 
     function guardAddToCartML(eventML) {
+      if (locationsLoadedML && !registeredML) return false;
       if (confirmedSlotsML.length === 0) {
         eventML.preventDefault();
         eventML.stopPropagation();
@@ -904,6 +913,7 @@
         .then(function (dataML) {
           locationsML = dataML.locations || [];
           productBookingEnabledML = dataML.productBookingEnabled !== false;
+          registeredML = dataML.registered !== false;
           locationsLoadedML = true;
           populateLocationListML();
           updateAvailabilityML();
@@ -917,6 +927,15 @@
 
     function updateAvailabilityML() {
       if (!locationsLoadedML) return;
+      if (!registeredML) {
+        if (triggerBtnML) triggerBtnML.hidden = true;
+        if (unavailableElML) unavailableElML.hidden = true;
+        if (registerNoticeElML) {
+          registerNoticeElML.textContent = stringsML.registerRequired;
+          registerNoticeElML.hidden = !isDesignModeML;
+        }
+        return;
+      }
       var hasLocationsML = locationsML.length > 0 && productBookingEnabledML;
       if (triggerBtnML) {
         triggerBtnML.hidden = !hasLocationsML || confirmedSlotsML.length > 0;
