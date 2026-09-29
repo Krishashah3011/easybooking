@@ -137,6 +137,12 @@ const stylesML: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     whiteSpace: "nowrap",
   },
+  stepButtonLocked: {
+    opacity: 0.5,
+    pointerEvents: "none",
+    cursor: "not-allowed",
+    userSelect: "none",
+  },
   stepSpacer: {
     margin: "18px 0",
   },
@@ -161,6 +167,7 @@ export type GuideStep = {
   href: string;
   done?: boolean;
   external?: boolean;
+  locked?: boolean;
 };
 
 export default function GetStartedGuide({
@@ -224,10 +231,15 @@ export default function GetStartedGuide({
                   </span>
                 ) : stepML.external ? (
                   <a
-                    href={stepML.href}
+                    href={stepML.locked ? undefined : stepML.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={stylesML.stepButton}
+                    aria-disabled={stepML.locked || undefined}
+                    tabIndex={stepML.locked ? -1 : undefined}
+                    style={{
+                      ...stylesML.stepButton,
+                      ...(stepML.locked ? stylesML.stepButtonLocked : {}),
+                    }}
                   >
                     {stepML.cta}
                     <ArrowRightIcon />

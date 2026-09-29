@@ -30,7 +30,6 @@ const stylesML: Record<string, React.CSSProperties> = {
     padding: "10px 10px 13px",
     gap: "16px",
     width: "100%",
-    maxWidth: "886px",
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
@@ -400,8 +399,22 @@ export default function BlackoutDatesPage() {
     }
   };
 
+  const [errorsDismissedML, setErrorsDismissedML] = useState(false);
+
   const errorsML: BlackoutDateFieldErrors =
-    fetcherML.data?.intent === "add" ? (fetcherML.data.errors ?? {}) : {};
+    !errorsDismissedML && fetcherML.data?.intent === "add"
+      ? (fetcherML.data.errors ?? {})
+      : {};
+
+  // A new server response means its errors should be shown again.
+  useEffect(() => {
+    setErrorsDismissedML(false);
+  }, [fetcherML.data]);
+
+  // Opening or closing the modal always starts with a clean slate.
+  useEffect(() => {
+    setErrorsDismissedML(true);
+  }, [openML]);
 
   useEffect(() => {
     if (fetcherML.data?.intent === "add" && fetcherML.data.ok) {

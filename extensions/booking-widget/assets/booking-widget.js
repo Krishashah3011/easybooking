@@ -46,8 +46,6 @@
       "Please Select your Spot before adding this to the Cart.",
     selected: "{date} | {time}",
     triggerBook: "Book your slot",
-    registerRequired:
-      "EasyBooking isn't active yet. Please register the app first: open EasyBooking in your Shopify admin, go to Account and complete registration. The booking widget will work after that.",
     modalTitle: "Book Your Spot",
     modalSubtitle: "Select your preferred date & time",
     selectLocation: "Select location",
@@ -276,9 +274,6 @@
     var selectionElML = rootML.querySelector("[data-booking-selection]");
     var errorElML = rootML.querySelector("[data-booking-error]");
     var unavailableElML = rootML.querySelector("[data-booking-unavailable]");
-    var registerNoticeElML = rootML.querySelector("[data-booking-register-notice]");
-    var isDesignModeML = rootML.dataset.designMode === "true";
-    var registeredML = true;
     var multiAddStatusElML = rootML.querySelector("[data-booking-multi-add-status]");
     var cartReminderElML = rootML.querySelector("[data-booking-cart-reminder]");
 
@@ -749,7 +744,6 @@
     }
 
     function guardAddToCartML(eventML) {
-      if (locationsLoadedML && !registeredML) return false;
       if (confirmedSlotsML.length === 0) {
         eventML.preventDefault();
         eventML.stopPropagation();
@@ -913,7 +907,6 @@
         .then(function (dataML) {
           locationsML = dataML.locations || [];
           productBookingEnabledML = dataML.productBookingEnabled !== false;
-          registeredML = dataML.registered !== false;
           locationsLoadedML = true;
           populateLocationListML();
           updateAvailabilityML();
@@ -927,15 +920,6 @@
 
     function updateAvailabilityML() {
       if (!locationsLoadedML) return;
-      if (!registeredML) {
-        if (triggerBtnML) triggerBtnML.hidden = true;
-        if (unavailableElML) unavailableElML.hidden = true;
-        if (registerNoticeElML) {
-          registerNoticeElML.textContent = stringsML.registerRequired;
-          registerNoticeElML.hidden = !isDesignModeML;
-        }
-        return;
-      }
       var hasLocationsML = locationsML.length > 0 && productBookingEnabledML;
       if (triggerBtnML) {
         triggerBtnML.hidden = !hasLocationsML || confirmedSlotsML.length > 0;

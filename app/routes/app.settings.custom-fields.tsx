@@ -63,7 +63,6 @@ const stylesML: Record<string, React.CSSProperties> = {
     padding: "10px 10px 13px",
     gap: "16px",
     width: "100%",
-    maxWidth: "886px",
     background: "#FFFFFF",
     border: `1px solid ${LINE_BORDER_ML}`,
     borderRadius: "4px",
@@ -253,12 +252,12 @@ const stylesML: Record<string, React.CSSProperties> = {
     flexWrap: "nowrap",
     justifyContent: "center",
     alignItems: "center",
-    padding: "8px 14px",
-    gap: "6px",
+    padding: "10px 16px",
+    gap: "4px",
     width: "auto",
-    height: "36px",
+    height: "42px",
     background: ACCENT_ML,
-    borderRadius: "8px",
+    borderRadius: "10px",
     border: "none",
     cursor: "pointer",
     whiteSpace: "nowrap",
@@ -270,8 +269,8 @@ const stylesML: Record<string, React.CSSProperties> = {
   addButtonLabel: {
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "14px",
-    lineHeight: "17px",
+    fontSize: "16px",
+    lineHeight: "19px",
     color: "#FFFFFF",
     whiteSpace: "nowrap",
     flexShrink: 0,
@@ -896,7 +895,7 @@ export default function CustomFieldsPage() {
           <div style={stylesML.headerLeft}>
             <p style={stylesML.title}>Add a field</p>
             <p style={stylesML.descText}>
-              Extra questions customers answer on the booking widget- e.g. "Number of guests" or "Special requests". Applies to every bookable product.
+              Extra questions customers answer on the booking widget- e.g. "Number of guests" or "Special requests".
             </p>
           </div>
           <button

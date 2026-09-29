@@ -697,6 +697,7 @@ function buildGuideStepsML(
       cta: "Activate App Embed",
       href: `https://${shopML}/admin/themes/current/editor?context=apps&activateAppId=${apiKeyML}/${BOOKING_WIDGET_BLOCK_HANDLE_ML}`,
       external: true,
+      locked: !registeredML,
     },
     {
       title: "Enable booking on your products",
