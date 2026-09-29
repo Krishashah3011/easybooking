@@ -751,23 +751,7 @@ const uiML: Record<string, React.CSSProperties> = {
 
 function CloseIcon() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="904 27 20 20"
-      fill="none"
-      aria-hidden="true"
-      overflow="visible"
-      style={{ display: "block" }}
-    >
-      <path
-        d="M904 47L914 37L924 47M924 27L913.998 37L904 27"
-        stroke={BLUE_ML}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <img src="/cross.svg" width={40} height={40} alt="" aria-hidden="true" style={{ display: "block", margin: -10 }} />
   );
 }
 

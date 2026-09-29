@@ -495,15 +495,7 @@ const MONTH_SHORT_ML = [
 
 function CollapseIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        d="M0 20L10 10L20 20M20 0L9.998 10L0 0"
-        stroke={BLUE_ML}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <img src="/cross.svg" width={40} height={40} alt="" aria-hidden="true" style={{ display: "block", margin: -10 }} />
   );
 }
 
