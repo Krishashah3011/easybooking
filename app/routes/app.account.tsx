@@ -93,31 +93,15 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
 };
 
 function PersonIcon() {
-  return (
-    <svg width="18" height="22" viewBox="0 0 18 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M8.75024 8.75C10.9594 8.75 12.7502 6.95914 12.7502 4.75C12.7502 2.54086 10.9594 0.75 8.75024 0.75C6.54111 0.75 4.75024 2.54086 4.75024 4.75C4.75024 6.95914 6.54111 8.75 8.75024 8.75Z" stroke={BLUE_ML} strokeWidth="1.5"/>
-      <path d="M16.7482 16.75C16.7496 16.586 16.7502 16.4193 16.7502 16.25C16.7502 13.765 13.1682 11.75 8.75024 11.75C4.33224 11.75 0.750244 13.765 0.750244 16.25C0.750244 18.735 0.750244 20.75 8.75024 20.75C10.9812 20.75 12.5902 20.593 13.7502 20.313" stroke={BLUE_ML} strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  );
+  return <img src="/name.svg" width={20} height={22} alt="" />;
 }
 
 function MailIcon() {
-  return (
-    <svg width="21" height="18" viewBox="0 0 21 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17.507 0.75H3.99349C2.20229 0.75 0.750244 2.20205 0.750244 3.99324V14.2635C0.750244 16.0547 2.20229 17.5068 3.99349 17.5068H17.507C19.2982 17.5068 20.7502 16.0547 20.7502 14.2635V3.99324C20.7502 2.20205 19.2982 0.75 17.507 0.75Z" stroke={BLUE_ML} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M0.750244 4.80405L9.84754 8.98351C10.1307 9.1136 10.4386 9.18096 10.7502 9.18096C11.0619 9.18096 11.3698 9.1136 11.6529 8.98351L20.7502 4.80405" stroke={BLUE_ML} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
+  return <img src="/mail.svg" width={22} height={20} alt="" />;
 }
 
 function ShopIcon() {
-  return (
-    <svg width="20" height="21" viewBox="0 0 20 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M13.2291 2.3959L14.6431 3.81049L16.2739 3.85697L18.6036 19.3682L13.2291 20.4995L0.5 18.2369L2.19728 5.79047L13.2291 2.3959ZM13.2291 20.4995V2.3959" stroke={BLUE_ML} strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M5.26081 14.3806C5.67703 14.9233 6.19864 15.125 6.92512 15.125H7.93052C8.37957 15.1248 8.81018 14.9463 9.12766 14.6288C9.44513 14.3112 9.62348 13.8805 9.62348 13.4315V13.4239C9.62348 12.9747 9.44506 12.544 9.12747 12.2264C8.80987 11.9088 8.37913 11.7304 7.92998 11.7304H6.82188C6.59923 11.7305 6.37875 11.6867 6.17302 11.6015C5.9673 11.5164 5.78036 11.3915 5.6229 11.2341C5.46544 11.0767 5.34053 10.8898 5.25531 10.6841C5.17008 10.4784 5.12622 10.2579 5.12622 10.0353C5.12622 9.58469 5.30521 9.15257 5.62382 8.83396C5.94243 8.51536 6.37455 8.33636 6.82513 8.33636H7.82512C8.55106 8.33636 9.07267 8.53798 9.48889 9.08014M7.71269 4.09316C7.17485 2.11317 10.7905 -0.955452 11.7051 2.86506" stroke={BLUE_ML} strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M4.98682 4.93208C5.74897 0.213199 10.4581 -1.35598 10.296 3.29858" stroke={BLUE_ML} strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
+  return <img src="/shop.svg" width={20} height={21} alt="" />;
 }
 
 function PencilIcon() {
@@ -697,21 +681,7 @@ export default function Account() {
             <div style={stylesML.fieldGroup}>
               <span style={stylesML.label}>Plan</span>
               <div style={stylesML.inputBox}>
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M7 2V5M17 2V5M3 9H21M5 5H19C20.1046 5 21 5.89543 21 7V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V7C3 5.89543 3.89543 5 5 5Z"
-                    stroke={BLUE_ML}
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <img src="/plan.svg" width={20} height={20} alt="" />
 
                 <span style={stylesML.value}>{planML || "—"}</span>
               </div>
@@ -722,21 +692,7 @@ export default function Account() {
             <div style={stylesML.fieldGroup}>
               <span style={stylesML.label}>Subscription ID</span>
               <div style={stylesML.inputBox}>
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8 4H18M8 8H18M8 12H14M5 4H5.01M5 8H5.01M5 12H5.01M4 20H20C20.5523 20 21 19.5523 21 19V5C21 4.44772 20.5523 4 20 4H4C3.44772 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20Z"
-                    stroke={BLUE_ML}
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <img src="/subsid.svg" width={20} height={21} alt="" />
 
                 <span style={stylesML.value}>{subscriptionIdML || "—"}</span>
               </div>
