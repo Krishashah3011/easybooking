@@ -1531,7 +1531,7 @@ export default function BookableProductPage() {
                       label="Select All"
                     />
                   </div>
-                  <div style={uiML.dayGrid}>
+                  <div className="eb-pd-daygrid" style={uiML.dayGrid}>
                   {WEEKDAY_LABELS_ML.map((dayML) => {
                     const dayTimeML = valuesML.dayTimes?.[dayML.value];
                     const isCheckedML = dayTimeML != null;
@@ -1550,7 +1550,7 @@ export default function BookableProductPage() {
                   />
                         {!isCheckedML && <p style={uiML.hintText}>Closed</p>}
                         {isCheckedML && (
-                          <div style={uiML.dayTimeInputs}>
+                          <div className="eb-pd-daytimes" style={uiML.dayTimeInputs}>
                             <InlineTimeField
                               value={dayTimeML.start}
                               placeholder={shopDefaultsML.dailyStartTime}
@@ -1898,6 +1898,22 @@ export default function BookableProductPage() {
         </div>
       </div>
       <style>{`
+        /* Firefox only: text inputs keep a wide intrinsic width, which stretches the day time boxes */
+        @-moz-document url-prefix() {
+          .eb-pd-daytimes {
+            min-width: 0;
+            max-width: 100%;
+          }
+          .eb-pd-daytimes > div {
+            flex: 0 1 auto !important;
+            width: auto !important;
+            min-width: 0 !important;
+          }
+          .eb-pd-daytimes input {
+            width: 22px !important;
+            min-width: 0 !important;
+          }
+        }
         @media (max-width: 780px) {
           .eb-pd-bo-listcard {
             overflow-x: auto;

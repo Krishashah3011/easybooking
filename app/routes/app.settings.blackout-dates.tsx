@@ -21,6 +21,17 @@ const INPUT_BORDER_ML = "#E9E9EA";
 const LABEL_GREY_ML = "#373737";
 const TEXT_BLACK_ML = "#000000";
 
+const popupFooterML: React.CSSProperties = {
+  justifyContent: "center",
+  width: "calc(100% + 32px)",
+  margin: "0 -16px -16px",
+  padding: "14px 16px",
+  boxSizing: "border-box",
+  background: "#F4F8FB",
+  borderTop: "1px solid #E3E8EE",
+  borderRadius: "0 0 8px 8px",
+};
+
 const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
@@ -589,14 +600,17 @@ export default function BlackoutDatesPage() {
             </div>
 
 
-            <div style={stylesML.buttonRow}>
+            <div style={{ ...stylesML.buttonRow, ...popupFooterML }}>
               <button
                 type="button"
                 style={stylesML.cancelButton}
-                onClick={() => setOpenML(false)}
+                onClick={() => {
+                  setDateML("");
+                  setReasonML("");
+                }}
                 disabled={isAddingML}
               >
-                <span style={stylesML.cancelButtonLabel}>Cancel</span>
+                <span style={stylesML.cancelButtonLabel}>Reset</span>
               </button>
               <button
                 type="button"

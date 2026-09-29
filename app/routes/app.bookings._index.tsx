@@ -1882,7 +1882,15 @@ function BookingsListPage({
       filtersML.dateFrom ||
       filtersML.dateTo,
   );
-  const [filtersOpenML, setFiltersOpenML] = useState(hasActiveFiltersML);
+  const [filtersOpenML, setFiltersOpenML] = useState(false);
+
+  const openFiltersML = () => {
+    setStatusML(filtersML.status);
+    setProductIdML(filtersML.bookableProductId);
+    setDateFromML(filtersML.dateFrom);
+    setDateToML(filtersML.dateTo);
+    setFiltersOpenML(true);
+  };
 
   const applyFiltersML = () => {
     const paramsML = new URLSearchParams();
@@ -1892,10 +1900,18 @@ function BookingsListPage({
     if (dateFromML) paramsML.set("dateFrom", dateFromML);
     if (dateToML) paramsML.set("dateTo", dateToML);
     navigateML({ search: paramsML.toString() });
+    setFiltersOpenML(false);
   };
 
-  const clearFiltersML = () => {
-    navigateML({ search: "" });
+  const resetFiltersML = () => {
+    setStatusML("");
+    setProductIdML("");
+    setDateFromML("");
+    setDateToML("");
+    const paramsML = new URLSearchParams();
+    if (queryML.trim()) paramsML.set("search", queryML.trim());
+    navigateML({ search: paramsML.toString() });
+    setFiltersOpenML(false);
   };
 
   const visibleBookingsML = useMemo(() => {
@@ -1957,9 +1973,9 @@ function BookingsListPage({
                     ? S.squareIconButtonActive
                     : {}),
                 }}
-                onClick={() => setFiltersOpenML((openML) => !openML)}
-                aria-expanded={filtersOpenML}
-                aria-label={filtersOpenML ? "Hide filters" : "Show filters"}
+                onClick={openFiltersML}
+                aria-haspopup="dialog"
+                aria-label="Filters"
                 title="Filters"
               >
                 <FilterIcon />
@@ -1982,8 +1998,69 @@ function BookingsListPage({
           </div>
 
           {filtersOpenML && (
-            <div className="eb-touch" style={S.filterPanel}>
-              <label style={S.filterField}>
+            <div
+              role="presentation"
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 1000,
+                background: "rgba(0, 0, 0, 0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "16px",
+                boxSizing: "border-box",
+              }}
+              onClick={() => setFiltersOpenML(false)}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Filter bookings"
+                className="eb-touch"
+                onClick={(eML) => eML.stopPropagation()}
+                style={{
+                  boxSizing: "border-box",
+                  width: "min(640px, 100%)",
+                  maxHeight: "90vh",
+                  overflowY: "auto",
+                  background: "#FFFFFF",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                  fontFamily: "Inter",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <p style={S.listTitle}>Filters</p>
+                  <button
+                    type="button"
+                    aria-label="Close"
+                    onClick={() => setFiltersOpenML(false)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      fontSize: "24px",
+                      lineHeight: "20px",
+                      padding: 0,
+                      color: TEXT_DARK_ML,
+                    }}
+                  >
+                    &times;
+                  </button>
+                </div>
+                <hr style={S.divider} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <label style={{ ...S.filterField, flex: "0 0 auto" }}>
                 <span style={S.fieldLabel}>Status</span>
                 <select
                   style={S.input}
@@ -1998,7 +2075,7 @@ function BookingsListPage({
                 </select>
               </label>
               {showProductFilterML && (
-                <label style={S.filterField}>
+                <label style={{ ...S.filterField, flex: "0 0 auto" }}>
                   <span style={S.fieldLabel}>Product</span>
                   <select
                     style={S.input}
@@ -2014,7 +2091,7 @@ function BookingsListPage({
                   </select>
                 </label>
               )}
-              <label style={S.filterField}>
+              <label style={{ ...S.filterField, flex: "0 0 auto" }}>
                 <span style={S.fieldLabel}>From</span>
                 <input
                   type="date"
@@ -2024,7 +2101,7 @@ function BookingsListPage({
                   onChange={(eML) => setDateFromML(eML.target.value)}
                 />
               </label>
-              <label style={S.filterField}>
+              <label style={{ ...S.filterField, flex: "0 0 auto" }}>
                 <span style={S.fieldLabel}>To</span>
                 <input
                   type="date"
@@ -2034,15 +2111,28 @@ function BookingsListPage({
                   onChange={(eML) => setDateToML(eML.target.value)}
                 />
               </label>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button type="button" style={S.primaryButton} onClick={applyFiltersML}>
-                  Apply
-                </button>
-                {(hasActiveFiltersML || filtersML.search) && (
-                  <button type="button" style={S.ghostButton} onClick={clearFiltersML}>
-                    Clear
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    width: "calc(100% + 32px)",
+                    margin: "0 -16px -16px",
+                    padding: "14px 16px",
+                    boxSizing: "border-box",
+                    background: "#F4F8FB",
+                    borderTop: "1px solid #E3E8EE",
+                    borderRadius: "0 0 8px 8px",
+                  }}
+                >
+                  <button type="button" style={S.ghostButton} onClick={resetFiltersML}>
+                    Reset
                   </button>
-                )}
+                  <button type="button" style={S.primaryButton} onClick={applyFiltersML}>
+                    Apply
+                  </button>
+                </div>
               </div>
             </div>
           )}

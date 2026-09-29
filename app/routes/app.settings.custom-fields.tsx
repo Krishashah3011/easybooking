@@ -54,6 +54,17 @@ const ChevronIcon = ({ open: openML }: { open: boolean }) => (
   />
 );
 
+const popupFooterML: React.CSSProperties = {
+  justifyContent: "center",
+  width: "calc(100% + 32px)",
+  margin: "0 -16px -16px",
+  padding: "14px 16px",
+  boxSizing: "border-box",
+  background: "#F4F8FB",
+  borderTop: "1px solid #E3E8EE",
+  borderRadius: "0 0 8px 8px",
+};
+
 const stylesML: Record<string, React.CSSProperties> = {
   card: {
     boxSizing: "border-box",
@@ -674,16 +685,27 @@ function FieldEditor({
 
             {showChromeML && <hr style={stylesML.divider} />}
 
-            <div style={stylesML.buttonRow}>
-              {onCancelML && (
+            <div style={{ ...stylesML.buttonRow, ...(bareML ? popupFooterML : {}) }}>
+              {bareML ? (
                 <button
                   type="button"
                   style={stylesML.cancelButton}
-                  onClick={onCancelML}
+                  onClick={() => setValuesML(initialML)}
                   disabled={isSavingML}
                 >
-                  <span style={stylesML.cancelButtonLabel}>Cancel</span>
+                  <span style={stylesML.cancelButtonLabel}>Reset</span>
                 </button>
+              ) : (
+                onCancelML && (
+                  <button
+                    type="button"
+                    style={stylesML.cancelButton}
+                    onClick={onCancelML}
+                    disabled={isSavingML}
+                  >
+                    <span style={stylesML.cancelButtonLabel}>Cancel</span>
+                  </button>
+                )
               )}
               <button
                 type="button"
