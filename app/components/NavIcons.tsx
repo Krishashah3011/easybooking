@@ -42,21 +42,6 @@ function NavBadge({
   );
 }
 
-function PlaceholderGlyph({ children: childrenML }: { children: ReactNode }) {
-  return (
-    <g
-      transform="translate(14 14) scale(0.8333)"
-      stroke={NAVY_ML}
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-    >
-      {childrenML}
-    </g>
-  );
-}
-
 export function HomeIcon({ className: classNameML, active: activeML }: IconProps) {
   return (
     <NavBadge active={activeML} className={classNameML}>
@@ -108,20 +93,6 @@ export function AccountIcon({ className: classNameML }: IconProps) {
         preserveAspectRatio="none"
       />
     </svg>
-  );
-}
-
-export function ScheduleIcon({ className: classNameML, active: activeML }: IconProps) {
-  return (
-    <NavBadge active={activeML} className={classNameML}>
-      <PlaceholderGlyph>
-        <rect x="3" y="4" width="18" height="17" rx="2" />
-        <path d="M3 9h18" />
-        <path d="M8 2.5v3M16 2.5v3" />
-        <circle cx="15.5" cy="15" r="3.2" />
-        <path d="M15.5 13.5V15l1 0.8" />
-      </PlaceholderGlyph>
-    </NavBadge>
   );
 }
 

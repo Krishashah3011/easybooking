@@ -34,7 +34,6 @@ import {
   LICENSE_BORDER_ML,
   TEXT_DARK_ML,
   TEXT_MUTED_ML,
-  stylesML as settingsStyles,
   saveWrapperStyleML,
   saveButtonStyleML,
 } from "../components/SettingsUI";
@@ -43,7 +42,6 @@ const WEEKDAY_HEADERS_ML = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 const CAL_BLUE_ML = "#0060E6";
 const BLUE_TINT_ML = "rgba(0, 96, 230, 0.08)";
-const NAV_ARROW_ML = "#4C4C4C";
 const DISABLED_DATE_ML = "#ADADAD";
 const YEAR_PICKER_SPAN_ML = 5;
 
@@ -546,10 +544,8 @@ function splitFieldLabelML(labelML: string): { title: string; hint: string | nul
 
 function NavChevron({
   direction: directionML,
-  color: colorML,
 }: {
   direction: "left" | "right";
-  color: string;
 }) {
   return (
     <img
@@ -1507,7 +1503,7 @@ export default function NewBookingPage() {
             onClick={() => goToMonthML(-1)}
             aria-label="Previous month"
           >
-            <NavChevron direction="left" color={NAV_ARROW_ML} />
+            <NavChevron direction="left" />
           </button>
 
           <label className="nb-month-picker" style={S.monthPicker}>
@@ -1536,7 +1532,7 @@ export default function NewBookingPage() {
             onClick={() => goToMonthML(1)}
             aria-label="Next month"
           >
-            <NavChevron direction="right" color={CAL_BLUE_ML} />
+            <NavChevron direction="right" />
           </button>
         </div>
 

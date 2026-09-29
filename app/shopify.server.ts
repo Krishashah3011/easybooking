@@ -28,7 +28,5 @@ export default shopifyML;
 export const apiVersion = ApiVersion.July26;
 export const addDocumentResponseHeaders = shopifyML.addDocumentResponseHeaders;
 export const authenticate = shopifyML.authenticate;
-export const unauthenticated = shopifyML.unauthenticated;
 export const login = shopifyML.login;
-export const registerWebhooks = shopifyML.registerWebhooks;
 export const sessionStorage = shopifyML.sessionStorage;

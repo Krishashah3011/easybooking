@@ -96,8 +96,6 @@ export default function BookingManagementPage() {
 }
 
 
-type FieldChangeEvent = { currentTarget: { value: string } };
-
 const STATUS_OPTIONS_ML = [
   "",
   "CONFIRMED",
@@ -435,21 +433,6 @@ const S: Record<string, React.CSSProperties> = {
     border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
     whiteSpace: "normal",
-  },
-  detailRow: {
-    display: "flex",
-    gap: "8px",
-    alignItems: "flex-start",
-    fontFamily: "Inter",
-    fontSize: "14px",
-    lineHeight: "16px",
-    color: TEXT_DARK_ML,
-  },
-  detailLabel: {
-    minWidth: "100px",
-    flexShrink: 0,
-    color: TEXT_MUTED_ML,
-    fontWeight: 500,
   },
   detailsCard: {
     boxSizing: "border-box",
@@ -808,21 +791,6 @@ function StatusPill({ status: statusML }: { status: string }) {
     >
       {statusML.toLowerCase()}
     </span>
-  );
-}
-
-function DetailRow({
-  label: labelML,
-  children: childrenML,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={S.detailRow}>
-      <span style={S.detailLabel}>{labelML}</span>
-      <div>{childrenML}</div>
-    </div>
   );
 }
 
@@ -1478,7 +1446,7 @@ function BundleGroupDetails({
               value={rescheduleTargetML.id}
               onChange={(eML) => pickSessionML(eML.target.value)}
             >
-              {activeBookingsML.map((bML, iML) => (
+              {activeBookingsML.map((bML) => (
                 <option key={bML.id} value={bML.id}>
                   {`Slot ${groupML.bookings.indexOf(bML) + 1} · ${formatDateDisplayML(bML.date)}`}
                 </option>
