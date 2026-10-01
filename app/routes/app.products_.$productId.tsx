@@ -1967,7 +1967,6 @@ export default function BookableProductPage() {
         </div>
       </div>
       <style>{`
-        /* Firefox only: text inputs keep a wide intrinsic width, which stretches the day time boxes */
         @-moz-document url-prefix() {
           .eb-pd-daytimes {
             min-width: 0;

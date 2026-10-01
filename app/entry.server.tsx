@@ -5,6 +5,9 @@ import { createReadableStreamFromReadable } from "@react-router/node";
 import { type EntryContext } from "react-router";
 import { isbot } from "isbot";
 import { addDocumentResponseHeaders } from "./shopify.server";
+import { startReminderSchedulerML } from "./utils/reminderScheduler.server";
+
+startReminderSchedulerML();
 
 export const streamTimeout = 5000;
 

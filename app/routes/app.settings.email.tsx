@@ -16,6 +16,10 @@ import {
   getBookingSettingsML,
   parseEmailFromNameML,
   updateEmailFromNameML,
+  parseReminderHoursBeforeML,
+  updateReminderHoursBeforeML,
+  MIN_REMINDER_HOURS_ML,
+  MAX_REMINDER_HOURS_ML,
 } from "../models/bookingSettings.server";
 import {
   getSmtpSettingsML,
@@ -57,6 +61,7 @@ export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
     smtp: toFormValuesML(smtpSettingsML),
     templates: templatesML,
     emailFromName: bookingSettingsML.emailFromName,
+    reminderHoursBefore: bookingSettingsML.reminderHoursBefore,
   };
 };
 
@@ -81,9 +86,11 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
 
   const { values: valuesML, errors: smtpErrorsML } = parseSmtpSettingsFormML(formDataML);
   const emailFromNameML = parseEmailFromNameML(formDataML);
-  const errorsML: SmtpSettingsFieldErrors & { emailFromName?: string } = {
+  const reminderHoursML = parseReminderHoursBeforeML(formDataML);
+  const errorsML: SmtpSettingsFieldErrors & { emailFromName?: string; reminderHoursBefore?: string } = {
     ...smtpErrorsML,
     ...(emailFromNameML.error ? { emailFromName: emailFromNameML.error } : {}),
+    ...(reminderHoursML.error ? { reminderHoursBefore: reminderHoursML.error } : {}),
   };
   if (Object.keys(errorsML).length > 0) {
     return {
@@ -92,11 +99,13 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
       errors: errorsML,
       values: valuesML,
       emailFromName: emailFromNameML.value,
+      reminderHoursBefore: reminderHoursML.value,
     };
   }
 
   const savedSmtpML = await upsertSmtpSettingsML(sessionML.shop, valuesML);
   await updateEmailFromNameML(sessionML.shop, emailFromNameML.value);
+  await updateReminderHoursBeforeML(sessionML.shop, reminderHoursML.value);
 
   let parsedTemplatesML: { type: string; subject: string; body: string }[] = [];
   try {
@@ -121,10 +130,11 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
   return {
     ok: true as const,
     kind: "save" as const,
-    errors: {} as SmtpSettingsFieldErrors & { emailFromName?: string },
+    errors: {} as SmtpSettingsFieldErrors & { emailFromName?: string; reminderHoursBefore?: string },
     values: toFormValuesML(savedSmtpML),
     templates: templatesML,
     emailFromName: emailFromNameML.value,
+    reminderHoursBefore: reminderHoursML.value,
   };
 };
 
@@ -146,6 +156,7 @@ export default function EmailSettingsTab() {
     smtp: initialSmtpML,
     templates: initialTemplatesML,
     emailFromName: initialEmailFromNameML,
+    reminderHoursBefore: initialReminderHoursML,
   } = useLoaderData<typeof loader>();
   const saveFetcherML = useFetcher<typeof action>();
   const resetFetcherML = useFetcher<typeof action>();
@@ -154,6 +165,7 @@ export default function EmailSettingsTab() {
 
   const [smtpValuesML, setSmtpValuesML] = useState<SmtpSettingsFormValues>(initialSmtpML);
   const [emailFromNameML, setEmailFromNameML] = useState<string>(initialEmailFromNameML ?? "");
+  const [reminderHoursML, setReminderHoursML] = useState<string>(String(initialReminderHoursML));
   const [showPassML, setShowPassML] = useState(false);
 
   const [templatesML, setTemplatesML] = useState<TemplateRow[]>(initialTemplatesML);
@@ -168,7 +180,7 @@ export default function EmailSettingsTab() {
   const popupSaveRef = useRef(false);
   const bodyRefML = useRef<RichTextEditorHandle | null>(null);
 
-  const smtpErrorsML: SmtpSettingsFieldErrors & { emailFromName?: string } =
+  const smtpErrorsML: SmtpSettingsFieldErrors & { emailFromName?: string; reminderHoursBefore?: string } =
     saveFetcherML.data && saveFetcherML.data.kind === "save"
       ? saveFetcherML.data.errors
       : {};
@@ -181,6 +193,7 @@ export default function EmailSettingsTab() {
     if (saveFetcherML.data.ok) {
       setSmtpValuesML(saveFetcherML.data.values);
       setEmailFromNameML(saveFetcherML.data.emailFromName ?? "");
+      setReminderHoursML(String(saveFetcherML.data.reminderHoursBefore));
       setTemplatesML(saveFetcherML.data.templates);
       setTemplateValuesML(toEditableValuesML(saveFetcherML.data.templates));
       shopifyML.toast.show("Settings saved");
@@ -268,6 +281,7 @@ export default function EmailSettingsTab() {
         password: smtpValuesML.password,
         fromEmail: smtpValuesML.fromEmail,
         emailFromName: emailFromNameML,
+        reminderHoursBefore: reminderHoursML,
         templates: JSON.stringify(templatesPayloadML),
       },
       { method: "POST" },
@@ -293,7 +307,7 @@ export default function EmailSettingsTab() {
   useEffect(() => {
     registerSaveML(handleSaveML, isSavingML);
     return () => registerSaveML(null, false);
-  }, [registerSaveML, smtpValuesML, emailFromNameML, templateValuesML, isSavingML]);
+  }, [registerSaveML, smtpValuesML, emailFromNameML, reminderHoursML, templateValuesML, isSavingML]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -412,6 +426,29 @@ export default function EmailSettingsTab() {
             </div>
             {smtpErrorsML.emailFromName && (
               <p style={stylesML.errorText}>{smtpErrorsML.emailFromName}</p>
+            )}
+          </div>
+
+          <div style={stylesML.clientDivider} />
+
+          <div style={stylesML.clientFieldGroup}>
+            <div style={stylesML.clientFieldLabel}>Send Reminder Email (hours before booking)</div>
+            <input
+              type="number"
+              min={MIN_REMINDER_HOURS_ML}
+              max={MAX_REMINDER_HOURS_ML}
+              step={1}
+              style={stylesML.clientInput}
+              value={reminderHoursML}
+              onChange={(eML) => setReminderHoursML(eML.target.value)}
+              placeholder="24"
+            />
+            <div style={stylesML.subLabel}>
+              How many hours before the booking start time the reminder email is
+              sent to the customer — e.g. 24 sends it one day before.
+            </div>
+            {smtpErrorsML.reminderHoursBefore && (
+              <p style={stylesML.errorText}>{smtpErrorsML.reminderHoursBefore}</p>
             )}
           </div>
         </div>

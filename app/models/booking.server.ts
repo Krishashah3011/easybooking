@@ -1402,7 +1402,7 @@ export async function listSlotsForRescheduleML(
   return { ok: true, slots: slotsML };
 }
 
-const REMINDER_MIN_GAP_MS_ML = 6 * 60 * 60 * 1000;
+const DEFAULT_REMINDER_HOURS_ML = 24;
 
 const MAX_START_SKEW_BEFORE_MS_ML = 36 * 60 * 60 * 1000;
 const MAX_START_SKEW_AFTER_MS_ML = 14 * 60 * 60 * 1000;
@@ -1432,12 +1432,18 @@ function lastCustomerNoticeAtML(bookingML: ReminderCandidate): Date {
   );
 }
 
-export async function sendDueRemindersML(
-  windowHoursML = 24,
-): Promise<{ sent: number; skipped: number }> {
+export async function sendDueRemindersML(): Promise<{ sent: number; skipped: number }> {
   const nowML = new Date();
-  const windowMsML = windowHoursML * 60 * 60 * 1000;
-  const windowEndML = new Date(nowML.getTime() + windowMsML);
+  const HOUR_MS_ML = 60 * 60 * 1000;
+
+  const settingsRowsML = await prismaML.bookingSettings.findMany({
+    select: { shop: true, reminderHoursBefore: true },
+  });
+  const hoursByShopML = new Map<string, number>(
+    settingsRowsML.map((rowML) => [rowML.shop, rowML.reminderHoursBefore]),
+  );
+  const maxHoursML = Math.max(DEFAULT_REMINDER_HOURS_ML, ...hoursByShopML.values());
+  const windowEndML = new Date(nowML.getTime() + maxHoursML * HOUR_MS_ML);
 
   const candidatesML: ReminderCandidate[] = await prismaML.booking.findMany({
     where: {
@@ -1458,8 +1464,10 @@ export async function sendDueRemindersML(
   let skippedML = 0;
 
   for (const bookingML of candidatesML) {
+    const windowMsML =
+      (hoursByShopML.get(bookingML.shop) ?? DEFAULT_REMINDER_HOURS_ML) * HOUR_MS_ML;
     const startsAtML = bookingStartInstantML(bookingML);
-    if (startsAtML < nowML || startsAtML > windowEndML) continue;
+    if (startsAtML < nowML || startsAtML.getTime() > nowML.getTime() + windowMsML) continue;
 
     if (!bookingML.customerEmail) {
       skippedML += 1;
@@ -1471,7 +1479,6 @@ export async function sendDueRemindersML(
       skippedML += 1;
       continue;
     }
-    if (nowML.getTime() - noticeAtML.getTime() < REMINDER_MIN_GAP_MS_ML) continue;
 
     const { fromName: fromNameML } = await getShopEmailSettingsML(bookingML.shop);
     const { subject: subjectML, text: textML, html: htmlML } = await reminderEmailML(bookingML.shop, {

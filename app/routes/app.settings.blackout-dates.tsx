@@ -418,12 +418,10 @@ export default function BlackoutDatesPage() {
       ? (fetcherML.data.errors ?? {})
       : {};
 
-  // A new server response means its errors should be shown again.
   useEffect(() => {
     setErrorsDismissedML(false);
   }, [fetcherML.data]);
 
-  // Opening or closing the modal always starts with a clean slate.
   useEffect(() => {
     setErrorsDismissedML(true);
   }, [openML]);

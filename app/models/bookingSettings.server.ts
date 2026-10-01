@@ -116,6 +116,40 @@ export async function updateEmailFromNameML(
   });
 }
 
+export const MIN_REMINDER_HOURS_ML = 1;
+export const MAX_REMINDER_HOURS_ML = 168;
+
+export function parseReminderHoursBeforeML(formDataML: FormData): {
+  value: number;
+  error?: string;
+} {
+  const rawML = String(formDataML.get("reminderHoursBefore") ?? "").trim();
+  const nML = Number(rawML);
+  if (
+    !rawML ||
+    !Number.isInteger(nML) ||
+    nML < MIN_REMINDER_HOURS_ML ||
+    nML > MAX_REMINDER_HOURS_ML
+  ) {
+    return {
+      value: Number.isInteger(nML) && nML > 0 ? nML : 24,
+      error: `Enter a whole number of hours between ${MIN_REMINDER_HOURS_ML} and ${MAX_REMINDER_HOURS_ML}.`,
+    };
+  }
+  return { value: nML };
+}
+
+export async function updateReminderHoursBeforeML(
+  shopML: string,
+  reminderHoursBeforeML: number,
+): Promise<void> {
+  await prismaML.bookingSettings.upsert({
+    where: { shop: shopML },
+    create: { shop: shopML, ...DEFAULT_BOOKING_SETTINGS_ML, reminderHoursBefore: reminderHoursBeforeML },
+    update: { reminderHoursBefore: reminderHoursBeforeML },
+  });
+}
+
 export function parseBookingSettingsFormML(formDataML: FormData): {
   values: BookingSettingsFormValues;
   errors: BookingSettingsFieldErrors;

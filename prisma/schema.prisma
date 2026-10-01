@@ -42,6 +42,7 @@ model BookingSettings {
   bookingStartDate DateTime?
   bookingEndDate   DateTime?
   emailFromName String?
+  reminderHoursBefore Int @default(24)
   locationPrefillDone Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

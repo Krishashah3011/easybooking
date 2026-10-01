@@ -281,8 +281,6 @@
     if (overlayElML && overlayElML.parentNode !== document.body) {
       document.body.appendChild(overlayElML);
     }
-    // The overlay now lives in <body>, so its inner parts must be queried from it,
-    // not from rootML (which no longer contains them).
     var modalScopeML = overlayElML || rootML;
     var closeBtnML = modalScopeML.querySelector("[data-booking-close]");
     var locationTimezoneElML = modalScopeML.querySelector("[data-booking-location-timezone]");

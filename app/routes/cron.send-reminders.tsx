@@ -15,12 +15,7 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const windowHoursParamML = new URL(requestML.url).searchParams.get("windowHours");
-  const windowHoursML = windowHoursParamML ? Number(windowHoursParamML) : 24;
-
-  const resultML = await sendDueRemindersML(
-    Number.isFinite(windowHoursML) ? windowHoursML : 24,
-  );
+  const resultML = await sendDueRemindersML();
 
   return Response.json(resultML);
 };
