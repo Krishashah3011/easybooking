@@ -44,30 +44,38 @@ export function AppTopNav() {
           {NAV_ITEMS_ML.map((itemML) => {
             const Icon = itemML.icon;
             const activeML = isActiveML(pathnameML, itemML);
+            const tipIdML = `nav-tip-${itemML.label.toLowerCase()}`;
             return (
-              <Link
-                key={itemML.href}
-                to={itemML.href}
-                title={itemML.label}
-                aria-label={itemML.label}
-                aria-current={activeML ? "page" : undefined}
-                className="link"
-              >
-                <Icon active={activeML} />
-              </Link>
+              <div key={itemML.href} style={{ display: "flex" }}>
+                <s-text interestFor={tipIdML}>
+                  <Link
+                    to={itemML.href}
+                    aria-label={itemML.label}
+                    aria-current={activeML ? "page" : undefined}
+                    className="link"
+                  >
+                    <Icon active={activeML} />
+                  </Link>
+                </s-text>
+                <s-tooltip id={tipIdML}>{itemML.label}</s-tooltip>
+              </div>
             );
           })}
         </div>
         <div className="spacer" />
-        <Link
-          to="/app/account"
-          title="Account"
-          aria-label="Account"
-          aria-current={accountActiveML ? "page" : undefined}
-          className="link"
-        >
-          <AccountIcon active={accountActiveML} />
-        </Link>
+        <div style={{ display: "flex" }}>
+          <s-text interestFor="nav-tip-account">
+            <Link
+              to="/app/account"
+              aria-label="Account"
+              aria-current={accountActiveML ? "page" : undefined}
+              className="link"
+            >
+              <AccountIcon active={accountActiveML} />
+            </Link>
+          </s-text>
+          <s-tooltip id="nav-tip-account">Account</s-tooltip>
+        </div>
       </div>
     </nav>
   );
