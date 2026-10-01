@@ -51,6 +51,7 @@
     selectLocation: "Select location",
     selectLocationPlaceholder: "Location",
     locationRequired: "Please select a location to continue.",
+    customFieldRequired: "This field is required.",
     noLocationsConfigured:
       "Booking isn't available for this product.",
     next: "Next",
@@ -1163,7 +1164,7 @@
           labelML.appendChild(iconSpanML);
         }
         var labelTextML = document.createElement("span");
-        labelTextML.textContent = fieldML.label;
+        labelTextML.textContent = fieldML.label + (fieldML.required ? " *" : "");
         labelML.appendChild(labelTextML);
         wrapperML.appendChild(labelML);
 
@@ -1194,9 +1195,11 @@
         inputML.disabled = quantityLockedML;
         inputML.addEventListener("input", function () {
           customFieldValuesML[fieldML.fieldKey] = inputML.value;
+          clearCustomFieldErrorML(inputML);
         });
         inputML.addEventListener("change", function () {
           customFieldValuesML[fieldML.fieldKey] = inputML.value;
+          clearCustomFieldErrorML(inputML);
         });
 
         wrapperML.classList.toggle("is-locked", quantityLockedML);
@@ -1206,6 +1209,43 @@
       });
 
       customFieldsEntryElML.hidden = false;
+    }
+
+    function clearCustomFieldErrorML(inputML) {
+      inputML.classList.remove("booking-widget__field-input--error");
+      var wrapperML = inputML.parentNode;
+      if (!wrapperML) return;
+      var errML = wrapperML.querySelector(".booking-widget__field-error");
+      if (errML) errML.remove();
+    }
+
+    function validateRequiredCustomFieldsML() {
+      var firstInvalidML = null;
+      customFieldsML.forEach(function (fieldML) {
+        if (!fieldML.required) return;
+        var inputML = document.getElementById(
+          "booking-field-" + rootML.dataset.productId + "-" + fieldML.fieldKey,
+        );
+        if (!inputML) return;
+        clearCustomFieldErrorML(inputML);
+        var valueML = String(customFieldValuesML[fieldML.fieldKey] || "").trim();
+        if (valueML) return;
+        inputML.classList.add("booking-widget__field-input--error");
+        var errML = document.createElement("p");
+        errML.className = "booking-widget__field-error";
+        errML.setAttribute("role", "alert");
+        errML.textContent = stringsML.customFieldRequired;
+        inputML.parentNode.appendChild(errML);
+        if (!firstInvalidML) firstInvalidML = inputML;
+      });
+      if (firstInvalidML) {
+        if (firstInvalidML.scrollIntoView) {
+          firstInvalidML.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+        firstInvalidML.focus({ preventScroll: true });
+        return false;
+      }
+      return true;
     }
 
     function showErrorML(messageML) {
@@ -2596,6 +2636,7 @@
     if (nextSlotBtnML) {
       nextSlotBtnML.addEventListener("click", function () {
         if (!pendingDateML || !pendingSlotML) return;
+        if (!validateRequiredCustomFieldsML()) return;
         if (isSlotTakenML(pendingDateML, pendingSlotML)) {
           showErrorML(stringsML.slotAlreadySelectedError);
           return;
@@ -2633,6 +2674,8 @@
       }
 
       if (!pendingDateML || !pendingSlotML) return;
+
+      if (!atReviewStepML && !validateRequiredCustomFieldsML()) return;
 
       if (productBookingTypeML === "BUNDLE") {
         var totalSessionsML = bundleSessionCountML || 1;

@@ -459,44 +459,23 @@ const S: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
-    gap: "20px",
+    gap: "6px",
   },
   bookingForText: {
     fontFamily: "Inter",
-    fontWeight: 600,
-    fontSize: "20px",
+    fontWeight: 400,
+    fontSize: "16px",
     lineHeight: "24px",
     letterSpacing: "0.02em",
     color: "#000000",
     whiteSpace: "nowrap",
   },
   customerChip: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "4px 12px",
-    background: "#DDEEFF",
-    borderRadius: "70px",
     fontFamily: "Inter",
-    fontWeight: 400,
-    fontSize: "14px",
-    lineHeight: "17px",
-    color: "#000000",
-    whiteSpace: "nowrap",
-  },
-  dateTimeChipsRow: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: "20px",
-    flexWrap: "wrap",
-  },
-  dateTimeChip: {
-    fontFamily: "Inter",
-    fontWeight: 600,
-    fontSize: "14px",
-    lineHeight: "17px",
-    textAlign: "center",
+    fontWeight: 700,
+    fontSize: "16px",
+    lineHeight: "24px",
+    letterSpacing: "0.02em",
     color: "#000000",
     whiteSpace: "nowrap",
   },
@@ -582,8 +561,8 @@ const S: Record<string, React.CSSProperties> = {
     lineHeight: "17px",
     letterSpacing: "0.02em",
     color: "#000000",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+    overflowX: "auto",
+    overflowY: "hidden",
     whiteSpace: "nowrap",
   },
   actionRow: {
@@ -610,22 +589,24 @@ const S: Record<string, React.CSSProperties> = {
     justifyContent: "flex-end",
     flex: "0 0 auto",
     marginLeft: "auto",
-    gap: "10px",
+    gap: "16px",
   },
   actionSpacer: {
     flex: "0 0 141px",
   },
   cancelBookingBtn: {
     display: "inline-flex",
+    boxSizing: "border-box",
+    minWidth: "140px",
     justifyContent: "center",
     alignItems: "center",
-    padding: "10px",
+    padding: "0 16px",
     gap: "4px",
-    height: "34px",
-    borderRadius: "10px",
-    border: "none",
-    background: "transparent",
-    color: "#E00000",
+    height: "36px",
+    borderRadius: "8px",
+    border: "1px solid #E00000",
+    background: "#E00000",
+    color: "#FFFFFF",
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "16px",
@@ -635,15 +616,17 @@ const S: Record<string, React.CSSProperties> = {
   },
   rescheduleBookingBtn: {
     display: "inline-flex",
+    boxSizing: "border-box",
+    minWidth: "140px",
     justifyContent: "center",
     alignItems: "center",
-    padding: "10px",
+    padding: "0 16px",
     gap: "4px",
-    height: "34px",
-    borderRadius: "10px",
-    border: "none",
-    background: "transparent",
-    color: BLUE_ML,
+    height: "36px",
+    borderRadius: "8px",
+    border: `1px solid ${BLUE_ML}`,
+    background: BLUE_ML,
+    color: "#FFFFFF",
     fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "16px",
@@ -735,15 +718,16 @@ const PlusIcon = () => (
 
 
 const DETAILS_RESPONSIVE_CSS_ML = `
+  .eb-field-box {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .eb-field-box::-webkit-scrollbar {
+    display: none;
+  }
   @media (max-width: 720px) {
     .eb-fields-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    }
-    .eb-fields-grid > div > div,
-    .eb-action-row > div > div {
-      white-space: normal !important;
-      overflow-wrap: anywhere;
-      text-overflow: clip !important;
     }
     .eb-action-note,
     .eb-action-booked {
@@ -789,11 +773,13 @@ function FieldBlock({
   children: childrenML,
   style: styleML,
   className: classNameML,
+  noScroll: noScrollML,
 }: {
   label: string;
   children: React.ReactNode;
   style?: React.CSSProperties;
   className?: string;
+  noScroll?: boolean;
 }) {
   return (
     <div
@@ -801,7 +787,16 @@ function FieldBlock({
       style={styleML ? { ...S.fieldBlock, ...styleML } : S.fieldBlock}
     >
       <span style={S.fieldBlockLabel}>{labelML}</span>
-      <div style={S.fieldBlockBox}>{childrenML}</div>
+      <div
+        className={noScrollML ? undefined : "eb-field-box"}
+        style={
+          noScrollML
+            ? { ...S.fieldBlockBox, overflow: "hidden", textOverflow: "ellipsis" }
+            : S.fieldBlockBox
+        }
+      >
+        {childrenML}
+      </div>
     </div>
   );
 }
@@ -1018,11 +1013,6 @@ function BookingDetails({
           <span style={S.customerChip}>{bookingML.customerName ?? "—"}</span>
         </div>
 
-        <div className="eb-chip-group" style={S.dateTimeChipsRow}>
-          <span style={S.dateTimeChip}>{dateLabelML}</span>
-          {timeLabelML && <span style={S.dateTimeChip}>{timeLabelML}</span>}
-        </div>
-
         <div
           style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}
         >
@@ -1055,10 +1045,10 @@ function BookingDetails({
         <FieldBlock label="Customer Mail">
           {bookingML.customerEmail ?? "—"}
         </FieldBlock>
-        <FieldBlock label="Customer Phone">
+        <FieldBlock label="Customer Phone" noScroll>
           {bookingML.customerPhone ?? "—"}
         </FieldBlock>
-        <FieldBlock label="Booking Type">
+        <FieldBlock label="Booking Type" noScroll>
           {TYPE_SHORT_LABELS_ML[bookingML.bookingType]}
         </FieldBlock>
         <FieldBlock label="Location">{bookingML.location ?? "—"}</FieldBlock>
@@ -1157,9 +1147,9 @@ function BookingDetails({
         </div>
       ) : (
         <div className="eb-fields-grid" style={S.topFieldsRow}>
-          <FieldBlock label="Booking Date">{dateLabelML}</FieldBlock>
-          <FieldBlock label="Booking Time">{timeLabelML ?? "Whole day"}</FieldBlock>
-          <FieldBlock label="Quantity">{bookingML.quantity}</FieldBlock>
+          <FieldBlock label="Booking Date" noScroll>{dateLabelML}</FieldBlock>
+          <FieldBlock label="Booking Time" noScroll>{timeLabelML ?? "Whole day"}</FieldBlock>
+          <FieldBlock label="Quantity" noScroll>{bookingML.quantity}</FieldBlock>
           <FieldBlock label="Customer Note">{bookingML.note ?? "—"}</FieldBlock>
         </div>
       )}
@@ -1348,11 +1338,6 @@ function BundleGroupDetails({
           <span style={S.customerChip}>{firstML.customerName ?? "—"}</span>
         </div>
 
-        <div className="eb-chip-group" style={S.dateTimeChipsRow}>
-          <span style={S.dateTimeChip}>{whenML.date}</span>
-          {whenML.sub && <span style={S.dateTimeChip}>{whenML.sub}</span>}
-        </div>
-
         <div
           style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}
         >
@@ -1385,10 +1370,10 @@ function BundleGroupDetails({
         <FieldBlock label="Customer Mail">
           {firstML.customerEmail ?? "—"}
         </FieldBlock>
-        <FieldBlock label="Customer Phone">
+        <FieldBlock label="Customer Phone" noScroll>
           {firstML.customerPhone ?? "—"}
         </FieldBlock>
-        <FieldBlock label="Booking Type">
+        <FieldBlock label="Booking Type" noScroll>
           {TYPE_SHORT_LABELS_ML[firstML.bookingType]}
         </FieldBlock>
         <FieldBlock label="Location">{firstML.location ?? "—"}</FieldBlock>
@@ -1397,9 +1382,9 @@ function BundleGroupDetails({
       <hr style={S.detailsDivider} />
 
       <div className="eb-fields-grid" style={S.topFieldsRow}>
-        <FieldBlock label="Booking Date">{whenML.date}</FieldBlock>
-        <FieldBlock label="Booking Time">{whenML.sub ?? "Whole day"}</FieldBlock>
-        <FieldBlock label="Quantity">{firstML.quantity}</FieldBlock>
+        <FieldBlock label="Booking Date" noScroll>{whenML.date}</FieldBlock>
+        <FieldBlock label="Booking Time" noScroll>{whenML.sub ?? "Whole day"}</FieldBlock>
+        <FieldBlock label="Quantity" noScroll>{firstML.quantity}</FieldBlock>
         <FieldBlock label="Customer Note">{firstML.note ?? "—"}</FieldBlock>
       </div>
 

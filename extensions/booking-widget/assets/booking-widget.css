@@ -1847,6 +1847,21 @@ body.booking-widget-lock-scroll {
   border-color: #88b5e1;
 }
 
+.booking-widget__field-input--error,
+.booking-widget__field-input--error:focus {
+  border-color: #c0392b;
+  background: #fdeeee;
+}
+
+.booking-widget__field-error {
+  flex: 0 0 100%;
+  margin: 0;
+  color: #c0392b;
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
 @media (max-width: 780px) {
   .booking-widget__modal-title {
     font-size: 23px;
