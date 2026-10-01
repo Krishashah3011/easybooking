@@ -8,11 +8,21 @@ import {
   getBookableProductML,
   isProductAvailableForCountryML,
 } from "../models/bookableProduct.server";
+import { getOrCreateShopSettingsML } from "../models/shopSettings.server";
 
 export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
   const { session: sessionML } = await authenticate.public.appProxy(requestML);
   if (!sessionML) {
     return Response.json({ error: "Unknown shop" }, { status: 401 });
+  }
+
+  const shopSettingsML = await getOrCreateShopSettingsML(sessionML.shop);
+  if (!shopSettingsML.isAppEnabled) {
+    return Response.json({
+      appEnabled: false,
+      locations: [],
+      productBookingEnabled: false,
+    });
   }
 
   const urlML = new URL(requestML.url);
@@ -31,6 +41,7 @@ export const loader = async ({ request: requestML }: LoaderFunctionArgs) => {
     : true;
 
   return Response.json({
+    appEnabled: true,
     locations: locationsML.map(toPublicLocationML),
     productBookingEnabled: productBookingEnabledML,
   });

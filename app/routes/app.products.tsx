@@ -360,7 +360,11 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
     }
 
     await setAllBookableProductsEnabledML(sessionML.shop, productsML, isEnabledML);
-    return { ok: true as const };
+    return {
+      ok: true as const,
+      intent: "bulkToggle" as const,
+      isEnabled: isEnabledML,
+    };
   }
 
   const productIdML = String(formDataML.get("productId") ?? "");
@@ -388,7 +392,7 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
     isEnabledML,
   );
 
-  return { ok: true as const };
+  return { ok: true as const, intent: "toggle" as const, isEnabled: isEnabledML };
 };
 
 export default function BookingProductsPage() {
@@ -409,8 +413,26 @@ export default function BookingProductsPage() {
       : "";
 
   useEffect(() => {
-    if (fetcherML.data && !fetcherML.data.ok && "error" in fetcherML.data) {
-      shopifyML.toast.show(fetcherML.data.error, { isError: true });
+    if (!fetcherML.data) return;
+    if (!fetcherML.data.ok) {
+      if ("error" in fetcherML.data) {
+        shopifyML.toast.show(fetcherML.data.error, { isError: true });
+      }
+      return;
+    }
+    if ("intent" in fetcherML.data) {
+      const enabledML = fetcherML.data.isEnabled;
+      if (fetcherML.data.intent === "bulkToggle") {
+        shopifyML.toast.show(
+          enabledML
+            ? "Booking enabled for all products"
+            : "Booking disabled for all products",
+        );
+      } else {
+        shopifyML.toast.show(
+          enabledML ? "Booking enabled for product" : "Booking disabled for product",
+        );
+      }
     }
   }, [fetcherML.data, shopifyML]);
 

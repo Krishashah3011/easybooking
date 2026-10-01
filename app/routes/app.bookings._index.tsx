@@ -945,8 +945,13 @@ function BookingDetails({
   }, [rescheduleFetcherML.data, shopifyML]);
 
   useEffect(() => {
-    if (cancelFetcherML.data?.intent === "cancel" && cancelFetcherML.data.ok) {
+    if (cancelFetcherML.data?.intent !== "cancel") return;
+    if (cancelFetcherML.data.ok) {
       shopifyML.toast.show("Booking cancelled");
+    } else {
+      shopifyML.toast.show(cancelFetcherML.data.error || "Couldn't cancel booking.", {
+        isError: true,
+      });
     }
   }, [cancelFetcherML.data, shopifyML]);
 

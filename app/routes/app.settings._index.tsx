@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, useOutletContext } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -14,6 +14,7 @@ import {
   setAppEnabledML,
 } from "../models/shopSettings.server";
 import { stylesML, BLUE_ML } from "../components/SettingsUI";
+import type { RegisterSave } from "./app.settings";
 
 const GRAY_OFF_ML = "#E4E4E4";
 
@@ -94,27 +95,33 @@ export default function GeneralSettingsTab() {
     useLoaderData<typeof loader>();
   const fetcherML = useFetcher<typeof action>();
   const shopifyML = useAppBridge();
+  const { registerSave: registerSaveML } = useOutletContext<{ registerSave: RegisterSave }>();
 
-  const currentEnabledML =
-    fetcherML.formData?.get("isAppEnabled") != null
-      ? fetcherML.formData.get("isAppEnabled") === "true"
-      : isAppEnabledML;
-  const isSubmittingML = fetcherML.state !== "idle";
+  const [currentEnabledML, setCurrentEnabledML] = useState(isAppEnabledML);
+  const isSavingML = fetcherML.state !== "idle";
+
+  useEffect(() => {
+    setCurrentEnabledML(isAppEnabledML);
+  }, [isAppEnabledML]);
 
   useEffect(() => {
     if (fetcherML.data?.ok) {
-      shopifyML.toast.show(
-        fetcherML.data.isAppEnabled ? "Booking app enabled" : "Booking app disabled",
-      );
+      shopifyML.toast.show("Settings saved");
     }
   }, [fetcherML.data, shopifyML]);
 
   const toggleAppML = () => {
-    fetcherML.submit(
-      { isAppEnabled: String(!currentEnabledML) },
-      { method: "POST" },
-    );
+    setCurrentEnabledML((prevML) => !prevML);
   };
+
+  const handleSaveML = () => {
+    fetcherML.submit({ isAppEnabled: String(currentEnabledML) }, { method: "POST" });
+  };
+
+  useEffect(() => {
+    registerSaveML(handleSaveML, isSavingML);
+    return () => registerSaveML(null, false);
+  }, [registerSaveML, currentEnabledML, isSavingML]);
 
   const themeEditorUrlML = `https://${shopML}/admin/themes/current/editor?context=apps`;
 
@@ -140,7 +147,6 @@ export default function GeneralSettingsTab() {
           <ToggleSwitch
             checked={currentEnabledML}
             onChange={toggleAppML}
-            disabled={isSubmittingML}
             label={currentEnabledML ? "Disable booking app" : "Enable booking app"}
           />
         </div>

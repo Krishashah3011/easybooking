@@ -869,6 +869,7 @@ export default function Dashboard() {
   const [dateToML, setDateToML] = useState(reportFiltersML.dateTo);
 
   const applyReportFiltersML = () => {
+    if (dateFromML && dateToML && dateToML < dateFromML) return;
     const paramsML = new URLSearchParams();
     if (productIdML) paramsML.set("productId", productIdML);
     if (dateFromML) paramsML.set("dateFrom", dateFromML);
@@ -1016,7 +1017,12 @@ export default function Dashboard() {
                   <input
                     type="date"
                     value={dateFromML}
-                    onChange={(eML) => setDateFromML(eML.target.value)}
+                    max={dateToML || undefined}
+                    onChange={(eML) => {
+                      const nextML = eML.target.value;
+                      setDateFromML(nextML);
+                      if (nextML && dateToML && dateToML < nextML) setDateToML("");
+                    }}
                     style={analyticsStylesML.dateInput}
                     className="eb-date-input"
                   />
@@ -1029,7 +1035,12 @@ export default function Dashboard() {
                   <input
                     type="date"
                     value={dateToML}
-                    onChange={(eML) => setDateToML(eML.target.value)}
+                    min={dateFromML || undefined}
+                    onChange={(eML) => {
+                      const nextML = eML.target.value;
+                      if (nextML && dateFromML && nextML < dateFromML) return;
+                      setDateToML(nextML);
+                    }}
                     style={analyticsStylesML.dateInput}
                     className="eb-date-input"
                   />

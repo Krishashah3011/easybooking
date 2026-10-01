@@ -1129,8 +1129,21 @@ export default function BookableProductPage() {
       setNewBlackoutDateML("");
       setNewBlackoutReasonML("");
       setBlackoutOpenML(false);
+      shopifyML.toast.show("Blackout date added");
     }
-  }, [blackoutFetcherML.data]);
+    if (
+      blackoutFetcherML.data?.intent === "deleteBlackoutDate" &&
+      blackoutFetcherML.data.ok
+    ) {
+      shopifyML.toast.show("Blackout date removed");
+    }
+    if (
+      blackoutFetcherML.data?.intent === "excludeBlackoutDate" &&
+      blackoutFetcherML.data.ok
+    ) {
+      shopifyML.toast.show("Shop blackout date removed for this product");
+    }
+  }, [blackoutFetcherML.data, shopifyML]);
 
   useEffect(() => {
     if (!blackoutOpenML) return;

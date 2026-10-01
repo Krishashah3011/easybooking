@@ -905,6 +905,11 @@
           return resML.json();
         })
         .then(function (dataML) {
+          if (dataML.appEnabled === false) {
+            rootML.hidden = true;
+            rootML.style.display = "none";
+            return;
+          }
           locationsML = dataML.locations || [];
           productBookingEnabledML = dataML.productBookingEnabled !== false;
           locationsLoadedML = true;

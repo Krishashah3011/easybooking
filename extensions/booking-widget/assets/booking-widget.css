@@ -267,17 +267,21 @@
   color: #ffffff;
 }
 
-.booking-widget__error {
+.booking-widget .booking-widget__error {
   color: #c0392b;
-  font-size: 0.9rem;
+  font-family: var(--font-body-family, inherit);
+  font-size: 1em;
   font-weight: 600;
-  margin: 0.5rem 0;
+  line-height: 1.5;
+  margin: 12px 0 16px;
 }
 
-.booking-widget__unavailable {
+.booking-widget .booking-widget__unavailable {
   color: #6d7175;
-  font-size: 0.95rem;
-  margin: 0.5rem 0;
+  font-family: var(--font-body-family, inherit);
+  font-size: 1.5em;
+  line-height: 1.5;
+  margin: 12px 0 16px;
 }
 
 .booking-widget__overlay {

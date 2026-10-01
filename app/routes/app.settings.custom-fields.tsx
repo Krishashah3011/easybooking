@@ -770,8 +770,13 @@ function FieldRow({
   }, [isEditingML]);
 
   useEffect(() => {
-    if (deleteFetcherML.data?.intent === "delete" && deleteFetcherML.data.ok) {
+    if (deleteFetcherML.data?.intent !== "delete") return;
+    if (deleteFetcherML.data.ok) {
       shopifyML.toast.show("Field removed");
+    } else {
+      shopifyML.toast.show(deleteFetcherML.data.error || "Couldn't delete field.", {
+        isError: true,
+      });
     }
   }, [deleteFetcherML.data, shopifyML]);
 

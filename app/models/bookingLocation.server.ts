@@ -113,8 +113,8 @@ export async function createLocationML(
   shopML: string,
   valuesML: LocationFormValues,
 ): Promise<{ ok: true; location: BookingLocation } | { ok: false; error: string }> {
-  const existingML = await prismaML.bookingLocation.findUnique({
-    where: { shop_name: { shop: shopML, name: valuesML.name } },
+  const existingML = await prismaML.bookingLocation.findFirst({
+    where: { shop: shopML, name: { equals: valuesML.name, mode: "insensitive" } },
   });
   if (existingML) {
     return { ok: false, error: "A location with this name already exists." };
@@ -154,7 +154,11 @@ export async function updateLocationML(
   }
 
   const nameTakenML = await prismaML.bookingLocation.findFirst({
-    where: { shop: shopML, name: valuesML.name, id: { not: idML } },
+    where: {
+      shop: shopML,
+      name: { equals: valuesML.name, mode: "insensitive" },
+      id: { not: idML },
+    },
   });
   if (nameTakenML) {
     return { ok: false, error: "A location with this name already exists." };

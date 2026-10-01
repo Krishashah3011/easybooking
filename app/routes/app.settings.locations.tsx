@@ -538,6 +538,14 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
   if (intentML === "update") {
     const idML = String(formDataML.get("id") ?? "");
     const resultML = await updateLocationML(sessionML.shop, idML, valuesML);
+    if (!resultML.ok) {
+      return {
+        intent: intentML,
+        ok: false as const,
+        errors: { name: resultML.error },
+        values: valuesML,
+      };
+    }
     return { intent: intentML, ...resultML, values: valuesML };
   }
 

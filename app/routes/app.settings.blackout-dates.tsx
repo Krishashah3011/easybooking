@@ -394,6 +394,7 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
 export default function BlackoutDatesPage() {
   const { blackoutDates: blackoutDatesML } = useLoaderData<typeof loader>();
   const fetcherML = useFetcher<typeof action>();
+  const shopifyML = useAppBridge();
 
   const [dateML, setDateML] = useState("");
   const [reasonML, setReasonML] = useState("");
@@ -432,8 +433,16 @@ export default function BlackoutDatesPage() {
       setDateML("");
       setReasonML("");
       setOpenML(false);
+      shopifyML.toast.show("Blackout date added");
     }
-  }, [fetcherML.data]);
+    if (fetcherML.data?.intent === "delete") {
+      if (fetcherML.data.ok) {
+        shopifyML.toast.show("Blackout date removed");
+      } else {
+        shopifyML.toast.show("Couldn't delete blackout date.", { isError: true });
+      }
+    }
+  }, [fetcherML.data, shopifyML]);
 
   useEffect(() => {
     if (!openML) return;
