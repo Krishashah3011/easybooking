@@ -1002,6 +1002,20 @@ function LocationRow({
   const isBusyML = isDeletingML || isReorderingML;
 
   useEffect(() => {
+    if (!isEditingML) return;
+    const onKeyDownML = (eML: KeyboardEvent) => {
+      if (eML.key === "Escape") setIsEditingML(false);
+    };
+    document.addEventListener("keydown", onKeyDownML);
+    const prevOverflowML = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDownML);
+      document.body.style.overflow = prevOverflowML;
+    };
+  }, [isEditingML]);
+
+  useEffect(() => {
     if (deleteFetcherML.data?.intent !== "delete") return;
     if (deleteFetcherML.data.ok) {
       shopifyML.toast.show("Location removed");
@@ -1018,29 +1032,6 @@ function LocationRow({
       { method: "POST" },
     );
   };
-
-  if (isEditingML) {
-    return (
-      <div>
-        <LocationEditor
-          locationId={locationML.id}
-          submitLabel="Save"
-          onCancel={() => setIsEditingML(false)}
-          initial={{
-            name: locationML.name,
-            timezone: locationML.timezone,
-            isEnabled: locationML.isEnabled,
-            workingDays: locationML.workingDays
-              ? parseWorkingDaysML(locationML.workingDays)
-              : null,
-            dailyStartTime: locationML.dailyStartTime,
-            dailyEndTime: locationML.dailyEndTime,
-          }}
-        />
-        <hr style={stylesML.divider} />
-      </div>
-    );
-  }
 
   const offsetML = timezoneOffsetLabelML(locationML.timezone);
 
@@ -1112,6 +1103,74 @@ function LocationRow({
           </button>
         </div>
       </div>
+      {isEditingML && (
+        <div
+          role="presentation"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit Location"
+            style={{
+              boxSizing: "border-box",
+              width: "min(640px, 100%)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: "#FFFFFF",
+              borderRadius: "8px",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              fontFamily: "Inter",
+            }}
+          >
+            <div style={stylesML.headerRow}>
+              <div style={stylesML.headerLeft}>
+                <p style={stylesML.title}>Edit Location</p>
+              </div>
+              <button
+                type="button"
+                style={stylesML.chevronButton}
+                aria-label="Close"
+                onClick={() => setIsEditingML(false)}
+              >
+                <span style={{ fontSize: "24px", lineHeight: "20px", color: TEXT_BLACK_ML }}>
+                  &times;
+                </span>
+              </button>
+            </div>
+            <hr style={stylesML.divider} />
+            <LocationEditor
+              bare
+              locationId={locationML.id}
+              submitLabel="Save"
+              onCancel={() => setIsEditingML(false)}
+              initial={{
+                name: locationML.name,
+                timezone: locationML.timezone,
+                isEnabled: locationML.isEnabled,
+                workingDays: locationML.workingDays
+                  ? parseWorkingDaysML(locationML.workingDays)
+                  : null,
+                dailyStartTime: locationML.dailyStartTime,
+                dailyEndTime: locationML.dailyEndTime,
+              }}
+            />
+          </div>
+        </div>
+      )}
       <hr style={stylesML.divider} />
     </div>
   );

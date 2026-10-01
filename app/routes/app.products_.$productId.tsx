@@ -768,22 +768,6 @@ function ChevronDownIcon() {
   );
 }
 
-function CollapseChevron({ open: openML }: { open: boolean }) {
-  return (
-    <img
-      src="/chevron.svg"
-      width={11}
-      height={6}
-      alt=""
-      aria-hidden="true"
-      style={{
-        transform: openML ? "rotate(180deg)" : "rotate(0deg)",
-        transition: "transform 0.2s ease",
-      }}
-    />
-  );
-}
-
 function PlusIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -927,27 +911,15 @@ function FieldGroup({
 function Card({
   title: titleML,
   description: descriptionML,
-  collapsible: collapsibleML,
-  open: openML = true,
-  onToggle: onToggleML,
   children: childrenML,
 }: {
   title: string;
   description?: string;
-  collapsible?: boolean;
-  open?: boolean;
-  onToggle?: () => void;
   children: React.ReactNode;
 }) {
   return (
     <div style={uiML.card}>
-      <div
-        style={{
-          ...uiML.cardHeaderRow,
-          ...(collapsibleML ? { cursor: "pointer" } : {}),
-        }}
-        onClick={collapsibleML ? onToggleML : undefined}
-      >
+      <div style={uiML.cardHeaderRow}>
         <div style={uiML.cardHeaderText}>
           <p style={uiML.title}>{titleML}</p>
           {descriptionML && (
@@ -956,23 +928,9 @@ function Card({
             </div>
           )}
         </div>
-        {collapsibleML && (
-          <button
-            type="button"
-            style={uiML.chevronButton}
-            aria-label={openML ? "Collapse" : "Expand"}
-            aria-expanded={openML}
-          >
-            <CollapseChevron open={openML} />
-          </button>
-        )}
       </div>
-      {openML && (
-        <>
-          <hr style={uiML.divider} />
-          {childrenML}
-        </>
-      )}
+      <hr style={uiML.divider} />
+      {childrenML}
     </div>
   );
 }
@@ -1170,8 +1128,23 @@ export default function BookableProductPage() {
     ) {
       setNewBlackoutDateML("");
       setNewBlackoutReasonML("");
+      setBlackoutOpenML(false);
     }
   }, [blackoutFetcherML.data]);
+
+  useEffect(() => {
+    if (!blackoutOpenML) return;
+    const onKeyDownML = (eML: KeyboardEvent) => {
+      if (eML.key === "Escape") setBlackoutOpenML(false);
+    };
+    document.addEventListener("keydown", onKeyDownML);
+    const prevOverflowML = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDownML);
+      document.body.style.overflow = prevOverflowML;
+    };
+  }, [blackoutOpenML]);
 
   const setFieldML = <K extends keyof BookableProductFormValues>(
     keyML: K,
@@ -1762,61 +1735,160 @@ export default function BookableProductPage() {
               </div>
             </Card>
 
-            <Card
-              title="Add a Blackout Date"
-              description="Block bookings of this product on specific dates- holidays, closures, and one-off events (on top of any shop-wide blackout dates)."
-              collapsible
-              open={blackoutOpenML}
-              onToggle={() => setBlackoutOpenML((prevML) => !prevML)}
-            >
-              <div style={uiML.fieldsRow}>
-                <DateField
-                  label="Date"
-                  grey
-                  size="fixed"
-                  value={newBlackoutDateML}
-                  error={blackoutErrorsML.date}
-                  onChange={setNewBlackoutDateML}
-                />
-                <FieldGroup label="Reason (Optional)" grey size="grow">
-                  <div style={uiML.inputBox}>
-                    <input
-                      type="text"
-                      style={uiML.timeInput}
-                      placeholder="e.g. Maintenance"
-                      value={newBlackoutReasonML}
-                      onChange={(eML: FieldChangeEvent) =>
-                        setNewBlackoutReasonML(eML.currentTarget.value)
-                      }
-                    />
+            <div style={uiML.card}>
+              <div style={uiML.cardHeaderRow}>
+                <div style={uiML.cardHeaderText}>
+                  <p style={uiML.title}>Add a Blackout Date</p>
+                  <div style={uiML.descRow}>
+                    <p style={uiML.descText}>
+                      Block bookings of this product on specific dates- holidays, closures, and one-off events (on top of any shop-wide blackout dates).
+                    </p>
                   </div>
-                </FieldGroup>
+                </div>
+                <button
+                  type="button"
+                  className="eb-add-btn"
+                  style={{ ...uiML.addButton, alignSelf: "center", minWidth: "auto" }}
+                  onClick={() => setBlackoutOpenML(true)}
+                >
+                  <span style={uiML.addButtonLabel}>Add Blackout Date</span>
+                </button>
               </div>
+            </div>
 
-              <hr style={uiML.divider} />
-
-              <button
-                type="button"
-                className="eb-add-btn"
+            {blackoutOpenML && (
+              <div
+                role="presentation"
                 style={{
-                  ...uiML.addButton,
-                  ...(isAddingBlackoutML
-                    ? { opacity: 0.6, cursor: "not-allowed" }
-                    : {}),
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 1000,
+                  background: "rgba(0, 0, 0, 0.5)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "16px",
+                  boxSizing: "border-box",
                 }}
-                onClick={handleAddBlackoutDateML}
-                disabled={isAddingBlackoutML}
               >
-                <span style={uiML.addButtonLabel}>
-                  {isAddingBlackoutML ? "Adding…" : "Add Blackout Date"}
-                </span>
-                {!isAddingBlackoutML && (
-                  <span style={uiML.plusWrap}>
-                    <PlusIcon />
-                  </span>
-                )}
-              </button>
-            </Card>
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Add a Blackout Date"
+                  style={{
+                    boxSizing: "border-box",
+                    width: "min(640px, 100%)",
+                    maxHeight: "90vh",
+                    overflowY: "auto",
+                    background: "#FFFFFF",
+                    borderRadius: "8px",
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    fontFamily: "Inter",
+                  }}
+                >
+                  <div style={uiML.cardHeaderRow}>
+                    <div style={uiML.cardHeaderText}>
+                      <p style={uiML.title}>Add a Blackout Date</p>
+                    </div>
+                    <button
+                      type="button"
+                      style={uiML.chevronButton}
+                      aria-label="Close"
+                      onClick={() => setBlackoutOpenML(false)}
+                    >
+                      <span style={{ fontSize: "24px", lineHeight: "20px", color: "#000000" }}>
+                        &times;
+                      </span>
+                    </button>
+                  </div>
+                  <hr style={uiML.divider} />
+
+                  <div style={uiML.fieldsRow}>
+                    <DateField
+                      label="Date"
+                      grey
+                      size="fixed"
+                      value={newBlackoutDateML}
+                      error={blackoutErrorsML.date}
+                      onChange={setNewBlackoutDateML}
+                    />
+                    <FieldGroup label="Reason (Optional)" grey size="grow">
+                      <div style={uiML.inputBox}>
+                        <input
+                          type="text"
+                          style={uiML.timeInput}
+                          placeholder="e.g. Maintenance"
+                          value={newBlackoutReasonML}
+                          onChange={(eML: FieldChangeEvent) =>
+                            setNewBlackoutReasonML(eML.currentTarget.value)
+                          }
+                        />
+                      </div>
+                    </FieldGroup>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      gap: "12px",
+                      width: "calc(100% + 32px)",
+                      margin: "0 -16px -16px",
+                      padding: "14px 16px",
+                      boxSizing: "border-box",
+                      background: "#F4F8FB",
+                      borderTop: "1px solid #E3E8EE",
+                      borderRadius: "0 0 8px 8px",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      style={{
+                        padding: "10px 16px",
+                        height: "42px",
+                        background: "#FFFFFF",
+                        border: "1px solid #E3E8EE",
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        fontFamily: "Inter",
+                        fontWeight: 600,
+                        fontSize: "16px",
+                        color: "#000000",
+                      }}
+                      onClick={() => {
+                        setNewBlackoutDateML("");
+                        setNewBlackoutReasonML("");
+                      }}
+                      disabled={isAddingBlackoutML}
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="button"
+                      className="eb-add-btn"
+                      style={{
+                        ...uiML.addButton,
+                        minWidth: 0,
+                        ...(isAddingBlackoutML
+                          ? { opacity: 0.6, cursor: "not-allowed" }
+                          : {}),
+                      }}
+                      onClick={handleAddBlackoutDateML}
+                      disabled={isAddingBlackoutML}
+                    >
+                      <span style={uiML.addButtonLabel}>
+                        {isAddingBlackoutML ? "Adding…" : "Add"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {blackoutDatesML.length > 0 && (
               <div className="eb-pd-bo-listcard" style={uiML.card}>

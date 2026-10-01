@@ -41,8 +41,6 @@ import {
   TEXT_DARK_ML,
   TEXT_MUTED_ML,
   BLUE_ML,
-  ChevronDownIcon,
-  collapsibleHeaderStyleML,
 } from "../components/SettingsUI";
 import type { RegisterSave } from "./app.settings";
 
@@ -78,7 +76,7 @@ export const action = async ({ request: requestML }: ActionFunctionArgs) => {
     }
     await resetEmailTemplateML(sessionML.shop, typeML);
     const templatesML = await listEmailTemplatesML(sessionML.shop);
-    return { ok: true as const, kind: "reset" as const, templates: templatesML };
+    return { ok: true as const, kind: "reset" as const, type: typeML, templates: templatesML };
   }
 
   const { values: valuesML, errors: smtpErrorsML } = parseSmtpSettingsFormML(formDataML);
@@ -162,9 +160,13 @@ export default function EmailSettingsTab() {
   const [templateValuesML, setTemplateValuesML] = useState<EditableTemplateValues>(() =>
     toEditableValuesML(initialTemplatesML),
   );
-  const [previewOpenML, setPreviewOpenML] = useState<Record<string, boolean>>({});
-  const [openTemplatesML, setOpenTemplatesML] = useState<Record<string, boolean>>({});
-  const bodyRefsML = useRef<Record<string, RichTextEditorHandle | null>>({});
+  const [editingTypeML, setEditingTypeML] = useState<EmailTemplateType | null>(null);
+  const [draftML, setDraftML] = useState<{ subject: string; body: string }>({
+    subject: "",
+    body: "",
+  });
+  const popupSaveRef = useRef(false);
+  const bodyRefML = useRef<RichTextEditorHandle | null>(null);
 
   const smtpErrorsML: SmtpSettingsFieldErrors & { emailFromName?: string } =
     saveFetcherML.data && saveFetcherML.data.kind === "save"
@@ -182,15 +184,46 @@ export default function EmailSettingsTab() {
       setTemplatesML(saveFetcherML.data.templates);
       setTemplateValuesML(toEditableValuesML(saveFetcherML.data.templates));
       shopifyML.toast.show("Settings saved");
+      if (popupSaveRef.current) {
+        popupSaveRef.current = false;
+        setEditingTypeML(null);
+      }
     } else {
+      popupSaveRef.current = false;
       shopifyML.toast.show("Please fix the highlighted fields", { isError: true });
     }
   }, [saveFetcherML.data, shopifyML]);
 
   useEffect(() => {
+    if (!editingTypeML) return;
+    const onKeyDownML = (eML: KeyboardEvent) => {
+      if (eML.key === "Escape") setEditingTypeML(null);
+    };
+    document.addEventListener("keydown", onKeyDownML);
+    const prevOverflowML = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDownML);
+      document.body.style.overflow = prevOverflowML;
+    };
+  }, [editingTypeML]);
+
+  useEffect(() => {
     if (resetFetcherML.data?.ok && resetFetcherML.data.kind === "reset") {
+      const resetValuesML = toEditableValuesML(resetFetcherML.data.templates);
+      const resetTypeML = resetFetcherML.data.type;
       setTemplatesML(resetFetcherML.data.templates);
-      setTemplateValuesML(toEditableValuesML(resetFetcherML.data.templates));
+      if (resetTypeML && resetValuesML[resetTypeML]) {
+        setTemplateValuesML((prevML) => ({
+          ...prevML,
+          [resetTypeML]: resetValuesML[resetTypeML],
+        }));
+        if (editingTypeML === resetTypeML) {
+          setDraftML(resetValuesML[resetTypeML]);
+        }
+      } else {
+        setTemplateValuesML(resetValuesML);
+      }
       shopifyML.toast.show("Reverted to default");
     }
   }, [resetFetcherML.data, shopifyML]);
@@ -202,40 +235,29 @@ export default function EmailSettingsTab() {
     setSmtpValuesML((prevML) => ({ ...prevML, [keyML]: valueML }));
   };
 
-  const setTemplateFieldML = (
-    typeML: EmailTemplateType,
-    fieldML: "subject" | "body",
-    valueML: string,
-  ) => {
-    setTemplateValuesML((prevML) => ({
-      ...prevML,
-      [typeML]: { ...prevML[typeML], [fieldML]: valueML },
-    }));
+  const openTemplateEditorML = (typeML: EmailTemplateType) => {
+    setDraftML(templateValuesML[typeML] ?? { subject: "", body: "" });
+    setEditingTypeML(typeML);
   };
 
-  const insertTokenML = (typeML: EmailTemplateType, tokenML: string) => {
-    const editorHandleML = bodyRefsML.current[typeML];
+  const closeTemplateEditorML = () => {
+    setEditingTypeML(null);
+  };
+
+  const insertTokenML = (tokenML: string) => {
+    const editorHandleML = bodyRefML.current;
     if (!editorHandleML) {
-      const currentML = templateValuesML[typeML]?.body ?? "";
-      setTemplateFieldML(typeML, "body", `${currentML}${tokenML}`);
+      setDraftML((prevML) => ({ ...prevML, body: `${prevML.body}${tokenML}` }));
       return;
     }
     editorHandleML.insertText(tokenML);
   };
 
-  const togglePreviewML = (typeML: EmailTemplateType) => {
-    setPreviewOpenML((prevML) => ({ ...prevML, [typeML]: !prevML[typeML] }));
-  };
-
-  const toggleTemplateOpenML = (typeML: EmailTemplateType) => {
-    setOpenTemplatesML((prevML) => ({ ...prevML, [typeML]: !prevML[typeML] }));
-  };
-
-  const handleSaveML = () => {
+  const submitSaveML = (valuesByTypeML: EditableTemplateValues) => {
     const templatesPayloadML = EMAIL_TEMPLATE_TYPES_ML.map((typeML) => ({
       type: typeML,
-      subject: templateValuesML[typeML]?.subject ?? "",
-      body: templateValuesML[typeML]?.body ?? "",
+      subject: valuesByTypeML[typeML]?.subject ?? "",
+      body: valuesByTypeML[typeML]?.body ?? "",
     }));
     saveFetcherML.submit(
       {
@@ -250,6 +272,18 @@ export default function EmailSettingsTab() {
       },
       { method: "POST" },
     );
+  };
+
+  const handleSaveML = () => {
+    submitSaveML(templateValuesML);
+  };
+
+  const handleSaveTemplateML = () => {
+    if (!editingTypeML) return;
+    const nextValuesML = { ...templateValuesML, [editingTypeML]: draftML };
+    setTemplateValuesML(nextValuesML);
+    popupSaveRef.current = true;
+    submitSaveML(nextValuesML);
   };
 
   const handleResetTemplateML = (typeML: EmailTemplateType) => {
@@ -394,115 +428,135 @@ export default function EmailSettingsTab() {
             </div>
           </div>
 
-          {templatesML.map((templateML, indexML) => {
-            const editableML = templateValuesML[templateML.type] ?? { subject: "", body: "" };
-            const isOpenML = !!openTemplatesML[templateML.type];
-            return (
-              <div key={templateML.type}>
-                {indexML > 0 && <div style={stylesML.clientDivider} />}
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "6px 0" }}>
-                  <div
-                    style={{ ...collapsibleHeaderStyleML(), alignItems: "flex-start" }}
-                    onClick={() => toggleTemplateOpenML(templateML.type)}
-                    onKeyDown={(eML) => {
-                      if (eML.key === "Enter" || eML.key === " ") {
-                        eML.preventDefault();
-                        toggleTemplateOpenML(templateML.type);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    aria-expanded={isOpenML}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div>
-                        <div style={stylesML.label}>
-                          {templateML.label}
-                          {templateML.isCustomized && (
-                            <span style={customizedPillStyleML}>Customized</span>
-                          )}
-                        </div>
-                        <div style={stylesML.subLabel}>{templateML.description}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-                      <ChevronDownIcon open={isOpenML} />
-                    </div>
+          {templatesML.map((templateML, indexML) => (
+            <div key={templateML.type}>
+              {indexML > 0 && <div style={stylesML.clientDivider} />}
+              <div style={templateRowStyleML}>
+                <div>
+                  <div style={stylesML.label}>
+                    {templateML.label}
+                    {templateML.isCustomized && (
+                      <span style={customizedPillStyleML}>Customized</span>
+                    )}
                   </div>
-
-                  {isOpenML && (
-                    <>
-                      <div style={subjectRowStyleML}>
-                        <div style={subjectFieldGroupStyleML}>
-                          <div style={stylesML.clientFieldLabel}>Subject</div>
-                          <input
-                            type="text"
-                            style={stylesML.clientInput}
-                            value={editableML.subject}
-                            onChange={(eML) => setTemplateFieldML(templateML.type, "subject", eML.target.value)}
-                          />
-                        </div>
-                        <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                          <button
-                            type="button"
-                            onClick={() => togglePreviewML(templateML.type)}
-                            style={resetButtonStyleML(false)}
-                          >
-                            {previewOpenML[templateML.type] ? "Hide preview" : "Preview"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleResetTemplateML(templateML.type)}
-                            disabled={!templateML.isCustomized || isResettingML}
-                            style={resetButtonStyleML(!templateML.isCustomized || isResettingML)}
-                          >
-                            Reset to default
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="eb-email-row" style={editorPreviewRowStyleML}>
-                        <div className="eb-email-col" style={editorColumnStyleML}>
-                          <div style={editorFieldGroupStyleML}>
-                            <div style={stylesML.clientFieldLabel}>Email Body</div>
-                            <RichTextEditor
-                              ref={(elML) => {
-                                bodyRefsML.current[templateML.type] = elML;
-                              }}
-                              value={editableML.body}
-                              onChange={(htmlML) => setTemplateFieldML(templateML.type, "body", htmlML)}
-                              footer={templateML.placeholders.map((pML) => (
-                                <button
-                                  key={pML.token}
-                                  type="button"
-                                  title={pML.description}
-                                  onClick={() => insertTokenML(templateML.type, pML.token)}
-                                  style={tokenPillStyleML}
-                                >
-                                  {pML.token}
-                                </button>
-                              ))}
-                            />
-                          </div>
-                        </div>
-
-                        {previewOpenML[templateML.type] && (
-                          <div className="eb-email-col eb-email-preview" style={previewColumnStyleML}>
-                            <div style={hiddenLabelSpacerStyleML} aria-hidden="true">
-                              Email Body
-                            </div>
-                            <EmailPreview type={templateML.type} subject={editableML.subject} body={editableML.body} />
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </div>
+                <button
+                  type="button"
+                  style={editIconButtonStyleML}
+                  onClick={() => openTemplateEditorML(templateML.type)}
+                  aria-label={`Edit ${templateML.label}`}
+                >
+                  <img src="/edit-icon.svg" width={44} height={40} alt="" />
+                </button>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
+
+      {editingTypeML && (() => {
+        const editingTemplateML = templatesML.find((tML) => tML.type === editingTypeML);
+        if (!editingTemplateML) return null;
+        return (
+          <div role="presentation" style={popupBackdropStyleML}>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Edit ${editingTemplateML.label}`}
+              style={{
+                ...popupBoxStyleML,
+                width: "min(1000px, 100%)",
+              }}
+            >
+              <div style={popupHeaderStyleML}>
+                <div>
+                  <div style={stylesML.clientCardTitle}>{editingTemplateML.label}</div>
+                  <div style={stylesML.subLabel}>{editingTemplateML.description}</div>
+                </div>
+                <button
+                  type="button"
+                  style={popupCloseStyleML}
+                  aria-label="Close"
+                  onClick={closeTemplateEditorML}
+                >
+                  <span style={{ fontSize: "24px", lineHeight: "20px", color: "#000000" }}>
+                    &times;
+                  </span>
+                </button>
+              </div>
+              <div style={stylesML.clientDivider} />
+
+              <div style={stylesML.clientFieldGroup}>
+                <div style={stylesML.clientFieldLabel}>Subject</div>
+                <input
+                  type="text"
+                  style={stylesML.clientInput}
+                  value={draftML.subject}
+                  onChange={(eML) =>
+                    setDraftML((prevML) => ({ ...prevML, subject: eML.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="eb-email-row" style={editorPreviewRowStyleML}>
+                <div className="eb-email-col" style={editorColumnStyleML}>
+                  <div style={editorFieldGroupStyleML}>
+                    <div style={stylesML.clientFieldLabel}>Email Body</div>
+                    <RichTextEditor
+                      ref={bodyRefML}
+                      value={draftML.body}
+                      onChange={(htmlML) =>
+                        setDraftML((prevML) => ({ ...prevML, body: htmlML }))
+                      }
+                      footer={editingTemplateML.placeholders.map((pML) => (
+                        <button
+                          key={pML.token}
+                          type="button"
+                          title={pML.description}
+                          onClick={() => insertTokenML(pML.token)}
+                          style={tokenPillStyleML}
+                        >
+                          {pML.token}
+                        </button>
+                      ))}
+                    />
+                  </div>
+                </div>
+
+                <div className="eb-email-col eb-email-preview" style={previewColumnStyleML}>
+                  <div style={hiddenLabelSpacerStyleML} aria-hidden="true">
+                    Email Body
+                  </div>
+                  <EmailPreview
+                    type={editingTemplateML.type}
+                    subject={draftML.subject}
+                    body={draftML.body}
+                  />
+                </div>
+              </div>
+
+              <div style={popupFooterStyleML}>
+                <button
+                  type="button"
+                  onClick={() => handleResetTemplateML(editingTemplateML.type)}
+                  disabled={!editingTemplateML.isCustomized || isResettingML}
+                  style={resetButtonStyleML(!editingTemplateML.isCustomized || isResettingML)}
+                >
+                  Reset to default
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveTemplateML}
+                  disabled={isSavingML}
+                  style={popupSaveButtonStyleML(isSavingML)}
+                >
+                  {isSavingML ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -531,18 +585,103 @@ function EmailPreview({
   );
 }
 
-const subjectRowStyleML: React.CSSProperties = {
+const templateRowStyleML: React.CSSProperties = {
   display: "flex",
-  flexWrap: "wrap",
-  alignItems: "flex-end",
-  gap: "12px 16px",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "12px",
+  padding: "6px 0",
 };
 
-const subjectFieldGroupStyleML: React.CSSProperties = {
-  ...stylesML.clientFieldGroup,
-  flex: "1 1 260px",
-  minWidth: 0,
+const editIconButtonStyleML: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: "10px",
+  width: "40px",
+  height: "40px",
+  flexShrink: 0,
+  borderRadius: "4px",
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
 };
+
+const popupBackdropStyleML: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 1000,
+  background: "rgba(0, 0, 0, 0.5)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "16px",
+  boxSizing: "border-box",
+};
+
+const popupBoxStyleML: React.CSSProperties = {
+  boxSizing: "border-box",
+  maxHeight: "90vh",
+  overflowY: "auto",
+  background: "#FFFFFF",
+  borderRadius: "8px",
+  padding: "16px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "16px",
+  fontFamily: "Inter",
+};
+
+const popupHeaderStyleML: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: "12px",
+};
+
+const popupCloseStyleML: React.CSSProperties = {
+  width: "20px",
+  height: "20px",
+  minWidth: "20px",
+  border: "none",
+  background: "transparent",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  padding: 0,
+};
+
+const popupFooterStyleML: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "12px",
+  width: "calc(100% + 32px)",
+  margin: "0 -16px -16px",
+  padding: "14px 16px",
+  boxSizing: "border-box",
+  background: "#F4F8FB",
+  borderTop: "1px solid #E3E8EE",
+  borderRadius: "0 0 8px 8px",
+};
+
+function popupSaveButtonStyleML(disabledML: boolean): React.CSSProperties {
+  return {
+    padding: "8px 20px",
+    borderRadius: "8px",
+    border: "none",
+    background: BLUE_ML,
+    color: "#FFFFFF",
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "14px",
+    cursor: disabledML ? "not-allowed" : "pointer",
+    opacity: disabledML ? 0.6 : 1,
+    whiteSpace: "nowrap",
+  };
+}
 
 const editorPreviewRowStyleML: React.CSSProperties = {
   display: "flex",

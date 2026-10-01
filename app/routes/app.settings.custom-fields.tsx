@@ -756,6 +756,20 @@ function FieldRow({
   const isBusyML = isDeletingML || isReorderingML;
 
   useEffect(() => {
+    if (!isEditingML) return;
+    const onKeyDownML = (eML: KeyboardEvent) => {
+      if (eML.key === "Escape") setIsEditingML(false);
+    };
+    document.addEventListener("keydown", onKeyDownML);
+    const prevOverflowML = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDownML);
+      document.body.style.overflow = prevOverflowML;
+    };
+  }, [isEditingML]);
+
+  useEffect(() => {
     if (deleteFetcherML.data?.intent === "delete" && deleteFetcherML.data.ok) {
       shopifyML.toast.show("Field removed");
     }
@@ -767,25 +781,6 @@ function FieldRow({
       { method: "POST" },
     );
   };
-
-  if (isEditingML) {
-    return (
-      <div>
-        <FieldEditor
-          fieldId={fieldML.id}
-          submitLabel="Save"
-          onCancel={() => setIsEditingML(false)}
-          initial={{
-            label: fieldML.label,
-            type: fieldML.type as CustomFieldFormValues["type"],
-            required: fieldML.required,
-            options: fieldML.options ?? "",
-          }}
-        />
-        <hr style={stylesML.divider} />
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -859,6 +854,70 @@ function FieldRow({
           </button>
         </div>
       </div>
+      {isEditingML && (
+        <div
+          role="presentation"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit field"
+            style={{
+              boxSizing: "border-box",
+              width: "min(640px, 100%)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: "#FFFFFF",
+              borderRadius: "8px",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              fontFamily: "Inter",
+            }}
+          >
+            <div style={stylesML.headerRow}>
+              <div style={stylesML.headerLeft}>
+                <p style={stylesML.title}>Edit field</p>
+              </div>
+              <button
+                type="button"
+                style={stylesML.chevronButton}
+                aria-label="Close"
+                onClick={() => setIsEditingML(false)}
+              >
+                <span style={{ fontSize: "24px", lineHeight: "20px", color: TEXT_BLACK_ML }}>
+                  &times;
+                </span>
+              </button>
+            </div>
+            <hr style={stylesML.divider} />
+            <FieldEditor
+              bare
+              fieldId={fieldML.id}
+              submitLabel="Save"
+              onCancel={() => setIsEditingML(false)}
+              initial={{
+                label: fieldML.label,
+                type: fieldML.type as CustomFieldFormValues["type"],
+                required: fieldML.required,
+                options: fieldML.options ?? "",
+              }}
+            />
+          </div>
+        </div>
+      )}
       <hr style={stylesML.divider} />
     </div>
   );
