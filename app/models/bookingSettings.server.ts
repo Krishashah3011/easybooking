@@ -1,5 +1,6 @@
 import type { BookingSettings } from "@prisma/client";
 import prismaML from "../db.server";
+import { MIN_REMINDER_HOURS_ML, MAX_REMINDER_HOURS_ML } from "./emailTemplateTypes";
 import {
   dayTimeMapFromLegacyML,
   parseDayTimesFormValueML,
@@ -115,9 +116,6 @@ export async function updateEmailFromNameML(
     update: { emailFromName: emailFromNameML },
   });
 }
-
-export const MIN_REMINDER_HOURS_ML = 1;
-export const MAX_REMINDER_HOURS_ML = 168;
 
 export function parseReminderHoursBeforeML(formDataML: FormData): {
   value: number;

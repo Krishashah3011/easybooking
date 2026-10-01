@@ -334,17 +334,6 @@ export function ChevronDownIcon({ open: openML }: { open: boolean }) {
   );
 }
 
-export function collapsibleHeaderStyleML(): React.CSSProperties {
-  return {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "8px",
-    cursor: "pointer",
-    userSelect: "none",
-  };
-}
-
 export function TabNavRow({
   onBack: onBackML,
   onNext: onNextML,

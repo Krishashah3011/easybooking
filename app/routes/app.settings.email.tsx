@@ -18,8 +18,6 @@ import {
   updateEmailFromNameML,
   parseReminderHoursBeforeML,
   updateReminderHoursBeforeML,
-  MIN_REMINDER_HOURS_ML,
-  MAX_REMINDER_HOURS_ML,
 } from "../models/bookingSettings.server";
 import {
   getSmtpSettingsML,
@@ -37,6 +35,8 @@ import {
 } from "../models/emailTemplate.server";
 import {
   EMAIL_TEMPLATE_TYPES_ML,
+  MIN_REMINDER_HOURS_ML,
+  MAX_REMINDER_HOURS_ML,
   type EmailTemplateType,
 } from "../models/emailTemplateTypes";
 import {
