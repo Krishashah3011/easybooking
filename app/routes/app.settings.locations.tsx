@@ -30,6 +30,7 @@ const EMPTY_FORM_ML: LocationFormValues = {
   name: "",
   timezone: "UTC",
   isEnabled: true,
+  isDefault: false,
   workingDays: null,
   dailyStartTime: null,
   dailyEndTime: null,
@@ -741,6 +742,7 @@ function LocationEditor({
         name: valuesML.name,
         timezone: valuesML.timezone,
         isEnabled: String(valuesML.isEnabled),
+        isDefault: String(valuesML.isDefault),
         workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : "",
         dailyStartTime: valuesML.dailyStartTime ?? "",
         dailyEndTime: valuesML.dailyEndTime ?? "",
@@ -924,11 +926,26 @@ function LocationEditor({
             <Checkbox
               checked={valuesML.isEnabled}
               onChange={() =>
-                setValuesML((prevML) => ({ ...prevML, isEnabled: !prevML.isEnabled }))
+                setValuesML((prevML) => ({
+                  ...prevML,
+                  isEnabled: !prevML.isEnabled,
+                  isDefault: prevML.isEnabled ? false : prevML.isDefault,
+                }))
               }
               label="Visible to shoppers"
               labelStyle={stylesML.requiredLabel}
             />
+
+            {valuesML.isEnabled && (
+              <Checkbox
+                checked={valuesML.isDefault}
+                onChange={() =>
+                  setValuesML((prevML) => ({ ...prevML, isDefault: !prevML.isDefault }))
+                }
+                label="Set as default location (preselected when shoppers open the booking popup)"
+                labelStyle={stylesML.requiredLabel}
+              />
+            )}
 
             {showChromeML && <hr style={stylesML.divider} />}
 
@@ -993,6 +1010,7 @@ function LocationRow({
     name: string;
     timezone: string;
     isEnabled: boolean;
+    isDefault: boolean;
     workingDays: string | null;
     dailyStartTime: string | null;
     dailyEndTime: string | null;
@@ -1056,7 +1074,7 @@ function LocationRow({
             ? "Custom"
             : "Shop default"}
         </p>
-        <p className="eb-loc-cell" style={stylesML.rowCell}>{locationML.isEnabled ? "Visible" : "Hidden"}</p>
+        <p className="eb-loc-cell" style={stylesML.rowCell}>{locationML.isEnabled ? "Visible" : "Hidden"}{locationML.isDefault ? " · Default" : ""}</p>
         <div className="eb-loc-actions" style={stylesML.actionsCell}>
           <button
             type="button"
@@ -1169,6 +1187,7 @@ function LocationRow({
                 name: locationML.name,
                 timezone: locationML.timezone,
                 isEnabled: locationML.isEnabled,
+                isDefault: locationML.isDefault,
                 workingDays: locationML.workingDays
                   ? parseWorkingDaysML(locationML.workingDays)
                   : null,

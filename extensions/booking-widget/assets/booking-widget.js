@@ -1294,6 +1294,18 @@
       updateRangeSummaryML();
       updateBundleProgressML();
 
+      // Preselect the admin-chosen default location (shopper can still change it).
+      if (!pendingLocationML && locationsLoadedML && productBookingEnabledML) {
+        var defaultLocationML = null;
+        for (var dIdxML = 0; dIdxML < locationsML.length; dIdxML++) {
+          if (locationsML[dIdxML].isDefault) {
+            defaultLocationML = locationsML[dIdxML];
+            break;
+          }
+        }
+        if (defaultLocationML) pendingLocationML = defaultLocationML;
+      }
+
       showBookingStepML();
     }
 

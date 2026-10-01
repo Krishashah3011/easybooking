@@ -10,6 +10,7 @@ export type LocationFormValues = {
   name: string;
   timezone: string;
   isEnabled: boolean;
+  isDefault: boolean;
   workingDays: number[] | null;
   dailyStartTime: string | null;
   dailyEndTime: string | null;
@@ -64,6 +65,8 @@ export function parseLocationFormML(formDataML: FormData): {
   }
 
   const isEnabledML = formDataML.get("isEnabled") !== "false";
+  // A hidden location can never be the default.
+  const isDefaultML = isEnabledML && formDataML.get("isDefault") === "true";
 
   const workingDaysRawML = String(formDataML.get("workingDays") ?? "");
   const workingDaysML =
@@ -101,6 +104,7 @@ export function parseLocationFormML(formDataML: FormData): {
       name: nameML,
       timezone: timezoneML,
       isEnabled: isEnabledML,
+      isDefault: isDefaultML,
       workingDays: workingDaysML,
       dailyStartTime: dailyStartTimeML,
       dailyEndTime: dailyEndTimeML,
@@ -126,17 +130,26 @@ export async function createLocationML(
   });
   const sortOrderML = (lastLocationML?.sortOrder ?? -1) + 1;
 
-  const locationML = await prismaML.bookingLocation.create({
-    data: {
-      shop: shopML,
-      name: valuesML.name,
-      timezone: valuesML.timezone,
-      isEnabled: valuesML.isEnabled,
-      sortOrder: sortOrderML,
-      workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : null,
-      dailyStartTime: valuesML.dailyStartTime,
-      dailyEndTime: valuesML.dailyEndTime,
-    },
+  const locationML = await prismaML.$transaction(async (txML) => {
+    if (valuesML.isDefault) {
+      await txML.bookingLocation.updateMany({
+        where: { shop: shopML, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+    return txML.bookingLocation.create({
+      data: {
+        shop: shopML,
+        name: valuesML.name,
+        timezone: valuesML.timezone,
+        isEnabled: valuesML.isEnabled,
+        isDefault: valuesML.isDefault,
+        sortOrder: sortOrderML,
+        workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : null,
+        dailyStartTime: valuesML.dailyStartTime,
+        dailyEndTime: valuesML.dailyEndTime,
+      },
+    });
   });
   return { ok: true, location: locationML };
 }
@@ -164,16 +177,25 @@ export async function updateLocationML(
     return { ok: false, error: "A location with this name already exists." };
   }
 
-  await prismaML.bookingLocation.update({
-    where: { id: idML },
-    data: {
-      name: valuesML.name,
-      timezone: valuesML.timezone,
-      isEnabled: valuesML.isEnabled,
-      workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : null,
-      dailyStartTime: valuesML.dailyStartTime,
-      dailyEndTime: valuesML.dailyEndTime,
-    },
+  await prismaML.$transaction(async (txML) => {
+    if (valuesML.isDefault) {
+      await txML.bookingLocation.updateMany({
+        where: { shop: shopML, isDefault: true, id: { not: idML } },
+        data: { isDefault: false },
+      });
+    }
+    await txML.bookingLocation.update({
+      where: { id: idML },
+      data: {
+        name: valuesML.name,
+        timezone: valuesML.timezone,
+        isEnabled: valuesML.isEnabled,
+        isDefault: valuesML.isDefault,
+        workingDays: valuesML.workingDays ? valuesML.workingDays.join(",") : null,
+        dailyStartTime: valuesML.dailyStartTime,
+        dailyEndTime: valuesML.dailyEndTime,
+      },
+    });
   });
   return { ok: true };
 }
@@ -218,10 +240,16 @@ export type PublicLocation = {
   id: string;
   name: string;
   timezone: string;
+  isDefault: boolean;
 };
 
 export function toPublicLocationML(locationML: BookingLocation): PublicLocation {
-  return { id: locationML.id, name: locationML.name, timezone: locationML.timezone };
+  return {
+    id: locationML.id,
+    name: locationML.name,
+    timezone: locationML.timezone,
+    isDefault: locationML.isDefault,
+  };
 }
 
 type MinimalAdminGraphqlClient = {
@@ -260,6 +288,7 @@ export async function maybePrefillFirstLocationFromShopTimezoneML(
         name: "Main location",
         timezone: timezoneML,
         isEnabled: true,
+        isDefault: true,
         workingDays: null,
         dailyStartTime: null,
         dailyEndTime: null,

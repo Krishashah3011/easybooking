@@ -54,6 +54,7 @@ model BookingLocation {
   name String
   timezone String @default("UTC")
   isEnabled Boolean @default(true)
+  isDefault Boolean @default(false)
   sortOrder Int @default(0)
   workingDays    String?
   dailyStartTime String?
